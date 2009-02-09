@@ -8,8 +8,6 @@
 #ifndef _BOARD_
 #define _BOARD_
 
-using namespace std;
-
 #include <cassert>
 #include <cstring>
 #include <iostream>
@@ -41,7 +39,7 @@ void print_masks (bitboard b);
 
 enum Color { WHITE = 1, NULL_COLOR = 0, BLACK = -1 };
 
-ostream & operator<< (ostream &, Color);
+std::ostream & operator<< (std::ostream &, Color);
 
 inline Color 
 invert_color (Color c) {
@@ -54,7 +52,7 @@ invert_color (Color c) {
 
 enum Status { GAME_IN_PROGRESS = 0, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
 
-ostream & operator<< (ostream &os, Status s);
+std::ostream & operator<< (std::ostream &os, Status s);
 
 /******************/
 /*  Piece kinds.  */
@@ -62,7 +60,7 @@ ostream & operator<< (ostream &os, Status s);
 
 enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
-ostream & operator<< (ostream &os, Kind k);
+std::ostream & operator<< (std::ostream &os, Kind k);
 
 /**************/
 /* Move type. */
@@ -115,7 +113,7 @@ value (const Move &m) {
   return 0;
 }
 
-ostream & operator<< (ostream &, const Move &);
+std::ostream & operator<< (std::ostream &, const Move &);
 
 /****************/
 /* Move vectors */
@@ -151,14 +149,14 @@ count (const Move_Vector &moves) {
   return moves.count;
 };
 
-ostream &
-operator<< (ostream &os, const Move_Vector &moves);
+std::ostream &
+operator<< (std::ostream &os, const Move_Vector &moves);
 
 /****************************/
 /* Chess board state type. */
 /***************************/
 
-ostream & operator<< (ostream &, const Board &);
+std::ostream & operator<< (std::ostream &, const Board &);
 
 struct Board {
 
@@ -169,7 +167,7 @@ struct Board {
   /* Constants */
   /*************/
 
-  static const string INITIAL_POSITIONS;
+  static const std::string INITIAL_POSITIONS;
 
   /**********************/
   /* Precomputed tables */
@@ -253,10 +251,10 @@ struct Board {
   static void common_init (Board &);
 
   // Construct from an ascii board representation.
-  static Board from_ascii  (const string &str);
+  static Board from_ascii  (const std::string &str);
 
   // Construct from a fen string.
-  static Board from_fen (const string &str);
+  static Board from_fen (const std::string &str);
 
   // Construct a board from the standard starting position.
   static Board startpos ();
@@ -516,7 +514,7 @@ struct Board {
 };
 
 // Output human readable board.
-ostream & operator<< (ostream &, const Board &);
+std::ostream & operator<< (std::ostream &, const Board &);
 
 /*****************/
 /* Board vectors */
@@ -551,6 +549,6 @@ inline int count (const Board_Vector &bv) {
   return bv.count;
 }
 
-ostream & operator<< (ostream &os, Board_Vector bv);
+std::ostream & operator<< (std::ostream &os, Board_Vector bv);
 
 #endif // _BOARD_

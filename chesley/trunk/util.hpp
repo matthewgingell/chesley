@@ -22,16 +22,16 @@
 /********************************************/
 
 // Return a string of spaces.
-static string spaces (int n) IS_UNUSED;
+static std::string spaces (int n) IS_UNUSED;
 
 // Downcase a string.
-static string downcase (string &s) IS_UNUSED;
+static std::string downcase (std::string &s) IS_UNUSED;
 
 // Test whether is string is a number.
-static bool is_number (const string &s) IS_UNUSED;
+static bool is_number (const std::string &s) IS_UNUSED;
 
 // Convert a string to a long.
-static int to_int (const string &s) IS_UNUSED;
+static int to_int (const std::string &s) IS_UNUSED;
 
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
@@ -49,22 +49,22 @@ template <typename T> inline void quick_sort (T &items) IS_UNUSED;
 template <typename T> inline void bubble_sort (T &items) IS_UNUSED;
 
 // Collect space seperated tokens in a vector.
-typedef vector <string> string_vector;
-static string_vector tokenize (const string &s) IS_UNUSED;
+typedef std::vector <std::string> string_vector;
+static string_vector tokenize (const std::string &s) IS_UNUSED;
 
 /***************************************/
 /* Inline implementation of utilities. */
 /***************************************/
 
 // Return a string of N spaces.
-static string 
+static std::string 
 spaces (int n) {
-  return string (n, ' ');
+  return std::string (n, ' ');
 }
 
 // Downcase a string of spaces.
-static string 
-downcase (string &s) {
+static std::string 
+downcase (std::string &s) {
   for (uint32 i = 0; i < s.length (); i++)
     {
       s[i] = tolower (s[i]);
@@ -75,7 +75,7 @@ downcase (string &s) {
 
 // Test whether is string is a number.
 static bool 
-is_number (const string &s) {
+is_number (const std::string &s) {
   for (uint32 i = 0; i < s.length (); i++)
     {
       if (!isdigit (s[i])) 
@@ -88,7 +88,7 @@ is_number (const string &s) {
 
 // Convert a string to a long.
 static int
-to_int (const string &s) {
+to_int (const std::string &s) {
   return atoi (s.c_str ());
 }
 
@@ -121,10 +121,10 @@ fdready (int fd) {
 }
 
 // Collect space seperated tokens in a vector.
-typedef vector <string> string_vector;
+typedef std::vector <std::string> string_vector;
 
 static string_vector
-tokenize (const string &s) {
+tokenize (const std::string &s) {
   uint32 first, last;
   string_vector tokens;
 
