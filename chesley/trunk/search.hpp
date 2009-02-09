@@ -22,7 +22,7 @@ struct Game_Over {
   Status status;
 };
 
-ostream & operator<< (ostream &os, Game_Over e);
+std::ostream & operator<< (std::ostream &os, Game_Over e);
 
 struct Search_Engine {
 

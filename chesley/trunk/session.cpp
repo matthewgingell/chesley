@@ -6,9 +6,6 @@
    gingell@adacore.com
 */
 
-using namespace std;
-
-#include <cctype>
 #include <cstring>
 #include <cstdio>
 #include <readline/readline.h>
@@ -17,6 +14,13 @@ using namespace std;
 #include <sys/time.h>
 
 #include "chesley.hpp"
+
+/* Putting cctype here, after include of <iostream> works around a bug
+   in some version of the g++ library. */
+
+#include <cctype>
+
+using namespace std;
 
 /*********************/
 /* Session variables */

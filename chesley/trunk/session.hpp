@@ -10,8 +10,6 @@
 #ifndef _Session_
 #define _Session_
 
-using namespace std;
-
 #include <stdio.h>
 #include <unistd.h>
 #include "board.hpp"

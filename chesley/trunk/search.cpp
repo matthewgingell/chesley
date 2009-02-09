@@ -9,6 +9,8 @@
 #include <iostream>
 #include "chesley.hpp"
 
+using namespace std;
+
 /*****************************/
 /* Game over exception type. */
 /*****************************/

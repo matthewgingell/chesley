@@ -9,6 +9,8 @@
 #include <cctype>
 #include "chesley.hpp"
 
+using namespace std;
+
 /**********/
 /* Debug. */
 /**********/
@@ -46,8 +48,8 @@ Board::print_tree (int depth)
 /*  Status type.  */
 /******************/
 
-ostream & 
-operator<< (ostream &os, Status s) {
+std::ostream & 
+operator<< (std::ostream &os, Status s) {
   switch (s) 
     {
     case GAME_IN_PROGRESS: os << "GAME_IN_PROGRESS"; break;
@@ -62,8 +64,8 @@ operator<< (ostream &os, Status s) {
 /* Kind type. */
 /**************/
 
-ostream & 
-operator<< (ostream &os, Kind k) {
+std::ostream & 
+operator<< (std::ostream &os, Kind k) {
   const char *strs[] =
     { "PAWN", "ROOK", "KNIGHT", "BISHOP", "KING", "QUEEN" };
   return os << strs [k];
@@ -73,7 +75,7 @@ operator<< (ostream &os, Kind k) {
 /*  Color type.  */
 /*****************/
 
-ostream & operator<< (ostream &os, Color c) {
+std::ostream & operator<< (std::ostream &os, Color c) {
   switch (c) 
     {
     case WHITE: return os << "WHITE";
@@ -91,8 +93,8 @@ Move_Vector::Move_Vector (const Board &b) {
   b.gen_all_moves (*this);
 }
 
-ostream &
-operator<< (ostream &os, const Move &m)
+std::ostream &
+operator<< (std::ostream &os, const Move &m)
 {
   os << "[MOVE: ";
   os << m.color << " " << m.kind;
@@ -105,8 +107,8 @@ operator<< (ostream &os, const Move &m)
   return os;
 }
 
-ostream &
-operator<< (ostream &os, const Move_Vector &moves)
+std::ostream &
+operator<< (std::ostream &os, const Move_Vector &moves)
 {
   for (int i = 0; i < moves.count; i++)
     {
@@ -779,8 +781,8 @@ Board_Vector::Board_Vector (const Board &b)
     }
 }
 
-ostream & 
-operator<< (ostream &os, Board_Vector bv) {
+std::ostream & 
+operator<< (std::ostream &os, Board_Vector bv) {
   for (int i = 0; i < bv.count; i++)
     {
       os << "Position #" << i << endl;
@@ -793,8 +795,8 @@ operator<< (ostream &os, Board_Vector bv) {
 /* Printing. */
 /*************/
 
-ostream &
-operator<< (ostream &os, const Board &b)
+std::ostream &
+operator<< (std::ostream &os, const Board &b)
 {
   if (b.flags.to_move == WHITE)
     {
