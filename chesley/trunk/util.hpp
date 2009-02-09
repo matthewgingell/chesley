@@ -8,6 +8,7 @@
 #ifndef __UTIL__
 #define __UTIL__
 
+#include <cstdlib>
 #include <cstring>
 #include <string>
 #include <vector>
