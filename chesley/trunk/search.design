@@ -1,0 +1,172 @@
+Searching for the best move:
+
+Do searchs need state?
+
+   configuration variables. (depth, timeout, etc.)	
+   cache tables.
+   threads.
+
+So: Client creates an Search_Engine object, and calls method 
+
+  Move choose_move (const Board &b);
+  int score (const Board &b, int depth = 0);
+
+Algorithms:
+
+score 
+
+   what should score do with an illegal position?
+      score should never receive an illegal position
+         apply should never generate an illegal position
+	 
+   what should score do with a terminal move?
+      if a position has no legal children
+         check draw / checkmate. 
+	    return 0 / +INFINITY / -INFINITY
+
+	 
+
+
+This still allow lazy evaluation of check, since we will not call
+apply for nodes cut by pruning.
+ 
+   apply move should
+   check legality of move.
+   return ILLEGAL on illegal moves.
+
+move choose_move (board in, board out)
+   gen moves
+
+   return min/max of legal moves.
+
+   if no legal moves 
+      set win / draw / lose flag.
+      return NULL_MOVE
+
+score (board, depth)
+
+  if (depth = max_depth) 
+     return heuristic_eval
+
+  gen_moves
+
+  for each move
+     child = copy board.
+     alpha = +/-INFINITY
+     if (child.apply != ILLEGAL)
+        count move
+        alpha = min/max (alpha, score (move))
+     end
+  end
+
+  if (count of moves = 0)
+     return -INFINITY / 0 / +INFINITY
+
+  return alpha
+
+Minimax:
+
+   function minimax(node, depth)
+       if node is a terminal node or depth = 0
+           return the heuristic value of node
+       else
+           let α := -∞
+           foreach child of node                       { evaluation is identical for both players }
+               let α := max(α, -minimax(child, depth-1))
+           return α
+
+With Alphabeta
+
+function alphabeta(node, depth, α, β)         
+    (* β represents previous player best choice - doesn't want it if α would worsen it *)
+    if node is a terminal node or depth = 0
+        return the heuristic value of node
+    foreach child of node
+        α := max(α, -alphabeta(child, depth-1, -β, -α))     
+        (* use symmetry, -β becomes subsequently pruned α *)
+        if β≤α
+            break                             (* Beta cut-off *)
+    return α
+
+(* Initial call *)
+alphabeta(origin, depth, -inf, +inf)
+
+
+With Negamax
+
+function negamax(node, depth, α, β)
+    if node is a terminal node or depth = 0
+        return the heuristic value of node
+    else
+        foreach child of node
+            α := max(α, -negamax(child, depth-1, -β, -α))
+            {the following if statement constitutes alpha-beta pruning}
+            if α≥β
+                return β
+        return α
+
+
+With Negascout:
+
+function negascout(node, depth, α, β)
+    if node is a terminal node or depth = 0
+        return the heuristic value of node
+    b := β                                          (* initial window is (-β, -α) *)
+    foreach child of node
+        a := -negascout (child, depth-1, -b, -α)
+        if a>α
+            α := a
+        if α≥β
+            return α                                (* Beta cut-off *)
+        if α≥b                                      (* check if null-window failed high*)
+           α := -negascout(child, depth-1, -β, -α)  (* full re-search *)
+           if α≥β
+               return α                             (* Beta cut-off *)    
+        b := α+1                                    (* set new null window *)             
+    return α
+
+WITH MTD(f):
+
+function MTDF(root : node_type; f : integer; d : integer) : integer;
+
+      g := f;
+      upperbound := +INFINITY;
+      lowerbound := -INFINITY;
+      repeat
+            if g == lowerbound then beta := g + 1 else beta := g;
+            g := AlphaBetaWithMemory(root, beta - 1, beta, d);
+            if g < beta then upperbound := g else lowerbound := g;
+      until lowerbound >= upperbound;
+      return g;
+
+function AlphaBetaWithMemory(n : node_type; alpha , beta , d : integer) : integer;
+
+      if retrieve(n) == OK then /* Transposition table lookup */
+            if n.lowerbound >= beta then return n.lowerbound;
+            if n.upperbound <= alpha then return n.upperbound;
+            alpha := max(alpha, n.lowerbound);
+            beta := min(beta, n.upperbound);
+      if d == 0 then g := evaluate(n); /* leaf node */
+      else if n == MAXNODE then
+            g := -INFINITY; a := alpha; /* save original alpha value */
+            c := firstchild(n);
+            while (g < beta) and (c != NOCHILD) do
+                  g := max(g, AlphaBetaWithMemory(c, a, beta, d - 1));
+                  a := max(a, g);
+                  c := nextbrother(c);
+      else /* n is a MINNODE */
+            g := +INFINITY; b := beta; /* save original beta value */
+            c := firstchild(n);
+            while (g > alpha) and (c != NOCHILD) do
+                  g := min(g, AlphaBetaWithMemory(c, alpha, b, d - 1));
+                  b := min(b, g);
+                  c := nextbrother(c);
+      /* Traditional transposition table storing of bounds */
+      /* Fail low result implies an upper bound */
+      if g <= alpha then n.upperbound := g; store n.upperbound;
+      /* Found an accurate minimax value - will not occur if called with zero window */
+      if g >  alpha and g < beta then
+            n.lowerbound := g; n.upperbound := g; store n.lowerbound, n.upperbound;
+      /* Fail high result implies a lower bound */
+      if g >= beta then n.lowerbound := g; store n.lowerbound;
+      return g;

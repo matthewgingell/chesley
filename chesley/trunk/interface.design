@@ -1,0 +1,3 @@
+- Start periodic timer. 
+- Handler polls input.
+- If input available, set Search_Engine.interrupt.
