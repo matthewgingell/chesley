@@ -1,0 +1,41 @@
+Priority:
+
+  * Implement Xboard proto.
+
+Clean up:
+      
+  * Move util stuff to a .cpp.
+  * Fix quicksort.
+
+Practice:
+
+  * SVN
+
+Testing:
+ 
+  * Setup automated regression testing.
+  * Test perft in middle and end game.
+
+* Session
+
+  * Implement command interpreter.
+  * Implement Xboard protocol.
+  * Implement Universal Chess Interface (UCI)
+
+* Search
+
+  * Iterative deepening.
+  * Timed searches.
+  X Heuristic move ordering.
+  * Aspiration windows
+  X Move ordering
+  * Transposition tables.
+  * Static Exchange Evaluation (SEE) for capture ordering.
+
+  ??? Negascout
+  ??? MTD(f)
+
+* Eval
+
+  * Reward good pawn structure.
+  * Do some research....

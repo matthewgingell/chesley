@@ -1,0 +1,26 @@
+SHELL = /bin/sh
+
+# CXX = g++
+# CXXFLAGS = -g -Wall
+
+CXX = g++-mp-4.4
+CXXFLAGS = -g -Wall -O3 -m64 -funroll-all-loops
+
+LIBS = -lreadline
+OBJECTS = board.o eval.o genmasks.o genmoves.o gentables.o main.o	\
+ search.o session.o
+
+all: chesley
+
+chesley: $(OBJECTS)
+	$(CXX) $(CXXFLAGS) $(OBJECTS) $(LIBS) -o $@
+
+play: chesley
+	xboard -debug -fcp ./chesley -size Big
+
+%.o : %.cpp *.hpp
+	$(CXX) $(CXXFLAGS) -c $<
+
+clean :
+	rm -rf chesley a.out *.o *.dSYM *~ TAGS *.gcda a.out Saturn*	\
+	      game.00* log.00* book.lrn position.bin position.lrn *.d

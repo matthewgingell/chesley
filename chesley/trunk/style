@@ -1,0 +1,22 @@
+
+ * Always include variable names in prototypes.
+
+*  Use C style comment box for major headings, eg:
+
+  /**************************************************/
+  /* Compute legal destinations for ordinary moves. */
+  /**************************************************/
+
+* Use C++ style comments for minor headings, eg:
+
+  // Collect each destination in the moves list.
+  while (to)
+  {
+    out.push (Move (KING, from, bit_idx (to), flags.to_move));
+    to = clear_lsb (to);
+  }
+
+* Major headings should precead each logically seperate task in a
+  subprogram.
+
+* One blank line after major headings.
