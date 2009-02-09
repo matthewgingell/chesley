@@ -7,6 +7,7 @@
 
 #include <cassert>
 #include <cctype>
+#include <sstream>
 #include "chesley.hpp"
 
 using namespace std;
@@ -27,7 +28,7 @@ print_board (bitboard b) {
 }
 
 // Print the full tree to depth N.
-void 
+void
 Board::print_tree (int depth)
 {
   if (depth == 0)
@@ -48,9 +49,9 @@ Board::print_tree (int depth)
 /*  Status type.  */
 /******************/
 
-std::ostream & 
+std::ostream &
 operator<< (std::ostream &os, Status s) {
-  switch (s) 
+  switch (s)
     {
     case GAME_IN_PROGRESS: os << "GAME_IN_PROGRESS"; break;
     case GAME_WIN_WHITE:   os << "GAME_WIN_WHITE"; break;
@@ -64,7 +65,26 @@ operator<< (std::ostream &os, Status s) {
 /* Kind type. */
 /**************/
 
-std::ostream & 
+// Convert a kind to a character code.
+char
+to_char (Kind k) {
+  switch (k)
+    {
+    case NULL_KIND: return '?';
+    case PAWN:      return 'p';
+    case ROOK:      return 'r';
+    case KNIGHT:    return 'n';
+    case BISHOP:    return 'b';
+    case QUEEN:     return 'q';
+    case KING:      return 'k';
+    }
+  assert (0);
+
+  // Suppress gcc warning in -DNDEBUG case.
+  return '!';
+}
+
+std::ostream &
 operator<< (std::ostream &os, Kind k) {
   const char *strs[] =
     { "PAWN", "ROOK", "KNIGHT", "BISHOP", "KING", "QUEEN" };
@@ -76,7 +96,7 @@ operator<< (std::ostream &os, Kind k) {
 /*****************/
 
 std::ostream & operator<< (std::ostream &os, Color c) {
-  switch (c) 
+  switch (c)
     {
     case WHITE: return os << "WHITE";
     case BLACK: return os << "BLACK";
@@ -87,11 +107,6 @@ std::ostream & operator<< (std::ostream &os, Color c) {
 /*******************************/
 /* Move and move vector type.  */
 /*******************************/
-
-Move_Vector::Move_Vector (const Board &b) {
-  count = 0;
-  b.gen_all_moves (*this);
-}
 
 std::ostream &
 operator<< (std::ostream &os, const Move &m)
@@ -105,6 +120,32 @@ operator<< (std::ostream &os, const Move &m)
   os << " score: " << m.score ;
   os << "]";
   return os;
+}
+
+// Return a description of this move in coordinate algebraic
+// notation.
+string
+Move::to_calg () const {
+  ostringstream s;
+
+  // The simple case of an ordinary move.
+  s << (char) ('a' + Board::idx_to_file (from));
+  s << (int) Board::idx_to_rank (from) + 1;
+  s << (char) ('a' + Board::idx_to_file (to));
+  s << (int) Board::idx_to_rank (to) + 1;
+
+  // Promotion case.
+  if (flags.promote)
+    {
+      s << flags.promote;
+    }
+
+  return s.str();
+}
+
+Move_Vector::Move_Vector (const Board &b) {
+  count = 0;
+  b.gen_all_moves (*this);
 }
 
 std::ostream &
@@ -198,7 +239,7 @@ Board::precompute_tables () {
 /* Constructors. */
 /****************/
 
-void 
+void
 Board::common_init (Board &b) {
 
   // Initialize bitboards.
@@ -208,7 +249,7 @@ Board::common_init (Board &b) {
 
   // Initialize flags.
   b.flags.to_move = WHITE;
-  
+
   // Initialize castling status
   b.flags.w_has_q_castled  = 0;
   b.flags.w_has_k_castled  = 0;
@@ -226,7 +267,7 @@ Board::common_init (Board &b) {
   b.flags.status = GAME_IN_PROGRESS;
 
   // Initialize clocks.
-  b.half_move_clock = 
+  b.half_move_clock =
     b.full_move_clock = 0;
 }
 
@@ -281,16 +322,16 @@ Board::from_ascii (const string &str) {
 	case 'R': b.set_piece (ROOK, WHITE, i); break;
 	case 'r': b.set_piece (ROOK, BLACK, i); break;
 
-	case 'K': 
-	  b.set_piece (KING, WHITE, i); 
-	  if (i != 4) 
+	case 'K':
+	  b.set_piece (KING, WHITE, i);
+	  if (i != 4)
 	    b.flags.w_can_q_castle = b.flags.w_can_k_castle = 0;
 	  break;
 
-	case 'k': 
+	case 'k':
 	  b.set_piece (KING, BLACK, i);
-	  if (i != 60) 
-	    b.flags.b_can_q_castle = 
+	  if (i != 60)
+	    b.flags.b_can_q_castle =
 	      b.flags.b_can_k_castle = 0;
 	  break;
 	}
@@ -300,7 +341,7 @@ Board::from_ascii (const string &str) {
 }
 
 // Construct a board from the standard starting position.
-Board 
+Board
 Board::startpos () {
   static const string position =
 
@@ -319,7 +360,7 @@ Board::startpos () {
 }
 
 // Construct from FEN string.
-Board 
+Board
 Board::from_fen (const string &fen) {
   Board b;
   Board::common_init(b);
@@ -341,13 +382,13 @@ Board::from_fen (const string &fen) {
   while (1)
     {
       // Do our best if the string ends unexpectantly.
-      if (*s == 0) 
+      if (*s == 0)
 	{
 	  return b;
 	}
 
       // Skip space in the string.
-      while (isspace (*s)) 
+      while (isspace (*s))
 	{
 	  s++;
 	}
@@ -379,7 +420,7 @@ Board::from_fen (const string &fen) {
 	}
 
       // End of row.
-      if (*s == '/') 
+      if (*s == '/')
 	{
 	  row--;
 	  file = 0;
@@ -388,7 +429,7 @@ Board::from_fen (const string &fen) {
       // Exit when we've filled the whole board.
       if (row == 0 && file > 7)
 	break;
-      
+
       s++;
     }
 
@@ -419,15 +460,15 @@ Board::from_fen (const string &fen) {
   while (!isspace (*s)) s++;
   while (isspace (*s)) s++;;
 
-  b.flags.w_can_k_castle = 
-    b.flags.w_can_q_castle = 
-    b.flags.w_can_k_castle = 
+  b.flags.w_can_k_castle =
+    b.flags.w_can_q_castle =
+    b.flags.w_can_k_castle =
     b.flags.w_can_q_castle = 0;
-    
+
   int done = false;
-  while (!done) 
+  while (!done)
     {
-      switch (*s) 
+      switch (*s)
 	{
 	case 'K': b.flags.w_can_k_castle = 1; break;
 	case 'k': b.flags.b_can_k_castle = 1; break;
@@ -438,7 +479,7 @@ Board::from_fen (const string &fen) {
 	}
       s++;
     }
-  
+
   /*
       4: En passant target square. If a pawn has just made a 2-square
          move this is the postion behind the pawn, otherwise "-".
@@ -447,17 +488,17 @@ Board::from_fen (const string &fen) {
   // Scan to next field.
   while (isspace (*s)) s++;
 
-  if (*s == '-') 
+  if (*s == '-')
     {
       b.flags.en_passant = 0;
     }
-  else   
+  else
     {
       int tmp;
       sscanf (s, "%i", &tmp);
       b.flags.en_passant = tmp;
     }
-  
+
   // Scan to next field.
   while (!isspace (*s)) s++;
   while (isspace (*s)) s++;
@@ -471,7 +512,7 @@ Board::from_fen (const string &fen) {
   */
 
   sscanf (s, "%i %i", &b.half_move_clock, &b.full_move_clock);
-  
+
   return b;
 }
 
@@ -480,21 +521,21 @@ Board::from_fen (const string &fen) {
 /*********/
 
 // Compute a bitboard of every square color is attacking.
-bitboard 
+bitboard
 Board::attack_set (Color c) const {
   bitboard color = c == WHITE ? white : black;
   bitboard attacks = 0llu;
   bitboard pieces;
   int from;
-    
+
   // Pawns
   pieces = pawns & color;
-  if (c == WHITE) 
+  if (c == WHITE)
     {
       attacks |= ((pieces & ~file(0)) << 7) & black;
       attacks |= ((pieces & ~file(7)) << 9) & black;
-    } 
-  else 
+    }
+  else
     {
       attacks |= ((pieces & ~file(0)) >> 9) & white;
       attacks |= ((pieces & ~file(7)) >> 7) & white;
@@ -502,59 +543,59 @@ Board::attack_set (Color c) const {
 
   // Rooks
   pieces = rooks & color;
-  while (pieces) 
+  while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= 
+      attacks |=
 	(RANK_ATTACKS_TBL[from * 256 + occ_0 (from)] |
 	 FILE_ATTACKS_TBL[from * 256 + occ_90 (from)])
 	& ~color;
       pieces = clear_lsb (pieces);
-    } 
-    
+    }
+
   // Knights
   pieces = knights & color;
-  while (pieces) 
+  while (pieces)
     {
       from = bit_idx (pieces);
       attacks |= KNIGHT_ATTACKS_TBL[from] & ~color;
       pieces = clear_lsb (pieces);
-    } 
-    
+    }
+
   // Bishops
   pieces = bishops & color;
-  while (pieces) 
+  while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= 
+      attacks |=
 	(DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
 	 DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
 	& ~color;
       pieces = clear_lsb (pieces);
-    } 
+    }
 
   // Queens
   pieces = queens & color;
-  while (pieces) 
+  while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= 
+      attacks |=
 	(RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
 	 | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
 	 | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
 	 | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
 	& ~color;
       pieces = clear_lsb (pieces);
-    } 
+    }
 
   // Kings
   pieces = kings & color;
-  while (pieces) 
+  while (pieces)
     {
       from = bit_idx (pieces);
       attacks |= KING_ATTACKS_TBL[from] & ~color;
       pieces = clear_lsb (pieces);
-    } 
+    }
 
   return attacks;
 }
@@ -565,13 +606,13 @@ Board::attack_set (Color c) const {
 
 // Apply a move to the board. Return false if this move is illegal
 // because it places or leaves the color to move in check.
-bool 
+bool
 Board::apply (const Move &m) {
 
   /******************/
   /* Update clocks. */
   /******************/
-  
+
   // Reset the 50 move rule clock when a pawn is moved or a capture is
   // made.
   if (m.flags.capture != NULL_KIND || m.kind == PAWN)
@@ -598,7 +639,7 @@ Board::apply (const Move &m) {
   /*************************/
   /* Update to_move state. */
   /*************************/
-    
+
   flags.to_move = invert_color (flags.to_move);
 
   /****************************/
@@ -624,7 +665,7 @@ Board::apply (const Move &m) {
 	      flags.w_has_k_castled = 1;
 	      return true;
 	    }
-	    
+
 	  if (m.flags.castle_ks && !(attacked & 0x70))
 	    {
 	      clear_piece (4);
@@ -637,10 +678,10 @@ Board::apply (const Move &m) {
 	      return true;
 	    }
 	}
-      else 
+      else
 	{
 	  byte attacks = get_byte (attacked, 7);
-	   
+
 	  if (m.flags.castle_qs && !(attacks & 0xE))
 	    {
 	      clear_piece (60);
@@ -652,7 +693,7 @@ Board::apply (const Move &m) {
 	      flags.b_has_q_castled = 1;
 	      return true;
 	    }
-	    
+
 	  if (m.flags.castle_ks && !(attacks & 0x70))
 	    {
 	      clear_piece (60);
@@ -674,8 +715,8 @@ Board::apply (const Move &m) {
       /****************************/
       /* Handle taking En Passant */
       /****************************/
-      
-      if (m.kind == PAWN && 
+
+      if (m.kind == PAWN &&
 	  flags.en_passant != 0 &&
 	  m.to == flags.en_passant)
 	{
@@ -715,15 +756,15 @@ Board::apply (const Move &m) {
       /**************************/
 
       // King moves.
-      if (m.from == 4) { 
-	flags.w_can_q_castle = 0; 
-	flags.w_can_k_castle = 0; 
-      } 
-      else if (m.from == 60) { 
-	flags.b_can_q_castle = 0; 
-	flags.b_can_k_castle = 0; 
+      if (m.from == 4) {
+	flags.w_can_q_castle = 0;
+	flags.w_can_k_castle = 0;
       }
-	
+      else if (m.from == 60) {
+	flags.b_can_q_castle = 0;
+	flags.b_can_k_castle = 0;
+      }
+
       // Rook moves and attacks.
       if (m.from ==  0 || m.to ==  0) { flags.w_can_q_castle = 0; }
       if (m.from ==  7 || m.to ==  7) { flags.w_can_k_castle = 0; }
@@ -756,7 +797,7 @@ Board::apply (const Move &m) {
       /*****************/
       /* Test legality. */
       /*****************/
-    
+
       // Return whether this position puts or leaves us in check.
       return !in_check (m.color);
     }
@@ -769,7 +810,7 @@ Board::apply (const Move &m) {
 Board_Vector::Board_Vector (const Board &b)
 {
   Move_Vector moves (b);
-  
+
   count = 0;
   for (int i = 0; i < moves.count; i++)
     {
@@ -781,7 +822,7 @@ Board_Vector::Board_Vector (const Board &b)
     }
 }
 
-std::ostream & 
+std::ostream &
 operator<< (std::ostream &os, Board_Vector bv) {
   for (int i = 0; i < bv.count; i++)
     {
@@ -801,7 +842,7 @@ operator<< (std::ostream &os, const Board &b)
   if (b.flags.to_move == WHITE)
     {
       os << "White to move:" << endl;
-	
+
     }
   else
     {

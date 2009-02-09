@@ -1,10 +1,10 @@
 SHELL = /bin/sh
 
-CXX = g++
-# CXX = g++-mp-4.4
+#CXX = g++
+CXX = g++-mp-4.4
 
 #CXXFLAGS = -g -Wall
-CXXFLAGS = -g -Wall -O3 -funroll-all-loops
+CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops
 
 LIBS = -lreadline -lcurses
 OBJECTS = board.o eval.o genmasks.o genmoves.o gentables.o main.o	\
