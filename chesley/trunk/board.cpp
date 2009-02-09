@@ -6,7 +6,7 @@
 */
 
 #include <cassert>
-#include <ctype>
+#include <cctype>
 #include "chesley.hpp"
 
 /**********/
