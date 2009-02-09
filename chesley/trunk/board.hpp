@@ -135,7 +135,6 @@ struct Move_Vector {
   Move_Vector (const Board &b);
 
   void push (const Move &m) {
-    assert (count < SIZE);
     move[count++] = m;
   }
 
