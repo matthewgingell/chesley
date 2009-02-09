@@ -351,7 +351,7 @@ Board::from_fen (const string &fen) {
 	}
 
       // Process empty square counts.
-      if (isnumber (*s))
+      if (isdigit (*s))
 	{
 	  for (int j = 0; j < atoi (s); j++)
 	    {
