@@ -60,6 +60,9 @@ std::ostream & operator<< (std::ostream &os, Status s);
 
 enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
+// Convert a kind to a character code.
+char to_char (Kind k);
+
 std::ostream & operator<< (std::ostream &os, Kind k);
 
 /**************/
@@ -92,6 +95,10 @@ struct Move {
   uint32 to     :6;  // Destination
 
   uint32 score;      // Score for this move.
+
+  // Return a description of this move in coordinate algebraic
+  // notation.
+  std::string to_calg () const;
 };
 
 // Estimate the value of this move as zero or the value of the piece
@@ -108,7 +115,6 @@ value (const Move &m) {
     case QUEEN:  return -9;
     default:     assert (0);
     }
-
   // Suppress gcc warning in -DNDEBUG case.
   return 0;
 }

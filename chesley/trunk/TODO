@@ -3,13 +3,11 @@ Priority:
   * Implement Xboard proto.
 
 Clean up:
-      
-  * Move util stuff to a .cpp.
+
+
+  * NULL_KIND etc. must be zero.      
+  * Move util stuff to a .cpp?
   * Fix quicksort.
-
-Practice:
-
-  * SVN
 
 Testing:
  
@@ -28,7 +26,6 @@ Testing:
   * Timed searches.
   X Heuristic move ordering.
   * Aspiration windows
-  X Move ordering
   * Transposition tables.
   * Static Exchange Evaluation (SEE) for capture ordering.
 
