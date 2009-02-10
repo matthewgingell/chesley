@@ -50,6 +50,9 @@ Search_Engine :: choose_move (Board &b) {
       if (child.apply (moves[i]))
 	{
 	  int s = score (child, 1, -INFINITY, INFINITY);
+
+	  moves[i].score = s;
+
 	  if ((c == WHITE && s > best_score) ||
 	      (c == BLACK && s < best_score))
 	    {
@@ -57,6 +60,13 @@ Search_Engine :: choose_move (Board &b) {
 	      best_index = i;
 	    }
 	}
+    }
+
+  if (best_index != -1) 
+    {
+      cerr << moves << endl;
+      cerr << best_index << endl;
+      cerr << moves[best_index] << endl;
     }
 
   /********************************************************************/
@@ -109,7 +119,9 @@ Search_Engine :: score
 
   if (depth == max_depth) 
     {
-      return eval (b, depth);  
+      int e = eval (b, depth);  
+      assert (e > -INFINITY && e < INFINITY);
+      return e;
     }
 
   /***********************************************************/
@@ -121,7 +133,7 @@ Search_Engine :: score
 
   Move_Vector moves (b);
 
-#if 1
+#if 0
   bubble_sort (moves);
 #endif
 
@@ -137,16 +149,20 @@ Search_Engine :: score
 	  if (c == WHITE)
 	    {
 	      alpha = max (alpha, score (child, depth + 1, alpha, beta));
+
+	      // Alpha cut-off
 	      if (alpha >= beta) 
 		{
-		  return beta;
+		  return beta; 
 		}
 	    }
 
 	  // Minimizing at this node.
-	  else 
+	  else // c == BLACK
 	    {
 	      beta = min (beta, score (child, depth + 1, alpha, beta));
+
+	      // Beta cut-off
 	      if (beta <= alpha) 
 		{
 		  return alpha;

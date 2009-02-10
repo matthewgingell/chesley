@@ -405,14 +405,14 @@ Board::gen_king_moves (Move_Vector &out) const
 
       if (flags.b_can_q_castle && (row & 0xE) == 0)
 	{
-	  Move m (KING, 60, 62, BLACK, NULL_KIND);
+	  Move m (KING, 60, 58, BLACK, NULL_KIND);
 	  m.flags.castle_qs = 1;
 	  out.push (m);
 	}
 
       if (flags.b_can_k_castle && (row & 0x60) == 0)
 	{
-	  Move m (KING, 60, 58, BLACK, NULL_KIND);
+	  Move m (KING, 60, 62, BLACK, NULL_KIND);
 	  m.flags.castle_ks = 1;
 	  out.push (m);
 	}

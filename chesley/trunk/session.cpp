@@ -162,6 +162,11 @@ Session::execute (char *line) {
 	  cerr << "Sent move: " << best << endl;
 	  board.apply (best);
 	}
+      if (token == "playself")
+	{
+	  return play_self (tokens);
+	}
+
     }
   
   return true;
@@ -218,4 +223,25 @@ Session::perft (const string_vector &tokens)
   fprintf (out, "%.2f moves/second.\n", ((double) count) / elapsed);  
 
   return true;
+}
+
+// Play a game against its self.
+bool 
+Session::play_self (const string_vector &tokens) 
+{
+  board = Board::startpos ();
+
+  try {
+    while (1)
+      {
+	cerr << board << endl;
+	Move m = se.choose_move (board);
+	board.apply (m);
+      }
+  }
+
+  catch (...)
+    {
+      return true;
+    }
 }

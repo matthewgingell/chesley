@@ -83,7 +83,9 @@ eval (const Board &b, int depth = 0) {
   // piece, location) tuple is assigned a static value and we sum over
   // the board to obtain an estimate of the value of this position.
 
+#if 1
   score += eval_simple_positional (b);
+#endif
 
   // Encourage preserving the right to castle.
   score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);

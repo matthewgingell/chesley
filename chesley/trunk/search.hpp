@@ -58,9 +58,9 @@ struct Search_Engine {
   Move choose_move (Board &b);
 
   // Score a move dynamically.
-  int score (const Board &b, int depth, 
-	     int alpha = -INFINITY, 
-	     int beta = INFINITY);
+  int32 score (const Board &b, int depth, 
+	       int alpha = -INFINITY, 
+	       int beta = INFINITY);
 
 };
 
