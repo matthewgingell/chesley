@@ -87,7 +87,7 @@ to_char (Kind k) {
 std::ostream &
 operator<< (std::ostream &os, Kind k) {
   const char *strs[] =
-    { "PAWN", "ROOK", "KNIGHT", "BISHOP", "KING", "QUEEN" };
+    { "NULL_KIND", "PAWN", "ROOK", "KNIGHT", "BISHOP", "KING", "QUEEN" };
   return os << strs [k];
 }
 
@@ -122,22 +122,54 @@ operator<< (std::ostream &os, const Move &m)
   return os;
 }
 
-// Return a description of this move in coordinate algebraic
-// notation.
+// Does this string look like a move written in coordinate algebraic
+// notation?
+bool
+Board::is_calg (const string &s) const {
+  if (s.length() != 4 ||
+      !isalpha (s[0]) || !isdigit (s[1]) ||
+      !isalpha (s[2]) || !isdigit (s[3]) )
+    {
+      return false;
+    }
+  else
+    {
+      return true;
+    }
+}
+
+// Construct a Move from coordinate algebraic notation.
+Move 
+Board::from_calg (const string &s) const {
+  assert (s.length () >= 4);
+
+  uint32 from = (s[0] - 'a') + 8 * (s[1] - '1');
+  //  cerr <<  (s[0] - 'a') << endl << 8 * (s[1] - '1');
+
+  uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
+
+  Kind k = get_kind (from);
+  Color c = flags.to_move;
+  Kind capture = get_kind (to);
+
+  return Move (k, from, to, c, capture);
+}
+
+// Return a description of a Move in coordinate algebraic notation.
 string
-Move::to_calg () const {
+Board::to_calg (const Move &m) const {
   ostringstream s;
 
   // The simple case of an ordinary move.
-  s << (char) ('a' + Board::idx_to_file (from));
-  s << (int) Board::idx_to_rank (from) + 1;
-  s << (char) ('a' + Board::idx_to_file (to));
-  s << (int) Board::idx_to_rank (to) + 1;
+  s << (char) ('a' + idx_to_file (m.from));
+  s << (int)  (      idx_to_rank (m.from) + 1);
+  s << (char) ('a' + idx_to_file (m.to));
+  s << (int)  (      idx_to_rank (m.to) + 1);
 
   // Promotion case.
-  if (flags.promote)
+  if (m.flags.promote)
     {
-      s << flags.promote;
+      s << to_char (m.flags.promote);
     }
 
   return s.str();

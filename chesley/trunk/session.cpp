@@ -53,7 +53,9 @@ Session::init_session () {
 
   // Setup state.
   board = Board :: startpos ();
-  se = Search_Engine ();
+  se = Search_Engine (6);
+
+  signal (SIGINT, handle_interrupt);
 
 #if 0
   halt = 0;
@@ -70,6 +72,7 @@ Session::init_session () {
 // Set the halt flag depending on whether there is input waiting.
 void 
 Session::handle_interrupt (int sig) {
+#if 0
   if (fdready (fileno (in)))
     {
       halt = true;
@@ -78,6 +81,9 @@ Session::handle_interrupt (int sig) {
     {
       halt = false;
     }
+#endif
+
+  cerr << "Caught SIGINT" << endl;
 }
 
 /*************************************/
@@ -91,7 +97,6 @@ Session::cmd_loop ()
   while (true)
     {
       char *line = readline (Session::prompt);
-      cerr << "Chesley got: \"" << line << "\"" << endl;
       if (!line || !execute (line)) break;
       free (line);
     }
@@ -105,6 +110,8 @@ bool
 Session::execute (char *line) {
   string_vector tokens = tokenize (line);
   int count = tokens.size ();
+
+  cerr << "Chesley got: " << line << endl;
 
   if (tokens.size () > 0)
     {
@@ -138,6 +145,22 @@ Session::execute (char *line) {
 	  fprintf (out, "tellicsnoalias set 1 %s v%s\n", ENGINE_ID_STR, VERSION_STR);
 	  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n", VERSION_STR);
 	  prompt = NULL;
+	}
+
+      if (token == "protover") 
+	{
+	  fprintf (out, "feature\n");
+	}
+
+      if (board.is_calg (token))
+	{
+	  Move m = board.from_calg (token);	  
+	  board.apply (m);
+	  Move best = se.choose_move (board);
+	  fprintf (out, "move %s\n",  board.to_calg (best).c_str ());
+	  fflush (out);
+	  cerr << "Sent move: " << best << endl;
+	  board.apply (best);
 	}
     }
   

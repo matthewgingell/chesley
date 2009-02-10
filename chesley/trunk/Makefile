@@ -1,6 +1,6 @@
 SHELL = /bin/sh
 
-#CXX = g++
+CXX = g++
 CXX = g++-mp-4.4
 
 #CXXFLAGS = -g -Wall

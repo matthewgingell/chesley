@@ -58,7 +58,7 @@ std::ostream & operator<< (std::ostream &os, Status s);
 /*  Piece kinds.  */
 /******************/
 
-enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
+enum Kind { NULL_KIND = 0, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
 // Convert a kind to a character code.
 char to_char (Kind k);
@@ -95,10 +95,6 @@ struct Move {
   uint32 to     :6;  // Destination
 
   uint32 score;      // Score for this move.
-
-  // Return a description of this move in coordinate algebraic
-  // notation.
-  std::string to_calg () const;
 };
 
 // Estimate the value of this move as zero or the value of the piece
@@ -265,6 +261,20 @@ struct Board {
   // Construct a board from the standard starting position.
   static Board startpos ();
 
+  /*************************************************/
+  /* Reading and writing Moves against this board. */
+  /*************************************************/
+
+  // Does this string look like a move written in coordinate algebraic
+  // notation?
+  bool is_calg (const std::string &s) const;
+
+  // Construct a Move from coordinate algebraic notation.
+  Move from_calg (const std::string &s) const;
+
+  // Return a description of a Move in coordinate algebraic notation.
+  std::string to_calg (const Move &m) const;
+
   /*********/
   /* Tests */
   /*********/
@@ -310,7 +320,7 @@ struct Board {
   kind_to_board (Kind k) {
     switch (k) 
       {
-      case NULL_KIND: assert (0);
+      case NULL_KIND: assert (0); break;
       case PAWN: return pawns; break;
       case ROOK: return rooks; break;
       case KNIGHT: return knights; break;
