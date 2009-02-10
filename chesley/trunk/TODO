@@ -1,29 +1,33 @@
 Priority:
 
-  * Implement Xboard proto.
+  * Finish and clean up implementation of Xboard protocol.
 
 Clean up:
 
-
-  * NULL_KIND etc. must be zero.      
   * Move util stuff to a .cpp?
   * Fix quicksort.
 
 Testing:
- 
+
+  * Add log and debugging infrastructure.
   * Setup automated regression testing.
   * Test perft in middle and end game.
 
-* Session
+Move generation:
+
+  * Should be possible to write a much faster check tester.
+
+Session
 
   * Implement command interpreter.
   * Implement Xboard protocol.
   * Implement Universal Chess Interface (UCI)
 
-* Search
+Search
 
+  * Must do timed searches, and do some kind of overall time
+    management for timed games.
   * Iterative deepening.
-  * Timed searches.
   X Heuristic move ordering.
   * Aspiration windows
   * Transposition tables.
@@ -32,7 +36,7 @@ Testing:
   ??? Negascout
   ??? MTD(f)
 
-* Eval
+Eval
 
   * Reward good pawn structure.
   * Do some research....

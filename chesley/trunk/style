@@ -1,5 +1,11 @@
+*  Goal is to be as simple and as well commented as possible. Logic and
+   terminology must be cleat to a reader unfamiliar with the
+   sources. We would *much* rather over comment than under comment.
 
- * Always include variable names in prototypes.
+*  Should provide references to write-ups of algorithms whenever
+   possible.
+
+*  Always include variable names in prototypes.
 
 *  Use C style comment box for major headings, eg:
 
@@ -20,3 +26,5 @@
   subprogram.
 
 * One blank line after major headings.
+
+* Never put "using namespace" directives in header files.

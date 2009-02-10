@@ -15,8 +15,8 @@
 
 #include "chesley.hpp"
 
-/* Putting cctype here, after include of <iostream> works around a bug
-   in some version of the g++ library. */
+/* Putting cctype here, after include of <iostream>, works around a
+   bug in some version of the g++ library. */
 
 #include <cctype>
 
@@ -26,10 +26,11 @@ using namespace std;
 /* Session variables */
 /*********************/
 
-bool  Session::halt;
-FILE *Session::in;
-FILE *Session::out;
-bool  Session::tty;
+Session::Mode Session::mode;
+bool          Session::halt;
+FILE         *Session::in;
+FILE         *Session::out;
+bool          Session::tty;
 
 const char *Session::prompt = "> ";
 
@@ -51,10 +52,14 @@ Session::init_session () {
   out = stdout;
   tty = isatty (fileno (in));
 
-  // Setup state.
+  // Setup mode.
+  mode = INTERACTIVE;
+
+  // Setup Chess position.
   board = Board :: startpos ();
   se = Search_Engine (6);
 
+  // Handle interrupts.
   signal (SIGINT, handle_interrupt);
 
 #if 0
@@ -108,23 +113,91 @@ Session::cmd_loop ()
 
 bool 
 Session::execute (char *line) {
+
+  /*******************************************************************/
+  /* Give the mode-specific handler a chance to process this command */
+  /* before handing it to the generic list below.                    */
+  /*******************************************************************/
+
+  if (mode == XBOARD)
+    {
+      if (!xbd_execute (line))
+	{
+	  return false;
+	}
+    }
+
   string_vector tokens = tokenize (line);
   int count = tokens.size ();
 
-  cerr << "Chesley got: " << line << endl;
-
-  if (tokens.size () > 0)
+  if (count > 0)
     {
       string token = downcase (tokens[0]);
+
+      /**********************/
+      /* Benchmark command. */
+      /**********************/
 
       if (token == "bench") 
 	{
 	  return bench (tokens);
 	}
+
+      /**************************************/
+      /* Perft position generation command. */
+      /**************************************/
       
-      if (token == "perft") {
-	return perft (tokens);
-      }
+      if (token == "perft") 
+	{
+	  return perft (tokens);
+	}
+
+      /**********************************/
+      /* The play against self command. */
+      /**********************************/
+
+      if (token == "playself")
+	{
+	  return play_self (tokens);
+	}
+
+      /****************/
+      /* Quit command */
+      /***************/
+
+      if (token == "quit")  
+	{
+	  return false;
+	}
+
+      /**********************/
+      /* Enter xboard mode. */
+      /**********************/
+
+      if (token == "xboard") 
+	{
+	  return set_xboard_mode (tokens);
+	}
+    }
+  
+  // Ignore unrecognized commands.
+  return true;
+}
+
+// Execute a command in xboard mode. The specification for this
+// protocol is http://tim-mann.org/xboard/engine-intf.html.
+bool 
+Session::xbd_execute (char *line) {
+  string_vector tokens = tokenize (line);
+  int count = tokens.size ();
+
+  if (tokens.size () > 0) 
+    {
+      string token = downcase (tokens[0]);
+
+      /*****************/
+      /* Ping command. */
+      /*****************/
 
       if (token == "ping") {
 	fprintf (out, "pong");
@@ -135,26 +208,41 @@ Session::execute (char *line) {
 	fprintf (out, "\n");
       }
 
-      if (token == "quit")  
-	{
-	  return false;
-	}
-
-      if (token == "xboard") 
-	{
-	  fprintf (out, "tellicsnoalias set 1 %s v%s\n", ENGINE_ID_STR, VERSION_STR);
-	  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n", VERSION_STR);
-	  prompt = NULL;
-	}
+      /*********************/
+      /* Protover command. */
+      /*********************/
 
       if (token == "protover") 
 	{
-	  fprintf (out, "feature\n");
-	}
+	  // Send xboard the list of features we support.
 
-      if (board.is_calg (token))
+	  fprintf (out, "feature ping=1\n");
+	  fprintf (out, "feature setboard=1\n");
+	  fprintf (out, "feature playother=1\n");
+	  fprintf (out, "feature san=0\n");
+	  fprintf (out, "feature usermove=1\n");
+	  fprintf (out, "feature time=1\n");
+	  fprintf (out, "feature draw=1\n");
+	  fprintf (out, "feature sigint=1\n");
+	  fprintf (out, "feature sigterm=1\n");
+	  fprintf (out, "feature reuse=1\n");
+	  fprintf (out, "feature analyze=0\n");
+	  fprintf (out, "feature myname=\"Chesley The Chess Engine!\"\n");
+	  fprintf (out, "feature colors=0\n");
+	  fprintf (out, "feature ics=1\n");
+	  fprintf (out, "feature name=1\n");
+	  fprintf (out, "feature pause=1\n");
+	  fprintf (out, "feature done=1\n");
+	  fflush (out);
+	}
+      
+      /***********************************/
+      /* Commands which look like moves. */
+      /***********************************/
+
+      if (token == "usermove" && count > 1 && board.is_calg (tokens[1]))
 	{
-	  Move m = board.from_calg (token);	  
+	  Move m = board.from_calg (tokens[1]);	  
 	  board.apply (m);
 	  Move best = se.choose_move (board);
 	  fprintf (out, "move %s\n",  board.to_calg (best).c_str ());
@@ -162,13 +250,24 @@ Session::execute (char *line) {
 	  cerr << "Sent move: " << best << endl;
 	  board.apply (best);
 	}
-      if (token == "playself")
-	{
-	  return play_self (tokens);
-	}
-
     }
-  
+
+  return true;
+}
+
+// Set xboard protocol mode.
+bool 
+Session::set_xboard_mode (const string_vector &tokens) {
+  // Set mode.
+  mode = XBOARD;
+
+  // Prompts confuse XBoard so switch them off.
+  prompt = NULL;
+
+  // Set chatting for ICS.
+  fprintf (out, "tellicsnoalias set 1 %s v%s\n", ENGINE_ID_STR, VERSION_STR);
+  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n", VERSION_STR);
+
   return true;
 }
 
