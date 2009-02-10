@@ -1,2 +1,8 @@
 * black tries to castle in the wrong direction.
+
+  eg:
+  
+   xboard: Illegal move "e8c8" from first machine
+   79843 <first : Sent move: [MOVE: BLACK QUEEN at 60 => 58 (castling king side) score: 4278126205]
+
 * black ignores leaving king in check.

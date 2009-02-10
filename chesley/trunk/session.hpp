@@ -69,6 +69,10 @@ private:
 
   // Compute possible moves from a position.
   static bool perft (const string_vector &tokens);
+
+  // Play a game against its self.
+  static bool play_self (const string_vector &tokens);
+
 };
 
 #endif /* _Session_ */

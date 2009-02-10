@@ -58,7 +58,9 @@ std::ostream & operator<< (std::ostream &os, Status s);
 /*  Piece kinds.  */
 /******************/
 
-enum Kind { NULL_KIND = 0, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
+// This type is used to index tables, so PAWN must always be set to
+// zero, etc.
+enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
 // Convert a kind to a character code.
 char to_char (Kind k);
@@ -94,7 +96,7 @@ struct Move {
   uint32 from   :6;  // Origin.
   uint32 to     :6;  // Destination
 
-  uint32 score;      // Score for this move.
+  int32  score;      // Score for this move.
 };
 
 // Estimate the value of this move as zero or the value of the piece
@@ -413,7 +415,7 @@ struct Board {
   }
 
   // Return a bitboard with every bit of the Nth file set.
-  static bitboard 
+  static bitboard
   file (int file) { 
     return 0x0101010101010101llu << file; 
   }

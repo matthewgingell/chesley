@@ -86,9 +86,20 @@ to_char (Kind k) {
 
 std::ostream &
 operator<< (std::ostream &os, Kind k) {
-  const char *strs[] =
-    { "NULL_KIND", "PAWN", "ROOK", "KNIGHT", "BISHOP", "KING", "QUEEN" };
-  return os << strs [k];
+    switch (k) 
+    {
+    case NULL_KIND: return os << "NULL_KIND"; 
+    case PAWN:      return os << "PAWN"; 
+    case ROOK:      return os << "ROOK"; 
+    case KNIGHT:    return os << "KNIGHT"; 
+    case BISHOP:    return os << "BISHOP"; 
+    case QUEEN:     return os << "QUEEN"; 
+    case KING:      return os << "KING"; 
+    default:        cerr << k << endl; assert (0);
+    }
+    
+    // Suppress gcc warning in -DNDEBUG case.
+    return os;
 }
 
 /*****************/
@@ -185,7 +196,7 @@ operator<< (std::ostream &os, const Move_Vector &moves)
 {
   for (int i = 0; i < moves.count; i++)
     {
-      os << value (moves.move[i]) << ":";
+      os << moves.move[i].score << ":";
     }
   return os;
 }

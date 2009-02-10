@@ -1,6 +1,6 @@
 SHELL = /bin/sh
 
-CXX = g++
+#CXX = g++
 CXX = g++-mp-4.4
 
 #CXXFLAGS = -g -Wall
@@ -16,7 +16,7 @@ chesley: $(OBJECTS)
 	$(CXX) $(CXXFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 play: chesley
-	xboard -debug -fcp ./chesley -size Big
+	xboard -debug -fcp ./chesley -size Medium
 
 %.o : %.cpp *.hpp
 	$(CXX) $(CXXFLAGS) -c $<
