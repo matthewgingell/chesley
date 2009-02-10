@@ -1,6 +1,6 @@
 /* 
    This file provides the Session object, representing a Chesley
-   session, either over the Xboard protocal, UCI (Universal Chess
+   session, either over the xboard protocal, UCI (Universal Chess
    Interface), or interactive mode.
 
    Matthew Gingell
@@ -47,6 +47,13 @@ struct Session {
 
 private:
 
+  /*******************/
+  /* Interface mode. */
+  /*******************/
+
+  enum Mode { INTERACTIVE, UCI, XBOARD };
+  static Mode mode;
+
   /**************/
   /* I/O status */
   /**************/
@@ -58,11 +65,19 @@ private:
   static const int buf_max;
   
   static void handle_interrupt (int sig);
+  
+  // Command handling.
   static bool execute (char *line);
 
-  /************/
-  /* Commands */
-  /************/
+  // XBoard specific command handling.
+  static bool xbd_execute (char *line);
+
+  // Set xboard protocol mode.
+  static bool set_xboard_mode (const string_vector &tokens);
+
+  /********************/
+  /* Generic commands */
+  /********************/
 
   // Generate a benchmark.
   static bool bench (const string_vector &tokens); 
@@ -72,6 +87,10 @@ private:
 
   // Play a game against its self.
   static bool play_self (const string_vector &tokens);
+
+  
+
+
 
 };
 
