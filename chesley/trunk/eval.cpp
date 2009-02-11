@@ -147,6 +147,7 @@ eval_simple_positional (Board b) {
       {
 	Color c = (ci == WHITE_IDX ? WHITE : BLACK);
 	Kind k = (Kind) ki;
+	assert (ki != NULL_KIND);
 	bitboard pieces = 
 	  b.kind_to_board (k) & 
 	  b.color_to_board (c);

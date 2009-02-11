@@ -15,11 +15,20 @@
 #include <sys/resource.h>
 #include <sys/select.h>
 
+/* Utility macros. */
+
+#if 0
+#define ASSERT(e)  \
+    ((void) ((e) ? 0 : __assert (#e, __FILE__, __LINE__)))
+#define __ASSERT(e, file, line) \
+  ((void)printf ("%s:%u: failed assertion `%s'\n", file, line, e), abort())
+#endif
+
 #define IS_UNUSED __attribute__ ((unused))
 
-/********************************************/
-/* Various miscellaneous utility functions. */
-/********************************************/
+/********************/
+/* String functions */
+/********************/
 
 // Return a string of spaces.
 static std::string spaces (int n) IS_UNUSED;
@@ -36,25 +45,50 @@ static int to_int (const std::string &s) IS_UNUSED;
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
 
-// Test whether a file descriptor has IO waiting.
-static bool fdready (int fd) IS_UNUSED;
-
-// Return the amount of user time we have consumed in microseconds. 
-static double user_time () IS_UNUSED;
-
-// Quick sort implementation.
-template <typename T> inline void quick_sort (T &items) IS_UNUSED;
-
-// Bubble sort implementation.
-template <typename T> inline void bubble_sort (T &items) IS_UNUSED;
-
 // Collect space seperated tokens in a vector.
 typedef std::vector <std::string> string_vector;
 static string_vector tokenize (const std::string &s) IS_UNUSED;
 
-/***************************************/
-/* Inline implementation of utilities. */
-/***************************************/
+/****************/
+/* IO functions */
+/****************/
+
+// Test whether a file descriptor has IO waiting.
+static bool fdready (int fd) IS_UNUSED;
+
+/********************/
+/* Time and timers. */
+/********************/
+
+// Return the amount of user time we have consumed in microseconds. 
+static double user_time () IS_UNUSED;
+
+/**************************/
+/* Generic sorting inline */
+/**************************/
+
+// Quick sort implementation.
+template <typename T> inline void 
+quick_sort (T &items) IS_UNUSED;
+
+// Bubble sort implementation.
+template <typename T> inline void 
+bubble_sort (T &items) IS_UNUSED;
+
+// Insertion sort implementation. 
+template <typename T> inline void 
+insertion_sort (T &items) IS_UNUSED;
+
+/******************/
+/* Random numbers */
+/*****************/
+
+// Seed the random number generator
+static void seed_random () IS_UNUSED;;
+
+/******************/
+/* Implementation */
+/******************/
 
 // Return a string of N spaces.
 static std::string 
@@ -168,7 +202,6 @@ user_time () {
     ((double) ru.ru_utime.tv_usec) / (1000L * 1000L);
 }
 
-
 // Inline quicksort. Client type must 1) define a function count, 2)
 // define a function value and 3) be accessible with operator[].
 template <typename T> 
@@ -177,11 +210,14 @@ partition (T &items, int left, int right, int pivot_index) {
   int pivot_value = value (items[pivot_index]);
   int store_index = left;
 
+  assert (left >= 0);
+  assert (right < count (items));
+
   std::swap (items[pivot_index], items[right]);
 
-  for (int i = left; i <= right - 1; i++)
+  for (int i = left; i < right; i++)
     {
-      if (value (items[i]) < pivot_value)
+      if (value (items[i]) <= pivot_value)
 	{
 	  std::swap (items [i], items[store_index]);
 	  store_index++;
@@ -189,7 +225,6 @@ partition (T &items, int left, int right, int pivot_index) {
     }
 
   std::swap (items[store_index], items[right]);
-
   return store_index;
 }
 
@@ -208,7 +243,7 @@ quick_sort_in_place (T &items, int left, int right) {
 template <typename T> 
 inline void 
 quick_sort (T &items) {
-  quick_sort_in_place (items, 0, count (items));
+  quick_sort_in_place (items, 0, count (items) - 1);
 }
 
 // Good old bubble sort! Client type must 1) define a function count, 2)
@@ -232,6 +267,32 @@ bubble_sort (T &items) {
       len -= 1;
     }
   while (!done);
+}
+
+// Insertion sort implementation. 
+template <typename V, typename I> 
+inline void 
+insertion_sort (V &items) {
+  int len = count (items);
+  for (int i = 1; i < len; i++)
+    {
+      I index = items[i];
+      int j = i;
+
+      while ((j > 0) && (value (items[j - 1]) > value (index)))
+	{
+	  items[j] = items[j - 1];
+	  j = j - 1;
+	}
+      items[j] = index;
+    }
+}
+
+
+// Seed the random number generator
+static void 
+seed_random () {
+  srandomdev();
 }
 
 #endif // __UTIL__

@@ -339,8 +339,10 @@ Session::play_self (const string_vector &tokens)
       }
   }
 
-  catch (...)
+  catch (Game_Over e)
     {
-      return true;
+      cout << e << endl;
     }
+
+  return true;
 }

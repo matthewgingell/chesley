@@ -77,6 +77,8 @@ struct Move {
   Move (Kind k, uint32 f, uint32 t, Color c, Kind capture) :
     kind (k), color (c), from (f), to (t)
   {
+    assert (k != NULL_KIND);
+    
     score = 0;
     flags.capture = capture;
     flags.promote = (Kind) 0;
@@ -373,6 +375,8 @@ struct Board {
   // Set a piece on the board with an index.
   void 
   set_piece (Kind kind, Color color, int at) {
+    assert (kind != NULL_KIND);
+
     color_to_board (color) |= masks_0[at];
     kind_to_board (kind) |= masks_0[at];
     occupied |= masks_0[at];

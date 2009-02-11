@@ -9,6 +9,7 @@
 #ifndef _EVAL_
 #define _EVAL_
 
+#include <cstdlib>
 #include "bits64.hpp"
 #include "board.hpp"
 #include "util.hpp"
@@ -101,7 +102,11 @@ eval (const Board &b, int depth = 0) {
   // never converge!!!
 
   score += depth * -b.flags.to_move;
-    
+
+#if 0
+  score += random () % 10;
+#endif
+
   return score;
 }
 

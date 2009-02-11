@@ -1,11 +1,11 @@
 Priority:
 
   * Finish and clean up implementation of Xboard protocol.
+  * Get winner correct in case of 50-move rule.
 
 Clean up:
 
   * Move util stuff to a .cpp?
-  * Fix quicksort.
 
 Testing:
 
@@ -25,6 +25,9 @@ Session
 
 Search
 
+  * Implement 3 fold repetition detection. Right now Chesley plays and
+    incredibly irritating end game, repeatedly running the half move
+    clock up to 50 then moving a pawn...
   * Must do timed searches, and do some kind of overall time
     management for timed games.
   * Iterative deepening.

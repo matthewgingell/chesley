@@ -1,11 +1,30 @@
-White to move:
-66 full moves, 50 half moves.
-En Passant square at 0
-. . . . . . . . 
-p . . . . . p p 
-. . . . . . . . 
-. . . . . . . . 
-P . r . . P . . 
-B . . . . . . . 
-. . . . . . k P 
-. R K . . . . . 
+No sorting:
+
+bench 7
+Computing best move to ply 7...
+114529650 calls to score.
+46.90 seconds elapsed.
+2441821.19 calls/second.
+
+Bubble sorting:
+
+bench 7
+Computing best move to ply 7...
+46812843 calls to score.
+32.32 seconds elapsed.
+1448459.16 calls/second.
+
+Quick sorting:
+
+bench 7
+Computing best move to ply 7...
+38053279 calls to score.
+44.04 seconds elapsed.
+864063.96 calls/second.
+
+Insertion sort:
+bench 7
+Computing best move to ply 7...
+46812843 calls to score.
+18.36 seconds elapsed.
+2549476.39 calls/second.
