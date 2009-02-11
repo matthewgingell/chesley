@@ -87,11 +87,6 @@ private:
 
   // Play a game against its self.
   static bool play_self (const string_vector &tokens);
-
-  
-
-
-
 };
 
 #endif /* _Session_ */

@@ -64,9 +64,9 @@ Search_Engine :: choose_move (Board &b) {
 
   if (best_index != -1) 
     {
-      cerr << moves << endl;
-      cerr << best_index << endl;
-      cerr << moves[best_index] << endl;
+      //      cerr << moves << endl;
+      //      cerr << best_index << endl;
+      //      cerr << moves[best_index] << endl;
     }
 
   /********************************************************************/
@@ -133,9 +133,13 @@ Search_Engine :: score
 
   Move_Vector moves (b);
 
-#if 0
-  bubble_sort (moves);
-#endif
+  // Sort the moves vector heuristically and hopefully generate
+  // earlier cut-offs. Insertion sort looks like the winner here in
+  // benchmarking tests.
+
+  //  bubble_sort <Move_Vector> (moves);
+  //  quick_sort <Move_Vector> (moves);
+  insertion_sort <Move_Vector, Move> (moves);
 
   for (int i = 0; i < moves.count; i++) 
     {
