@@ -64,9 +64,9 @@ Search_Engine :: choose_move (Board &b) {
 
   if (best_index != -1) 
     {
-      //      cerr << moves << endl;
-      //      cerr << best_index << endl;
-      //      cerr << moves[best_index] << endl;
+      cerr << moves << endl;
+      cerr << best_index << endl;
+      cerr << moves[best_index] << endl;
     }
 
   /********************************************************************/
@@ -77,7 +77,8 @@ Search_Engine :: choose_move (Board &b) {
   // If color has no legal moves, then the game is over.
   if (best_index == -1)
     {
-      if (b.in_check (c))
+
+      if (b.in_check (c) && b.half_move_clock < 50)
 	{
 	  if (c == WHITE) 
 	    {
@@ -90,6 +91,10 @@ Search_Engine :: choose_move (Board &b) {
 	}
       else
 	{
+	  /* This isn't quite right, since we don't know if b has no
+	     children because the 50-move rule has expired or because
+	     it's in checkmate. For now, assume it's a draw. */
+
 	  b.flags.status = GAME_DRAW;
 	}
       throw Game_Over (b.flags.status);
@@ -133,7 +138,7 @@ Search_Engine :: score
 
   Move_Vector moves (b);
 
-  // Sort the moves vector heuristically and hopefully generate
+  // Sort the moves vector heuristically and hoping to generate
   // earlier cut-offs. Insertion sort looks like the winner here in
   // benchmarking tests.
 

@@ -28,3 +28,16 @@ Computing best move to ply 7...
 46812843 calls to score.
 18.36 seconds elapsed.
 2549476.39 calls/second.
+
+No vectorize:
+bench 7
+Computing best move to ply 7...
+46812843 calls to score.
+18.36 seconds elapsed.
+2549719.12 calls/second.
+
+bench 7
+Computing best move to ply 7...
+46812843 calls to score.
+18.76 seconds elapsed.
+2495976.77 calls/second.

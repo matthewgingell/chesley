@@ -54,6 +54,9 @@ private:
   enum Mode { INTERACTIVE, UCI, XBOARD };
   static Mode mode;
 
+  // Color the engine is playing.
+  static Color our_color;
+
   /**************/
   /* I/O status */
   /**************/

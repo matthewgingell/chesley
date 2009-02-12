@@ -1,6 +1,8 @@
-Priority:
+Interface:
 
   * Finish and clean up implementation of Xboard protocol.
+  * Do validity checking.
+  * Do end game reporting.
   * Get winner correct in case of 50-move rule.
 
 Clean up:
@@ -28,6 +30,7 @@ Search
   * Implement 3 fold repetition detection. Right now Chesley plays and
     incredibly irritating end game, repeatedly running the half move
     clock up to 50 then moving a pawn...
+  * Quiescence search
   * Must do timed searches, and do some kind of overall time
     management for timed games.
   * Iterative deepening.
