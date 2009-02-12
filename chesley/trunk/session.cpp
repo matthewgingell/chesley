@@ -8,7 +8,6 @@
 
 #include <cstring>
 #include <cstdio>
-#include <readline/readline.h>
 #include <signal.h>
 #include <string>
 #include <sys/time.h>
@@ -27,7 +26,6 @@ using namespace std;
 /*********************/
 
 Session::Mode Session::mode;
-Color         Session::our_color;
 bool          Session::halt;
 FILE         *Session::in;
 FILE         *Session::out;
@@ -41,6 +39,8 @@ const char *Session::prompt = "> ";
 
 Board Session::board;
 Search_Engine Session::se;
+Color Session::our_color;
+bool Session::op_is_computer;
 
 /******************************/
 /* Initialize the environment */
@@ -49,24 +49,24 @@ Search_Engine Session::se;
 void
 Session::init_session () {
 
-  // Setup streams.
+  // Setup I/O.
   in = stdin;
   out = stdout;
-  setlinebuf(stdin);
-  setlinebuf(stdout);
-
+  setvbuf (in, NULL, _IONBF, 0);
+  setvbuf (out, NULL, _IONBF, 0);
   tty = isatty (fileno (in));
 
   // Set mode.
   mode = INTERACTIVE;
 
-  // Setup initiatial position.
-  our_color = WHITE;
+  // Set initial game state.
+  our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (6);
+  se = Search_Engine (7);
+  op_is_computer = false;
 
   // Handle interrupts.
-  signal (SIGINT, handle_interrupt);
+  //  signal (SIGINT, handle_interrupt);
 
 #if 0
   halt = 0;
@@ -97,19 +97,57 @@ Session::handle_interrupt (int sig) {
   cerr << "Caught SIGINT" << endl;
 }
 
-/*************************************/
-/* Session command interpreter loop. */
-/*************************************/
+// Write the command prompt.
+void Session::write_prompt ()
+{
+  if (prompt) {
+    fprintf (out, "%s", prompt);
+    fflush (out);
+  }
+}
+
+/*************************/
+/* Session command loop. */
+/*************************/
 
 void
 Session::cmd_loop () 
 {
+  char *line;
+
   fprintf (out, PROLOGUE);
+  write_prompt ();
   while (true)
     {
-      char *line = readline (Session::prompt);
-      if (!line || !execute (line)) break;
-      free (line);
+      line = get_line (in);
+
+      // Break out of command loop at end of input.
+      if (!line || !execute (line))
+	{
+	  if (line) 
+	    {
+	      free (line);
+	    }
+	  break;
+	}
+      
+      write_prompt ();
+
+      while (!fdready (fileno (in))) 
+	{
+	  // Control is turned over to us until the client provides
+	  // input.
+	  if (board.flags.to_move == our_color)
+	    {
+	      Move best = se.choose_move (board);
+	      fprintf (out, "move %s\n",  board.to_calg (best).c_str ());
+	      fflush (out);
+	      cerr << "Sent move: " << best << endl;
+	      board.apply (best);
+	    }
+
+	  usleep (100000);
+	}
     }
 }
 
@@ -201,9 +239,9 @@ Session::xbd_execute (char *line) {
     {
       string token = downcase (tokens[0]);
 
-      /*********************/
-      /* Protover command. */
-      /*********************/
+      /**********************/
+      /* protover N command */
+      /**********************/
 
       if (token == "protover") 
 	{
@@ -226,21 +264,153 @@ Session::xbd_execute (char *line) {
 	  fprintf (out, "feature name=1\n");
 	  fprintf (out, "feature pause=1\n");
 	  fprintf (out, "feature done=1\n");
-	  //	  fflush (out);
 	}
 
+      /**************************************************************/
+      /* Assume we are using an up to date version of xboard and do */
+      /* not pay attention to replies to the feature command.       */
+      /**************************************************************/
+         
+      if (token == "accepted" || token == "rejected")
+	{
+	  // ignored.
+	}
 
-      /****************/
-      /* New command. */
-      /****************/
+      /***************/
+      /* new command */
+      /***************/
 
       if (token == "new")
 	{
 	  board = Board :: startpos ();
 	}
 
+      /******************************************************/
+      /* We do not support any non-standard chess variants. */
+      /******************************************************/
+
+      if (token == "variant") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* quit command */
+      /****************/
+
+      if (token == "quit") 
+	{
+	  return false;
+	}
+
+      /******************/
+      /* random command */
+      /******************/
+
+      if (token == "random") 
+	{
+	  // ignored.
+	}
+
+      /*****************/
+      /* force command */
+      /*****************/
+
+      if (token == "force") 
+	{
+	  our_color = NULL_COLOR;
+	}
+
+      /**************/
+      /* go command */
+      /**************/
+
+      if (token == "go") 
+	{
+	  our_color = board.flags.to_move;
+	  // ignored.
+	}
+
+      /*********************/
+      /* playother command */
+      /*********************/
+
+      if (token == "playother") 
+	{
+	  our_color = invert_color (board.flags.to_move);
+	}
+
+      /*****************/
+      /* white command */
+      /*****************/
+
+      if (token == "white") 
+	{
+	  board.flags.to_move = WHITE;
+	  our_color = BLACK;
+	}
+
+      /*****************/
+      /* black command */
+      /*****************/
+
+      if (token == "black") 
+	{
+	  board.flags.to_move = BLACK;
+	  our_color = WHITE;
+	}
+
+      /******************************/
+      /* level MPS BASE INC command */
+      /******************************/
+
+      if (token == "level") 
+	{
+	  // ignored.
+	}
+
+      /*******************/
+      /* st TIME command */
+      /*******************/
+
+      if (token == "st") 
+	{
+	  // ignored.
+	}
+
       /********************/
-      /* Usermove command */ 
+      /* sd DEPTH command */
+      /********************/
+
+      if (token == "sd") 
+	{
+	  int d;
+	  if (sscanf (token.c_str (), "%i", &d) > 0)
+	    {
+	      se.max_depth = d;
+	    }
+	}
+
+      /******************/
+      /* time N command */
+      /******************/
+
+      if (token == "time") 
+	{
+	  // ignored.
+	}
+
+      /*******************/
+      /* otime N command */
+      /*******************/
+
+      if (token == "otime") 
+	{
+	  // ignored.
+	}
+
+      /********************/
+      /* usermove command */
       /********************/
 
       if (token == "usermove" && count > 1 && board.is_calg (tokens[1]))
@@ -254,9 +424,18 @@ Session::xbd_execute (char *line) {
 	  board.apply (best);
 	}
 
-      /*****************/
-      /* Ping command. */
-      /*****************/
+      /**************/
+      /* ? command. */
+      /**************/
+
+      if (token == "?") 
+	{
+	  // ignored.
+	}
+
+      /*******************/
+      /* ping N command. */
+      /*******************/
 
       if (token == "ping") {
 	fprintf (out, "pong");
@@ -265,8 +444,178 @@ Session::xbd_execute (char *line) {
 	    fprintf (out, " %s", tokens[1].c_str ());
 	  }
 	fprintf (out, "\n");
-      }      
+      }
 
+      /****************/
+      /* draw command */
+      /****************/
+
+      if (token == "draw") 
+	{
+	  // ignored.
+	}
+
+      /***********************************/
+      /* result RESULT {COMMENT} command */
+      /***********************************/
+
+      if (token == "result") 
+	{
+	  // ignored.
+	}
+
+      /************************/
+      /* setboard FEN command */
+      /************************/
+
+      if (token == "setboard") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* edit command */
+      /****************/
+
+      if (token == "edit") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* hint command */
+      /****************/
+
+      if (token == "hint") 
+	{
+	  // ignored.
+	}
+
+      /**************/
+      /* bk command */
+      /**************/
+
+      if (token == "bk") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* undo command */
+      /****************/
+
+      if (token == "undo") 
+	{
+	  // ignored.
+	}
+
+      /******************/
+      /* remove command */
+      /******************/
+
+      if (token == "remove") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* hard command */
+      /****************/
+
+      if (token == "hard") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* easy command */
+      /****************/
+
+      if (token == "easy") 
+	{
+	  // ignored.
+	}
+
+      /****************/
+      /* post command */
+      /****************/
+
+      if (token == "post") 
+	{
+	  // ignored.
+	}
+
+      /******************/
+      /* nopost command */
+      /******************/
+
+      if (token == "nopost") 
+	{
+	  // ignored.
+	}
+
+      /*******************/
+      /* analyze command */
+      /*******************/
+
+      if (token == "analyse") 
+	{
+	  // ignored.
+	}
+
+      /******************/
+      /* name X command */
+      /******************/
+
+      if (token == "name") 
+	{
+	  // ignored.
+	}
+
+      /******************/
+      /* rating command */
+      /******************/
+
+      if (token == "rating") 
+	{
+	  // ignored.
+	}
+
+      /************************/
+      /* ics HOSTNAME command */
+      /************************/
+
+      if (token == "ics") 
+	{
+	  // ignored.
+	}
+
+      /********************/
+      /* computer command */
+      /********************/
+
+      if (token == "computer") 
+	{
+	  op_is_computer = true;
+	}
+
+      /*****************/
+      /* pause command */
+      /*****************/
+
+      if (token == "pause") 
+	{
+	  // ignored.
+	}
+
+      /******************/
+      /* resume command */
+      /******************/
+
+      if (token == "resume") 
+	{
+	  // ignored.
+	}
     }
 
   return true;

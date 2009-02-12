@@ -39,11 +39,21 @@ struct Session {
   // command loop as soon as possible.
   static bool halt;
 
+  /***************/
+  /* Game state. */
+  /***************/
+
   // State of play.
   static Board board;
 
+  // Color the engine is playing.
+  static Color our_color;
+
   // Search engine begin used.
   static Search_Engine se;
+
+  // Is the opponent a computer?
+  static bool op_is_computer;
 
 private:
 
@@ -54,21 +64,21 @@ private:
   enum Mode { INTERACTIVE, UCI, XBOARD };
   static Mode mode;
 
-  // Color the engine is playing.
-  static Color our_color;
-
-  /**************/
-  /* I/O status */
-  /**************/
+  /****************/
+  /* I/O handling */
+  /****************/
 
   static FILE *in;
   static FILE *out;
   static const char *prompt;
   static bool tty;
-  static const int buf_max;
   
+  // Handle a timer interrupt.
   static void handle_interrupt (int sig);
   
+  // Write the command prompt.
+  static void write_prompt ();
+
   // Command handling.
   static bool execute (char *line);
 
