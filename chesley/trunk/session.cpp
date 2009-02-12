@@ -27,6 +27,7 @@ using namespace std;
 /*********************/
 
 Session::Mode Session::mode;
+Color         Session::our_color;
 bool          Session::halt;
 FILE         *Session::in;
 FILE         *Session::out;
@@ -47,15 +48,20 @@ Search_Engine Session::se;
 
 void
 Session::init_session () {
+
   // Setup streams.
   in = stdin;
   out = stdout;
+  setlinebuf(stdin);
+  setlinebuf(stdout);
+
   tty = isatty (fileno (in));
 
-  // Setup mode.
+  // Set mode.
   mode = INTERACTIVE;
 
-  // Setup Chess position.
+  // Setup initiatial position.
+  our_color = WHITE;
   board = Board :: startpos ();
   se = Search_Engine (6);
 
@@ -195,19 +201,6 @@ Session::xbd_execute (char *line) {
     {
       string token = downcase (tokens[0]);
 
-      /*****************/
-      /* Ping command. */
-      /*****************/
-
-      if (token == "ping") {
-	fprintf (out, "pong");
-	if (count > 1) 
-	  {
-	    fprintf (out, " %s", tokens[1].c_str ());
-	  }
-	fprintf (out, "\n");
-      }
-
       /*********************/
       /* Protover command. */
       /*********************/
@@ -223,7 +216,7 @@ Session::xbd_execute (char *line) {
 	  fprintf (out, "feature usermove=1\n");
 	  fprintf (out, "feature time=1\n");
 	  fprintf (out, "feature draw=1\n");
-	  fprintf (out, "feature sigint=1\n");
+	  fprintf (out, "feature sigint=0\n");
 	  fprintf (out, "feature sigterm=1\n");
 	  fprintf (out, "feature reuse=1\n");
 	  fprintf (out, "feature analyze=0\n");
@@ -233,12 +226,22 @@ Session::xbd_execute (char *line) {
 	  fprintf (out, "feature name=1\n");
 	  fprintf (out, "feature pause=1\n");
 	  fprintf (out, "feature done=1\n");
-	  fflush (out);
+	  //	  fflush (out);
 	}
-      
-      /***********************************/
-      /* Commands which look like moves. */
-      /***********************************/
+
+
+      /****************/
+      /* New command. */
+      /****************/
+
+      if (token == "new")
+	{
+	  board = Board :: startpos ();
+	}
+
+      /********************/
+      /* Usermove command */ 
+      /********************/
 
       if (token == "usermove" && count > 1 && board.is_calg (tokens[1]))
 	{
@@ -246,10 +249,24 @@ Session::xbd_execute (char *line) {
 	  board.apply (m);
 	  Move best = se.choose_move (board);
 	  fprintf (out, "move %s\n",  board.to_calg (best).c_str ());
-	  fflush (out);
+	  //	  fflush (out);
 	  cerr << "Sent move: " << best << endl;
 	  board.apply (best);
 	}
+
+      /*****************/
+      /* Ping command. */
+      /*****************/
+
+      if (token == "ping") {
+	fprintf (out, "pong");
+	if (count > 1) 
+	  {
+	    fprintf (out, " %s", tokens[1].c_str ());
+	  }
+	fprintf (out, "\n");
+      }      
+
     }
 
   return true;
