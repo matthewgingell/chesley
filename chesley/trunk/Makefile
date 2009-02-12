@@ -7,7 +7,7 @@ CXX = g++-mp-4.4
 #CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops
 CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops -DNDEBUG
 
-LIBS = -lreadline -lcurses
+LIBS = 
 OBJECTS = board.o eval.o genmasks.o genmoves.o gentables.o main.o	\
  search.o session.o
 

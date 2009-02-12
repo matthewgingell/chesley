@@ -56,6 +56,10 @@ static string_vector tokenize (const std::string &s) IS_UNUSED;
 // Test whether a file descriptor has IO waiting.
 static bool fdready (int fd) IS_UNUSED;
 
+// Get a line, remove the trailing new line if any, and return a
+// malloced string.
+static char *get_line (FILE *in) IS_UNUSED;
+
 /********************/
 /* Time and timers. */
 /********************/
@@ -152,6 +156,28 @@ fdready (int fd) {
 
   // Poll the file descriptor.
   return select (fd + 1, &readfds, NULL, NULL, &timeout);
+}
+
+// Get a line, remove the trailing new line if any, and return a
+// malloc'd string.
+static char *get_line (FILE *in) {
+  const int BUFSIZE = 4096;
+  char buf[BUFSIZE];
+
+  if (!fgets (buf, BUFSIZE, in))
+    {
+      return NULL;
+    }
+  else
+    {
+      int last = strlen (buf) - 1;
+      if (buf[last] == '\n')
+	{
+	  buf[last] = '\0';
+	}
+    }
+
+  return newstr (buf);
 }
 
 // Collect space seperated tokens in a vector.
