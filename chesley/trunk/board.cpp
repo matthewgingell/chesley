@@ -154,16 +154,26 @@ Move
 Board::from_calg (const string &s) const {
   assert (s.length () >= 4);
 
+  // Decode string
   uint32 from = (s[0] - 'a') + 8 * (s[1] - '1');
-  //  cerr <<  (s[0] - 'a') << endl << 8 * (s[1] - '1');
-
   uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
 
+  // Generate move.
   Kind k = get_kind (from);
   Color c = flags.to_move;
   Kind capture = get_kind (to);
+  Move m = Move (k, from, to, c, capture);
 
-  return Move (k, from, to, c, capture);
+  // Set castling flags.
+  if (k == KING)
+    {
+      if (from ==  4 && to ==  2) m.flags.castle_qs = 1;
+      if (from ==  4 && to ==  6) m.flags.castle_ks = 1;
+      if (from == 60 && to == 58) m.flags.castle_qs = 1;
+      if (from == 60 && to == 62) m.flags.castle_ks = 1;
+    }
+
+  return m;
 }
 
 // Return a description of a Move in coordinate algebraic notation.
