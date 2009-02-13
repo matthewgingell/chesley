@@ -33,7 +33,7 @@ Board::print_tree (int depth)
 {
   if (depth == 0)
     {
-      cerr  << *this << endl;
+      cerr<< *this << endl;
     }
   else
     {
@@ -158,11 +158,19 @@ Board::from_calg (const string &s) const {
   uint32 from = (s[0] - 'a') + 8 * (s[1] - '1');
   uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
 
-  // Generate move.
+  // Build move.
   Kind k = get_kind (from);
   Color c = flags.to_move;
   Kind capture = get_kind (to);
   Move m = Move (k, from, to, c, capture);
+
+
+  // Check for promotion.
+  if (s.length () >= 5)
+    {
+      assert (k == PAWN);
+      m.flags.promote = get_kind (s[4]);
+    }
 
   // Set castling flags.
   if (k == KING)
@@ -709,8 +717,8 @@ Board::apply (const Move &m) {
 	{
 	  if (m.flags.castle_qs && !(attacked & 0xE))
 	    {
-	      clear_piece (0);
 	      clear_piece (4);
+	      clear_piece (0);
 	      set_piece (KING, WHITE, 2);
 	      set_piece (ROOK, WHITE, 3);
 	      flags.w_can_q_castle = 0;
@@ -764,7 +772,6 @@ Board::apply (const Move &m) {
     }
   else
     {
-
       /****************************/
       /* Handle taking En Passant */
       /****************************/
@@ -847,6 +854,10 @@ Board::apply (const Move &m) {
 	    }
 	}
 
+      //      if (flags.en_passant != 0)
+      //	cerr << *this << endl;
+
+
       /*****************/
       /* Test legality. */
       /*****************/
@@ -895,7 +906,6 @@ operator<< (std::ostream &os, const Board &b)
   if (b.flags.to_move == WHITE)
     {
       os << "White to move:" << endl;
-
     }
   else
     {

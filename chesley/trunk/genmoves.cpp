@@ -3,7 +3,7 @@
 
   Code to generate a vector of moves, given a state of play.
 
-  There is a good discusion of generating moves from bit boards in:
+  There is a good discusion of generating moves from bitmaps in:
   _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at
   http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.
 
@@ -136,11 +136,8 @@ Board::gen_pawn_moves (Move_Vector &out) const
 	      // Generate a move for each possible promotion.
 	      for (int k = (int) ROOK; k <= (int) QUEEN; k++)
 		{
-		  if (k != KING) 
-		    {
-		      m.flags.promote = (Kind) k;
-		      out.push (m);
-		    }
+		  m.flags.promote = (Kind) k;
+		  out.push (m);
 		}
 	    }
 	  else

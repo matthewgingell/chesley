@@ -1,16 +1,20 @@
 Bugs:
 
-  * We make moves that put or leave us in check.
-
 Interface:
 
   * Finish and clean up implementation of Xboard protocol.
   * Do validity checking.
+  * Terminate xboard games in a reasonable way.
   * Do end game reporting.
+
 
 Clean up:
 
   * Move util stuff to a .cpp?
+
+  * We use a weird mix of C++ string and C char *, and C++ iostreams
+    and C FILE *. Each of these has real advantages in th appropriate
+    setting, but we really ought to be able to normalize our usage.
 
 Testing:
 
