@@ -45,6 +45,7 @@ struct Session {
 
   // State of play.
   static Board board;
+  static Status status;
 
   // Color the engine is playing.
   static Color our_color;
@@ -87,6 +88,13 @@ private:
 
   // Set xboard protocol mode.
   static bool set_xboard_mode (const string_vector &tokens);
+  
+  /****************/
+  /* Flow control */
+  /****************/
+
+  // Report and clean up when a game ends.
+  static void handle_end_of_game (Status s);
 
   /********************/
   /* Generic commands */
