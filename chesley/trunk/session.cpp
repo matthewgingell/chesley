@@ -21,6 +21,9 @@
 
 using namespace std;
 
+#include <iostream>
+#include <fstream>
+
 /*********************/
 /* Session variables */
 /*********************/
@@ -32,6 +35,8 @@ FILE         *Session::out;
 bool          Session::tty;
 
 const char *Session::prompt = "> ";
+
+ofstream log;
 
 /*********/
 /* State */
@@ -62,11 +67,16 @@ Session::init_session () {
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (7);
+  se = Search_Engine (6);
   op_is_computer = false;
 
   // Handle interrupts.
   //  signal (SIGINT, handle_interrupt);
+
+
+  // DEBUG
+
+  log.open ("LOG");
 
 #if 0
   halt = 0;
@@ -121,6 +131,8 @@ Session::cmd_loop ()
     {
       line = get_line (in);
 
+      cerr << "Chesley got \"" << line << "\"" << endl;
+      
       // Break out of command loop at end of input.
       if (!line || !execute (line))
 	{
@@ -140,9 +152,13 @@ Session::cmd_loop ()
 	  if (board.flags.to_move == our_color)
 	    {
 	      Move best = se.choose_move (board);
+
+	      log << board << endl;
+	      log << flush;
+
 	      fprintf (out, "move %s\n",  board.to_calg (best).c_str ());
-	      fflush (out);
-	      cerr << "Sent move: " << best << endl;
+	      // cerr << board << endl;
+	      // cerr << "Sent move: " << best << endl;
 	      board.apply (best);
 	    }
 
@@ -203,6 +219,72 @@ Session::execute (char *line) {
       if (token == "playself")
 	{
 	  return play_self (tokens);
+	}
+
+      /*************************/
+      /* Perform various tests */
+      /*************************/
+      if (token == "test")
+	{
+
+
+	  board = Board::from_fen ("2k2b1r/ppp1npp1/2n3p1/8/5PPq/4P2P/PP1r2K1/R6R w - - 0 20");
+	  Move best = se.choose_move (board);
+
+	  cerr << board << endl;
+	  cerr << best << endl;
+
+#if 0
+	  board = Board::from_fen ("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
+
+	  // Expect 48.
+	  cerr << board.perft (1) << endl;
+	  
+	  // Expect 2039.
+	  cerr << board.perft (2) << endl;
+
+	  // Expect 97862.
+	  cerr << board.perft (3) << endl;
+
+	  // Expect 4085603
+	  cerr << board.perft (4) << endl;
+	  
+	  // Expect 193690690
+	  cerr << board.perft (5) << endl;
+
+	  cerr << endl;
+#endif 
+
+#if 0
+	  board = Board::from_fen ("8/3K4/2p5/p2b2r1/5k2/8/8/1q6 b - - 1 67");
+
+
+	  cerr << board << endl;
+
+	  // Expect 50
+	  cerr << board.perft (1) << endl;
+
+	  // Expect 279
+	  cerr << board.perft (2) << endl;
+
+	  cerr << endl;
+
+	  abort ();
+	  
+	  /*
+	    8/7p/p5pb/4k3/P1pPn3/8/P5PP/1rB2RK1 b - d3 0 28
+	    Perft(6) = 38633283
+	    
+	    rnbqkb1r/ppppp1pp/7n/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3
+	    Perft(5) = 11139762
+	    
+	    8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - -
+	    Perft(6) = 11030083
+	    Perft(7) = 178633661
+	  */
+#endif
+
+
 	}
 
       /****************/
@@ -417,11 +499,6 @@ Session::xbd_execute (char *line) {
 	{
 	  Move m = board.from_calg (tokens[1]);	  
 	  board.apply (m);
-	  Move best = se.choose_move (board);
-	  fprintf (out, "move %s\n",  board.to_calg (best).c_str ());
-	  //	  fflush (out);
-	  cerr << "Sent move: " << best << endl;
-	  board.apply (best);
 	}
 
       /**************/

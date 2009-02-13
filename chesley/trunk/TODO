@@ -1,9 +1,12 @@
+Bugs:
+
+  * We make moves that put or leave us in check.
+
 Interface:
 
   * Finish and clean up implementation of Xboard protocol.
   * Do validity checking.
   * Do end game reporting.
-  * Get winner correct in case of 50-move rule.
 
 Clean up:
 

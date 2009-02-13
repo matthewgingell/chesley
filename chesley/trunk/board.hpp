@@ -245,7 +245,7 @@ struct Board {
   uint32 half_move_clock; // Used for 50-move rule.
   uint32 full_move_clock; // Clock after each black move.
 
-  int score;
+  int32 score;
 
   /************************************/
   /* Constructors and initialization. */

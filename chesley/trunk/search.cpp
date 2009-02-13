@@ -60,13 +60,17 @@ Search_Engine :: choose_move (Board &b) {
 	      best_index = i;
 	    }
 	}
+      else
+	{
+	  moves[i].score = c * -INFINITY;
+	}
     }
 
   if (best_index != -1) 
     {
       cerr << moves << endl;
-      cerr << best_index << endl;
-      cerr << moves[best_index] << endl;
+      //      cerr << best_index << endl;
+      //      cerr << moves[best_index] << endl;
     }
 
   /********************************************************************/
