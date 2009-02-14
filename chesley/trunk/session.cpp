@@ -248,26 +248,43 @@ Session::execute (char *line) {
       /*************************/
       /* Perform various tests */
       /*************************/
+
       if (token == "test")
 	{
-	  board = Board::from_fen ("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq -");
-
-	  // Expect 48.
-	  cerr << board.perft (1) << endl; // Get 48
+	  // We get this one wrong.
+	  board = Board::from_fen ("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
 	  
-	  // Expect 2039.
-	  cerr << board.perft (2) << endl; // Get 2038????????
+	  cerr << board << endl;
+	  for (int i = 1; i <= 6; i++)
+	    cerr << board.perft (i) << endl;
+	  abort ();
+
+
+
+
+	  abort ();
+	  Move m = board.from_calg ("e5d7");
+	  board.apply (m);
+	  cerr << board << endl;
+
+
+	  abort();
+
+	  board.divide (2);
 
 	  abort ();
 
-	  // Expect 97862.
-	  cerr << board.perft (3) << endl;
+	  cerr << board << endl;
+	  for (int i = 1; i <= 2; i++)
+	    cerr << board.perft (i) << endl;
+	  abort ();
 
-	  // Expect 4085603
-	  cerr << board.perft (4) << endl;
-	  
-	  // Expect 193690690
-	  cerr << board.perft (5) << endl;
+	  // We get this one right.
+	  board = Board::from_fen ("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1");
+	  cerr << board << endl;
+	  for (int i = 1; i <= 6; i++)
+	    cerr << board.perft (i) << endl;
+	  abort ();
 	}
 
       /****************/

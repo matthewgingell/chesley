@@ -84,6 +84,28 @@ to_char (Kind k) {
   return '!';
 }
 
+// Convert a character code to a piece code, ignoring color.
+Kind 
+to_kind (char k) {
+
+  k = toupper (k);
+  switch (k) 
+    {
+      case 'P': return PAWN;
+      case 'R': return ROOK;
+      case 'N': return KNIGHT;
+      case 'B': return BISHOP;
+      case 'Q': return QUEEN;
+      case 'K': return KING;
+    }
+
+  assert (0);
+
+  return NULL_KIND;
+}
+
+
+
 std::ostream &
 operator<< (std::ostream &os, Kind k) {
     switch (k) 
@@ -214,7 +236,7 @@ operator<< (std::ostream &os, const Move_Vector &moves)
 {
   for (int i = 0; i < moves.count; i++)
     {
-      os << moves.move[i].score << ":";
+      os << moves.move[i] << endl;
     }
   return os;
 }
@@ -420,161 +442,104 @@ Board::startpos () {
   return from_ascii (position);
 }
 
+// Note that only the first six tokens in toks are examined, so we can
+// reuse this code in the EPD parser.
+Board
+Board::from_fen (const string_vector &toks) {
+
+  /*********************************************************************/
+  /* Forsyth-Edwards Notation:                                         */
+  /*                                                                   */
+  /* Example: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 */
+  /*********************************************************************/
+
+  Board b;
+  Board::common_init(b);
+
+  // Specification from Wikipedia.
+  // http://en.wikipedia.org/wiki/Forsyth-Edwards_Notation
+  //
+  // A FEN record contains six fields. The separator between fields is
+  // a space. The fields are:
+
+  assert (toks.size () >= 6);
+
+  // 1. Piece placement (from white's perspective). Each rank is
+  // described, starting with rank 8 and ending with rank 1; within
+  // each rank, the contents of each square are described from file a
+  // through file h. Following the Standard Algebraic Notation (SAN),
+  // each piece is identified by a single letter taken from the
+  // standard English names (pawn = "P", knight = "N", bishop = "B",
+  // rook = "R", queen = "Q" and king = "K")[1]. White pieces are
+  // designated using upper-case letters ("PNBRQK") while Black take
+  // lowercase ("pnbrqk"). Blank squares are noted using digits 1
+  // through 8 (the number of blank squares), and "/" separate ranks.
+
+  int row = 7, file = 0;
+  string::const_iterator i;
+  
+  for (i = toks[0].begin (); i < toks[0].end (); i++)
+    {
+      // Handle a piece code.
+      if (isalpha (*i)) {
+	b.set_piece 
+	  (to_kind (*i), isupper (*i) ? WHITE : BLACK, row, file++);
+      }
+
+      // Handle count of empty squares.
+      if (isdigit (*i)) { file += atoi (*i); }
+
+      // Handle end of row.
+      if (*i == '/') { row--; file = 0;}
+    }
+
+  // 2. Active color. "w" means white moves next, "b" means black.
+
+  b.flags.to_move = tolower (toks[1][0]) == 'w' ? WHITE : BLACK;
+   
+  // 3. Castling availability. If neither side can castle, this is
+  // "-". Otherwise, this has one or more letters: "K" (White can
+  // castle kingside), "Q" (White can castle queenside), "k" (Black
+  // can castle kingside), and/or "q" (Black can castle queenside).
+
+  b.flags.w_can_q_castle = b.flags.w_can_k_castle = 
+    b.flags.b_can_q_castle = b.flags.b_can_k_castle = 0;
+   
+  for (i = toks[2].begin (); i < toks[2].end (); i++)
+    {
+      switch (*i)
+	{
+	case 'K': b.flags.w_can_k_castle = 1; break;
+	case 'Q': b.flags.w_can_q_castle = 1; break;
+	case 'k': b.flags.b_can_k_castle = 1; break;
+	case 'q': b.flags.b_can_q_castle = 1; break;
+	}
+    }
+
+  // 4. En passant target square in algebraic notation. If there's no
+  // en passant target square, this is "-". If a pawn has just made a
+  // 2-square move, this is the position "behind" the pawn.
+
+  if (is_number (toks[3])) b.flags.en_passant = to_int (toks[3]);
+   
+  // 5. Halfmove clock: This is the number of halfmoves since the last
+  // pawn advance or capture. This is used to determine if a draw can
+  // be claimed under the fifty-move rule.
+
+  if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
+
+  // 6. Fullmove number: The number of the full move. It starts at 1,
+  // and is incremented after Black's move.
+
+  if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
+
+  return b;
+}
+
 // Construct from FEN string.
 Board
 Board::from_fen (const string &fen) {
-  Board b;
-  Board::common_init(b);
-  const char *s = fen.c_str ();
-
-  /*
-    Forsyth-Edwards Notation:
-
-    Example: rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-
-    Six fields:
-
-    1: Piece placement, using digits to represent contiguous empty
-       squares.
-  */
-
-  int file = 0;
-  int row = 7;
-  while (1)
-    {
-      // Do our best if the string ends unexpectantly.
-      if (*s == 0)
-	{
-	  return b;
-	}
-
-      // Skip space in the string.
-      while (isspace (*s))
-	{
-	  s++;
-	}
-
-      // Process empty square counts.
-      if (isdigit (*s))
-	{
-	  for (int j = 0; j < atoi (s); j++)
-	    {
-	      file++;
-	    }
-	}
-
-      // Piece codes.
-      switch (*s)
-	{
-	case 'P': b.set_piece (PAWN,   WHITE, row, file++); break;
-	case 'p': b.set_piece (PAWN,   BLACK, row, file++); break;
-	case 'R': b.set_piece (ROOK,   WHITE, row, file++); break;
-	case 'r': b.set_piece (ROOK,   BLACK, row, file++); break;
-	case 'N': b.set_piece (KNIGHT, WHITE, row, file++); break;
-	case 'n': b.set_piece (KNIGHT, BLACK, row, file++); break;
-	case 'B': b.set_piece (BISHOP, WHITE, row, file++); break;
-	case 'b': b.set_piece (BISHOP, BLACK, row, file++); break;
-	case 'K': b.set_piece (KING,   WHITE, row, file++); break;
-	case 'k': b.set_piece (KING,   BLACK, row, file++); break;
-	case 'Q': b.set_piece (QUEEN,  WHITE, row, file++); break;
-	case 'q': b.set_piece (QUEEN,  BLACK, row, file++); break;
-	}
-
-      // End of row.
-      if (*s == '/')
-	{
-	  row--;
-	  file = 0;
-	}
-
-      // Exit when we've filled the whole board.
-      if (row == 0 && file > 7)
-	break;
-
-      s++;
-    }
-
-  /*
-    2: Color to play. 'w' or 'b'.
-  */
-
-  // Scan to next field.
-  while (!isspace (*s)) s++;
-  while (isspace (*s)) s++;
-
-  switch (*s)
-    {
-    case 'W':
-    case 'w': b.flags.to_move = WHITE; break;
-    case 'B':
-    case 'b': b.flags.to_move = BLACK; break;
-    }
-
-  s++;
-
-  /*
-    3: Castling availability. "K" for kingside "Q" for queen size. "-"
-       if neither side can castle.
-  */
-
-  // Scan to next field.
-  while (!isspace (*s)) s++;
-  while (isspace (*s)) s++;;
-
-  b.flags.w_can_k_castle =
-    b.flags.w_can_q_castle =
-    b.flags.w_can_k_castle =
-    b.flags.w_can_q_castle = 0;
-
-  int done = false;
-  while (!done)
-    {
-      switch (*s)
-	{
-	case 'K': b.flags.w_can_k_castle = 1; break;
-	case 'k': b.flags.b_can_k_castle = 1; break;
-	case 'Q': b.flags.w_can_q_castle = 1; break;
-	case 'q': b.flags.b_can_q_castle = 1; break;
-	case '-': break;
-	default: done = true; break;
-	}
-      s++;
-    }
-
-  /*
-      4: En passant target square. If a pawn has just made a 2-square
-         move this is the postion behind the pawn, otherwise "-".
-  */
-
-  // Scan to next field.
-  while (isspace (*s)) s++;
-
-  if (*s == '-')
-    {
-      b.flags.en_passant = 0;
-    }
-  else
-    {
-      int tmp;
-      sscanf (s, "%i", &tmp);
-      b.flags.en_passant = tmp;
-    }
-
-  // Scan to next field.
-  while (!isspace (*s)) s++;
-  while (isspace (*s)) s++;
-
-  /*
-    5: Halfmove clock. Number of half moves since the last pawn
-    advance or capture. Used to implemenent 50-move rule.
-
-    6: Fullmove number: Starts at one an is incremented after black
-    moves.
-  */
-
-  sscanf (s, "%i %i", &b.half_move_clock, &b.full_move_clock);
-
-  return b;
+  return from_fen (tokenize (fen));
 }
 
 /*********/
@@ -715,7 +680,7 @@ Board::apply (const Move &m) {
       // Test castle out of, across, or in to check.
       if (m.color == WHITE)
 	{
-	  if (m.flags.castle_qs && !(attacked & 0xE))
+	  if (m.flags.castle_qs && !(attacked & 0x1C))
 	    {
 	      clear_piece (4);
 	      clear_piece (0);
@@ -743,7 +708,7 @@ Board::apply (const Move &m) {
 	{
 	  byte attacks = get_byte (attacked, 7);
 
-	  if (m.flags.castle_qs && !(attacks & 0xE))
+	  if (m.flags.castle_qs && !(attacks & 0x1C))
 	    {
 	      clear_piece (60);
 	      clear_piece (56);
@@ -854,10 +819,6 @@ Board::apply (const Move &m) {
 	    }
 	}
 
-      //      if (flags.en_passant != 0)
-      //	cerr << *this << endl;
-
-
       /*****************/
       /* Test legality. */
       /*****************/
@@ -911,6 +872,14 @@ operator<< (std::ostream &os, const Board &b)
     {
       os << "Black to move:" << endl;
     }
+  
+  os << "Castling: ";
+  if (b.flags.w_can_k_castle) os << "K";
+  if (b.flags.w_can_q_castle) os << "Q";
+  if (b.flags.b_can_k_castle) os << "k";
+  if (b.flags.b_can_q_castle) os << "q";
+  os << endl;
+
 
   os << b.full_move_clock << " full moves, ";
   os << b.half_move_clock << " half moves." << endl;

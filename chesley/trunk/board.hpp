@@ -14,6 +14,7 @@
 #include <string>
 
 #include "bits64.hpp"
+#include "util.hpp"
 
 /*********/
 /* Types */
@@ -64,6 +65,9 @@ enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
 // Convert a kind to a character code.
 char to_char (Kind k);
+
+// Convert a character code to a piece code, ignoring color.
+Kind to_kind (char k);
 
 std::ostream & operator<< (std::ostream &os, Kind k);
 
@@ -260,7 +264,8 @@ struct Board {
   static Board from_ascii  (const std::string &str);
 
   // Construct from a fen string.
-  static Board from_fen (const std::string &str);
+  static Board from_fen (const std::string &fen);
+  static Board from_fen (const string_vector &toks);
 
   // Construct a board from the standard starting position.
   static Board startpos ();
@@ -376,7 +381,6 @@ struct Board {
   void 
   set_piece (Kind kind, Color color, int at) {
     assert (kind != NULL_KIND);
-
     color_to_board (color) |= masks_0[at];
     kind_to_board (kind) |= masks_0[at];
     occupied |= masks_0[at];
@@ -522,13 +526,17 @@ struct Board {
   static bitboard *init_45d_attacks_tbl ();
   static bitboard *init_135d_attacks_tbl ();
 
-  /*********/
-  /* Debug */
-  /*********/
+  /***********/
+  /* Testing */
+  /***********/
 
   // Generate the number of moves available at ply 'd'. Used for
   // debugging the move generator.
   uint64 perft (int d) const;
+
+  // For each child, print the child move and the perft (d) of the
+  // resulting board.
+  void divide (int d) const;
 
   // Print the full tree to depth N.
   void print_tree (int depth = 0);

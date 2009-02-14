@@ -30,24 +30,33 @@ Board::gen_all_moves (Move_Vector &out) const
 // Generate the number of moves available at ply d. Used for debugging
 // the move generator.
 u_int64_t
-Board::perft (int d) const
-{
+Board::perft (int d) const {
   u_int64_t sum = 0;
 
-  if (d == 0) 
-    {
-      sum = 1;
-    }
-  else
-    {
-      Board_Vector children (*this);
-      for (int i = 0; i < children.count; i++)
-	{
-	  sum += children[i].perft (d - 1);
-	}
-    }
+  if (d == 0) return 1;
+
+  Board_Vector children (*this);
+  for (int i = 0; i < children.count; i++)
+    sum += children[i].perft (d - 1);
 
   return sum;
+}
+
+// For each child, print the child move and the perft (d) of the
+// resulting board.
+void 
+Board :: divide (int d) const {
+  Move_Vector moves (*this);
+  
+  for (int i = 0; i < moves.count; i++)
+    {
+      Board child = *this;
+
+      std::cerr << to_calg (moves[i]) << " ";
+
+      child.apply (moves [i]); 
+      std::cerr << child.perft (d - 1) << std::endl;
+    }
 }
 
 /*********/
