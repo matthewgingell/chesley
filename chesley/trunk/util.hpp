@@ -1,5 +1,5 @@
 /*
-  Various utility functions.
+  Various small utility functions.
 
   Matthew Gingell
   gingell@adacore.com
@@ -39,7 +39,7 @@ static std::string downcase (std::string &s) IS_UNUSED;
 // Test whether is string is a number.
 static bool is_number (const std::string &s) IS_UNUSED;
 
-// Convert a string to a long.
+// Convert a string to an integer.
 static int to_int (const std::string &s) IS_UNUSED;
 
 // Return a malloc'd copy of a char *.
@@ -48,6 +48,13 @@ static char *newstr (const char *s) IS_UNUSED;
 // Collect space seperated tokens in a vector.
 typedef std::vector <std::string> string_vector;
 static string_vector tokenize (const std::string &s) IS_UNUSED;
+
+/***********************/
+/* Character functions */
+/***********************/
+
+// As atoi (char *).
+static long atoi (char) IS_UNUSED;
 
 /****************/
 /* IO functions */
@@ -124,7 +131,7 @@ is_number (const std::string &s) {
   return true;
 }
 
-// Convert a string to a long.
+// Convert a string to an integer.
 static int
 to_int (const std::string &s) {
   return atoi (s.c_str ());
@@ -137,6 +144,12 @@ newstr (const char *s) {
   char *rv = (char *) malloc (sz + 1);
   memcpy (rv, s, sz + 1);
   return rv;
+}
+
+// As atoi (char *).
+static long atoi (char c) {
+  assert (isdigit (c));
+  return (long) c - (long) '0';
 }
 
 // Check a file descriptor and return true is there is data available
