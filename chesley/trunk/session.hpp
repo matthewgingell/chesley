@@ -62,8 +62,8 @@ private:
   /* Interface mode. */
   /*******************/
 
-  enum Mode { INTERACTIVE, UCI, XBOARD };
-  static Mode mode;
+  enum UI { INTERACTIVE, UCI, XBOARD };
+  static UI ui;
 
   /****************/
   /* I/O handling */
@@ -95,6 +95,9 @@ private:
 
   // Report and clean up when a game ends.
   static void handle_end_of_game (Status s);
+
+  // Is session running or paused?
+  static bool running;
 
   /********************/
   /* Generic commands */

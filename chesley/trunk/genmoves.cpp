@@ -51,7 +51,6 @@ Board :: divide (int d) const {
   for (int i = 0; i < moves.count; i++)
     {
       Board child = *this;
-
       std::cerr << to_calg (moves[i]) << " ";
 
       child.apply (moves [i]); 

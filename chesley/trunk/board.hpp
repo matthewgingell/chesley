@@ -274,6 +274,9 @@ struct Board {
   /* Output */
   /**********/
 
+  // Return an ASCII representation of this position.
+  std::string to_ascii () const;
+
   // Return a FEN string for this position.
   std::string to_fen () const;
 

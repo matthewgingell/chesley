@@ -16,11 +16,7 @@ chesley: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
 
 play: chesley
-	xboard -debug -fcp ./chesley -size Medium
-
-tourn: chesley
-	xboard -debug -fcp ./chesley -scp `which gnuchess` \ 
-	   matchGames 5 -size Medium
+	xboard -debug -fcp ./chesley -size Large
 
 %.o : %.cpp *.hpp
 	$(CXX) $(CXXFLAGS) -c $<
