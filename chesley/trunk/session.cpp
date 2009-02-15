@@ -28,11 +28,12 @@ using namespace std;
 /* Session variables */
 /*********************/
 
-Session::Mode Session::mode;
+Session::UI   Session::ui;
 bool          Session::halt;
 FILE         *Session::in;
 FILE         *Session::out;
 bool          Session::tty;
+bool          Session::running;
 
 const char *Session::prompt = "> ";
 
@@ -62,15 +63,16 @@ Session::init_session () {
   setvbuf (out, NULL, _IONBF, 0);
   tty = isatty (fileno (in));
 
-  // Set mode.
-  mode = INTERACTIVE;
+  // Set ui.
+  ui = INTERACTIVE;
 
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
   status = GAME_IN_PROGRESS;
-  se = Search_Engine (6);
+  se = Search_Engine (8);
   op_is_computer = false;
+  running = true;
 
   // Setup periodic alarm.
   halt = 0;
@@ -136,9 +138,10 @@ Session::cmd_loop ()
 	}
       
       write_prompt ();
-      
+
+#if 0      
       // Loop until input is ready.
-      while (!fdready (fileno (in)) && status == GAME_IN_PROGRESS) 
+      while (running && !fdready (fileno (in)) && status == GAME_IN_PROGRESS) 
 	{
 	  if (board.flags.to_move == our_color)
 	    {
@@ -154,12 +157,14 @@ Session::cmd_loop ()
 		  handle_end_of_game (s.status);
 		  break;
 		}
-	      
-	      // Don't busy wait for input.
-	      usleep (10000);
 	    }
+
+	  // Don't busy wait for input.
+	  usleep (1000);
 	}
+#endif
     }
+
 }
 
 /*****************************************/
@@ -197,11 +202,11 @@ bool
 Session::execute (char *line) {
 
   /*******************************************************************/
-  /* Give the mode-specific handler a chance to process this command */
+  /* Give the ui-specific handler a chance to process this command   */
   /* before handing it to the handler below.                         */
   /*******************************************************************/
 
-  if (mode == XBOARD)
+  if (ui == XBOARD)
     {
       if (!xbd_execute (line))
 	{
@@ -216,6 +221,13 @@ Session::execute (char *line) {
     {
       string token = downcase (tokens[0]);
 
+      if (token == "apply" && count > 1 && board.is_calg (tokens[1]))
+	{
+	  running = false;
+	  Move m = board.from_calg (tokens[1]);	  
+	  board.apply (m);
+	}
+
       /**********************/
       /* Benchmark command. */
       /**********************/
@@ -225,13 +237,75 @@ Session::execute (char *line) {
 	  return bench (tokens);
 	}
 
+      /****************/
+      /* Disp command */
+      /****************/
+
+      if (token == "disp") 
+	{
+	  fprintf (out, "%s\n", (board.to_ascii ()).c_str ());
+	  return true;
+	}
+
+      /******************/
+      /* Div command */
+      /*****************/
+
+      if (token == "div")
+	{
+	  if (tokens.size () == 2)
+	    {
+	      board.divide (to_int (tokens[1]));
+	      return true;
+	    }
+	}
+
+      /**************************************/
+      /* FEN command to output board state. */
+      /**************************************/
+
+      if (token == "fen") 
+	{
+	  fprintf (out, "%s\n", (board.to_fen ()).c_str ());
+	  return true;
+	}
+
+      /******************************************************/
+      /* Force command to prevent computer generated moves. */
+      /******************************************************/
+
+      if (token == "force") 
+	{
+	  running = false;
+	  return true;
+	}
+
+      /* Moves command. */
+      if (token == "moves")
+	{
+	  Move_Vector moves (board);
+	  cerr << moves << endl;
+	}
+
+
+      /* Attacks command. */
+      if (token == "attacks")
+	{
+	  print_board (board.attack_set (invert_color (board.flags.to_move)));
+	}
+
+
       /**************************************/
       /* Perft position generation command. */
       /**************************************/
       
       if (token == "perft") 
 	{
-	  return perft (tokens);
+	  if (tokens.size () == 2)
+	    {
+	      fprintf (out, "%lli\n", board.perft (to_int (tokens[1])));
+	      return true;
+	    }
 	}
 
       /**********************************/
@@ -243,6 +317,15 @@ Session::execute (char *line) {
 	  return play_self (tokens);
 	}
 
+      /************************/
+      /* setboard FEN command */
+      /************************/
+
+      if (token == "setboard") 
+	{
+	  board = Board::from_fen (rest (tokens));
+	}
+
       /*************************/
       /* Perform various tests */
       /*************************/
@@ -251,7 +334,6 @@ Session::execute (char *line) {
 	{
 	  // Wrong at ply 3.
 	  board = Board::from_fen ("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-
 	}
 
       /****************/
@@ -263,9 +345,9 @@ Session::execute (char *line) {
 	  return false;
 	}
 
-      /**********************/
-      /* Enter xboard mode. */
-      /**********************/
+      /********************/
+      /* Enter xboard ui. */
+      /********************/
 
       if (token == "xboard") 
 	{

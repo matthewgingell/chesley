@@ -18,7 +18,7 @@
 /* Utility macros. */
 
 #if 0
-#define ASSERT(e)  \
+#define UASSERT(e)  \
     ((void) ((e) ? 0 : __assert (#e, __FILE__, __LINE__)))
 #define __ASSERT(e, file, line) \
   ((void)printf ("%s:%u: failed assertion `%s'\n", file, line, e), abort())
@@ -45,9 +45,24 @@ static int to_int (const std::string &s) IS_UNUSED;
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
 
-// Collect space seperated tokens in a vector.
+/**************************/
+/* String vector functions */
+/**************************/
+
 typedef std::vector <std::string> string_vector;
+
+// Collect space seperated tokens in a vector.
 static string_vector tokenize (const std::string &s) IS_UNUSED;
+
+// Return the first element of a string_vector.
+static std::string first (const string_vector &in) IS_UNUSED;
+
+// Return all but the first element of a string_vector.
+static string_vector rest (const string_vector &in) IS_UNUSED;
+
+// Return a slice of the string_vector, from 'from' to 'to' inclusive.
+static string_vector slice 
+(const string_vector &in, int first, int last) IS_UNUSED;
 
 /***********************/
 /* Character functions */
@@ -97,9 +112,9 @@ insertion_sort (T &items) IS_UNUSED;
 // Seed the random number generator
 static void seed_random () IS_UNUSED;;
 
-/******************/
-/* Implementation */
-/******************/
+/********************/
+/* String functions */
+/********************/
 
 // Return a string of N spaces.
 static std::string 
@@ -152,6 +167,69 @@ static long atoi (char c) {
   return (long) c - (long) '0';
 }
 
+/**************************/
+/* String vector functions */
+/**************************/
+
+// Collect space seperated tokens in a vector.
+typedef std::vector <std::string> string_vector;
+
+static string_vector
+tokenize (const std::string &s) {
+  uint32 first, last;
+  string_vector tokens;
+
+  first = last = 0;
+  while (1)
+    {
+      // Find begining of token.
+      for (first = last; 
+	   isspace (s[first]) && first < s.length(); 
+	   first++);
+
+      // Find end of token.
+      for (last = first; 
+	   !isspace (s[last]) && last < s.length(); 
+	   last++);
+
+      // Collect token.
+      if (first != last) 
+	{ 
+	  tokens.push_back (s.substr (first, last - first));
+	}
+
+      // Break at end of input.
+      if (last == s.length()) 
+	{
+	  break;
+	}
+    }
+
+  return tokens;
+}
+
+// Return the first element of a string_vector.
+static std::string first (const string_vector &in) {
+  return in[0];
+}
+
+// Return all but the first element of a string_vector.
+static string_vector rest (const string_vector &in) {
+  return slice (in, 1, in.size () - 1);
+}
+
+// Return a slice of the string_vector, from 'from' to 'to' inclusive.
+static string_vector 
+slice (const string_vector &in, int first, int last) {
+  string_vector out;
+  for (int i = first; i <= last; i++) out.push_back (in[i]);
+  return out;
+}
+
+/****************/
+/* IO functions */
+/****************/
+
 // Check a file descriptor and return true is there is data available
 // to read from it.
 static bool 
@@ -193,42 +271,9 @@ static char *get_line (FILE *in) {
   return newstr (buf);
 }
 
-// Collect space seperated tokens in a vector.
-typedef std::vector <std::string> string_vector;
-
-static string_vector
-tokenize (const std::string &s) {
-  uint32 first, last;
-  string_vector tokens;
-
-  first = last = 0;
-  while (1)
-    {
-      // Find begining of token.
-      for (first = last; 
-	   isspace (s[first]) && first < s.length(); 
-	   first++);
-
-      // Find end of token.
-      for (last = first; 
-	   !isspace (s[last]) && last < s.length(); 
-	   last++);
-
-      // Collect token.
-      if (first != last) 
-	{ 
-	  tokens.push_back (s.substr (first, last - first));
-	}
-
-      // Break at end of input.
-      if (last == s.length()) 
-	{
-	  break;
-	}
-    }
-
-  return tokens;
-}
+/********************/
+/* Time and timers. */
+/********************/
 
 // Return the amount of user time we have consumed in microseconds. 
 static double 
@@ -240,6 +285,10 @@ user_time () {
     ((double) ru.ru_utime.tv_sec)  + 
     ((double) ru.ru_utime.tv_usec) / (1000L * 1000L);
 }
+
+/**************************/
+/* Generic sorting inline */
+/**************************/
 
 // Inline quicksort. Client type must 1) define a function count, 2)
 // define a function value and 3) be accessible with operator[].
@@ -327,6 +376,9 @@ insertion_sort (V &items) {
     }
 }
 
+/******************/
+/* Random numbers */
+/*****************/
 
 // Seed the random number generator
 static void 

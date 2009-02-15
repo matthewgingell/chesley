@@ -1,4 +1,15 @@
+Next items:
+
+  * Must be correct before we worry about strength or speed.
+
+  * Must have a good way of measuring strength and speed before we try
+    to improved them.
+
 Bugs:
+
+  * Move generation bug with:
+
+    r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1
 
 Interface:
 
@@ -14,7 +25,8 @@ Clean up:
 
   * We use a weird mix of C++ string and C char *, and C++ iostreams
     and C FILE *. Each of these has real advantages in th appropriate
-    setting, but we really ought to be able to normalize our usage.
+    setting, but we really ought to be able to normalize our usage
+    somewhat.
 
 Testing:
 
@@ -36,7 +48,7 @@ Search
 
   * Implement 3 fold repetition detection. Right now Chesley plays and
     incredibly irritating end game, repeatedly running the half move
-    clock up to 50 then moving a pawn...
+    clock up to 49 then moving a pawn...
   * Quiescence search
   * Must do timed searches, and do some kind of overall time
     management for timed games.

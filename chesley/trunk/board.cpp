@@ -542,6 +542,75 @@ Board::from_fen (const string &fen) {
   return from_fen (tokenize (fen));
 }
 
+// Return an ASCII representation of this position.
+string 
+Board::to_ascii () const {
+  ostringstream s;
+
+  // Precede board diagram with status, formated as in FEN strings.
+
+  s << (flags.to_move == WHITE ? 'w' : 'b') << " ";
+
+
+  if (flags.w_can_k_castle | flags.w_can_q_castle | 
+      flags.b_can_k_castle | flags.b_can_q_castle)
+    {
+      if (flags.w_can_k_castle) s << 'K';
+      if (flags.w_can_q_castle) s << 'Q';
+      if (flags.b_can_k_castle) s << 'k';
+      if (flags.b_can_q_castle) s << 'q';
+    }
+  else
+    {
+      s << '-';
+    }
+
+  s << ' ';
+
+  if (flags.en_passant)
+    {
+      s << (char) ('a' + idx_to_file (flags.en_passant));
+      s << (int)  (      idx_to_rank (flags.en_passant));
+    }
+  else
+    {
+      s << '-';
+    }
+
+  s << ' ' << half_move_clock << ' ' << full_move_clock << endl << endl;
+  
+  // Dump a human readable ASCII art diagram of the board.
+  for (int row = 7; row >= 0; row--) 
+    {
+      for (int file = 0; file < 8; file++)
+	{
+	  Kind k = get_kind (row, file);
+	  
+	  if (k == NULL_KIND) 
+	    {
+	      s << ".";
+	    }
+	  else
+	    {
+	      if (get_color (row, file) == WHITE)
+		{
+		  s << (char) toupper (to_char (k));
+		}
+	      else
+		{
+		  s << (char) tolower (to_char (k));
+		}
+	    }
+	  
+	  if (file != 7) s << ' ';
+	}
+      if (row != 0) s << endl;
+    }
+  
+    return s.str ();
+}
+
+
 // Return a FEN string for this position.
 string 
 Board ::to_fen () const {
@@ -658,13 +727,13 @@ Board::attack_set (Color c) const {
   pieces = pawns & color;
   if (c == WHITE)
     {
-      attacks |= ((pieces & ~file(0)) << 7) & black;
-      attacks |= ((pieces & ~file(7)) << 9) & black;
+      attacks |= ((pieces & ~file(0)) << 7);
+      attacks |= ((pieces & ~file(7)) << 9);
     }
   else
     {
-      attacks |= ((pieces & ~file(0)) >> 9) & white;
-      attacks |= ((pieces & ~file(7)) >> 7) & white;
+      attacks |= ((pieces & ~file(0)) >> 9);
+      attacks |= ((pieces & ~file(7)) >> 7);
     }
 
   // Rooks

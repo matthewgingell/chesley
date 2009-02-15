@@ -15,7 +15,7 @@ using namespace std;
 // Set xboard protocol mode.
 bool 
 Session::set_xboard_mode (const string_vector &tokens) {
-  mode = XBOARD;
+  ui = XBOARD;
   prompt = NULL;
 
   // Set chatting for ICS.
@@ -260,7 +260,7 @@ Session::xbd_execute (char *line) {
 
       if (token == "setboard") 
 	{
-	  // ignored.
+	  // Handled in generic loop. 
 	}
 
       /****************/
