@@ -4,11 +4,11 @@ LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 
-CXX = g++ 
-#CXX = g++-mp-4.4
+#CXX = g++ 
+CXX = g++-mp-4.4
 
-CXXFLAGS = -g -Wall -m64
-#CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops -DNDEBUG
+#CXXFLAGS = -g -Wall -m64
+CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops -DNDEBUG
 
 all: chesley
 

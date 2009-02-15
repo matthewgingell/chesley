@@ -263,12 +263,19 @@ struct Board {
   // Construct from an ascii board representation.
   static Board from_ascii  (const std::string &str);
 
-  // Construct from a fen string.
+  // Construct from a FEN string.
   static Board from_fen (const std::string &fen);
   static Board from_fen (const string_vector &toks);
 
   // Construct a board from the standard starting position.
   static Board startpos ();
+
+  /**********/
+  /* Output */
+  /**********/
+
+  // Return a FEN string for this position.
+  std::string to_fen () const;
 
   /*************************************************/
   /* Reading and writing Moves against this board. */
@@ -291,11 +298,16 @@ struct Board {
   // Compute a bitboard of every square color is attacking.
   bitboard attack_set (Color) const;
 
-  // Return the kind of piece on a square.
-  Color get_color (uint32 idx) {
+  // Return the color of a piece on a square.
+  Color get_color (uint32 idx) const {
     if (test_bit (white, idx)) return WHITE;
     if (test_bit (black, idx)) return BLACK;
     return NULL_COLOR;
+  }
+
+  // Return the color of a piece on a square.
+  Color get_color (int row, int file) const {
+    return get_color (file + 8 * row);
   }
 
   // Return the kind of piece on a square.
@@ -312,6 +324,11 @@ struct Board {
 
     // Suppress gcc warning in -DNDEBUG case.
     return NULL_KIND;
+  }
+
+  // Return the kind of piece on a square.
+  Kind get_kind (int row, int file) const {
+    return get_kind (file + 8 * row);
   }
 
   // Test whether a coordinate is in bounds.

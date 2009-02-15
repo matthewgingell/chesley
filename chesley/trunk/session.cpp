@@ -85,12 +85,13 @@ Session::init_session () {
   return;
 }
 
-// Set halt when input is pending.
+/*******************************************************************/
+/* Catch an alarm periodically. This is used for asynchronous I/O. */
+/* handling.                                                       */
+/*******************************************************************/
+
 void 
 Session::handle_interrupt (int sig) {
-
-  //  cerr << "got SIGALRM" << endl;
-
   if (fdready (fileno (in)))
     {
       halt = true;
@@ -120,10 +121,9 @@ Session::cmd_loop ()
   fprintf (out, PROLOGUE);
   write_prompt ();
  
- while (true)
+  while (true)
     {
       char *line = get_line (in);
-      cerr << "Chesley got \"" << line << "\"" << endl;
       
       // Break out of command loop at end of input.
       if (!line || !execute (line))
@@ -136,7 +136,7 @@ Session::cmd_loop ()
 	}
       
       write_prompt ();
-
+      
       // Loop until input is ready.
       while (!fdready (fileno (in)) && status == GAME_IN_PROGRESS) 
 	{
@@ -166,30 +166,28 @@ Session::cmd_loop ()
 /* Report and clean up when a game ends. */
 /*****************************************/
 
- void 
- Session::handle_end_of_game (Status s)
- {
-   status = s;
-
-   switch (s)
-     {
-     case GAME_WIN_WHITE:
-       fprintf (out, "RESULT 1-0\n");
-       break;
+void 
+Session::handle_end_of_game (Status s) {
+  status = s;
+   
+  switch (s)
+    {
+    case GAME_WIN_WHITE:
+      fprintf (out, "RESULT 1-0\n");
+      break;
        
-     case GAME_WIN_BLACK:
-       fprintf (out, "RESULT 0-1\n");
-       break;
+    case GAME_WIN_BLACK:
+      fprintf (out, "RESULT 0-1\n");
+      break;
        
-     case GAME_DRAW:
-       fprintf (out, "RESULT 1/2-1/2\n");
-       break;
+    case GAME_DRAW:
+      fprintf (out, "RESULT 1/2-1/2\n");
+      break;
        
-     default:
-       assert (0);
-     }
+    default:
+      assert (0);
+    }
 }
-
 
 /*************************************/
 /* Parse and execute a command line. */
@@ -251,40 +249,9 @@ Session::execute (char *line) {
 
       if (token == "test")
 	{
-	  // We get this one wrong.
+	  // Wrong at ply 3.
 	  board = Board::from_fen ("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
-	  
-	  cerr << board << endl;
-	  for (int i = 1; i <= 6; i++)
-	    cerr << board.perft (i) << endl;
-	  abort ();
 
-
-
-
-	  abort ();
-	  Move m = board.from_calg ("e5d7");
-	  board.apply (m);
-	  cerr << board << endl;
-
-
-	  abort();
-
-	  board.divide (2);
-
-	  abort ();
-
-	  cerr << board << endl;
-	  for (int i = 1; i <= 2; i++)
-	    cerr << board.perft (i) << endl;
-	  abort ();
-
-	  // We get this one right.
-	  board = Board::from_fen ("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1");
-	  cerr << board << endl;
-	  for (int i = 1; i <= 6; i++)
-	    cerr << board.perft (i) << endl;
-	  abort ();
 	}
 
       /****************/
