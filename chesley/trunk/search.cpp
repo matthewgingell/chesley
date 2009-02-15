@@ -66,13 +66,6 @@ Search_Engine :: choose_move (Board &b) {
 	}
     }
 
-  if (best_index != -1) 
-    {
-      cerr << moves << endl;
-      //      cerr << best_index << endl;
-      //      cerr << moves[best_index] << endl;
-    }
-
   /********************************************************************/
   /* Handle end of game, raising an exception if there are no legal.  */
   /* moves from this position.                                        */ 

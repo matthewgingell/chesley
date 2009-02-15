@@ -542,6 +542,106 @@ Board::from_fen (const string &fen) {
   return from_fen (tokenize (fen));
 }
 
+// Return a FEN string for this position.
+string 
+Board ::to_fen () const {
+  ostringstream s;
+
+  // A FEN record contains six fields. The separator between fields is
+  // a space. The fields are:
+
+  // 1. Piece placement (from white's perspective).
+  for (int row = 7; row >= 0; row--)
+    {
+      int counter = 0;
+
+      for (int file = 0; file < 8; file++)
+	{
+	  Kind k = get_kind (row, file);
+
+	  if (k == NULL_KIND)
+	    {
+	      counter++;
+	    }
+	  else
+	    {
+	      char code = to_char (k);
+
+	      if (counter > 0)
+		{
+		  s << counter;
+		  counter = 0;
+		}
+
+	      if (get_color (row, file) == WHITE)
+		{
+		  s << (char) toupper (code);
+		}
+	      else
+		{
+		  s << (char) tolower (code);
+		}
+	    }
+	}
+
+      if (counter > 0)
+	{
+	  s << counter;
+	}
+
+      if (row > 0) 
+	{
+	  s << "/";
+	}
+    }
+
+  // 2. Active color. "w" means white moves next, "b" means black.
+
+  s << " " << (flags.to_move == WHITE ? 'w' : 'b');
+   
+  // 3. Castling availability.
+
+  s << ' ';
+
+  if (flags.w_can_k_castle | flags.w_can_q_castle | 
+      flags.b_can_k_castle | flags.b_can_q_castle)
+    {
+      if (flags.w_can_k_castle) s << 'K';
+      if (flags.w_can_q_castle) s << 'Q';
+      if (flags.b_can_k_castle) s << 'k';
+      if (flags.b_can_q_castle) s << 'q';
+    }
+  else
+    {
+      s << '-';
+    }
+      
+  // 4. En passant target square in algebraic notation.
+
+  s << ' ';
+
+  if (flags.en_passant)
+    {
+      s << (char) ('a' + idx_to_file (flags.en_passant));
+      s << (int)  (      idx_to_rank (flags.en_passant));
+    }
+  else
+    {
+      s << '-';
+    }
+
+  // 5. Halfmove clock.
+
+  s << ' ' << half_move_clock;
+
+  // 6. Fullmove clock.
+
+  s << ' ' << full_move_clock;
+
+  return s.str();
+}
+
+
 /*********/
 /* Tests */
 /*********/
