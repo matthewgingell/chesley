@@ -7,8 +7,11 @@
   _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at
   http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.
 
-   Matthew Gingell
-   gingell@adacore.com
+  The code here is very sensitive and changes should be checked
+  against the perft suite to ensure they do not cause regressions.
+
+  Matthew Gingell
+  gingell@adacore.com
 */
 
 #include "chesley.hpp"
@@ -112,8 +115,9 @@ Board::gen_pawn_moves (Move_Vector &out) const
 	  to |= ((from & ~file(0)) >> 9) & white;
 
 	  // Pawns which can reach the En Passant square.
-	  if ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) || 
-	      (bit_idx ((from & ~file(0)) >> 9) == flags.en_passant)) 
+	  if (flags.en_passant != 0 &&
+	      ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) || 
+	       (bit_idx ((from & ~file(0)) >> 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
