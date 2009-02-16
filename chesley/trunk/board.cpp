@@ -186,7 +186,6 @@ Board::from_calg (const string &s) const {
   Kind capture = get_kind (to);
   Move m = Move (k, from, to, c, capture);
 
-
   // Check for promotion.
   if (s.length () >= 5)
     {
@@ -520,7 +519,10 @@ Board::from_fen (const string_vector &toks) {
   // en passant target square, this is "-". If a pawn has just made a
   // 2-square move, this is the position "behind" the pawn.
 
-  if (is_number (toks[3])) b.flags.en_passant = to_int (toks[3]);
+  if (toks[3][0] != '-')
+    {
+      b.flags.en_passant = (toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1);
+    }
    
   // 5. Halfmove clock: This is the number of halfmoves since the last
   // pawn advance or capture. This is used to determine if a draw can

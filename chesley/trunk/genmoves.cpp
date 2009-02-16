@@ -93,8 +93,9 @@ Board::gen_pawn_moves (Move_Vector &out) const
 	  to |= ((from & ~file(7)) << 9) & black;
 
 	  // Pawns which can reach the En Passant square.
-	  if ((bit_idx ((from & ~file(0)) << 7) == flags.en_passant) || 
-	      (bit_idx ((from & ~file(7)) << 9) == flags.en_passant)) 
+	  if (flags.en_passant != 0 &&
+	      ((bit_idx ((from & ~file(0)) << 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file(7)) << 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
