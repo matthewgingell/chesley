@@ -838,6 +838,52 @@ Board::apply (const Move &m) {
   flags.to_move = invert_color (flags.to_move);
 
   /****************************/
+  /* Handle taking En Passant */
+  /****************************/
+
+  if (m.kind == PAWN &&
+      flags.en_passant != 0 &&
+      m.to == flags.en_passant)
+    {
+      // Clear the square behind the En Passant destination
+      // square.
+      if (m.color == WHITE)
+	{
+	  clear_piece (flags.en_passant - 8);
+	}
+      else
+	{
+	  clear_piece (flags.en_passant + 8);
+	}
+    }
+
+  /*****************************************************************/
+  /* Update En Passant target square. This needs to be done before */
+  /* checking castling, since otherwise we may return without      */
+  /* clearing the En Passant target square.                        */
+  /*****************************************************************/
+
+  flags.en_passant = 0;
+  if (m.kind == PAWN)
+    {
+      if (m.color == WHITE)
+	{
+	  if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
+	    {
+	      flags.en_passant = m.from + 8;
+	    }
+	}
+      else
+	{
+	  if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
+	    {
+	      flags.en_passant = m.from - 8;
+	    }
+	}
+    }
+
+
+  /****************************/
   /* Handling castling moves. */
   /****************************/
 
@@ -906,26 +952,6 @@ Board::apply (const Move &m) {
     }
   else
     {
-      /****************************/
-      /* Handle taking En Passant */
-      /****************************/
-
-      if (m.kind == PAWN &&
-	  flags.en_passant != 0 &&
-	  m.to == flags.en_passant)
-	{
-	  // Clear the square behind the En Passant destination
-	  // square.
-	  if (m.color == WHITE)
-	    {
-	      clear_piece (flags.en_passant - 8);
-	    }
-	  else
-	    {
-	      clear_piece (flags.en_passant + 8);
-	    }
-	}
-
       /*********************************/
       /* Handle the non-castling case. */
       /*********************************/
@@ -964,29 +990,6 @@ Board::apply (const Move &m) {
       if (m.from ==  7 || m.to ==  7) { flags.w_can_k_castle = 0; }
       if (m.from == 56 || m.to == 56) { flags.b_can_q_castle = 0; }
       if (m.from == 63 || m.to == 63) { flags.b_can_k_castle = 0; }
-
-      /************************************/
-      /* Update En Passant target square. */
-      /************************************/
-
-      flags.en_passant = 0;
-      if (m.kind == PAWN)
-	{
-	  if (m.color == WHITE)
-	    {
-	      if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
-		{
-		  flags.en_passant = m.from + 8;
-		}
-	    }
-	  else
-	    {
-	      if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
-		{
-		  flags.en_passant = m.from - 8;
-		}
-	    }
-	}
 
       /*****************/
       /* Test legality. */
