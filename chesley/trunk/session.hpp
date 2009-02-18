@@ -45,7 +45,6 @@ struct Session {
 
   // State of play.
   static Board board;
-  static Status status;
 
   // Color the engine is playing.
   static Color our_color;
@@ -62,7 +61,7 @@ private:
   /* Interface mode. */
   /*******************/
 
-  enum UI { INTERACTIVE, UCI, XBOARD };
+  enum UI { INTERACTIVE, BATCH, UCI, XBOARD };
   static UI ui;
 
   /****************/
@@ -93,24 +92,33 @@ private:
   /* Flow control */
   /****************/
 
-  // Report and clean up when a game ends.
-  static void handle_end_of_game (Status s);
-
   // Is session running or paused?
   static bool running;
 
-  /********************/
-  /* Generic commands */
-  /********************/
+  // Control is turned over to us, either to make a move, ponder,
+  // analyze, etc.
+  static void work ();
+
+  // Report and clean up when a game ends.
+  static void handle_end_of_game (Status s);
+
+  /************/
+  /* Commands */
+  /************/
 
   // Generate a benchmark.
   static bool bench (const string_vector &tokens); 
 
+  // Process a string in Extended Position Notation. This can include
+  // tests, etc.
+  static bool epd (const string_vector &tokens);
+
   // Compute possible moves from a position.
   static bool perft (const string_vector &tokens);
 
-  // Play a game against its self.
+  // Play a game with engine taking both sides.
   static bool play_self (const string_vector &tokens);
+
 };
 
 #endif /* _Session_ */

@@ -128,7 +128,8 @@ operator<< (std::ostream &os, Kind k) {
 /*  Color type.  */
 /*****************/
 
-std::ostream & operator<< (std::ostream &os, Color c) {
+std::ostream & 
+operator<< (std::ostream &os, Color c) {
   switch (c)
     {
     case WHITE: return os << "WHITE";
@@ -441,10 +442,11 @@ Board::startpos () {
   return from_ascii (position);
 }
 
-// Note that only the first six tokens in toks are examined, so we can
-// reuse this code in the EPD parser.
+// Note that only the first six tokens in toks are examined. If EPD is
+// true, then we are parsing an EPD command and the last two fields,
+// clock and half clock, are not provided.
 Board
-Board::from_fen (const string_vector &toks) {
+Board::from_fen (const string_vector &toks, bool EPD) {
 
   /*********************************************************************/
   /* Forsyth-Edwards Notation:                                         */
@@ -461,7 +463,7 @@ Board::from_fen (const string_vector &toks) {
   // A FEN record contains six fields. The separator between fields is
   // a space. The fields are:
 
-  assert (toks.size () >= 6);
+  if (!EPD) assert (toks.size () >= 6);
 
   // 1. Piece placement (from white's perspective). Each rank is
   // described, starting with rank 8 and ending with rank 1; within
@@ -523,25 +525,29 @@ Board::from_fen (const string_vector &toks) {
     {
       b.flags.en_passant = (toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1);
     }
+
+  if (!EPD) 
+    {
    
-  // 5. Halfmove clock: This is the number of halfmoves since the last
-  // pawn advance or capture. This is used to determine if a draw can
-  // be claimed under the fifty-move rule.
-
-  if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
-
-  // 6. Fullmove number: The number of the full move. It starts at 1,
-  // and is incremented after Black's move.
-
-  if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
+      // 5. Halfmove clock: This is the number of halfmoves since the last
+      // pawn advance or capture. This is used to determine if a draw can
+      // be claimed under the fifty-move rule.
+      
+      if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
+      
+      // 6. Fullmove number: The number of the full move. It starts at 1,
+      // and is incremented after Black's move.
+      
+      if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
+    }
 
   return b;
 }
 
 // Construct from FEN string.
 Board
-Board::from_fen (const string &fen) {
-  return from_fen (tokenize (fen));
+Board::from_fen (const string &fen, bool EPD) {
+  return from_fen (tokenize (fen), EPD);
 }
 
 // Return an ASCII representation of this position.
@@ -884,7 +890,6 @@ Board::apply (const Move &m) {
 	}
     }
 
-
   /****************************/
   /* Handling castling moves. */
   /****************************/
@@ -978,14 +983,16 @@ Board::apply (const Move &m) {
       /**************************/
 
       // King moves.
-      if (m.from == 4) {
-	flags.w_can_q_castle = 0;
-	flags.w_can_k_castle = 0;
-      }
-      else if (m.from == 60) {
-	flags.b_can_q_castle = 0;
-	flags.b_can_k_castle = 0;
-      }
+      if (m.from == 4) 
+	{
+	  flags.w_can_q_castle = 0;
+	  flags.w_can_k_castle = 0;
+	}
+      else if (m.from == 60) 
+	{
+	  flags.b_can_q_castle = 0;
+	  flags.b_can_k_castle = 0;
+	}
 
       // Rook moves and attacks.
       if (m.from ==  0 || m.to ==  0) { flags.w_can_q_castle = 0; }

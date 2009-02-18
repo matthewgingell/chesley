@@ -39,8 +39,9 @@ static std::string downcase (std::string &s) IS_UNUSED;
 // Test whether is string is a number.
 static bool is_number (const std::string &s) IS_UNUSED;
 
-// Convert a string to an integer.
+// Convert a string or character to an integer.
 static int to_int (const std::string &s) IS_UNUSED;
+static int to_int (const char &c) IS_UNUSED;
 
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
@@ -54,15 +55,24 @@ typedef std::vector <std::string> string_vector;
 // Collect space seperated tokens in a vector.
 static string_vector tokenize (const std::string &s) IS_UNUSED;
 
+// Return a slice of the string_vector, from 'from' to 'to' inclusive.
+static string_vector slice 
+(const string_vector &in, int first, int last) IS_UNUSED;
+
+// Return a slice of the string_vector, from 'from' then end.
+static string_vector slice 
+(const string_vector &in, int first) IS_UNUSED;
+
 // Return the first element of a string_vector.
 static std::string first (const string_vector &in) IS_UNUSED;
 
 // Return all but the first element of a string_vector.
 static string_vector rest (const string_vector &in) IS_UNUSED;
 
-// Return a slice of the string_vector, from 'from' to 'to' inclusive.
-static string_vector slice 
-(const string_vector &in, int first, int last) IS_UNUSED;
+// Return a string build from joining together each element of in. If
+// delim is not zero, it is used as the field separator.
+static std::string 
+join (const string_vector &in, const std::string &delim) IS_UNUSED;
 
 /***********************/
 /* Character functions */
@@ -152,6 +162,12 @@ to_int (const std::string &s) {
   return atoi (s.c_str ());
 }
 
+// Convert a character to an integer.
+static int 
+to_int (const char &c) {
+  return c - '0';
+}
+
 // Copy a string.
 static char *
 newstr (const char *s) {
@@ -171,13 +187,51 @@ static long atoi (char c) {
 /* String vector functions */
 /**************************/
 
-// Collect space seperated tokens in a vector.
+// Collect space or ';' seperated tokens in a vector. Quoted fields
+// are not broken.
 typedef std::vector <std::string> string_vector;
 
 static string_vector
 tokenize (const std::string &s) {
-  uint32 first, last;
   string_vector tokens;
+  std::string token;
+  bool in_quote = false;
+
+  for (std::string::const_iterator i = s.begin (); i < s.end (); i++)
+    {
+      if (*i == '\"')
+	{
+	  in_quote = !in_quote;
+	}
+
+      if (!in_quote 
+	  && (isspace (*i) || *i == ';'))
+	{
+	  if (token.length ())
+	    {
+	      tokens.push_back (token);
+	      token.clear ();
+	    }
+	}
+      else
+	{
+	  if (*i != '\"')
+	    {
+	      token += *i;
+	    }
+	}
+    }
+
+  if (token.length ())
+    {
+      tokens.push_back (token);
+    }
+
+  return tokens;
+
+#if 0
+  uint32 first, last;
+
 
   first = last = 0;
   while (1)
@@ -204,18 +258,9 @@ tokenize (const std::string &s) {
 	  break;
 	}
     }
+#endif
 
   return tokens;
-}
-
-// Return the first element of a string_vector.
-static std::string first (const string_vector &in) {
-  return in[0];
-}
-
-// Return all but the first element of a string_vector.
-static string_vector rest (const string_vector &in) {
-  return slice (in, 1, in.size () - 1);
 }
 
 // Return a slice of the string_vector, from 'from' to 'to' inclusive.
@@ -225,6 +270,42 @@ slice (const string_vector &in, int first, int last) {
   for (int i = first; i <= last; i++) out.push_back (in[i]);
   return out;
 }
+
+// Return a slice of the string_vector, from 'from' then end.
+static string_vector 
+slice (const string_vector &in, int first) {
+  return slice (in, first, in.size () - 1);
+}
+
+// Return the first element of a string_vector.
+static std::string first (const string_vector &in) {
+  return in[0];
+}
+
+// Return all but the first element of a string_vector.
+static string_vector rest (const string_vector &in) {
+  return slice (in, 1);
+}
+
+// Return a string build from joining together each element of in. If
+// delim is not zero, it is used as the field separator.
+static std::string join 
+(const string_vector &in, const std::string &delim) {
+  string_vector ::const_iterator i;
+  std::string out = "";
+
+  for (i = in.begin (); i < in.end (); i++)
+    {
+      out += *i;
+      if (i + 1 < in.end () && delim.length () > 0)
+	{
+	  out += delim;
+	}
+    }
+
+  return out;
+}
+
 
 /****************/
 /* IO functions */
