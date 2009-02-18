@@ -88,6 +88,11 @@ eval (const Board &b, int depth = 0) {
   score += eval_simple_positional (b);
 #endif
 
+  // This appears to do no good at all.
+#if 0
+  score += 5 * (count_bits (b.attack_set (WHITE)) - count_bits (b.attack_set (BLACK)));
+#endif 
+
   // Encourage preserving the right to castle.
   score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
   score += CAN_CASTLE_VAL * (b.flags.w_can_k_castle - b.flags.b_can_k_castle);
