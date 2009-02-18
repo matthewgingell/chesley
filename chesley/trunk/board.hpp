@@ -263,9 +263,9 @@ struct Board {
   // Construct from an ascii board representation.
   static Board from_ascii  (const std::string &str);
 
-  // Construct from a FEN string.
-  static Board from_fen (const std::string &fen);
-  static Board from_fen (const string_vector &toks);
+  // Construct from a FEN or EPD string.
+  static Board from_fen (const std::string &fen, bool EPD = false);
+  static Board from_fen (const string_vector &toks, bool EPD = false);
 
   // Construct a board from the standard starting position.
   static Board startpos ();

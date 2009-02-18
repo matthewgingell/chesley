@@ -78,6 +78,8 @@ Session::xbd_execute (char *line) {
       if (token == "new")
 	{
 	  board = Board :: startpos ();
+	  our_color = BLACK;
+	  running = true;
 	}
 
       /******************************************************/
@@ -113,7 +115,7 @@ Session::xbd_execute (char *line) {
 
       if (token == "force") 
 	{
-	  our_color = NULL_COLOR;
+	  running = false;
 	}
 
       /**************/
@@ -123,7 +125,7 @@ Session::xbd_execute (char *line) {
       if (token == "go") 
 	{
 	  our_color = board.flags.to_move;
-	  // ignored.
+	  running = true;
 	}
 
       /*********************/
@@ -132,7 +134,7 @@ Session::xbd_execute (char *line) {
 
       if (token == "playother") 
 	{
-	  our_color = invert_color (board.flags.to_move);
+	  our_color = invert_color (our_color);
 	}
 
       /*****************/
@@ -210,9 +212,17 @@ Session::xbd_execute (char *line) {
 
       if (token == "usermove" && count > 1 && board.is_calg (tokens[1]))
 	{
-	  Move m = board.from_calg (tokens[1]);	  
-	  board.apply (m);
+	  try 
+	    {
+	      Move m = board.from_calg (tokens[1]);	  
+	      board.apply (m);
+	    }
+	  catch  (Game_Over s)
+	    {
+	      handle_end_of_game (s.status);
+	    }
 	}
+
 
       /**************/
       /* ? command. */

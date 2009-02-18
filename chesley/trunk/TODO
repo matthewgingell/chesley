@@ -1,23 +1,26 @@
+Bugs:
+
+  * End of game detection isn't right. We only test when apply is
+    called *after the last move of the game*. This is no good in
+    interactive mode when EOG must be detected immediately .
+
 Next items:
 
+  * Must be able to automatically test correctness of move gen.
+  * Must be able to automatically test speed of move gen.
   * Must be correct before we worry about strength or speed.
-
   * Must have a good way of measuring strength and speed before we try
     to improved them.
 
-Bugs:
+  Therefore:
 
-  * Move generation bug with:
-
-    r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1
+  * Implement EPD command. 
+  * Add epd extension opcode "pft" for testing perft numbers.
 
 Interface:
 
   * Finish and clean up implementation of Xboard protocol.
   * Do validity checking.
-  * Terminate xboard games in a reasonable way.
-  * Do end game reporting.
-
 
 Clean up:
 
@@ -32,7 +35,6 @@ Testing:
 
   * Add log and debugging infrastructure.
   * Setup automated regression testing.
-  * Test perft in middle and end game.
 
 Move generation:
 
@@ -40,9 +42,7 @@ Move generation:
 
 Session
 
-  * Implement command interpreter.
   * Implement Xboard protocol.
-  * Implement Universal Chess Interface (UCI)
 
 Search
 
@@ -57,8 +57,8 @@ Search
   * Aspiration windows
   * Transposition tables.
   * Static Exchange Evaluation (SEE) for capture ordering.
+  * Null move heuristic
 
-  ??? Negascout
   ??? MTD(f)
 
 Eval

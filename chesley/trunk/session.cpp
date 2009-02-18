@@ -37,14 +37,11 @@ bool          Session::running;
 
 const char *Session::prompt = "> ";
 
-ofstream log;
-
 /*********/
 /* State */
 /*********/
 
 Board Session::board;
-Status Session::status;
 Search_Engine Session::se;
 Color Session::our_color;
 bool Session::op_is_computer;
@@ -64,15 +61,22 @@ Session::init_session () {
   tty = isatty (fileno (in));
 
   // Set ui.
-  ui = INTERACTIVE;
+  if (tty) 
+    {
+      ui = INTERACTIVE;
+    }
+  else 
+    {
+      ui = BATCH;
+      prompt = (char *) 0;
+    }
 
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  status = GAME_IN_PROGRESS;
-  se = Search_Engine (8);
+  se = Search_Engine (4);
   op_is_computer = false;
-  running = true;
+  running = false;
 
   // Setup periodic alarm.
   halt = 0;
@@ -107,7 +111,7 @@ Session::handle_interrupt (int sig) {
 // Write the command prompt.
 void Session::write_prompt ()
 {
-  if (prompt) {
+  if (prompt && (ui == INTERACTIVE)) {
     fprintf (out, "%s", prompt);
     fflush (out);
   }
@@ -120,61 +124,80 @@ void Session::write_prompt ()
 void
 Session::cmd_loop () 
 {
-  fprintf (out, PROLOGUE);
-  write_prompt ();
- 
-  while (true)
+  bool done = false;
+
+  if (ui == INTERACTIVE)
     {
-      char *line = get_line (in);
-      
-      // Break out of command loop at end of input.
-      if (!line || !execute (line))
-	{
-	  if (line) 
-	    {
-	      free (line);
-	    }
-	  break;
-	}
-      
-      write_prompt ();
-
-#if 0      
-      // Loop until input is ready.
-      while (running && !fdready (fileno (in)) && status == GAME_IN_PROGRESS) 
-	{
-	  if (board.flags.to_move == our_color)
-	    {
-	      // Send a move to the client.
-	      try 
-		{
-		  Move best = se.choose_move (board);
-		  board.apply (best);
-		  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
-		}
-	      catch (Game_Over s)
-		{
-		  handle_end_of_game (s.status);
-		  break;
-		}
-	    }
-
-	  // Don't busy wait for input.
-	  usleep (1000);
-	}
-#endif
+      fprintf (out, PROLOGUE);
     }
 
+  write_prompt (); 
+  while (true)
+    {
+      // Block for input.
+      char *line = get_line (in);
+      //      cerr << "Chesley got: " << line << endl;
+
+
+      if ((!line) || (!execute (line)))
+	{
+	  done = true;
+	}
+
+      if (line) 
+	{
+	  free (line);
+	}
+
+      if (done)
+	{
+	  break;
+	}
+
+      write_prompt ();
+      
+      // Loop until input it ready.
+      while (!fdready (fileno (in)))
+	{
+	  work ();
+	  usleep (100000);
+	}
+    }
 }
 
-/*****************************************/
-/* Report and clean up when a game ends. */
-/*****************************************/
+/****************/
+/* Flow control */
+/****************/
 
+// Control is turned over to us, either to make a move, ponder,
+// analyze, etc.
+void 
+Session::work () 
+{
+  if (running 
+      && board.flags.status == GAME_IN_PROGRESS 
+      && board.flags.to_move == our_color)
+    {
+      // Send a move to the client.
+      try 
+	{
+	  Move best = se.choose_move (board);
+	  board.apply (best);
+	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
+	}
+      catch (Game_Over s)
+	{
+	  handle_end_of_game (s.status);
+	}
+    }
+
+  return;
+}
+
+// Report and clean up when a game ends.
 void 
 Session::handle_end_of_game (Status s) {
-  status = s;
-   
+
   switch (s)
     {
     case GAME_WIN_WHITE:
@@ -192,6 +215,8 @@ Session::handle_end_of_game (Status s) {
     default:
       assert (0);
     }
+
+  running = false;
 }
 
 /*************************************/
@@ -270,6 +295,16 @@ Session::execute (char *line) {
 	  return true;
 	}
 
+      /**************************************/
+      /* EPD command execute an EPD string. */
+      /**************************************/
+
+      if (token == "epd")
+	{
+	  epd (tokens);
+	  return true;
+	}
+
       /******************************************************/
       /* Force command to prevent computer generated moves. */
       /******************************************************/
@@ -323,7 +358,7 @@ Session::execute (char *line) {
 
       if (token == "setboard") 
 	{
-	  board = Board::from_fen (rest (tokens));
+	  board = Board::from_fen (rest (tokens), false);
 	}
 
       /*************************/
@@ -332,8 +367,6 @@ Session::execute (char *line) {
 
       if (token == "test")
 	{
-	  // Wrong at ply 3.
-	  board = Board::from_fen ("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1");
 	}
 
       /****************/
