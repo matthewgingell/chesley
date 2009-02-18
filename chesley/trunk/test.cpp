@@ -130,7 +130,7 @@ Session::epd (const string_vector &args)
 	      else
 		{
 		  int depth = to_int (opcode [1]);
-		  int expecting = to_int (operand);
+		  uint64 expecting = to_int (operand);
 
 		  /*
 		    Format: <PASS|FAIL> <DEPTH> <EXPECTED> <GOT> <ELAPSED> <NPS>
@@ -138,12 +138,13 @@ Session::epd (const string_vector &args)
 
 		  Board b = Board::from_fen (fen, true);
 		  double start = user_time ();
-		  int p = b.perft (depth);
+		  uint64 p = b.perft (depth);
 		  double elapsed = user_time () - start;
 		  bool pass = (p == expecting);
 
-		  fprintf (out, "%s %i %i %i %f %f\n", pass ? "PASS" : "FAIL", 
-			   depth, expecting, p, elapsed, p / elapsed);
+		  fprintf (out, "%s %i %llu %llu %.2f\n",
+			   pass ? "PASS" : "FAIL", 
+			   depth, expecting, p, elapsed);
 
 		  if (!pass)
 		    {

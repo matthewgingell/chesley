@@ -6,6 +6,13 @@
 # Matthew Gingell
 # gingell@adacore.com
 
+
+
+###################################
+#           Perft tests           #
+###################################
+
+
 puts "Running move generation correctness tests."
 
 c = IO.popen("./chesley", "r+")
@@ -16,3 +23,5 @@ c.puts("quit")
 for result in c
   puts(result)
 end
+
+puts("done.")

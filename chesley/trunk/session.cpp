@@ -246,7 +246,7 @@ Session::execute (char *line) {
     {
       string token = downcase (tokens[0]);
 
-      if (token == "apply" && count > 1 && board.is_calg (tokens[1]))
+      if (token == "apply" && count > 1)
 	{
 	  running = false;
 	  Move m = board.from_calg (tokens[1]);	  
