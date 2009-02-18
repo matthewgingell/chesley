@@ -17,13 +17,6 @@
 /* Exception to raise if the game is over. */
 /*******************************************/
 
-struct Game_Over {
-  Game_Over (Status status) : status (status) {}
-  Status status;
-};
-
-std::ostream & operator<< (std::ostream &os, Game_Over e);
-
 struct Search_Engine {
 
   /************************************/
@@ -58,9 +51,8 @@ struct Search_Engine {
   Move choose_move (Board &b);
 
   // Score a move dynamically.
-  int32 score (const Board &b, int depth, 
-	       int alpha = -INFINITY, 
-	       int beta = INFINITY);
+  int32 score 
+  (const Board &b, int depth, int alpha = -INFINITY, int beta = INFINITY);
 
 };
 

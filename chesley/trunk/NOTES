@@ -11,3 +11,51 @@ p (5)    rnbqkb1r/ppppp1pp/7n/4Pp2/8/8/PPPP1PPP/RNBQKBNR w KQkq f6 0 3
 
 epd rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - D1 20; D2 400; D3 8902; D4 197281; D5 4865609; D6 119060324
 
+
+
+  //      FILE
+  // 0 1 2 3 4 5 6 7
+    "r n b q k b n r"  // 7
+    "p p p p p p p p"  // 6
+    ". . . . . . . ."  // 5 R
+    ". . . . . . . ."  // 4 A
+    ". . . . . . . ."  // 3 N
+    ". . . . . . . ."  // 2 K
+    "P P P P P P P P"  // 1
+    "R N B Q K B N R"; // 0
+
+With in_check return false:
+
+> startpos 
+> perft 6
+Computing perft to depth 6...
+moves = 120921506
+9.71 seconds elapsed.
+12447144.40 moves/second.
+
+With slow in_check:
+
+> startpos
+> perft 6
+Computing perft to depth 6...
+moves = 119060324
+17.70 seconds elapsed.
+6725640.27 moves/second.
+
+With fast in_check:
+
+Chesley! v0.01
+> perft 6
+Computing perft to depth 6...
+moves = 119060324
+12.28 seconds elapsed.
+9692593.08 moves/second.
+
+
+
+Crafty does:
+
+White(1): perft 6
+total moves=119060324  time=8.51
+
+arg!!!!

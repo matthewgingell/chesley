@@ -74,7 +74,7 @@ Session::init_session () {
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (4);
+  se = Search_Engine (6);
   op_is_computer = false;
   running = false;
 
@@ -136,23 +136,9 @@ Session::cmd_loop ()
     {
       // Block for input.
       char *line = get_line (in);
-      //      cerr << "Chesley got: " << line << endl;
-
-
-      if ((!line) || (!execute (line)))
-	{
-	  done = true;
-	}
-
-      if (line) 
-	{
-	  free (line);
-	}
-
-      if (done)
-	{
-	  break;
-	}
+      if ((!line) || (!execute (line))) done = true;
+      if (line) free (line);
+      if (done) break;
 
       write_prompt ();
       
@@ -175,19 +161,19 @@ void
 Session::work () 
 {
   if (running 
-      && board.flags.status == GAME_IN_PROGRESS 
+      && board.get_status () == GAME_IN_PROGRESS
       && board.flags.to_move == our_color)
     {
-      // Send a move to the client.
-      try 
+      // If the game isn't over yet, send a move to the client.
+      Move best = se.choose_move (board);
+      board.apply (best);
+      fprintf (out, "move %s\n", board.to_calg (best).c_str ());
+
+      Status s = board.get_status ();
+
+      if (s != GAME_IN_PROGRESS)
 	{
-	  Move best = se.choose_move (board);
-	  board.apply (best);
-	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
-	}
-      catch (Game_Over s)
-	{
-	  handle_end_of_game (s.status);
+	  handle_end_of_game (s);
 	}
     }
 
@@ -336,9 +322,10 @@ Session::execute (char *line) {
       
       if (token == "perft") 
 	{
-	  if (tokens.size () == 2)
+	  if (tokens.size () >= 2)
 	    {
-	      fprintf (out, "%lli\n", board.perft (to_int (tokens[1])));
+	      perft (tokens);
+	      // fprintf (out, "%lli\n", board.perft (to_int (tokens[1])));
 	      return true;
 	    }
 	}

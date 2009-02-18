@@ -212,14 +212,13 @@ Session::xbd_execute (char *line) {
 
       if (token == "usermove" && count > 1)
 	{
-	  try 
+	  Move m = board.from_calg (tokens[1]);
+
+	  board.apply (m);
+	  Status s = board.get_status ();
+	  if (s != GAME_IN_PROGRESS)
 	    {
-	      Move m = board.from_calg (tokens[1]);	  
-	      board.apply (m);
-	    }
-	  catch  (Game_Over s)
-	    {
-	      handle_end_of_game (s.status);
+	      handle_end_of_game (s);
 	    }
 	}
 

@@ -239,7 +239,6 @@ struct Board {
     unsigned b_can_q_castle  :1; // Black king and q-side rook unmoved.
     unsigned b_can_k_castle  :1; // Black king and k-side rook unmoved.
     unsigned en_passant      :6; // En Passant target square.
-    Status   status          :2; // GAME_IN_PROGRESS, etc.
   } flags;
   
   // Clocks
@@ -297,6 +296,15 @@ struct Board {
 
   // Compute a bitboard of every square color is attacking.
   bitboard attack_set (Color) const;
+
+  // Get the number of legal moves available from this position.
+  int move_count ();
+
+  // Get the status of the game.
+  Status get_status ();
+  
+  // Return whether color c is in check. 
+  bool in_check (Color c) const;
 
   // Return the color of a piece on a square.
   Color get_color (uint32 idx) const {
@@ -374,6 +382,20 @@ struct Board {
     return white;
   }
 
+  // Const version returns by copy.
+  bitboard
+  color_to_board (Color color) const {
+    switch (color) 
+      {
+      case WHITE: return white; break;
+      case BLACK: return black; break;
+      default: assert (0);
+      }
+
+    // Suppress gcc warning in -DNDEBUG case.
+    return white;
+  }
+
   // Clear a piece on the board.
   void 
   clear_piece (int at) {
@@ -414,20 +436,6 @@ struct Board {
 
   // Apply a move to this board.
   bool apply (const Move &m);
-
-  // Test whether color is in check at this position.
-  bool 
-  in_check (Color c) const
-  {
-    // Generate the attack set for the other color.
-    bitboard attacked = attack_set (invert_color (c));
-
-    // Find our king.
-    bitboard king = kings & (c == WHITE ? white : black);
-
-    // Return whether it's under attack.
-    return king & attacked;
-  }
 
   /**********/
   /* Boards */

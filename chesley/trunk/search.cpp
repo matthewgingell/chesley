@@ -11,28 +11,26 @@
 
 using namespace std;
 
-/*****************************/
-/* Game over exception type. */
-/*****************************/
-
-ostream & operator<< (ostream &os, Game_Over e) {
-  return os << "Game over with " << e.status;
-}
-
 // Select a move. Caller must check the value of b.flags.status after
 // this call, since it will be set and an exception raised if no moves
 // can be generated from this position.
 Move
 Search_Engine :: choose_move (Board &b) {
 
-  /***************************/
-  /* Find best scoring move. */
-  /***************************/
+  assert (b.get_status () == GAME_IN_PROGRESS);
+  
+  /***************************************/
+  /* Generate the set of avaiable moves. */
+  /***************************************/
 
   Move_Vector moves (b);
   Color c = b.flags.to_move;
   int best_score, best_index;
 
+  /*******************************************/
+  /* Return the move with the highest score. */
+  /*******************************************/
+  
   if (c == WHITE) 
     {
       best_score = -INFINITY;
@@ -41,7 +39,7 @@ Search_Engine :: choose_move (Board &b) {
     {
       best_score = +INFINITY;
     }
-
+  
   best_index = -1;
 
   for (int i = 0; i < moves.count; i++)
@@ -50,9 +48,7 @@ Search_Engine :: choose_move (Board &b) {
       if (child.apply (moves[i]))
 	{
 	  int s = score (child, 1, -INFINITY, INFINITY);
-
 	  moves[i].score = s;
-
 	  if ((c == WHITE && s > best_score) ||
 	      (c == BLACK && s < best_score))
 	    {
@@ -66,42 +62,7 @@ Search_Engine :: choose_move (Board &b) {
 	}
     }
 
-  /********************************************************************/
-  /* Handle end of game, raising an exception if there are no legal.  */
-  /* moves from this position.                                        */ 
-  /********************************************************************/
-
-  // If color has no legal moves, then the game is over.
-  if (best_index == -1)
-    {
-
-      if (b.in_check (c) && b.half_move_clock < 50)
-	{
-	  if (c == WHITE) 
-	    {
-	      b.flags.status = GAME_WIN_BLACK;
-	    }
-	  else 
-	    {
-	      b.flags.status = GAME_WIN_WHITE;
-	    }
-	}
-      else
-	{
-	  /* This isn't quite right, since we don't know if b has no
-	     children because the 50-move rule has expired or because
-	     it's in checkmate. For now, assume it's a draw. */
-
-	  b.flags.status = GAME_DRAW;
-	}
-      throw Game_Over (b.flags.status);
-    }
-  else
-    {
-      b.flags.status = GAME_IN_PROGRESS;
-      moves[best_index].score = best_score;
-      return moves[best_index];
-    }
+  return moves[best_index];
 }
 
 // Score a move using minimax with alpha-beta pruning.

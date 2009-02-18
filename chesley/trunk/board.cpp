@@ -198,9 +198,6 @@ Board::common_init (Board &b) {
   // Initialize en_passant status.
   b.flags.en_passant = 0;
 
-  // Initialize game state.
-  b.flags.status = GAME_IN_PROGRESS;
-
   // Initialize clocks.
   b.half_move_clock =
     b.full_move_clock = 0;
@@ -295,6 +292,90 @@ Board::attack_set (Color c) const {
     }
 
   return attacks;
+}
+
+// Get the number of legal moves available from this position.
+int 
+Board::move_count () {
+  return (Board_Vector (*this)).count;
+}
+
+// Get the status of the game. {
+Status 
+Board::get_status () {
+  if (move_count () > 0) return GAME_IN_PROGRESS;
+  if (in_check (WHITE)) return GAME_WIN_BLACK;
+  if (in_check (BLACK)) return GAME_WIN_WHITE;
+  return GAME_DRAW;
+}
+
+// Return whether color c is in check. 
+bool 
+Board::in_check (Color c) const
+{
+#if 0
+  // Generate the attack set for the other color.
+  bitboard attacked = attack_set (invert_color (c));
+  
+  // Find our king.
+  bitboard king = kings & (c == WHITE ? white : black);
+  
+  // Return whether it's under attack.
+  return king & attacked;
+#else
+
+  // Take advantage of the symmetry that: If a king could move like an
+  // X and capture an X, then that X is able to attack us and we are
+  // in check.
+
+  bitboard king = kings & color_to_board (c);
+  bitboard them = color_to_board (invert_color (c));
+  int from = bit_idx (king);
+
+  bitboard attacks;
+
+  // Are we attacked along a rank?
+  attacks = RANK_ATTACKS_TBL[from * 256 + occ_0 (from)];
+  if (attacks & (them & (queens | rooks))) return true;  
+
+  // Are we attack along a file?
+  attacks = FILE_ATTACKS_TBL[from * 256 + occ_90 (from)];
+  if (attacks & (them & (queens | rooks))) return true;  
+
+  // Are we attacked along a 45 degree diagonal.
+  attacks = DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)];
+  if (attacks & (them & (queens | bishops))) return true;  
+
+  // Are we attacked along a 135 degree diagonal.
+  attacks = DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)];
+    if (attacks & (them & (queens | bishops))) return true;  
+
+  // Are we attacked by a knight?
+  attacks = KNIGHT_ATTACKS_TBL[from];
+  if (attacks & (them & knights)) return true;
+
+  // Are we attacked by a king?
+  attacks = KING_ATTACKS_TBL[from];
+  if (attacks & (them & kings)) return true;
+
+  // Are we attacked by a pawn?
+  bitboard their_pawns = pawns & them;
+  if (c == WHITE) 
+    {
+      attacks = (((their_pawns & ~file (7)) >> 7)
+		 | ((their_pawns & ~file (0)) >> 9));
+    }
+  else
+    {
+      attacks = (((their_pawns & ~file (0)) << 7) 
+		 | ((their_pawns & ~file (7)) << 9));
+    }
+  
+  if (attacks & king) return true;
+
+  return false;
+  
+#endif
 }
 
 /********************/
@@ -760,7 +841,7 @@ Board::to_ascii () const {
       s << '-';
     }
 
-  s << ' ' << half_move_clock << ' ' << full_move_clock << endl << endl;
+  s << ' ' << half_move_clock << ' ' << full_move_clock << endl;
   
   // Dump a human readable ASCII art diagram of the board.
   for (int row = 7; row >= 0; row--) 
