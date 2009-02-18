@@ -13,7 +13,6 @@
 #include <iostream>
 #include <string>
 
-#include "bits64.hpp"
 #include "util.hpp"
 
 /*********/
@@ -79,10 +78,8 @@ struct Move {
   Move () {}
 
   Move (Kind k, uint32 f, uint32 t, Color c, Kind capture) :
-    kind (k), color (c), from (f), to (t)
-  {
+    kind (k), color (c), from (f), to (t) {
     assert (k != NULL_KIND);
-    
     score = 0;
     flags.capture = capture;
     flags.promote = (Kind) 0;
@@ -112,11 +109,11 @@ value (const Move &m) {
   switch (m.flags.capture) 
     {
     case NULL_KIND: return 0;
-    case PAWN:   return -1;
-    case ROOK:   return -5;
-    case KNIGHT: return -3;
-    case BISHOP: return -3;
-    case QUEEN:  return -9;
+    case PAWN:      return -1;
+    case ROOK:      return -5;
+    case KNIGHT:    return -3;
+    case BISHOP:    return -3;
+    case QUEEN:     return -9;
     default:     assert (0);
     }
   // Suppress gcc warning in -DNDEBUG case.

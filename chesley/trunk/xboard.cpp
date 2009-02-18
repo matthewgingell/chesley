@@ -210,7 +210,7 @@ Session::xbd_execute (char *line) {
       /* usermove command */
       /********************/
 
-      if (token == "usermove" && count > 1 && board.is_calg (tokens[1]))
+      if (token == "usermove" && count > 1)
 	{
 	  try 
 	    {

@@ -18,10 +18,13 @@ chesley: $(OBJS)
 play: chesley
 	xboard -debug -fcp ./chesley -size Large
 
+check: chesley
+	./run_tests.rb
+
 %.o : %.cpp *.hpp
 	$(CXX) $(CXXFLAGS) -c $<
 
 clean :
 	rm -rf chesley a.out *.o *.dSYM *~ TAGS *.gcda a.out Saturn*	\
 	      game.00* log.00* book.lrn position.bin position.lrn *.d	\
-	      /cores/core.* *.pgn *.fen
+	      /cores/core.* *.pgn *.fen \#*\#
