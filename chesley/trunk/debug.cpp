@@ -1,6 +1,6 @@
 /* 
-   This file implements various tests and commands for testing
-   Chesley.
+   This file implements various tests and commands for debugging and
+   testing Chesley.
 
    Matthew Gingell
    gingell@adacore.com
