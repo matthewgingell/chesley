@@ -110,6 +110,19 @@ operator<< (std::ostream &os, Color c) {
 const string Board::
 INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
+#if 0
+  //      FILE
+  // 0 1 2 3 4 5 6 7
+    "r n b q k b n r"  // 7
+    "p p p p p p p p"  // 6
+    ". . . . . . . ."  // 5 R
+    ". . . . . . . ."  // 4 A
+    ". . . . . . . ."  // 3 N
+    ". . . . . . . ."  // 2 K
+    "P P P P P P P P"  // 1
+    "R N B Q K B N R"; // 0
+#endif
+
 /*************************************/
 /* Initialization of static members. */
 /*************************************/
@@ -313,26 +326,14 @@ Board::get_status () {
 bool 
 Board::in_check (Color c) const
 {
-#if 0
-  // Generate the attack set for the other color.
-  bitboard attacked = attack_set (invert_color (c));
-  
-  // Find our king.
-  bitboard king = kings & (c == WHITE ? white : black);
-  
-  // Return whether it's under attack.
-  return king & attacked;
-#else
-
   // Take advantage of the symmetry that: If a king could move like an
   // X and capture an X, then that X is able to attack us and we are
   // in check.
 
   bitboard king = kings & color_to_board (c);
   bitboard them = color_to_board (invert_color (c));
-  int from = bit_idx (king);
-
   bitboard attacks;
+  int from = bit_idx (king);
 
   // Are we attacked along a rank?
   attacks = RANK_ATTACKS_TBL[from * 256 + occ_0 (from)];
@@ -370,12 +371,10 @@ Board::in_check (Color c) const
       attacks = (((their_pawns & ~file (0)) << 7) 
 		 | ((their_pawns & ~file (7)) << 9));
     }
-  
+
   if (attacks & king) return true;
 
   return false;
-  
-#endif
 }
 
 /********************/

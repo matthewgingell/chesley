@@ -74,7 +74,7 @@ Session::init_session () {
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (6);
+  se = Search_Engine (9);
   op_is_computer = false;
   running = false;
 

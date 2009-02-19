@@ -2,14 +2,11 @@ Bugs:
 
 Next items:
 
-  * Must be able to automatically test speed of move gen.
+  * Implement time control and iterative deepening.
+
 
   * Must have a good way of measuring search correctness, strength,
     and speed before we try to improved them.
-
-  Therefore:
-
-  * Implement EPD command. 
 
 Interface:
 

@@ -1,3 +1,13 @@
+Quiescence:
+
+In quiescence search only
+   king in check
+   capturing, 
+   promotion. 
+
+moves are expanded. 
+
+
 Searching for the best move:
 
 Do searchs need state?
