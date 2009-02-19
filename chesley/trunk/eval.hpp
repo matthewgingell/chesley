@@ -44,20 +44,20 @@ eval_material (const Board &b) {
   /* Evaluate material strength. */
   /*******************************/
 
-  score += PAWN_VAL * (count_bits (b.pawns & b.white) - 
-		       count_bits (b.pawns & b.black));
+  score += PAWN_VAL * (pop_count (b.pawns & b.white) - 
+		       pop_count (b.pawns & b.black));
   
-  score += ROOK_VAL * (count_bits (b.rooks & b.white) - 
-		       count_bits (b.rooks & b.black));
+  score += ROOK_VAL * (pop_count (b.rooks & b.white) - 
+		       pop_count (b.rooks & b.black));
   
-  score += KNIGHT_VAL * (count_bits (b.knights & b.white) - 
-			 count_bits (b.knights & b.black));
+  score += KNIGHT_VAL * (pop_count (b.knights & b.white) - 
+			 pop_count (b.knights & b.black));
   
-  score += BISHOP_VAL * (count_bits (b.bishops & b.white) - 
-			 count_bits (b.bishops & b.black));
+  score += BISHOP_VAL * (pop_count (b.bishops & b.white) - 
+			 pop_count (b.bishops & b.black));
   
-  score += QUEEN_VAL * (count_bits (b.queens & b.white) - 
-			count_bits (b.queens & b.black));
+  score += QUEEN_VAL * (pop_count (b.queens & b.white) - 
+			pop_count (b.queens & b.black));
 
   return score;
 }
@@ -90,7 +90,7 @@ eval (const Board &b, int depth = 0) {
 
   // This appears to do no good at all.
 #if 0
-  score += 5 * (count_bits (b.attack_set (WHITE)) - count_bits (b.attack_set (BLACK)));
+  score += 5 * (pop_count (b.attack_set (WHITE)) - pop_count (b.attack_set (BLACK)));
 #endif 
 
   // Encourage preserving the right to castle.

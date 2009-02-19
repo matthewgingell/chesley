@@ -25,9 +25,9 @@ inline bits64 set_bit    (bits64, int) IS_CONST;
 inline bits64 clear_bit  (bits64, int) IS_CONST;
 inline bits64 clear_lsb  (bits64)      IS_CONST;
 inline bits64 clear_msbs (bits64)      IS_CONST;
-inline int32  bit_idx    (bits64)      IS_CONST;
-inline uint32 count_bits (bits64)      IS_CONST;
-inline byte   get_byte(bits64, int)    IS_CONST;
+inline uint32 bit_idx    (bits64)      IS_CONST;
+inline uint32 pop_count  (bits64)      IS_CONST;
+inline byte   get_byte   (bits64, int) IS_CONST;
 static void   print_bits (bits64)      IS_UNUSED;
 
 // Test a bit.
@@ -52,7 +52,7 @@ clear_msbs (bits64 b) { return b & -b; }
 
 // Return the bit index of the least significant bit. Returns -1 in
 // the case b is 0x0.
-inline int32
+inline uint32
 bit_idx (bits64 b) {
 #ifdef __GNUC__
   // Using __builtin_ffsll is a surprisingly big win here.
@@ -68,7 +68,7 @@ bit_idx (bits64 b) {
 
 // Count the number of bits set in b.
 inline u_int32_t 
-count_bits (bits64 b) {
+pop_count (bits64 b) {
   // This is a big win over __builtin_popcount, at 
   // least for our purposes with g++ 4.4.
   uint32 n;

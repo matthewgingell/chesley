@@ -27,10 +27,11 @@ Session::bench (const string_vector &tokens) {
   double start_time = user_time (); 
   se.score_count = 0;
   se.max_depth = depth;
-  se.choose_move (board);
+  Move m = se.choose_move (board);
   double elapsed = user_time () - start_time;
   
-  fprintf (out, "Best move at depth %i.\n", depth); 
+  fprintf (out, "Best move at depth %i: %s.\n", 
+	   depth, board.to_calg (m).c_str ());
   fprintf (out, "%lli calls to score.\n", se.score_count); 
   fprintf (out, "%.2f seconds elapsed.\n", elapsed);
   fprintf (out, "%.2f calls/second.\n", ((double) se.score_count) / elapsed);
