@@ -16,7 +16,7 @@ chesley: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
 
 play: chesley
-	xboard -debug -fcp ./chesley -size Large
+	xboard -debug -fcp ./chesley -size Medium
 
 check: chesley
 	./run_tests.rb

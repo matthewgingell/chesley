@@ -11,9 +11,10 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <vector>
 #include <sys/resource.h>
 #include <sys/select.h>
+#include <sys/time.h>
+#include <vector>
 
 /* Utility macros. */
 
@@ -96,8 +97,11 @@ static char *get_line (FILE *in) IS_UNUSED;
 /* Time and timers. */
 /********************/
 
-// Return the amount of user time we have consumed in microseconds. 
-static double user_time () IS_UNUSED;
+// Return the time in milliseconds since the epoch. 
+static uint64 mclock () IS_UNUSED;
+
+// Return the amount of cpu time used in milliseconds.
+static uint64 cpu_time () IS_UNUSED;
 
 /**************************/
 /* Generic sorting inline */
@@ -228,39 +232,6 @@ tokenize (const std::string &s) {
     }
 
   return tokens;
-
-#if 0
-  uint32 first, last;
-
-
-  first = last = 0;
-  while (1)
-    {
-      // Find begining of token.
-      for (first = last; 
-	   isspace (s[first]) && first < s.length(); 
-	   first++);
-
-      // Find end of token.
-      for (last = first; 
-	   !isspace (s[last]) && last < s.length(); 
-	   last++);
-
-      // Collect token.
-      if (first != last) 
-	{ 
-	  tokens.push_back (s.substr (first, last - first));
-	}
-
-      // Break at end of input.
-      if (last == s.length()) 
-	{
-	  break;
-	}
-    }
-#endif
-
-  return tokens;
 }
 
 // Return a slice of the string_vector, from 'from' to 'to' inclusive.
@@ -356,15 +327,24 @@ static char *get_line (FILE *in) {
 /* Time and timers. */
 /********************/
 
-// Return the amount of user time we have consumed in microseconds. 
-static double 
-user_time () {
-  struct rusage ru;
+// Return the time in milliseconds since the epoch. 
+static uint64 
+mclock () {
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return 
+    ((uint64) tv.tv_sec) * 1000 + 
+    ((uint64) tv.tv_usec) / 1000;
+}
 
+// Return the amount of cpu time used in milliseconds.
+static uint64
+cpu_time () {
+  struct rusage ru;
   getrusage (RUSAGE_SELF, &ru);
   return 
-    ((double) ru.ru_utime.tv_sec)  + 
-    ((double) ru.ru_utime.tv_usec) / (1000L * 1000L);
+    ((uint64) ru.ru_utime.tv_sec) * 1000
+    + ((uint64) ru.ru_utime.tv_usec) / 1000;
 }
 
 /**************************/
@@ -415,8 +395,8 @@ quick_sort (T &items) {
   quick_sort_in_place (items, 0, count (items) - 1);
 }
 
-// Good old bubble sort! Client type must 1) define a function count, 2)
-// define a function value and 3) be accessible with operator[].
+// Bubble sort. Client type must 1) define a function count, 2) define
+// a function value and 3) be accessible with operator[].
 template <typename T> 
 inline void 
 bubble_sort (T &items) {
@@ -438,7 +418,9 @@ bubble_sort (T &items) {
   while (!done);
 }
 
-// Insertion sort implementation. 
+// Insertion sort implementation.  Client type must 1) define a
+// function count, 2) define a function value and 3) be accessible
+// with operator[].
 template <typename V, typename I> 
 inline void 
 insertion_sort (V &items) {
