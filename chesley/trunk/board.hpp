@@ -41,10 +41,7 @@ enum Color { WHITE = 1, NULL_COLOR = 0, BLACK = -1 };
 
 std::ostream & operator<< (std::ostream &, Color);
 
-inline Color 
-invert_color (Color c) {
-  return (Color) -c;
-}
+inline Color invert_color (Color c) { return (Color) -c; }
 
 /*****************/
 /*  Status type  */
@@ -298,7 +295,7 @@ struct Board {
   bitboard attack_set (Color) const;
 
   // Get the number of legal moves available from this position.
-  int move_count ();
+  int child_count ();
 
   // Get the status of the game.
   Status get_status ();

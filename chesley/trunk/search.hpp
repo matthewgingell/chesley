@@ -25,6 +25,7 @@ struct Search_Engine {
 
   Search_Engine (int max_depth = 4) : max_depth (max_depth) {
     assert (max_depth > 0);
+    interrupt_search = false;
     score_count = 0;
   }
   
@@ -44,6 +45,9 @@ struct Search_Engine {
   /************/
   /* Queries. */
   /************/
+
+  // If set true, the searh should conclude as quickly as possible.
+  bool interrupt_search;
 
   // Select a move. Caller must check the value of b.flags.status
   // after this call, since it will be set and an exception raised if

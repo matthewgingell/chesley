@@ -1,6 +1,6 @@
 /* 
-   This file provides the Session object, representing a Chesley's session
-   over the Universal Chess Interface (UCI).
+   This file provides the Session object, representing a Chesley's
+   session over the Universal Chess Interface (UCI).
 
    Matthew Gingell
    gingell@adacore.com
@@ -29,11 +29,11 @@ using namespace std;
 /*********************/
 
 Session::UI   Session::ui;
-bool          Session::halt;
 FILE         *Session::in;
 FILE         *Session::out;
 bool          Session::tty;
 bool          Session::running;
+uint64        Session::timeout;
 
 const char *Session::prompt = "> ";
 
@@ -42,7 +42,7 @@ const char *Session::prompt = "> ";
 /*********/
 
 Board Session::board;
-Search_Engine Session::se;
+Search_Engine Session::se (5);
 Color Session::our_color;
 bool Session::op_is_computer;
 
@@ -74,19 +74,18 @@ Session::init_session () {
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (9);
+  se = Search_Engine (6);
   op_is_computer = false;
   running = false;
 
   // Setup periodic alarm.
-  halt = 0;
   struct itimerval timer;
-  timer.it_value.tv_sec = 1;
-  timer.it_value.tv_usec = 0;
-  timer.it_interval.tv_sec = 1;
-  timer.it_interval.tv_usec = 0;
+  timer.it_value.tv_sec = 0;
+  timer.it_value.tv_usec = 10000;
+  timer.it_interval.tv_sec = 0;
+  timer.it_interval.tv_usec = 10000;
   setitimer(ITIMER_REAL, &timer, NULL);
-  signal (SIGALRM, handle_interrupt);
+  signal (SIGALRM, handle_alarm);
 
   return;
 }
@@ -97,7 +96,12 @@ Session::init_session () {
 /*******************************************************************/
 
 void 
-Session::handle_interrupt (int sig) {
+Session::handle_alarm (int sig) {
+
+  // Interrupt an ongoing search when time has elapsed.  
+  if (mclock ()  > timeout) se.interrupt_search = true;
+
+#if 0
   if (fdready (fileno (in)))
     {
       halt = true;
@@ -106,6 +110,7 @@ Session::handle_interrupt (int sig) {
     {
       halt = false;
     }
+#endif
 }
 
 // Write the command prompt.
@@ -115,6 +120,19 @@ void Session::write_prompt ()
     fprintf (out, "%s", prompt);
     fflush (out);
   }
+}
+
+/*************/
+/* Searching */
+/*************/
+
+Move Session::get_move () {
+  timeout = mclock () + 90 * 1000.0;
+
+  cerr << "starting search: " << mclock () << endl;
+  Move m = se.choose_move (board);
+  cerr << "  ending search: " << mclock () << endl;
+  return m;
 }
 
 /***************************/
@@ -136,6 +154,9 @@ Session::cmd_loop ()
     {
       // Block for input.
       char *line = get_line (in);
+
+      cerr << "Chelsey got: " << line << endl;
+
       if ((!line) || (!execute (line))) done = true;
       if (line) free (line);
       if (done) break;
@@ -164,10 +185,13 @@ Session::work ()
       && board.get_status () == GAME_IN_PROGRESS
       && board.flags.to_move == our_color)
     {
-      // If the game isn't over yet, send a move to the client.
-      Move best = se.choose_move (board);
-      board.apply (best);
-      fprintf (out, "move %s\n", board.to_calg (best).c_str ());
+      // If the game isn't over yet, generate a move and send it to
+      // the client.
+      Move best = get_move ();
+      if (board.apply (best))
+	{
+	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
+	}
 
       Status s = board.get_status ();
 
@@ -291,9 +315,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /******************************************************/
-      /* Force command to prevent computer generated moves. */
-      /******************************************************/
+      /*******************************************************/
+      /* Force command to prevent computer generating moves. */
+      /*******************************************************/
 
       if (token == "force") 
 	{
@@ -346,14 +370,6 @@ Session::execute (char *line) {
       if (token == "setboard") 
 	{
 	  board = Board::from_fen (rest (tokens), false);
-	}
-
-      /*************************/
-      /* Perform various tests */
-      /*************************/
-
-      if (token == "test")
-	{
 	}
 
       /****************/

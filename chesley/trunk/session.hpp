@@ -34,10 +34,6 @@ struct Session {
   // Enter the command loop. Control does not return to the caller
   // until the user session is over.
   static void cmd_loop ();
-  
-  // Indicate to clients that control should be returned to the
-  // command loop as soon as possible.
-  static bool halt;
 
   /***************/
   /* Game state. */
@@ -73,8 +69,8 @@ private:
   static const char *prompt;
   static bool tty;
   
-  // Handle a timer interrupt.
-  static void handle_interrupt (int sig);
+  // Handle an alarm signal.
+  static void handle_alarm (int sig);
   
   // Write the command prompt.
   static void write_prompt ();
@@ -98,6 +94,13 @@ private:
   // Control is turned over to us, either to make a move, ponder,
   // analyze, etc.
   static void work ();
+
+  // Time in milliseconds since the epoch to interrupt an ongoing
+  // search.
+  static uint64 timeout; 
+  
+  // Initiate a timed search.
+  static Move get_move ();
 
   // Report and clean up when a game ends.
   static void handle_end_of_game (Status s);

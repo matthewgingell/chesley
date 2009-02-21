@@ -309,14 +309,14 @@ Board::attack_set (Color c) const {
 
 // Get the number of legal moves available from this position.
 int 
-Board::move_count () {
+Board::child_count () {
   return (Board_Vector (*this)).count;
 }
 
 // Get the status of the game. {
 Status 
 Board::get_status () {
-  if (move_count () > 0) return GAME_IN_PROGRESS;
+  if (child_count () > 0) return GAME_IN_PROGRESS;
   if (in_check (WHITE)) return GAME_WIN_BLACK;
   if (in_check (BLACK)) return GAME_WIN_WHITE;
   return GAME_DRAW;
@@ -326,7 +326,7 @@ Board::get_status () {
 bool 
 Board::in_check (Color c) const
 {
-  // Take advantage of the symmetry that: If a king could move like an
+  // Take advantage of the symmetry that if a king could move like an
   // X and capture an X, then that X is able to attack us and we are
   // in check.
 

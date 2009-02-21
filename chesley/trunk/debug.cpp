@@ -24,18 +24,11 @@ Session::bench (const string_vector &tokens) {
       depth = to_int (tokens[1]);
     }
 
-  double start_time = user_time (); 
-  se.score_count = 0;
   se.max_depth = depth;
   Move m = se.choose_move (board);
-  double elapsed = user_time () - start_time;
-  
   fprintf (out, "Best move at depth %i: %s.\n", 
 	   depth, board.to_calg (m).c_str ());
-  fprintf (out, "%lli calls to score.\n", se.score_count); 
-  fprintf (out, "%.2f seconds elapsed.\n", elapsed);
-  fprintf (out, "%.2f calls/second.\n", ((double) se.score_count) / elapsed);
-  
+
   return true;
 }
 
@@ -54,13 +47,11 @@ Session::perft (const string_vector &tokens)
 
   fprintf (out, "Computing perft to depth %i...\n", depth);
 
-  double start = user_time (); 
+  uint64 start = cpu_time();
   uint64 count = board.perft (depth);
-  double elapsed = user_time () - start;
+  uint64 elapsed = cpu_time() - start;
   fprintf (out, "moves = %lli\n", count); 
-  fprintf (out, "%.2f seconds elapsed.\n", elapsed);
-  fprintf (out, "%.2f moves/second.\n", ((double) count) / elapsed);  
-
+  fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
   return true;
 }
 
@@ -73,7 +64,7 @@ Session::play_self (const string_vector &tokens)
   while (board.get_status () == GAME_IN_PROGRESS)
     {
       cerr << board << endl << endl;
-      Move m = se.choose_move (board);
+      Move m = get_move ();
       board.apply (m);
     }
 
@@ -136,14 +127,12 @@ Session::epd (const string_vector &args)
 		  */
 
 		  Board b = Board::from_fen (fen, true);
-		  double start = user_time ();
 		  uint64 p = b.perft (depth);
-		  double elapsed = user_time () - start;
 		  bool pass = (p == expecting);
 
 		  fprintf (out, "%s %i %llu %llu %.2f\n",
 			   pass ? "PASS" : "FAIL", 
-			   depth, expecting, p, elapsed);
+			   depth, expecting, 0, 0);
 
 		  if (!pass)
 		    {
