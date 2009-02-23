@@ -1,59 +1,14 @@
-Would love to have alpha beta return / compute principle variation.
+Scoring end games:
 
- - Similar but different objectives
+8/8/8/1N6/8/1K6/3k4/Q3R3 w - - 0 0
 
-   * Score a position.
-   * Score a move.
-   * Find the best move from a position.
-   * Find the child with the highest core.
-   * Find the principle variation.
+. . . . . . . .
+. . . . . . . .
+. . . . . . . .
+. N . . . . . .
+. . . . . . . .
+. K . . . . . .
+. . . k . . . .
+Q . . . R . . .
 
-
-integer       i
-position      p
-move          m
-move vector   <m>
-pos. vector   <p>
-
-p (m) => p
-
-
-apply (p, m) => p'
-moves (p)    => <m>
-score (p)    => i
-    
-
-for m in moves (p)
-  p' = apply (p, m)
-  
-
-gray-matter:
-
-void search_base::extract_pv()
-{
-
-/// Extract the principal variation from the transposition table.
-
-    move_t m;
-    pv.clear();
-
-    for (table_ptr->probe(board_ptr->get_hash(), 0, EXACT, &m); 
-         !m.is_null() && board_ptr->get_status(true) == IN_PROGRESS;
-         table_ptr->probe(board_ptr->get_hash(), 0, EXACT, &m))
-    {
-        pv.push_back(m);
-        board_ptr->make(m);
-        if (pv.size() == (unsigned) max_depth)
-            break;
-    }
-    for (size_t j = 0; j < pv.size(); j++)
-        board_ptr->unmake();
-}
-
-// Lookup and apply best move in transposition table repeatedly to
-// extract principle variation.
-
-for m = lookup (board); move != null; m = lookup (board)
-   board = board.apply (m)
-
-have alphabeta return a <move, score> type!
+3r3k/1p1q1ppp/3b4/1N1P1p2/Q1Pp1PB1/3n2P1/PP1B2KP/4R3 w - - bm Bxf5;id "CPF.009 Lordking 3.3 vs LDB 2.0";

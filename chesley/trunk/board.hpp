@@ -74,8 +74,8 @@ std::ostream & operator<< (std::ostream &os, Kind k);
 struct Move {
   Move () {}
 
-  Move (Kind k, uint32 f, uint32 t, Color c, Kind capture) :
-    kind (k), color (c), from (f), to (t) {
+  Move (Kind k, uint32 f, uint32 t, Color c, Kind capture, uint32 score = 0) :
+    kind (k), color (c), from (f), to (t), score (score) {
     assert (k != NULL_KIND);
     score = 0;
     flags.capture = capture;
@@ -83,7 +83,7 @@ struct Move {
     flags.castle_qs = 0;
     flags.castle_ks = 0;
   }
-  
+
   struct {
     Kind     capture   : 4; // Kind being captured.
     Kind     promote   : 4; // Kind being promoted to.
@@ -98,6 +98,11 @@ struct Move {
 
   int32  score;      // Score for this move.
 };
+
+inline Move operator- (Move m) {
+  m.score = -m.score;
+  return m;
+}
 
 // Estimate the value of this move as zero or the value of the piece
 // being captured.
@@ -202,6 +207,10 @@ struct Board {
   static byte *diag_bitpos_135;
   static byte *diag_widths_135;
 
+  static uint64 *zobrist_keys;
+  static uint64  zobrist_key_white;
+  static uint64  zobrist_key_black;
+
   /***************************************************/
   /* Bitboards representing the state of the board.  */
   /***************************************************/
@@ -262,6 +271,13 @@ struct Board {
 
   // Construct a board from the standard starting position.
   static Board startpos ();
+
+  /***********/
+  /* Hashing */
+  /***********/
+
+  // Incrementally updated hash key for this position.
+  uint64 hash;
 
   /**********/
   /* Output */
@@ -547,6 +563,9 @@ struct Board {
   static bitboard *init_file_attacks_tbl ();
   static bitboard *init_45d_attacks_tbl ();
   static bitboard *init_135d_attacks_tbl ();
+
+  // Zobrist keys.
+  static void init_zobrist_keys ();
 
   /***********/
   /* Testing */

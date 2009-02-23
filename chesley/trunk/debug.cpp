@@ -16,7 +16,6 @@ using namespace std;
 // Generate a benchmark. Calculate the best move to depth N.
 bool 
 Session::bench (const string_vector &tokens) {
-  board = Board::startpos ();
   int depth = 6;
   
   if (tokens.size () > 1 && is_number (tokens[1]))
@@ -24,11 +23,18 @@ Session::bench (const string_vector &tokens) {
       depth = to_int (tokens[1]);
     }
 
-  se.max_depth = depth;
-  Move m = se.choose_move (board);
-  fprintf (out, "Best move at depth %i: %s.\n", 
-	   depth, board.to_calg (m).c_str ());
+  timeout = mclock () + 1000.0 * 1000.0 * 1000.0;
+  
+  uint64 start = cpu_time();
+  Move m = se.choose_move (board, depth);
+  uint64 elapsed = cpu_time() - start;
+  //  fprintf (out, "Best move at depth %i: %s.\n", 
+  //	   depth, board.to_calg (m).c_str ());
 
+  cerr << "Best move to depth " << depth << ":" << endl;
+  cerr << m << endl;
+
+  fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
   return true;
 }
 
