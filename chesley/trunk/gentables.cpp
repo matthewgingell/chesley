@@ -1,11 +1,3 @@
-/* 
-   gentables.cpp
-
-
-   Matthew Gingell
-   gingell@adacore.com
-*/
-
 #include "chesley.hpp"
 
 /*
@@ -32,6 +24,10 @@
 */
 
 #include "chesley.hpp"
+
+/*****************************************************************/
+/* Generate tables and masks for maintaining rotated bit boards. */
+/*****************************************************************/
 
 /*
   Masks for unrotated bitboards. This is trivial but provided for the
@@ -424,6 +420,10 @@ void print_masks (bitboard *b) {
     print_bits (b[i]);
 }
 
+/**********************************************/
+/* Generate tables for generating piece moves */
+/**********************************************/
+
 // Precompute bitboards for rank attack.
 bitboard *
 Board::init_rank_attacks_tbl () {
@@ -671,4 +671,23 @@ Board::init_135d_attacks_tbl () {
     }
 
   return rv;
+}
+
+/*********************************************************************/
+/* Generate tables of random bit-vectors for use as Zobrist hashing. */
+/*********************************************************************/
+
+uint64 Board::zobrist_key_white = 0;
+uint64 Board::zobrist_key_black = 0;
+
+void
+Board::init_zobrist_keys () {
+  Board::zobrist_key_white = random64();
+  Board::zobrist_key_black = random64();
+#if 0
+  for (int i = 0; i < 3; i++)
+    for (int j = 0; j < 6; j++)
+      for (int k = 0; k < 64; k++)
+	zobrist_keys[i][j][k] = random64();
+#endif
 }

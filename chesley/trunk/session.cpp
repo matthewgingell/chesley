@@ -42,7 +42,7 @@ const char *Session::prompt = "> ";
 /*********/
 
 Board Session::board;
-Search_Engine Session::se (5);
+Search_Engine Session::se;
 Color Session::our_color;
 bool Session::op_is_computer;
 
@@ -74,7 +74,7 @@ Session::init_session () {
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (6);
+  se = Search_Engine (100);
   op_is_computer = false;
   running = false;
 
@@ -97,20 +97,9 @@ Session::init_session () {
 
 void 
 Session::handle_alarm (int sig) {
-
   // Interrupt an ongoing search when time has elapsed.  
-  if (mclock ()  > timeout) se.interrupt_search = true;
-
-#if 0
-  if (fdready (fileno (in)))
-    {
-      halt = true;
-    }
-  else
-    {
-      halt = false;
-    }
-#endif
+  if (mclock () > timeout || fdready (fileno (in)))
+      se.interrupt_search = true;
 }
 
 // Write the command prompt.
@@ -127,11 +116,8 @@ void Session::write_prompt ()
 /*************/
 
 Move Session::get_move () {
-  timeout = mclock () + 90 * 1000.0;
-
-  cerr << "starting search: " << mclock () << endl;
+  timeout = mclock () + 15 * 1000.0;
   Move m = se.choose_move (board);
-  cerr << "  ending search: " << mclock () << endl;
   return m;
 }
 
@@ -154,8 +140,6 @@ Session::cmd_loop ()
     {
       // Block for input.
       char *line = get_line (in);
-
-      cerr << "Chelsey got: " << line << endl;
 
       if ((!line) || (!execute (line))) done = true;
       if (line) free (line);
@@ -181,20 +165,20 @@ Session::cmd_loop ()
 void 
 Session::work () 
 {
+  // If the game isn't over yet, generate a move and send it to
+  // the client.
   if (running 
       && board.get_status () == GAME_IN_PROGRESS
       && board.flags.to_move == our_color)
     {
-      // If the game isn't over yet, generate a move and send it to
-      // the client.
       Move best = get_move ();
+
       if (board.apply (best))
 	{
 	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
 	}
 
       Status s = board.get_status ();
-
       if (s != GAME_IN_PROGRESS)
 	{
 	  handle_end_of_game (s);
@@ -211,15 +195,15 @@ Session::handle_end_of_game (Status s) {
   switch (s)
     {
     case GAME_WIN_WHITE:
-      fprintf (out, "RESULT 1-0\n");
+      fprintf (out, "result 1-0\n");
       break;
        
     case GAME_WIN_BLACK:
-      fprintf (out, "RESULT 0-1\n");
+      fprintf (out, "result 0-1\n");
       break;
        
     case GAME_DRAW:
-      fprintf (out, "RESULT 1/2-1/2\n");
+      fprintf (out, "result 1/2-1/2\n");
       break;
        
     default:
@@ -261,6 +245,18 @@ Session::execute (char *line) {
 	  running = false;
 	  Move m = board.from_calg (tokens[1]);	  
 	  board.apply (m);
+	}
+
+
+      if (token == "test")
+	{
+	  for (int i = 0; i < 10; i++)
+	    print_bits (random64 ());
+	}
+
+      if (token == "eval")
+	{
+	  cerr << eval (board) << endl;
 	}
 
       /**********************/

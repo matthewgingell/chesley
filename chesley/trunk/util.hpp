@@ -124,7 +124,10 @@ insertion_sort (T &items) IS_UNUSED;
 /*****************/
 
 // Seed the random number generator
-static void seed_random () IS_UNUSED;;
+static void seed_random () IS_UNUSED;
+
+// Return a 64-bit random number.
+static uint64 random64 () IS_UNUSED;
 
 /********************/
 /* String functions */
@@ -447,6 +450,12 @@ insertion_sort (V &items) {
 static void 
 seed_random () {
   srandomdev();
+}
+
+// Return a 64-bit random number.
+static uint64
+random64 () {
+  return ((uint64) random()) | (((uint64) random()) << 32);
 }
 
 #endif // __UTIL__

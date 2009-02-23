@@ -11,11 +11,6 @@
 #define _SEARCH_
 
 #include "board.hpp"
-#include "eval.hpp"
-
-/*******************************************/
-/* Exception to raise if the game is over. */
-/*******************************************/
 
 struct Search_Engine {
 
@@ -49,13 +44,22 @@ struct Search_Engine {
   // If set true, the searh should conclude as quickly as possible.
   bool interrupt_search;
 
-  // Select a move. Caller must check the value of b.flags.status
-  // after this call, since it will be set and an exception raised if
-  // no moves can be generated from this position.
-  Move choose_move (Board &b);
+  // Choose a move, score it, and return it.
+  Move choose_move (Board &b, int32 depth = -1);
 
-  // Score a move dynamically.
-  int32 score 
+  // Return an estimate of the value of a position.
+  int32 score (const Board &b, int32 depth = -1);
+
+private:
+
+  // Do a depth first search repeatedly, each time increasing the
+  // depth by one. This allows us to return a reasonable move if we
+  // are interrupted.
+  Move iterative_deepening (const Board &b, int depth);
+
+  // Return the best available move with its score using minimax with
+  // alpha-beta pruning.
+  Move alpha_beta
   (const Board &b, int depth, int alpha = -INFINITY, int beta = INFINITY);
 
 };

@@ -16,7 +16,11 @@ chesley: $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
 
 play: chesley
-	xboard -debug -fcp ./chesley -size Medium
+	xboard -debug -fcp ./chesley  -coords -size Medium
+
+playself: chesley
+	xboard -debug -fcp ./chesley -scp ./chesley -coords -size	\
+	Medium -mode TwoMachines
 
 check: chesley
 	./run_tests.rb

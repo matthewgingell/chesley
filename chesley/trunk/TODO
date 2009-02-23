@@ -2,9 +2,11 @@ Bugs:
 
 Next items:
 
-  * Implement time control and iterative deepening.
+  * Implement zobrost hashing.
 
-
+  * Cleanup junky initialize code now we understand C++ global
+    initialization,
+     
   * Must have a good way of measuring search correctness, strength,
     and speed before we try to improved them.
 
