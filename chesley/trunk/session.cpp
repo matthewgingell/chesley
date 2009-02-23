@@ -250,8 +250,16 @@ Session::execute (char *line) {
 
       if (token == "test")
 	{
-	  for (int i = 0; i < 10; i++)
-	    print_bits (random64 ());
+	  for (int i = 0; i < 2; i++)
+	    for (int j = 0; j < 6; j++)
+	      for (int k = 0; k < 64; k++)
+		cerr << i * (64 * 6) + j * (64) + k << endl;
+	    
+	}
+
+      if (token == "hash")
+	{
+	  cerr << board.hash << endl;
 	}
 
       if (token == "eval")

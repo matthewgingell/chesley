@@ -62,16 +62,16 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
   return best_move;
 }
 
-/***********************************************************************/
-/* Search_Engine::alpha_beta ()                                        */
-/*                                                                     */
-/* The arguments alpha and beta provide a lower and upper bound on the */
-/* correct value of the top-level search we a conducting, so any node  */
-/* we can prove has a value outside that range can not possibly        */
-/* contain the value we're searching for. This allows us to cut of     */
-/* branches of the tree and provides an exponential speed up in the    */
-/* search.                                                             */
-/***********************************************************************/
+/************************************************************************/
+/* Search_Engine::alpha_beta ()                                         */
+/*                                                                      */
+/* The arguments alpha and beta provide a lower and upper bound on the  */
+/* correct value of the top-level search we a conducting, so any        */
+/* subtree we can prove has a value outside that range can not possibly */
+/* contain the value we're searching for. This allows us to cut of      */
+/* branches of the tree and provides an exponential speed up in the     */
+/* search.                                                              */
+/************************************************************************/
 
 Move
 Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {

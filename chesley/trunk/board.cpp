@@ -416,7 +416,18 @@ Board::apply (const Move &m) {
   /* Update to_move state. */
   /*************************/
 
-  flags.to_move = invert_color (flags.to_move);
+  if (flags.to_move == WHITE)
+    {
+      flags.to_move = BLACK;
+      hash ^= zobrist_key_white;
+      hash ^= zobrist_key_black;
+    }
+  else
+    {
+      flags.to_move = WHITE;
+      hash ^= zobrist_key_black;
+      hash ^= zobrist_key_white;
+    }
 
   /****************************/
   /* Handle taking En Passant */

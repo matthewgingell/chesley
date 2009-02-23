@@ -7,6 +7,8 @@ Next items:
   * Cleanup junky initialize code now we understand C++ global
     initialization,
      
+  * Don't put so much junk in Move.    
+
   * Must have a good way of measuring search correctness, strength,
     and speed before we try to improved them.
 

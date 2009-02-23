@@ -677,17 +677,15 @@ Board::init_135d_attacks_tbl () {
 /* Generate tables of random bit-vectors for use as Zobrist hashing. */
 /*********************************************************************/
 
-uint64 Board::zobrist_key_white = 0;
-uint64 Board::zobrist_key_black = 0;
+uint64  Board::zobrist_key_white = 0;
+uint64  Board::zobrist_key_black = 0;
+uint64 *Board::zobrist_keys = NULL;
 
 void
 Board::init_zobrist_keys () {
   Board::zobrist_key_white = random64();
   Board::zobrist_key_black = random64();
-#if 0
-  for (int i = 0; i < 3; i++)
-    for (int j = 0; j < 6; j++)
-      for (int k = 0; k < 64; k++)
-	zobrist_keys[i][j][k] = random64();
-#endif
+  Board::zobrist_keys = new uint64[2 * 6 * 64];
+  for (int i = 0; i < 2 * 6 * 64; i++) 
+    zobrist_keys[i] = random64();
 }

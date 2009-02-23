@@ -279,6 +279,13 @@ struct Board {
   // Incrementally updated hash key for this position.
   uint64 hash;
 
+  // Fetch the key for a feature.
+  static uint64 get_zobrist_key (Color c, Kind k, int32 idx) {
+    int i = (c == BLACK ? 0 : 1);
+    int j = (int) k;
+    return zobrist_keys[i * (64 * 6) + j * (64) + idx];
+  }
+
   /**********/
   /* Output */
   /**********/
@@ -411,34 +418,46 @@ struct Board {
 
   // Clear a piece on the board.
   void 
-  clear_piece (int at) {
-    if (occupied & masks_0[at])
+  clear_piece (int idx) {
+    if (occupied & masks_0[idx])
       {
-	white        &= ~masks_0[at];
-	black        &= ~masks_0[at];
-	pawns        &= ~masks_0[at];
-	rooks        &= ~masks_0[at];
-	knights      &= ~masks_0[at];
-	bishops      &= ~masks_0[at];
-	queens       &= ~masks_0[at];
-	kings        &= ~masks_0[at];
-	occupied     &= ~masks_0[at];
-	occupied_45  &= ~masks_45[at];
-	occupied_90  &= ~masks_90[at];
-	occupied_135 &= ~masks_135[at];
+	Color c = get_color (idx);
+	Kind k = get_kind (idx);
+	
+	// Clear color and piece kind bits.
+	color_to_board (c) &= ~masks_0[idx];
+	kind_to_board (k)  &= ~masks_0[idx];
+
+	// Update hash key.
+	hash ^= get_zobrist_key (c, k, idx);
+
+	// Clear the occupancy sets.
+	occupied     &= ~masks_0[idx];
+	occupied_45  &= ~masks_45[idx];
+	occupied_90  &= ~masks_90[idx];
+	occupied_135 &= ~masks_135[idx];
       }
   }
 
   // Set a piece on the board with an index.
   void 
-  set_piece (Kind kind, Color color, int at) {
+  set_piece (Kind k, Color c, uint32 idx) {
     assert (kind != NULL_KIND);
-    color_to_board (color) |= masks_0[at];
-    kind_to_board (kind) |= masks_0[at];
-    occupied |= masks_0[at];
-    occupied_45 |= masks_45[at];
-    occupied_90 |= masks_90[at];
-    occupied_135 |= masks_135[at];
+    assert (color >= BLACK && color <= WHITE);
+    assert (idx > 0 && idx < 64);
+
+    // Update color and piece sets.
+    color_to_board (c) |= masks_0[idx];
+    kind_to_board (k) |= masks_0[idx];
+
+    // Update hash key.
+    hash ^= get_zobrist_key (c, k, idx);
+
+    // Update occupancy sets.
+    occupied |= masks_0[idx];
+    occupied_45 |= masks_45[idx];
+    occupied_90 |= masks_90[idx];
+    occupied_135 |= masks_135[idx];
   }
 
   // Set a piece on the board with a row and file.
