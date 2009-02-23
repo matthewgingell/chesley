@@ -24,11 +24,15 @@ struct Search_Engine {
     score_count = 0;
   }
   
-  /****************************/
-  /* Configuration variables. */
-  /****************************/
+  /*****************/
+  /* Search state. */
+  /*****************/
 
+  // Default maximum depth for tree searches.
   int max_depth;
+
+  // If set true, the search should conclude as quickly as possible.
+  bool interrupt_search;
 
   /***************/
   /* Statistics. */
@@ -40,9 +44,6 @@ struct Search_Engine {
   /************/
   /* Queries. */
   /************/
-
-  // If set true, the searh should conclude as quickly as possible.
-  bool interrupt_search;
 
   // Choose a move, score it, and return it.
   Move choose_move (Board &b, int32 depth = -1);
