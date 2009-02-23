@@ -1,4 +1,4 @@
-/* 
+/*
    This file implements various tests and commands for debugging and
    testing Chesley.
 
@@ -11,24 +11,32 @@
 #include <string>
 #include <iostream>
 
-using namespace std; 
+using namespace std;
+
+
+// Execute a debugging command.
+bool
+Session::debug_execute (char *line) {
+  return true;
+}
+
 
 // Generate a benchmark. Calculate the best move to depth N.
-bool 
+bool
 Session::bench (const string_vector &tokens) {
   int depth = 6;
-  
+
   if (tokens.size () > 1 && is_number (tokens[1]))
     {
       depth = to_int (tokens[1]);
     }
 
   timeout = mclock () + 1000.0 * 1000.0 * 1000.0;
-  
+
   uint64 start = cpu_time();
   Move m = se.choose_move (board, depth);
   uint64 elapsed = cpu_time() - start;
-  //  fprintf (out, "Best move at depth %i: %s.\n", 
+  //  fprintf (out, "Best move at depth %i: %s.\n",
   //	   depth, board.to_calg (m).c_str ());
 
   cerr << "Best move to depth " << depth << ":" << endl;
@@ -39,7 +47,7 @@ Session::bench (const string_vector &tokens) {
 }
 
 // Compute possible moves from a position.
-bool 
+bool
 Session::perft (const string_vector &tokens)
 {
   int depth = 1;
@@ -56,14 +64,14 @@ Session::perft (const string_vector &tokens)
   uint64 start = cpu_time();
   uint64 count = board.perft (depth);
   uint64 elapsed = cpu_time() - start;
-  fprintf (out, "moves = %lli\n", count); 
+  fprintf (out, "moves = %lli\n", count);
   fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
   return true;
 }
 
 // Instruct Chesley to play a game against itself.
-bool 
-Session::play_self (const string_vector &tokens) 
+bool
+Session::play_self (const string_vector &tokens)
 {
   board = Board::startpos ();
 
@@ -78,13 +86,13 @@ Session::play_self (const string_vector &tokens)
   cerr << board << endl << endl;
 
   handle_end_of_game (board.get_status ());
-  
+
   return true;
 }
 
 // Process a string in Extended Position Notation. This can include
 // tests, etc.
-bool 
+bool
 Session::epd (const string_vector &args)
 {
   string_vector tokens = rest (args);
@@ -97,7 +105,7 @@ Session::epd (const string_vector &args)
   while (1)
     {
       // Exit when we are out of tokens.
-      if (tokens.size () == 0) 
+      if (tokens.size () == 0)
 	{
 	  break;
 	}
@@ -137,7 +145,7 @@ Session::epd (const string_vector &args)
 		  bool pass = (p == expecting);
 
 		  fprintf (out, "%s %i %llu %llu %.2f\n",
-			   pass ? "PASS" : "FAIL", 
+			   pass ? "PASS" : "FAIL",
 			   depth, expecting, 0, 0);
 
 		  if (!pass)
@@ -153,6 +161,6 @@ Session::epd (const string_vector &args)
 	  break;
 	}
     }
- 
+
   return true;
 }

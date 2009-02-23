@@ -1,4 +1,4 @@
-/* 
+/*
    This file provides the Session object, representing a Chesley's
    session over the Universal Chess Interface (UCI).
 
@@ -13,6 +13,9 @@
 #include <sys/time.h>
 
 #include "chesley.hpp"
+
+// For now we use a hardcoded timeout in milliseconds.
+const int TIME_OUT = 5 * 1000;
 
 // Putting cctype here, after include of <iostream>, works around a
 // bug in some version of the g++ library.
@@ -61,11 +64,11 @@ Session::init_session () {
   tty = isatty (fileno (in));
 
   // Set ui.
-  if (tty) 
+  if (tty)
     {
       ui = INTERACTIVE;
     }
-  else 
+  else
     {
       ui = BATCH;
       prompt = (char *) 0;
@@ -95,9 +98,9 @@ Session::init_session () {
 /* handling.                                                       */
 /*******************************************************************/
 
-void 
+void
 Session::handle_alarm (int sig) {
-  // Interrupt an ongoing search when time has elapsed.  
+  // Interrupt an ongoing search when time has elapsed.
   if (mclock () > timeout || fdready (fileno (in)))
       se.interrupt_search = true;
 }
@@ -105,10 +108,8 @@ Session::handle_alarm (int sig) {
 // Write the command prompt.
 void Session::write_prompt ()
 {
-  if (prompt && (ui == INTERACTIVE)) {
+  if (prompt && (ui == INTERACTIVE))
     fprintf (out, "%s", prompt);
-    fflush (out);
-  }
 }
 
 /*************/
@@ -116,9 +117,8 @@ void Session::write_prompt ()
 /*************/
 
 Move Session::get_move () {
-  timeout = mclock () + 15 * 1000.0;
-  Move m = se.choose_move (board);
-  return m;
+  timeout = mclock () + TIME_OUT;
+  return se.choose_move (board);
 }
 
 /***************************/
@@ -126,7 +126,7 @@ Move Session::get_move () {
 /***************************/
 
 void
-Session::cmd_loop () 
+Session::cmd_loop ()
 {
   bool done = false;
 
@@ -135,7 +135,7 @@ Session::cmd_loop ()
       fprintf (out, PROLOGUE);
     }
 
-  write_prompt (); 
+  write_prompt ();
   while (true)
     {
       // Block for input.
@@ -146,8 +146,8 @@ Session::cmd_loop ()
       if (done) break;
 
       write_prompt ();
-      
-      // Loop until input it ready.
+
+      // Loop and do some work until input is ready.
       while (!fdready (fileno (in)))
 	{
 	  work ();
@@ -161,13 +161,13 @@ Session::cmd_loop ()
 /****************/
 
 // Control is turned over to us, either to make a move, ponder,
-// analyze, etc.
-void 
-Session::work () 
+// analyze, garbage collect, etc.
+void
+Session::work ()
 {
   // If the game isn't over yet, generate a move and send it to
   // the client.
-  if (running 
+  if (running
       && board.get_status () == GAME_IN_PROGRESS
       && board.flags.to_move == our_color)
     {
@@ -189,7 +189,7 @@ Session::work ()
 }
 
 // Report and clean up when a game ends.
-void 
+void
 Session::handle_end_of_game (Status s) {
 
   switch (s)
@@ -197,15 +197,15 @@ Session::handle_end_of_game (Status s) {
     case GAME_WIN_WHITE:
       fprintf (out, "result 1-0\n");
       break;
-       
+
     case GAME_WIN_BLACK:
       fprintf (out, "result 0-1\n");
       break;
-       
+
     case GAME_DRAW:
       fprintf (out, "result 1/2-1/2\n");
       break;
-       
+
     default:
       assert (0);
     }
@@ -217,7 +217,7 @@ Session::handle_end_of_game (Status s) {
 /* Parse and execute a command line. */
 /*************************************/
 
-bool 
+bool
 Session::execute (char *line) {
 
   /*******************************************************************/
@@ -233,9 +233,16 @@ Session::execute (char *line) {
 	}
     }
 
+  // Apply a debugging command.
+  if (!debug_execute (line))
+    {
+      return false;
+    }
+
   string_vector tokens = tokenize (line);
   int count = tokens.size ();
 
+  // Execute a standard command.
   if (count > 0)
     {
       string token = downcase (tokens[0]);
@@ -243,18 +250,8 @@ Session::execute (char *line) {
       if (token == "apply" && count > 1)
 	{
 	  running = false;
-	  Move m = board.from_calg (tokens[1]);	  
+	  Move m = board.from_calg (tokens[1]);
 	  board.apply (m);
-	}
-
-
-      if (token == "test")
-	{
-	  for (int i = 0; i < 2; i++)
-	    for (int j = 0; j < 6; j++)
-	      for (int k = 0; k < 64; k++)
-		cerr << i * (64 * 6) + j * (64) + k << endl;
-	    
 	}
 
       if (token == "hash")
@@ -271,7 +268,7 @@ Session::execute (char *line) {
       /* Benchmark command. */
       /**********************/
 
-      if (token == "bench") 
+      if (token == "bench")
 	{
 	  return bench (tokens);
 	}
@@ -280,7 +277,7 @@ Session::execute (char *line) {
       /* Disp command */
       /****************/
 
-      if (token == "disp") 
+      if (token == "disp")
 	{
 	  fprintf (out, "%s\n", (board.to_ascii ()).c_str ());
 	  return true;
@@ -303,7 +300,7 @@ Session::execute (char *line) {
       /* FEN command to output board state. */
       /**************************************/
 
-      if (token == "fen") 
+      if (token == "fen")
 	{
 	  fprintf (out, "%s\n", (board.to_fen ()).c_str ());
 	  return true;
@@ -323,32 +320,36 @@ Session::execute (char *line) {
       /* Force command to prevent computer generating moves. */
       /*******************************************************/
 
-      if (token == "force") 
+      if (token == "force")
 	{
 	  running = false;
 	  return true;
 	}
 
+      /******************/
       /* Moves command. */
+      /******************/
+
       if (token == "moves")
 	{
 	  Move_Vector moves (board);
 	  cerr << moves << endl;
 	}
 
-
+      /********************/
       /* Attacks command. */
+      /********************/
+
       if (token == "attacks")
 	{
 	  print_board (board.attack_set (invert_color (board.flags.to_move)));
 	}
 
-
       /**************************************/
       /* Perft position generation command. */
       /**************************************/
-      
-      if (token == "perft") 
+
+      if (token == "perft")
 	{
 	  if (tokens.size () >= 2)
 	    {
@@ -371,16 +372,17 @@ Session::execute (char *line) {
       /* setboard FEN command */
       /************************/
 
-      if (token == "setboard") 
+      if (token == "setboard")
 	{
 	  board = Board::from_fen (rest (tokens), false);
+	  return true;
 	}
 
       /****************/
       /* Quit command */
       /***************/
 
-      if (token == "quit")  
+      if (token == "quit")
 	{
 	  return false;
 	}
@@ -389,12 +391,17 @@ Session::execute (char *line) {
       /* Enter xboard ui. */
       /********************/
 
-      if (token == "xboard") 
+      if (token == "xboard")
 	{
 	  return set_xboard_mode (tokens);
 	}
     }
-  
-  // Ignore unrecognized commands.
+
+  // Warn about unrecognized commands in interactive mode.
+  if (ui == INTERACTIVE)
+    {
+      fprintf (out, "Unrecognized command.\n");
+    }
+
   return true;
 }

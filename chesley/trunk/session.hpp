@@ -1,4 +1,4 @@
-/* 
+/*
    This file provides the Session object, representing a Chesley
    session, either over the xboard protocal, UCI (Universal Chess
    Interface), or interactive mode.
@@ -68,10 +68,10 @@ private:
   static FILE *out;
   static const char *prompt;
   static bool tty;
-  
+
   // Handle an alarm signal.
   static void handle_alarm (int sig);
-  
+
   // Write the command prompt.
   static void write_prompt ();
 
@@ -81,9 +81,12 @@ private:
   // XBoard specific command handling.
   static bool xbd_execute (char *line);
 
+  // Execute a debugging command.
+  static bool debug_execute (char *line);
+
   // Set xboard protocol mode.
   static bool set_xboard_mode (const string_vector &tokens);
-  
+
   /****************/
   /* Flow control */
   /****************/
@@ -97,8 +100,8 @@ private:
 
   // Time in milliseconds since the epoch to interrupt an ongoing
   // search.
-  static uint64 timeout; 
-  
+  static uint64 timeout;
+
   // Initiate a timed search.
   static Move get_move ();
 
@@ -110,7 +113,7 @@ private:
   /************/
 
   // Generate a benchmark.
-  static bool bench (const string_vector &tokens); 
+  static bool bench (const string_vector &tokens);
 
   // Process a string in Extended Position Notation. This can include
   // tests, etc.
