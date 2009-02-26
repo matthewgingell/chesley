@@ -92,7 +92,7 @@ Board::init_rot_45 () {
   int idx_00 = 0;
 
   // Lower diagonal.
-  for (int i = 0; i <= 56; i += 8) 
+  for (int i = 0; i <= 56; i += 8)
     for (int j = i; j >= (i / 8); j -= 7)
       rot[idx_00++] = j;
 
@@ -100,7 +100,7 @@ Board::init_rot_45 () {
   for (int i = 57; i < 64; i++)
     for (int j = i; j >= 15 + 8 * (i - 57); j -= 7)
       rot[idx_00++] = j;
-      
+
   return rot;
 }
 
@@ -188,7 +188,7 @@ Board :: init_diag_widths_45 () {
     2, 2,
     1
   };
-  
+
   assert (rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
@@ -369,7 +369,7 @@ Board :: init_diag_widths_135  () {
     2, 2,
     1
   };
-  
+
   assert (rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
@@ -435,7 +435,7 @@ Board::init_rank_attacks_tbl () {
       bitboard destinations;
       int first_bit = from - from % 8;
       int last_bit = first_bit + 7;
-     
+
       // For each possible rank state vector
       for (uint32 occ = 0; occ < 256; occ++)
 	{
@@ -462,7 +462,7 @@ Board::init_rank_attacks_tbl () {
 	  while (!test_bit (occ, from % 8 + k));
 
 	  rv[from * 256 + occ] = destinations;
-	}      
+	}
     }
 
   return rv;
@@ -494,7 +494,7 @@ Board::init_file_attacks_tbl () {
 	      bitnum--;
 	      if (bitnum < 0) break;
 	      bit_offset = from_bit - bitnum;
-	      destinations = 
+	      destinations =
 		set_bit (destinations, from + 8 * bit_offset);
 	    }
 	  while (!test_bit (file_pat, bitnum));
@@ -506,14 +506,14 @@ Board::init_file_attacks_tbl () {
 	      bitnum++;
 	      if (bitnum > 7) break;
 	      bit_offset = from_bit - bitnum;
-	      destinations = 
+	      destinations =
 		set_bit (destinations, from + 8 * bit_offset);
 	    }
 	  while (!test_bit (file_pat, bitnum));
 
 	  // Collect moves in destinations bitboard.
 	  rv[from * 256 + file_pat] = destinations;
-	}      
+	}
     }
 
   return rv;
@@ -599,24 +599,24 @@ Board::init_45d_attacks_tbl () {
 
 	  // Down and to the right.
 	  b = from_bit;
-	  do 
+	  do
 	    {
 	      b++;
 	      if (b >= pat_len) break;
-	      destinations = 
+	      destinations =
 		set_bit (destinations, from + (from_bit - b) * 7);
-	    } 
+	    }
 	  while (!test_bit(pat, b));
 
 	  // Up and to the left.
 	  b = from_bit;
-	  do 
+	  do
 	    {
 	      b--;
 	      if (b < 0) break;
-	      destinations = 
+	      destinations =
 		set_bit (destinations, from + (from_bit - b) * 7);
-	    } 
+	    }
 	  while (!test_bit(pat, b));
 
 	  rv[from * 256 + pat] = destinations;
@@ -646,24 +646,24 @@ Board::init_135d_attacks_tbl () {
 
 	  // Down and to the left.
 	  b = from_bit;
-	  do 
+	  do
 	    {
 	      b++;
 	      if (b >= pat_len) break;
-	      destinations = 
+	      destinations =
 		set_bit (destinations, from + (from_bit - b) * 9);
-	    } 
+	    }
 	  while (!test_bit(pat, b));
 
 	  // Up and to the left.
 	  b = from_bit;
-	  do 
+	  do
 	    {
 	      b--;
 	      if (b < 0) break;
-	      destinations = 
+	      destinations =
 		set_bit (destinations, from + (from_bit - b) * 9);
-	    } 
+	    }
 	  while (!test_bit(pat, b));
 
 	  rv[from * 256 + pat] = destinations;
@@ -677,15 +677,40 @@ Board::init_135d_attacks_tbl () {
 /* Generate tables of random bit-vectors for use as Zobrist hashing. */
 /*********************************************************************/
 
-uint64  Board::zobrist_key_white = 0;
-uint64  Board::zobrist_key_black = 0;
-uint64 *Board::zobrist_keys = NULL;
+// Keys hashing player to move status
+uint64  Board::zobrist_key_white_to_move = 0x0;
 
+// Keys hashing for piece locations.
+uint64 *Board::zobrist_piece_keys = NULL;
+
+// Keys hashing for enpassant status
+uint64 *Board::zobrist_enpassant_keys = NULL;
+
+// Keys reflecting castling right.
+uint64  Board::zobrist_w_castle_k_key = 0x0;
+uint64  Board::zobrist_w_castle_q_key = 0x0;
+uint64  Board::zobrist_b_castle_k_key = 0x0;
+uint64  Board::zobrist_b_castle_q_key = 0x0;
+
+// Initialize all the above keys to random bit strings.
 void
 Board::init_zobrist_keys () {
-  Board::zobrist_key_white = random64();
-  Board::zobrist_key_black = random64();
-  Board::zobrist_keys = new uint64[2 * 6 * 64];
-  for (int i = 0; i < 2 * 6 * 64; i++) 
-    zobrist_keys[i] = random64();
+  zobrist_key_white_to_move = random64();
+
+  zobrist_piece_keys = new uint64[2 * 6 * 64];
+  for (int i = 0; i < 2 * 6 * 64; i++)
+    zobrist_piece_keys[i] = random64();
+
+  zobrist_enpassant_keys = new uint64[64];
+  zobrist_enpassant_keys[0] = 0;
+  for (int i = 1; i < 64; i++)
+    zobrist_enpassant_keys[i] = random64();
+
+
+  zobrist_w_castle_q_key = random64 ();
+  zobrist_w_castle_k_key = random64 ();
+  zobrist_b_castle_q_key = random64 ();
+  zobrist_b_castle_k_key = random64 ();
+
+
 }

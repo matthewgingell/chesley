@@ -14,9 +14,36 @@
 using namespace std;
 
 
-// Execute a debugging command.
+/**************************************/
+/* Parse and execute a debug command. */
+/**************************************/
 bool
 Session::debug_execute (char *line) {
+  string_vector tokens = tokenize (line);
+  int count = tokens.size ();
+
+  // Execute a standard command.
+  if (count > 0)
+    {
+      string token = downcase (tokens[0]);
+
+      if (token == "test_hashing")
+	{
+	  // For all positions to depth N, compute the hash
+	  // incrementally and from scratch and make sure each method
+	  // generates the same value.
+
+	  int depth = 5;
+
+	  if (tokens.size () > 1 && is_number (tokens[1]))
+	    {
+	      depth = to_int (tokens[1]);
+	    }
+
+	  test_hashing (depth);
+	}
+    }
+
   return true;
 }
 
@@ -90,6 +117,43 @@ Session::play_self (const string_vector &tokens)
   return true;
 }
 
+
+// Check that hash keys are correctly generated to depth 'd'.
+int
+test_hashing_rec (const Board &b, int depth) {
+  Board_Vector children (b);
+  int pass = 0;
+
+  if (b.hash == b.gen_hash ())
+    {
+      pass++;
+    }
+  else
+    {
+      cerr << "FAIL at depth: " << depth << endl;
+      //      cerr << b << endl;
+    }
+
+  if (depth == 0)
+    {
+      return 1;
+    }
+
+  for (int i = 0; i < children.count; i++)
+    {
+      pass += test_hashing_rec (children [i], depth - 1);
+    }
+
+  return pass;
+}
+
+void
+Session::test_hashing (int d) {
+  int pass = test_hashing_rec (board, d);
+  cerr << pass << endl;
+}
+
+
 // Process a string in Extended Position Notation. This can include
 // tests, etc.
 bool
@@ -144,7 +208,7 @@ Session::epd (const string_vector &args)
 		  uint64 p = b.perft (depth);
 		  bool pass = (p == expecting);
 
-		  fprintf (out, "%s %i %llu %llu %.2f\n",
+		  fprintf (out, "%s %i %llu %i %i\n",
 			   pass ? "PASS" : "FAIL",
 			   depth, expecting, 0, 0);
 

@@ -47,16 +47,16 @@ Board::perft (int d) const {
 
 // For each child, print the child move and the perft (d) of the
 // resulting board.
-void 
+void
 Board :: divide (int d) const {
   Move_Vector moves (*this);
-  
+
   for (int i = 0; i < moves.count; i++)
     {
       Board child = *this;
       std::cerr << to_calg (moves[i]) << " ";
 
-      child.apply (moves [i]); 
+      child.apply (moves [i]);
       std::cerr << child.perft (d - 1) << std::endl;
     }
 }
@@ -117,7 +117,7 @@ Board::gen_pawn_moves (Move_Vector &out) const
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) || 
+	      ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) ||
 	       (bit_idx ((from & ~file(0)) >> 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
@@ -143,7 +143,7 @@ Board::gen_pawn_moves (Move_Vector &out) const
 	  Move m (PAWN, bit_idx (from), to_idx, c, is_capture);
 
 	  // Handle the case of a promotion.
-	  if ((c == WHITE && idx_to_rank (to_idx) == 7) || 
+	  if ((c == WHITE && idx_to_rank (to_idx) == 7) ||
 	      (c == BLACK && idx_to_rank (to_idx) == 0))
 	    {
 	      // Generate a move for each possible promotion.
@@ -202,7 +202,7 @@ Board::gen_rook_moves (Move_Vector &out) const
 	      is_capture = NULL_KIND;
 	    }
 
-	  out.push 
+	  out.push
 	    (Move (ROOK, from,  to_idx, c, is_capture));
 	  to = clear_lsb (to);
 	}
@@ -243,7 +243,7 @@ Board::gen_knight_moves (Move_Vector &out) const
 	      is_capture = NULL_KIND;
 	    }
 
-	  out.push 
+	  out.push
 	    (Move (KNIGHT, from, to_idx, c, is_capture));
 	  to = clear_lsb (to);
 	}
@@ -272,7 +272,7 @@ Board::gen_bishop_moves (Move_Vector &out) const
       to = (DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
 	    DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
 	& ~our_pieces ();
-      
+
       // Collect each destination in the moves list.
       while (to)
 	{
@@ -289,7 +289,7 @@ Board::gen_bishop_moves (Move_Vector &out) const
 	      is_capture = NULL_KIND;
 	    }
 
-	  out.push 
+	  out.push
 	    (Move (BISHOP, from, to_idx, c, is_capture));
 	  to = clear_lsb (to);
 	}
@@ -313,13 +313,13 @@ Board::gen_queen_moves (Move_Vector &out) const
       // Look up destinations in moves table and collect each in 'out'.
       int from = bit_idx (our_queens);
 
-      bitboard to = 
+      bitboard to =
 	(RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
 	 | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
 	 | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
 	 | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
 	& ~our_pieces ();
-      
+
       // Collect each destination in the moves list.
       while (to)
 	{
@@ -336,7 +336,7 @@ Board::gen_queen_moves (Move_Vector &out) const
 	      is_capture = NULL_KIND;
 	    }
 
-	  out.push 
+	  out.push
 	    (Move (QUEEN, from,  to_idx, c, is_capture));
 	  to = clear_lsb (to);
 	}
@@ -380,12 +380,12 @@ Board::gen_king_moves (Move_Vector &out) const
 	      is_capture = NULL_KIND;
 	    }
 
-	  out.push 
+	  out.push
 	    (Move (KING, from,  to_idx, c, is_capture));
 	  to = clear_lsb (to);
 	}
     }
-  
+
   /**************************/
   /* Compute castling moves */
   /**************************/
@@ -408,7 +408,7 @@ Board::gen_king_moves (Move_Vector &out) const
 	  out.push (m);
 	}
     }
-  
+
   if (c == BLACK)
     {
       byte row = occ_0 (60);

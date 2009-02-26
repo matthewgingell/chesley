@@ -76,7 +76,6 @@ struct Move {
 
   Move (Kind k, uint32 f, uint32 t, Color c, Kind capture, uint32 score = 0) :
     kind (k), color (c), from (f), to (t), score (score) {
-    assert (k != NULL_KIND);
     score = 0;
     flags.capture = capture;
     flags.promote = (Kind) 0;
@@ -108,7 +107,7 @@ inline Move operator- (Move m) {
 // being captured.
 inline int
 value (const Move &m) {
-  switch (m.flags.capture) 
+  switch (m.flags.capture)
     {
     case NULL_KIND: return 0;
     case PAWN:      return -1;
@@ -132,7 +131,7 @@ std::ostream & operator<< (std::ostream &, const Move &);
 struct Move_Vector {
 
   // Amazingly, examples of positions with 218 different possible
-  // moves exist. 
+  // moves exist.
   static int const SIZE = 256;
 
   Move_Vector () {
@@ -161,6 +160,13 @@ count (const Move_Vector &moves) {
 std::ostream &
 operator<< (std::ostream &os, const Move_Vector &moves);
 
+/*******************/
+/* Castling rights */
+/*******************/
+
+enum Castling_Right
+  {W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE};
+
 /****************************/
 /* Chess board state type. */
 /***************************/
@@ -178,9 +184,9 @@ struct Board {
 
   static const std::string INITIAL_POSITIONS;
 
-  /**********************/
-  /* Precomputed tables */
-  /**********************/
+  /************************************/
+  /* Precomputed tables and constants */
+  /************************************/
 
   static bool have_precomputed_tables;
 
@@ -207,9 +213,13 @@ struct Board {
   static byte *diag_bitpos_135;
   static byte *diag_widths_135;
 
-  static uint64 *zobrist_keys;
-  static uint64  zobrist_key_white;
-  static uint64  zobrist_key_black;
+  static uint64 *zobrist_piece_keys;
+  static uint64 *zobrist_enpassant_keys;
+  static uint64  zobrist_key_white_to_move;
+  static uint64  zobrist_w_castle_q_key;
+  static uint64  zobrist_w_castle_k_key;
+  static uint64  zobrist_b_castle_q_key;
+  static uint64  zobrist_b_castle_k_key;
 
   /***************************************************/
   /* Bitboards representing the state of the board.  */
@@ -219,7 +229,7 @@ struct Board {
   bitboard white;
   bitboard black;
 
-  // Pieces 
+  // Pieces
   bitboard pawns;
   bitboard rooks;
   bitboard knights;
@@ -246,7 +256,7 @@ struct Board {
     unsigned b_can_k_castle  :1; // Black king and k-side rook unmoved.
     unsigned en_passant      :6; // En Passant target square.
   } flags;
-  
+
   // Clocks
   uint32 half_move_clock; // Used for 50-move rule.
   uint32 full_move_clock; // Clock after each black move.
@@ -279,11 +289,23 @@ struct Board {
   // Incrementally updated hash key for this position.
   uint64 hash;
 
-  // Fetch the key for a feature.
-  static uint64 get_zobrist_key (Color c, Kind k, int32 idx) {
-    int i = (c == BLACK ? 0 : 1);
-    int j = (int) k;
-    return zobrist_keys[i * (64 * 6) + j * (64) + idx];
+  // Fetch the key for a piece.
+  static uint64 get_zobrist_piece_key (Color c, Kind k, int32 idx) {
+    uint32 i = (c == BLACK ? 0 : 1);
+    uint32 j = (int32) k;
+
+    assert (c != NULL_COLOR);
+    assert (k != NULL_KIND);
+    assert (idx < 64);
+
+    if ((i * (64 * 6) + j * (64) + idx) >= 2 * 6 * 64)
+      {
+	std::cerr << i * (64 * 6) + j * (64) + idx << std::endl;
+      }
+
+    assert ((i * (64 * 6) + j * (64) + idx) < 2 * 6 * 64);
+
+    return zobrist_piece_keys[i * (64 * 6) + j * (64) + idx];
   }
 
   /**********/
@@ -322,8 +344,8 @@ struct Board {
 
   // Get the status of the game.
   Status get_status ();
-  
-  // Return whether color c is in check. 
+
+  // Return whether color c is in check.
   bool in_check (Color c) const;
 
   // Return the color of a piece on a square.
@@ -360,11 +382,39 @@ struct Board {
   }
 
   // Test whether a coordinate is in bounds.
-  static bool 
+  static bool
   in_bounds (int x, int y) {
     return x >= 0 && x <= 7 && y >= 0 && y <= 7;
   }
-  
+
+  /****************/
+  /* Flags setter */
+  /****************/
+
+  // It is crucial to use the following routines to set board flags,
+  // rather than accessing those fields directly, becase otherwise the
+  // incrementally maintained hash key will not be properly updated.
+
+  // Set color.
+  void set_color (Color c) {
+    // If the color is changing, we need to flip the hash bits for
+    // zobrist_key_white_to_move.
+    assert (c != NULL_COLOR);
+    if (flags.to_move != c)
+      hash ^= Board::zobrist_key_white_to_move;
+    flags.to_move = c;
+  }
+
+  // Set en_passant target.
+  void set_en_passant (int32 idx) {
+    hash ^= zobrist_enpassant_keys[flags.en_passant];
+    hash ^= zobrist_enpassant_keys[idx];
+    flags.en_passant = idx;
+  }
+
+  // Set castling rights.
+  void set_castling_right (Castling_Right cr, bool v);
+
   /*************/
   /* Accessors */
   /*************/
@@ -372,7 +422,7 @@ struct Board {
   // Return a board reference from a Kind.
   bitboard &
   kind_to_board (Kind k) {
-    switch (k) 
+    switch (k)
       {
       case NULL_KIND: assert (0); break;
       case PAWN: return pawns; break;
@@ -391,7 +441,7 @@ struct Board {
   // Map a color to the corresponding bitboard.
   bitboard &
   color_to_board (Color color) {
-    switch (color) 
+    switch (color)
       {
       case WHITE: return white; break;
       case BLACK: return black; break;
@@ -405,7 +455,7 @@ struct Board {
   // Const version returns by copy.
   bitboard
   color_to_board (Color color) const {
-    switch (color) 
+    switch (color)
       {
       case WHITE: return white; break;
       case BLACK: return black; break;
@@ -417,19 +467,22 @@ struct Board {
   }
 
   // Clear a piece on the board.
-  void 
+  void
   clear_piece (int idx) {
     if (occupied & masks_0[idx])
       {
 	Color c = get_color (idx);
 	Kind k = get_kind (idx);
-	
+
+	assert (c != NULL_COLOR);
+	assert (k != NULL_KIND);
+
 	// Clear color and piece kind bits.
 	color_to_board (c) &= ~masks_0[idx];
 	kind_to_board (k)  &= ~masks_0[idx];
 
 	// Update hash key.
-	hash ^= get_zobrist_key (c, k, idx);
+	hash ^= get_zobrist_piece_key (c, k, idx);
 
 	// Clear the occupancy sets.
 	occupied     &= ~masks_0[idx];
@@ -440,18 +493,18 @@ struct Board {
   }
 
   // Set a piece on the board with an index.
-  void 
+  void
   set_piece (Kind k, Color c, uint32 idx) {
-    assert (kind != NULL_KIND);
-    assert (color >= BLACK && color <= WHITE);
-    assert (idx > 0 && idx < 64);
+    assert (k != NULL_KIND);
+    assert (c >= BLACK && c <= WHITE);
+    assert (idx >= 0 && idx < 64);
 
     // Update color and piece sets.
     color_to_board (c) |= masks_0[idx];
     kind_to_board (k) |= masks_0[idx];
 
     // Update hash key.
-    hash ^= get_zobrist_key (c, k, idx);
+    hash ^= get_zobrist_piece_key (c, k, idx);
 
     // Update occupancy sets.
     occupied |= masks_0[idx];
@@ -475,67 +528,67 @@ struct Board {
 
   // Return a bitboard with every bit of the Nth rank set.
   static bitboard
-  rank (int rank) { 
-    return 0x00000000000000FFllu << rank * 8; 
+  rank (int rank) {
+    return 0x00000000000000FFllu << rank * 8;
   }
 
   // Return a bitboard with every bit of the Nth file set.
   static bitboard
-  file (int file) { 
-    return 0x0101010101010101llu << file; 
+  file (int file) {
+    return 0x0101010101010101llu << file;
   }
 
   // Return the rank 0 .. 7 containing a piece.
-  static int 
+  static int
   idx_to_rank (int idx) {
-    return idx / 8;    
+    return idx / 8;
   }
 
   // Return the file 0 .. 7 containing a piece.
-  static int 
+  static int
   idx_to_file (int idx) {
     return idx % 8;
   }
 
   // Return a bitboard of to_moves pieces.
-  bitboard 
-  our_pieces () const { 
-    return flags.to_move == WHITE ? white : black; 
+  bitboard
+  our_pieces () const {
+    return flags.to_move == WHITE ? white : black;
   }
-  
+
   // Return a bitboard of the other colors pieces.
-  bitboard 
-  other_pieces () const { 
-    return flags.to_move == WHITE ? black : white; 
+  bitboard
+  other_pieces () const {
+    return flags.to_move == WHITE ? black : white;
   }
-  
+
   // Return a bitboard of unoccupied squares.
-  bitboard 
-  unoccupied () const { 
-    return ~occupied; 
+  bitboard
+  unoccupied () const {
+    return ~occupied;
   }
 
   /***********************/
   /* Occupancy patterns. */
   /***********************/
-  
-  byte 
-  occ_0 (int from) const { 
-    return get_byte (occupied, from / 8); 
+
+  byte
+  occ_0 (int from) const {
+    return get_byte (occupied, from / 8);
   }
-  
-  byte 
-  occ_45 (int from) const { 
+
+  byte
+  occ_45 (int from) const {
     return occupied_45 >> diag_shifts_45[from];
   }
-  
-  byte 
-  occ_90 (int from) const { 
-    return get_byte (occupied_90, from % 8); 
+
+  byte
+  occ_90 (int from) const {
+    return get_byte (occupied_90, from % 8);
   }
-  
-  byte 
-  occ_135 (int from) const { 
+
+  byte
+  occ_135 (int from) const {
     return occupied_135 >> diag_shifts_135[from];
   }
 
@@ -601,6 +654,9 @@ struct Board {
   // Print the full tree to depth N.
   void print_tree (int depth = 0);
 
+  // Generate a hash key from scratch. This is used to test the
+  // correctness of our incremently hash update code.
+  uint64 gen_hash () const;
 };
 
 // Output human readable board.

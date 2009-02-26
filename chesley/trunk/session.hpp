@@ -112,18 +112,27 @@ private:
   /* Commands */
   /************/
 
-  // Generate a benchmark.
-  static bool bench (const string_vector &tokens);
-
   // Process a string in Extended Position Notation. This can include
   // tests, etc.
   static bool epd (const string_vector &tokens);
+
+  /**********************/
+  /* Debugging commands */
+  /**********************/
+
+  // Generate a benchmark.
+  static bool bench (const string_vector &tokens);
 
   // Compute possible moves from a position.
   static bool perft (const string_vector &tokens);
 
   // Play a game with engine taking both sides.
   static bool play_self (const string_vector &tokens);
+
+  // Check that hash keys are correctly generated to depth 'd'.
+  static void test_hashing (int d);
+
+
 
 };
 
