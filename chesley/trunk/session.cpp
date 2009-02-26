@@ -15,7 +15,7 @@
 #include "chesley.hpp"
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 5 * 1000;
+const int TIME_OUT = 10 * 1000;
 
 // Putting cctype here, after include of <iostream>, works around a
 // bug in some version of the g++ library.
@@ -252,16 +252,19 @@ Session::execute (char *line) {
 	  running = false;
 	  Move m = board.from_calg (tokens[1]);
 	  board.apply (m);
+	  return true;
 	}
 
       if (token == "hash")
 	{
 	  cerr << board.hash << endl;
+	  return true;
 	}
 
       if (token == "eval")
 	{
 	  cerr << eval (board) << endl;
+	  return true;
 	}
 
       /**********************/
@@ -334,6 +337,7 @@ Session::execute (char *line) {
 	{
 	  Move_Vector moves (board);
 	  cerr << moves << endl;
+	  return true;
 	}
 
       /********************/
@@ -343,6 +347,7 @@ Session::execute (char *line) {
       if (token == "attacks")
 	{
 	  print_board (board.attack_set (invert_color (board.flags.to_move)));
+	  return true;
 	}
 
       /**************************************/
@@ -395,12 +400,12 @@ Session::execute (char *line) {
 	{
 	  return set_xboard_mode (tokens);
 	}
-    }
 
-  // Warn about unrecognized commands in interactive mode.
-  if (ui == INTERACTIVE)
-    {
-      fprintf (out, "Unrecognized command.\n");
+      // Warn about unrecognized commands in interactive mode.
+      if (ui == INTERACTIVE)
+	{
+	  //	  fprintf (out, "Unrecognized command.\n");
+	}
     }
 
   return true;

@@ -33,10 +33,10 @@ static const int QS_CASTLE_VAL  = 50;
 static const int CAN_CASTLE_VAL = 10;
 
 // Simple table driven positional bonuses.
-int 
+int
 eval_simple_positional (Board b);
 
-inline int 
+inline int
 eval_material (const Board &b) {
   int score = 0;
 
@@ -44,19 +44,19 @@ eval_material (const Board &b) {
   /* Evaluate material strength. */
   /*******************************/
 
-  score += PAWN_VAL * (pop_count (b.pawns & b.white) - 
+  score += PAWN_VAL * (pop_count (b.pawns & b.white) -
 		       pop_count (b.pawns & b.black));
-  
-  score += ROOK_VAL * (pop_count (b.rooks & b.white) - 
+
+  score += ROOK_VAL * (pop_count (b.rooks & b.white) -
 		       pop_count (b.rooks & b.black));
-  
-  score += KNIGHT_VAL * (pop_count (b.knights & b.white) - 
+
+  score += KNIGHT_VAL * (pop_count (b.knights & b.white) -
 			 pop_count (b.knights & b.black));
-  
-  score += BISHOP_VAL * (pop_count (b.bishops & b.white) - 
+
+  score += BISHOP_VAL * (pop_count (b.bishops & b.white) -
 			 pop_count (b.bishops & b.black));
-  
-  score += QUEEN_VAL * (pop_count (b.queens & b.white) - 
+
+  score += QUEEN_VAL * (pop_count (b.queens & b.white) -
 			pop_count (b.queens & b.black));
 
   return score;
@@ -64,7 +64,7 @@ eval_material (const Board &b) {
 
 // Evaluate a position statically. Positive scores favor white and
 // negative scores favor black.
-inline int 
+inline int
 eval (const Board &b, int depth = 0) {
   int score = 0;
 
@@ -91,7 +91,7 @@ eval (const Board &b, int depth = 0) {
   // This appears to do no good at all.
 #if 0
   score += 5 * (pop_count (b.attack_set (WHITE)) - pop_count (b.attack_set (BLACK)));
-#endif 
+#endif
 
   // Encourage preserving the right to castle.
   score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
@@ -100,7 +100,7 @@ eval (const Board &b, int depth = 0) {
   // Encourage castling, and prefer king side to queen side.
   score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
   score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
-  
+
   // All else being equal, prefer positions at a shallower rather than
   // a deeper depth. If we don't do this, minimax will be ambivalent
   // between winning in 1 move and 2 moves *at every ply* and may
@@ -108,7 +108,7 @@ eval (const Board &b, int depth = 0) {
 
   score +=  b.flags.to_move * (100 - depth);
 
-#if 0
+#if 1
   score += random () % 10;
 #endif
 

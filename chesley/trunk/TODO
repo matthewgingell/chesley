@@ -2,6 +2,10 @@ Bugs:
 
 Next items:
 
+  * Hunt for things that can be made const.
+
+  * Use 16 bit types for indexes, scores, and depths.
+
   * Implement zobrost hashing.
 
   * Cleanup junky initialize code now we understand C++ global

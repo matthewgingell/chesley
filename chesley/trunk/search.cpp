@@ -35,6 +35,54 @@ Search_Engine :: score (const Board &b, int depth) {
 const int SEARCH_INTERRUPTED = 0x01;
 
 /**********************************************************************/
+/* Transposition tables                                               */
+/*                                                                    */
+/* Operations on the transposition table.                             */
+/**********************************************************************/
+
+// Fetch an entry from the transposition table. Returns false if no
+// entry is found.
+bool
+Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
+  Trans_Table::iterator i = tt.find (hash);
+
+  if (i != tt.end ())
+    {
+      out = i -> second;
+      return true;
+    }
+  else
+    {
+      return false;
+    }
+}
+
+// Store an entry in the transposition table.
+void
+Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
+  // Garbage collect the table when it gets very large.
+  const uint32 COUNT_MAX = 10 * 1000 * 1000;
+  if (tt.size () > COUNT_MAX)
+    {
+      cerr << "garbage collecting..." << endl;
+      int depth = 1;
+      do
+	{
+	  Trans_Table::iterator i;
+	  for (i = tt.begin (); i != tt.end (); i++)
+	    if (i -> second.depth <= depth) tt.erase (i);
+	  depth++;
+	} while (tt.size () > COUNT_MAX / 2);
+
+      cerr << "done." << endl;
+    }
+
+
+  // Store an item in the table.
+  tt.insert (pair <uint64, TT_Entry> (hash, in));
+}
+
+/**********************************************************************/
 /* Search_Engine::iterative_deepening                                 */
 /*                                                                    */
 /* Do a depth first search repeatedly, each time increasing the depth */
@@ -44,26 +92,58 @@ const int SEARCH_INTERRUPTED = 0x01;
 
 Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
-  Move best_move = alpha_beta (b, 1);
+  //  Move best_move = alpha_beta_with_memory (b, 1);
+
+  Move best_move = MTDf (b, 0, 1);
 
   for (int i = 2; i < depth; i++)
     {
       try
         {
-          best_move = alpha_beta (b, i);
+#if 1
+          best_move = alpha_beta_with_memory (b, i);
+#else
+	  best_move = MTDf (b, best_move.score, i);
+#endif
+
         }
       catch (int code)
         {
           assert (code == SEARCH_INTERRUPTED);
-          return best_move;
+	  cerr << "timeout searching ply: " << i << endl;
+	  //	  tt.clear ();
+	  return best_move;
         }
     }
 
+  //  tt.clear ();
   return best_move;
 }
 
+Move
+Search_Engine::MTDf (const Board &root, int f, int d) {
+
+  int beta;
+  int g = f;
+  int upperbound = +INFINITY;
+  int lowerbound = -INFINITY;
+  Move m;
+
+  do
+    {
+	{
+	  if (g == lowerbound) beta = g + 1; else beta = g;
+	  m = alpha_beta_with_memory (root, d, beta - 1, beta);
+	  g = m.score;
+	  if (g < beta) upperbound = g; else lowerbound = g;
+	}
+    } while (lowerbound < upperbound);
+
+  return m;
+}
+
 /************************************************************************/
-/* Search_Engine::alpha_beta ()                                         */
+/* Search_Engine::alpha_beta_with_memory ()                             */
 /*                                                                      */
 /* The arguments alpha and beta provide a lower and upper bound on the  */
 /* correct value of the top-level search we a conducting, so any        */
@@ -74,7 +154,9 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 /************************************************************************/
 
 Move
-Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {
+Search_Engine::alpha_beta_with_memory
+(const Board &b, int depth, int alpha, int beta) {
+
   Color player = b.flags.to_move;
 
   /**************************************/
@@ -85,6 +167,48 @@ Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {
     {
       throw (SEARCH_INTERRUPTED);
     }
+
+  /*****************************************************/
+  /* Try to find this node in the transposition table. */
+  /*****************************************************/
+
+#if USE_TRANS_TABLE
+  TT_Entry entry;
+  bool found_tt_entry;
+
+  if (depth > 5)
+    {
+      found_tt_entry = tt_fetch (b.hash, entry);
+      if (found_tt_entry && entry.depth >= depth)
+	{
+	  /***************************************************************/
+	  /* Bail out if the bounds we have previously computed for this */
+	  /* node tells us the true minimax value isn't in this subtree. */
+	  /***************************************************************/
+
+	  if (entry.lowerbound >= beta)
+	    {
+	      entry.move.score = entry.lowerbound;
+	      return entry.move;
+	    }
+
+	  if (entry.upperbound <= alpha)
+	    {
+	      entry.move.score = entry.upperbound;
+	      return entry.move;
+	    }
+
+	  /************************************************************/
+	  /* Otherwise see if the bounds we saved allow us to tighten */
+	  /* [alpha, beta].                                           */
+	  /************************************************************/
+
+	  alpha = max (alpha, entry.lowerbound);
+	  beta = min (beta, entry.upperbound);
+	}
+    }
+
+#endif
 
   /*********************************************/
   /*  Return heuristic estimate at depth zero. */
@@ -118,7 +242,7 @@ Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {
           if (child.apply (moves[i]))
             {
               at_least_one_legal_move = true;
-              Move m = alpha_beta (child, depth - 1, alpha, beta);
+              Move m = alpha_beta_with_memory (child, depth - 1, alpha, beta);
 
               /***************************/
               /* Maximizing at this node. */
@@ -132,7 +256,7 @@ Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {
                       best_move = moves[i];
                     }
 
-                  if (alpha >= beta) 
+                  if (alpha >= beta)
                     {
                       /*************************************************/
                       /* The value of this position is at least alpha, */
@@ -157,7 +281,7 @@ Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {
                       best_move = moves[i];
                     }
 
-                  if (beta <= alpha) 
+                  if (beta <= alpha)
                     {
                       /***********************************************/
                       /* The value of this position is at most beta, */
@@ -225,6 +349,43 @@ Search_Engine::alpha_beta (const Board &b, int depth, int alpha, int beta) {
               best_move = Move (NULL_KIND, 0, 0, NULL_COLOR, NULL_KIND, 0);
             }
         }
+
+      /*****************************************************************/
+      /* If we have no entry for this position, or we have scored this */
+      /* position to a deeper depth, then store the results in the     */
+      /* transposition table.                                          */
+      /*****************************************************************/
+
+#if USE_TRANS_TABLE
+      if (depth > 5)  {
+	if (!found_tt_entry || depth > entry.depth)
+	  {
+	    entry.move = best_move;
+	    entry.depth = depth;
+
+	    // If he have established an upper or lower bound on this
+	    // position, update the table.
+
+	    if (fail_low)
+	      {
+		entry.upperbound = best_move.score;
+	      }
+
+	    else if (fail_high)
+	      {
+		entry.lowerbound = best_move.score;
+	      }
+
+	    else
+	      {
+		entry.upperbound = best_move.score;
+		entry.lowerbound = best_move.score;
+	      }
+
+	    tt_store (b.hash, entry);
+	  }
+      }
+#endif
 
       return best_move;
     }

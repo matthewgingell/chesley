@@ -1,4 +1,4 @@
-/* 
+/*
    This file provides Chesley's implementation of the xboard
    interface. The specification for this protocol is available at
    http://tim-mann.org/xboard/engine-intf.html.
@@ -13,7 +13,7 @@
 using namespace std;
 
 // Set xboard protocol mode.
-bool 
+bool
 Session::set_xboard_mode (const string_vector &tokens) {
   ui = XBOARD;
   prompt = NULL;
@@ -25,13 +25,13 @@ Session::set_xboard_mode (const string_vector &tokens) {
   return true;
 }
 
-// Execute a command in xboard mode. 
-bool 
+// Execute a command in xboard mode.
+bool
 Session::xbd_execute (char *line) {
   string_vector tokens = tokenize (line);
   int count = tokens.size ();
 
-  if (tokens.size () > 0) 
+  if (tokens.size () > 0)
     {
       string token = downcase (tokens[0]);
 
@@ -39,7 +39,7 @@ Session::xbd_execute (char *line) {
       /* protover N command */
       /**********************/
 
-      if (token == "protover") 
+      if (token == "protover")
 	{
 	  // Send xboard the list of features we support.
 	  fprintf (out, "feature ping=1\n");
@@ -65,7 +65,7 @@ Session::xbd_execute (char *line) {
       /* Assume we are using an up to date version of xboard and do */
       /* not pay attention to replies to the feature command.       */
       /**************************************************************/
-         
+
       if (token == "accepted" || token == "rejected")
 	{
 	  // ignored.
@@ -86,7 +86,7 @@ Session::xbd_execute (char *line) {
       /* We do not support any non-standard chess variants. */
       /******************************************************/
 
-      if (token == "variant") 
+      if (token == "variant")
 	{
 	  // ignored.
 	}
@@ -95,7 +95,7 @@ Session::xbd_execute (char *line) {
       /* quit command */
       /****************/
 
-      if (token == "quit") 
+      if (token == "quit")
 	{
 	  return false;
 	}
@@ -104,7 +104,7 @@ Session::xbd_execute (char *line) {
       /* random command */
       /******************/
 
-      if (token == "random") 
+      if (token == "random")
 	{
 	  // ignored.
 	}
@@ -113,7 +113,7 @@ Session::xbd_execute (char *line) {
       /* force command */
       /*****************/
 
-      if (token == "force") 
+      if (token == "force")
 	{
 	  running = false;
 	}
@@ -122,7 +122,7 @@ Session::xbd_execute (char *line) {
       /* go command */
       /**************/
 
-      if (token == "go") 
+      if (token == "go")
 	{
 	  our_color = board.flags.to_move;
 	  running = true;
@@ -132,7 +132,7 @@ Session::xbd_execute (char *line) {
       /* playother command */
       /*********************/
 
-      if (token == "playother") 
+      if (token == "playother")
 	{
 	  our_color = invert_color (our_color);
 	}
@@ -141,9 +141,9 @@ Session::xbd_execute (char *line) {
       /* white command */
       /*****************/
 
-      if (token == "white") 
+      if (token == "white")
 	{
-	  board.flags.to_move = WHITE;
+	  board.set_color (WHITE);
 	  our_color = BLACK;
 	}
 
@@ -151,9 +151,9 @@ Session::xbd_execute (char *line) {
       /* black command */
       /*****************/
 
-      if (token == "black") 
+      if (token == "black")
 	{
-	  board.flags.to_move = BLACK;
+	  board.set_color (BLACK);
 	  our_color = WHITE;
 	}
 
@@ -161,7 +161,7 @@ Session::xbd_execute (char *line) {
       /* level MPS BASE INC command */
       /******************************/
 
-      if (token == "level") 
+      if (token == "level")
 	{
 	  // ignored.
 	}
@@ -170,7 +170,7 @@ Session::xbd_execute (char *line) {
       /* st TIME command */
       /*******************/
 
-      if (token == "st") 
+      if (token == "st")
 	{
 	  // ignored.
 	}
@@ -179,7 +179,7 @@ Session::xbd_execute (char *line) {
       /* sd DEPTH command */
       /********************/
 
-      if (token == "sd") 
+      if (token == "sd")
 	{
 	  int d;
 	  if (sscanf (token.c_str (), "%i", &d) > 0)
@@ -192,7 +192,7 @@ Session::xbd_execute (char *line) {
       /* time N command */
       /******************/
 
-      if (token == "time") 
+      if (token == "time")
 	{
 	  // ignored.
 	}
@@ -201,7 +201,7 @@ Session::xbd_execute (char *line) {
       /* otime N command */
       /*******************/
 
-      if (token == "otime") 
+      if (token == "otime")
 	{
 	  // ignored.
 	}
@@ -227,7 +227,7 @@ Session::xbd_execute (char *line) {
       /* ? command. */
       /**************/
 
-      if (token == "?") 
+      if (token == "?")
 	{
 	  // ignored.
 	}
@@ -238,7 +238,7 @@ Session::xbd_execute (char *line) {
 
       if (token == "ping") {
 	fprintf (out, "pong");
-	if (count > 1) 
+	if (count > 1)
 	  {
 	    fprintf (out, " %s", tokens[1].c_str ());
 	  }
@@ -249,7 +249,7 @@ Session::xbd_execute (char *line) {
       /* draw command */
       /****************/
 
-      if (token == "draw") 
+      if (token == "draw")
 	{
 	  // ignored.
 	}
@@ -258,7 +258,7 @@ Session::xbd_execute (char *line) {
       /* result RESULT {COMMENT} command */
       /***********************************/
 
-      if (token == "result") 
+      if (token == "result")
 	{
 	  // ignored.
 	}
@@ -267,16 +267,16 @@ Session::xbd_execute (char *line) {
       /* setboard FEN command */
       /************************/
 
-      if (token == "setboard") 
+      if (token == "setboard")
 	{
-	  // Handled in generic loop. 
+	  // Handled in generic loop.
 	}
 
       /****************/
       /* edit command */
       /****************/
 
-      if (token == "edit") 
+      if (token == "edit")
 	{
 	  // ignored.
 	}
@@ -285,7 +285,7 @@ Session::xbd_execute (char *line) {
       /* hint command */
       /****************/
 
-      if (token == "hint") 
+      if (token == "hint")
 	{
 	  // ignored.
 	}
@@ -294,7 +294,7 @@ Session::xbd_execute (char *line) {
       /* bk command */
       /**************/
 
-      if (token == "bk") 
+      if (token == "bk")
 	{
 	  // ignored.
 	}
@@ -303,7 +303,7 @@ Session::xbd_execute (char *line) {
       /* undo command */
       /****************/
 
-      if (token == "undo") 
+      if (token == "undo")
 	{
 	  // ignored.
 	}
@@ -312,7 +312,7 @@ Session::xbd_execute (char *line) {
       /* remove command */
       /******************/
 
-      if (token == "remove") 
+      if (token == "remove")
 	{
 	  // ignored.
 	}
@@ -321,7 +321,7 @@ Session::xbd_execute (char *line) {
       /* hard command */
       /****************/
 
-      if (token == "hard") 
+      if (token == "hard")
 	{
 	  // ignored.
 	}
@@ -330,7 +330,7 @@ Session::xbd_execute (char *line) {
       /* easy command */
       /****************/
 
-      if (token == "easy") 
+      if (token == "easy")
 	{
 	  // ignored.
 	}
@@ -339,7 +339,7 @@ Session::xbd_execute (char *line) {
       /* post command */
       /****************/
 
-      if (token == "post") 
+      if (token == "post")
 	{
 	  // ignored.
 	}
@@ -348,7 +348,7 @@ Session::xbd_execute (char *line) {
       /* nopost command */
       /******************/
 
-      if (token == "nopost") 
+      if (token == "nopost")
 	{
 	  // ignored.
 	}
@@ -357,7 +357,7 @@ Session::xbd_execute (char *line) {
       /* analyze command */
       /*******************/
 
-      if (token == "analyse") 
+      if (token == "analyse")
 	{
 	  // ignored.
 	}
@@ -366,7 +366,7 @@ Session::xbd_execute (char *line) {
       /* name X command */
       /******************/
 
-      if (token == "name") 
+      if (token == "name")
 	{
 	  // ignored.
 	}
@@ -375,7 +375,7 @@ Session::xbd_execute (char *line) {
       /* rating command */
       /******************/
 
-      if (token == "rating") 
+      if (token == "rating")
 	{
 	  // ignored.
 	}
@@ -384,7 +384,7 @@ Session::xbd_execute (char *line) {
       /* ics HOSTNAME command */
       /************************/
 
-      if (token == "ics") 
+      if (token == "ics")
 	{
 	  // ignored.
 	}
@@ -393,7 +393,7 @@ Session::xbd_execute (char *line) {
       /* computer command */
       /********************/
 
-      if (token == "computer") 
+      if (token == "computer")
 	{
 	  op_is_computer = true;
 	}
@@ -402,7 +402,7 @@ Session::xbd_execute (char *line) {
       /* pause command */
       /*****************/
 
-      if (token == "pause") 
+      if (token == "pause")
 	{
 	  // ignored.
 	}
@@ -411,7 +411,7 @@ Session::xbd_execute (char *line) {
       /* resume command */
       /******************/
 
-      if (token == "resume") 
+      if (token == "resume")
 	{
 	  // ignored.
 	}

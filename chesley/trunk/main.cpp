@@ -1,5 +1,5 @@
 /*
-   Chesley the chess engine! 
+   Chesley the chess engine!
 
    Matthew Gingell
    gingell@gnat.com
@@ -10,7 +10,7 @@
 // Initializion
 void initialize_all ()
 {
-  //  seed_random ();
+  seed_random ();
   Board :: precompute_tables ();
   Session :: init_session ();
 }

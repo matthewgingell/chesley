@@ -52,11 +52,11 @@ to_char (Kind k) {
 }
 
 // Convert a character code to a piece code, ignoring color.
-Kind 
+Kind
 to_kind (char k) {
 
   k = toupper (k);
-  switch (k) 
+  switch (k)
     {
       case 'P': return PAWN;
       case 'R': return ROOK;
@@ -73,18 +73,18 @@ to_kind (char k) {
 
 std::ostream &
 operator<< (std::ostream &os, Kind k) {
-    switch (k) 
+    switch (k)
     {
-    case NULL_KIND: return os << "NULL_KIND"; 
-    case PAWN:      return os << "PAWN"; 
-    case ROOK:      return os << "ROOK"; 
-    case KNIGHT:    return os << "KNIGHT"; 
-    case BISHOP:    return os << "BISHOP"; 
-    case QUEEN:     return os << "QUEEN"; 
-    case KING:      return os << "KING"; 
+    case NULL_KIND: return os << "NULL_KIND";
+    case PAWN:      return os << "PAWN";
+    case ROOK:      return os << "ROOK";
+    case KNIGHT:    return os << "KNIGHT";
+    case BISHOP:    return os << "BISHOP";
+    case QUEEN:     return os << "QUEEN";
+    case KING:      return os << "KING";
     default:        cerr << k << endl; assert (0);
     }
-    
+
     // Suppress gcc warning in -DNDEBUG case.
     return os;
 }
@@ -93,7 +93,7 @@ operator<< (std::ostream &os, Kind k) {
 /*  Color type.  */
 /*****************/
 
-std::ostream & 
+std::ostream &
 operator<< (std::ostream &os, Color c) {
   switch (c)
     {
@@ -197,10 +197,7 @@ Board::common_init (Board &b) {
   b.pawns = b.rooks = b.knights = b.bishops = b.queens = b.kings = 0x0;
   b.occupied = b.occupied_45 = b.occupied_90 = b.occupied_135 = 0x0;
 
-  // Initialize hash value;
-  b.hash = 0x0;
-
-  // Initialize flags.
+  // Set side to move.
   b.flags.to_move = WHITE;
 
   // Initialize castling status
@@ -216,6 +213,21 @@ Board::common_init (Board &b) {
   // Initialize en_passant status.
   b.flags.en_passant = 0;
 
+  // Set up initial hash value.
+  b.hash = 0x0;
+
+  // White is to move.
+  b.hash ^= zobrist_key_white_to_move;
+
+  // All castling moves are possible.
+  b.hash ^= zobrist_w_castle_q_key;
+  b.hash ^= zobrist_w_castle_k_key;
+  b.hash ^= zobrist_b_castle_q_key;
+  b.hash ^= zobrist_b_castle_k_key;
+
+  // The en passant square is not set.
+  b.hash ^= zobrist_enpassant_keys[0];
+
   // Initialize clocks.
   b.half_move_clock =
     b.full_move_clock = 0;
@@ -224,7 +236,7 @@ Board::common_init (Board &b) {
 // Construct a board from the standard starting position.
 Board
 Board::startpos () {
-  return Board::from_fen 
+  return Board::from_fen
     ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
@@ -313,13 +325,13 @@ Board::attack_set (Color c) const {
 }
 
 // Get the number of legal moves available from this position.
-int 
+int
 Board::child_count () {
   return (Board_Vector (*this)).count;
 }
 
 // Get the status of the game. {
-Status 
+Status
 Board::get_status () {
   if (child_count () > 0) return GAME_IN_PROGRESS;
   if (in_check (WHITE)) return GAME_WIN_BLACK;
@@ -327,8 +339,8 @@ Board::get_status () {
   return GAME_DRAW;
 }
 
-// Return whether color c is in check. 
-bool 
+// Return whether color c is in check.
+bool
 Board::in_check (Color c) const
 {
   // Take advantage of the symmetry that if a king could move like an
@@ -342,19 +354,19 @@ Board::in_check (Color c) const
 
   // Are we attacked along a rank?
   attacks = RANK_ATTACKS_TBL[from * 256 + occ_0 (from)];
-  if (attacks & (them & (queens | rooks))) return true;  
+  if (attacks & (them & (queens | rooks))) return true;
 
   // Are we attack along a file?
   attacks = FILE_ATTACKS_TBL[from * 256 + occ_90 (from)];
-  if (attacks & (them & (queens | rooks))) return true;  
+  if (attacks & (them & (queens | rooks))) return true;
 
   // Are we attacked along a 45 degree diagonal.
   attacks = DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)];
-  if (attacks & (them & (queens | bishops))) return true;  
+  if (attacks & (them & (queens | bishops))) return true;
 
   // Are we attacked along a 135 degree diagonal.
   attacks = DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)];
-    if (attacks & (them & (queens | bishops))) return true;  
+    if (attacks & (them & (queens | bishops))) return true;
 
   // Are we attacked by a knight?
   attacks = KNIGHT_ATTACKS_TBL[from];
@@ -366,20 +378,62 @@ Board::in_check (Color c) const
 
   // Are we attacked by a pawn?
   bitboard their_pawns = pawns & them;
-  if (c == WHITE) 
+  if (c == WHITE)
     {
       attacks = (((their_pawns & ~file (7)) >> 7)
                  | ((their_pawns & ~file (0)) >> 9));
     }
   else
     {
-      attacks = (((their_pawns & ~file (0)) << 7) 
+      attacks = (((their_pawns & ~file (0)) << 7)
                  | ((their_pawns & ~file (7)) << 9));
     }
 
   if (attacks & king) return true;
 
   return false;
+}
+
+/***************************/
+/* Seting castling rights  */
+/***************************/
+
+void
+Board::set_castling_right (Castling_Right cr, bool v) {
+  switch (cr)
+    {
+    case W_QUEEN_SIDE:
+      if (flags.w_can_q_castle != v)
+	{
+	  hash ^= zobrist_w_castle_q_key;
+	  flags.w_can_q_castle = v;
+	}
+      break;
+
+    case W_KING_SIDE:
+      if (flags.w_can_k_castle != v)
+	{
+	  hash ^= zobrist_w_castle_k_key;
+	  flags.w_can_k_castle = v;
+	}
+      break;
+
+    case B_QUEEN_SIDE:
+      if (flags.b_can_q_castle != v)
+	{
+	  hash ^= zobrist_b_castle_q_key;
+	  flags.b_can_q_castle = v;
+	}
+      break;
+
+    case B_KING_SIDE:
+      if (flags.b_can_k_castle != v)
+	{
+	  hash ^= zobrist_b_castle_k_key;
+	  flags.b_can_k_castle = v;
+	}
+      break;
+    }
 }
 
 /********************/
@@ -416,18 +470,7 @@ Board::apply (const Move &m) {
   /* Update to_move state. */
   /*************************/
 
-  if (flags.to_move == WHITE)
-    {
-      flags.to_move = BLACK;
-      hash ^= zobrist_key_white;
-      hash ^= zobrist_key_black;
-    }
-  else
-    {
-      flags.to_move = WHITE;
-      hash ^= zobrist_key_black;
-      hash ^= zobrist_key_white;
-    }
+  set_color (invert_color (flags.to_move));
 
   /****************************/
   /* Handle taking En Passant */
@@ -455,21 +498,21 @@ Board::apply (const Move &m) {
   /* clearing the En Passant target square.                        */
   /*****************************************************************/
 
-  flags.en_passant = 0;
+  set_en_passant (0);
   if (m.kind == PAWN)
     {
       if (m.color == WHITE)
         {
           if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
             {
-              flags.en_passant = m.from + 8;
+              set_en_passant (m.from + 8);
             }
         }
       else
         {
           if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
             {
-              flags.en_passant = m.from - 8;
+              set_en_passant (m.from - 8);
             }
         }
     }
@@ -492,8 +535,8 @@ Board::apply (const Move &m) {
               clear_piece (0);
               set_piece (KING, WHITE, 2);
               set_piece (ROOK, WHITE, 3);
-              flags.w_can_q_castle = 0;
-              flags.w_can_k_castle = 0;
+	      set_castling_right (W_QUEEN_SIDE, false);
+	      set_castling_right (W_KING_SIDE, false);
               flags.w_has_k_castled = 1;
               return true;
             }
@@ -504,8 +547,8 @@ Board::apply (const Move &m) {
               clear_piece (7);
               set_piece (KING, WHITE, 6);
               set_piece (ROOK, WHITE, 5);
-              flags.w_can_q_castle = 0;
-              flags.w_can_k_castle = 0;
+	      set_castling_right (W_QUEEN_SIDE, false);
+	      set_castling_right (W_KING_SIDE, false);
               flags.w_has_k_castled = 1;
               return true;
             }
@@ -520,8 +563,8 @@ Board::apply (const Move &m) {
               clear_piece (56);
               set_piece (KING, BLACK, 58);
               set_piece (ROOK, BLACK, 59);
-              flags.b_can_q_castle = 0;
-              flags.b_can_k_castle = 0;
+	      set_castling_right (B_QUEEN_SIDE, false);
+	      set_castling_right (B_KING_SIDE, false);
               flags.b_has_q_castled = 1;
               return true;
             }
@@ -532,8 +575,8 @@ Board::apply (const Move &m) {
               clear_piece (63);
               set_piece (KING, BLACK, 62);
               set_piece (ROOK, BLACK, 61);
-              flags.b_can_q_castle = 0;
-              flags.b_can_k_castle = 0;
+	      set_castling_right (B_QUEEN_SIDE, false);
+	      set_castling_right (B_KING_SIDE, false);
               flags.b_has_k_castled = 1;
               return true;
             }
@@ -567,22 +610,22 @@ Board::apply (const Move &m) {
       /**************************/
 
       // King moves.
-      if (m.from == 4) 
+      if (m.from == 4)
         {
-          flags.w_can_q_castle = 0;
-          flags.w_can_k_castle = 0;
+	  set_castling_right (W_QUEEN_SIDE, false);
+	  set_castling_right (W_KING_SIDE, false);
         }
-      else if (m.from == 60) 
+      else if (m.from == 60)
         {
-          flags.b_can_q_castle = 0;
-          flags.b_can_k_castle = 0;
+	  set_castling_right (B_QUEEN_SIDE, false);
+	  set_castling_right (B_KING_SIDE, false);
         }
 
       // Rook moves and attacks.
-      if (m.from ==  0 || m.to ==  0) { flags.w_can_q_castle = 0; }
-      if (m.from ==  7 || m.to ==  7) { flags.w_can_k_castle = 0; }
-      if (m.from == 56 || m.to == 56) { flags.b_can_q_castle = 0; }
-      if (m.from == 63 || m.to == 63) { flags.b_can_k_castle = 0; }
+      if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
+      if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
+      if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
+      if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
 
       /*****************/
       /* Test legality. */
@@ -660,7 +703,7 @@ operator<< (ostream &os, const Move_Vector &moves)
 }
 
 // Construct a Move from coordinate algebraic notation.
-Move 
+Move
 Board::from_calg (const string &s) const {
   assert (s.length () >= 4);
 
@@ -749,12 +792,12 @@ Board::from_fen (const string_vector &toks, bool EPD) {
 
   int row = 7, file = 0;
   string::const_iterator i;
-  
+
   for (i = toks[0].begin (); i < toks[0].end (); i++)
     {
       // Handle a piece code.
       if (isalpha (*i)) {
-        b.set_piece 
+        b.set_piece
           (to_kind (*i), isupper (*i) ? WHITE : BLACK, row, file++);
       }
 
@@ -767,24 +810,26 @@ Board::from_fen (const string_vector &toks, bool EPD) {
 
   // 2. Active color. "w" means white moves next, "b" means black.
 
-  b.flags.to_move = tolower (toks[1][0]) == 'w' ? WHITE : BLACK;
-   
+  b.set_color (tolower (toks[1][0]) == 'w' ? WHITE : BLACK);
+
   // 3. Castling availability. If neither side can castle, this is
   // "-". Otherwise, this has one or more letters: "K" (White can
   // castle kingside), "Q" (White can castle queenside), "k" (Black
   // can castle kingside), and/or "q" (Black can castle queenside).
 
-  b.flags.w_can_q_castle = b.flags.w_can_k_castle = 
-    b.flags.b_can_q_castle = b.flags.b_can_k_castle = 0;
-   
+  b.set_castling_right (W_QUEEN_SIDE, false);
+  b.set_castling_right (W_KING_SIDE, false);
+  b.set_castling_right (B_QUEEN_SIDE, false);
+  b.set_castling_right (B_KING_SIDE, false);
+
   for (i = toks[2].begin (); i < toks[2].end (); i++)
     {
       switch (*i)
         {
-        case 'K': b.flags.w_can_k_castle = 1; break;
-        case 'Q': b.flags.w_can_q_castle = 1; break;
-        case 'k': b.flags.b_can_k_castle = 1; break;
-        case 'q': b.flags.b_can_q_castle = 1; break;
+        case 'Q': b.set_castling_right (W_QUEEN_SIDE, true); break;
+        case 'K': b.set_castling_right (W_KING_SIDE, true); break;
+        case 'q': b.set_castling_right (B_QUEEN_SIDE, true); break;
+        case 'k': b.set_castling_right (B_KING_SIDE, true); break;
         }
     }
 
@@ -794,21 +839,21 @@ Board::from_fen (const string_vector &toks, bool EPD) {
 
   if (toks[3][0] != '-')
     {
-      b.flags.en_passant = (toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1);
+      b.set_en_passant ((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
     }
 
-  if (!EPD) 
+  if (!EPD)
     {
-   
+
       // 5. Halfmove clock: This is the number of halfmoves since the last
       // pawn advance or capture. This is used to determine if a draw can
       // be claimed under the fifty-move rule.
-      
+
       if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
-      
+
       // 6. Fullmove number: The number of the full move. It starts at 1,
       // and is incremented after Black's move.
-      
+
       if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
     }
 
@@ -822,7 +867,7 @@ Board::from_fen (const string &fen, bool EPD) {
 }
 
 // Return an ASCII representation of this position.
-string 
+string
 Board::to_ascii () const {
   ostringstream s;
 
@@ -831,7 +876,7 @@ Board::to_ascii () const {
   s << (flags.to_move == WHITE ? 'w' : 'b') << " ";
 
 
-  if (flags.w_can_k_castle | flags.w_can_q_castle | 
+  if (flags.w_can_k_castle | flags.w_can_q_castle |
       flags.b_can_k_castle | flags.b_can_q_castle)
     {
       if (flags.w_can_k_castle) s << 'K';
@@ -857,15 +902,15 @@ Board::to_ascii () const {
     }
 
   s << ' ' << half_move_clock << ' ' << full_move_clock << endl;
-  
+
   // Dump a human readable ASCII art diagram of the board.
-  for (int row = 7; row >= 0; row--) 
+  for (int row = 7; row >= 0; row--)
     {
       for (int file = 0; file < 8; file++)
         {
           Kind k = get_kind (row, file);
-          
-          if (k == NULL_KIND) 
+
+          if (k == NULL_KIND)
             {
               s << ".";
             }
@@ -880,18 +925,18 @@ Board::to_ascii () const {
                   s << (char) tolower (to_char (k));
                 }
             }
-          
+
           if (file != 7) s << ' ';
         }
       if (row != 0) s << endl;
     }
-  
+
     return s.str ();
 }
 
 
 // Return a FEN string for this position.
-string 
+string
 Board ::to_fen () const {
   ostringstream s;
 
@@ -939,12 +984,12 @@ Board ::to_fen () const {
   // 2. Active color. "w" means white moves next, "b" means black.
 
   s << " " << (flags.to_move == WHITE ? 'w' : 'b');
-   
+
   // 3. Castling availability.
 
   s << ' ';
 
-  if (flags.w_can_k_castle | flags.w_can_q_castle | 
+  if (flags.w_can_k_castle | flags.w_can_q_castle |
       flags.b_can_k_castle | flags.b_can_q_castle)
     {
       if (flags.w_can_k_castle) s << 'K';
@@ -956,7 +1001,7 @@ Board ::to_fen () const {
     {
       s << '-';
     }
-      
+
   // 4. En passant target square in algebraic notation.
 
   s << ' ';
@@ -992,9 +1037,9 @@ Board::from_ascii (const string &str) {
   return b;
 }
 
-/**********/
-/* Debug. */
-/**********/
+/************/
+/* Testing. */
+/************/
 
 // Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
 void
@@ -1024,4 +1069,37 @@ Board::print_tree (int depth)
           children[i].print_tree (depth - 1);
         }
     }
+}
+
+// Generate a hash key from scratch. This is used to test the
+// correctness of our incremental hash update code.
+uint64
+Board::gen_hash () const {
+  uint64 h = 0x0;
+  Color to_move = flags.to_move;
+
+  // Set color to move.
+  if (to_move == WHITE) h ^= zobrist_key_white_to_move;
+
+  // Set castling rights.
+  if (flags.w_can_q_castle) h ^= zobrist_w_castle_q_key;
+  if (flags.w_can_k_castle) h ^= zobrist_w_castle_k_key;
+  if (flags.b_can_q_castle) h ^= zobrist_b_castle_q_key;
+  if (flags.b_can_k_castle) h ^= zobrist_b_castle_k_key;
+
+  // Set en passant status.
+  h ^= zobrist_enpassant_keys[flags.en_passant];
+
+  // Set all pieces.
+  for (int i = 0; i < 64; i++)
+    {
+      Kind k = get_kind (i);
+      Color c = get_color (i);
+      if (k != NULL_KIND && c != NULL_COLOR)
+	{
+	  h ^= Board::get_zobrist_piece_key (c, k, i);
+	}
+    }
+
+  return h;
 }
