@@ -67,7 +67,7 @@ bit_idx (bits64 b) {
 }
 
 // Count the number of bits set in b.
-inline u_int32_t 
+inline uint32
 pop_count (bits64 b) {
   // This is a big win over __builtin_popcount, at 
   // least for our purposes with g++ 4.4.

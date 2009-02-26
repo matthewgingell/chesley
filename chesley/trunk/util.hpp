@@ -449,7 +449,7 @@ insertion_sort (V &items) {
 // Seed the random number generator
 static void 
 seed_random () {
-  srandomdev();
+  srandom (mclock ());
 }
 
 // Return a 64-bit random number.
