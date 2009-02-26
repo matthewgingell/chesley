@@ -4,13 +4,13 @@ LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 
-CXX = g++ 
-#CXX = g++-mp-4.4
+ALG = -DUSE_TRANS_TABLE=1 -DORDER_MOVES=0
 
-CXXFLAGS = -g -Wall -static
-#CXXFLAGS = -g -Wall -m64
-#CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops -DUSE_TRANS_TABLE
-#CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops -DNDEBUG -DUSE_TRANS_TABLE
+#CXX = g++ 
+CXX = g++-mp-4.4
+
+#CXXFLAGS = -g -Wall -m64 $(ALG)
+CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops $(ALG)
 
 all: chesley
 

@@ -2,6 +2,8 @@ Bugs:
 
 Next items:
 
+  * Convert ostring functions to to_string functions.
+
   * Hunt for things that can be made const.
 
   * Use 16 bit types for indexes, scores, and depths.
@@ -15,6 +17,14 @@ Next items:
 
   * Must have a good way of measuring search correctness, strength,
     and speed before we try to improved them.
+
+  * Document MTDf
+
+  * Collect and analyize search statistics.
+
+  * Use readline and completions.
+
+  * Add help command.
 
 Interface:
 
