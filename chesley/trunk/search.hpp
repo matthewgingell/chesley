@@ -73,7 +73,7 @@ struct Search_Engine {
   /***************/
 
   // Count the number of times score has been called.
-  u_int64_t score_count;
+  uint64 score_count;
 
   /************/
   /* Queries. */

@@ -32,9 +32,9 @@ Board::gen_all_moves (Move_Vector &out) const
 
 // Generate the number of moves available at ply d. Used for debugging
 // the move generator.
-u_int64_t
+uint64
 Board::perft (int d) const {
-  u_int64_t sum = 0;
+  uint64 sum = 0;
 
   if (d == 0) return 1;
 
