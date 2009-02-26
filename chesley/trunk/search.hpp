@@ -40,7 +40,6 @@ struct TT_Entry {
 
 // A transposition table type mapping from a 64 bit board hash to a
 // TT_Entry.
-
 typedef std::tr1::unordered_map <uint64, TT_Entry> Trans_Table;
 
 struct Search_Engine {

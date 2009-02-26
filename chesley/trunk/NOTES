@@ -1,50 +1,85 @@
-no tt, no mtdf:
+-DUSE_TRANS_TABLE=1 -DORDER_MOVES=1
 
+Chesley! v0.01
+> bench 1
+Best move to depth 1:
+[MOVE: WHITE PAWN at 8 => 16 score: -1]
+0.00 seconds elapsed.
+> bench 2
+Best move to depth 2:
+[MOVE: WHITE PAWN at 8 => 16 score: -1]
+0.00 seconds elapsed.
+> bench 3
+Best move to depth 3:
+[MOVE: WHITE KNIGHT at 6 => 21 score: 101]
+0.00 seconds elapsed.
+> bench 4
+Best move to depth 4:
+[MOVE: WHITE KNIGHT at 1 => 18 score: -60]
+0.00 seconds elapsed.
 > bench 5
-0.03 seconds elapsed.
-
+Best move to depth 5:
+[MOVE: WHITE KNIGHT at 1 => 18 score: 100]
+0.02 seconds elapsed.
 > bench 6
-0.10 seconds elapsed.
-
+Best move to depth 6:
+[MOVE: WHITE PAWN at 12 => 28 score: -7]
+0.09 seconds elapsed.
 > bench 7
-1.16 seconds elapsed.
-
+Best move to depth 7:
+[MOVE: WHITE PAWN at 11 => 19 score: 41]
+1.07 seconds elapsed.
 > bench 8
-6.57 seconds elapsed.
-
-> bench 9 
-76.77 seconds elapsed.
-
-tt, no mtdf:
-
-> bench 5
-0.03 seconds elapsed.
-
-> bench 6
-0.10 seconds elapsed.
-
-> bench 7
-1.21 seconds elapsed.
-
-> bench 8
-6.55 seconds elapsed.
-
+Best move to depth 8:
+[MOVE: WHITE PAWN at 12 => 20 score: 0]
+5.40 seconds elapsed.
 > bench 9
-79.24 seconds elapsed.
+garbage collecting...
+done.
+Best move to depth 9:
+[MOVE: WHITE PAWN at 12 => 20 score: 23]
+71.75 seconds elapsed.
 
-tt, mtdf:
+-DUSE_TRANS_TABLE=0 -DORDER_MOVES=1
 
+Chesley! v0.01
+> bench 1
+Best move to depth 1:
+[MOVE: WHITE KNIGHT at 1 => 18 score: -59]
+0.00 seconds elapsed.
+> bench 2
+Best move to depth 2:
+[MOVE: WHITE KNIGHT at 6 => 21 score: -57]
+0.00 seconds elapsed.
+> bench 3
+Best move to depth 3:
+[MOVE: WHITE KNIGHT at 6 => 21 score: 100]
+0.00 seconds elapsed.
+> bench 4
+Best move to depth 4:
+[MOVE: WHITE KNIGHT at 6 => 21 score: -62]
+0.00 seconds elapsed.
 > bench 5
-0.04 seconds elapsed.
-
+Best move to depth 5:
+[MOVE: WHITE KNIGHT at 6 => 21 score: 102]
+0.03 seconds elapsed.
 > bench 6
-0.51 seconds elapsed.
-
+Best move to depth 6:
+[MOVE: WHITE PAWN at 12 => 28 score: -9]
+0.11 seconds elapsed.
 > bench 7
-1.54 seconds elapsed.
-
+Best move to depth 7:
+[MOVE: WHITE KNIGHT at 1 => 18 score: 41]
+1.23 seconds elapsed.
 > bench 8
-12.27 seconds elapsed.
-
+Best move to depth 8:
+[MOVE: WHITE PAWN at 12 => 20 score: -5]
+6.72 seconds elapsed.
 > bench 9
-44.68 seconds elapsed.
+Best move to depth 9:
+[MOVE: WHITE PAWN at 12 => 20 score: 32]
+89.47 seconds elapsed.
+
+ -DUSE_TRANS_TABLE=0 -DORDER_MOVES=0
+
+(hopeless for depth > 7)

@@ -109,7 +109,7 @@ inline int
 value (const Move &m) {
   switch (m.flags.capture)
     {
-    case NULL_KIND: return 0;
+    case NULL_KIND: return  0;
     case PAWN:      return -1;
     case ROOK:      return -5;
     case KNIGHT:    return -3;
@@ -117,6 +117,7 @@ value (const Move &m) {
     case QUEEN:     return -9;
     default:     assert (0);
     }
+
   // Suppress gcc warning in -DNDEBUG case.
   return 0;
 }
