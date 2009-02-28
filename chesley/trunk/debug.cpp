@@ -73,6 +73,9 @@ Session::bench (const string_vector &tokens) {
   cerr << m << endl;
 
   fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
+
+  fprintf (out, "%lli calls_to_alpha_beta.\n", se.calls_to_alpha_beta);
+
   return true;
 }
 

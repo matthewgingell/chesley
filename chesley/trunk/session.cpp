@@ -210,7 +210,7 @@ Session::handle_end_of_game (Status s) {
       assert (0);
     }
 
-  running = false;
+  //  running = false;
 }
 
 /*************************************/
