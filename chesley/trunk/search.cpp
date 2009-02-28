@@ -241,22 +241,11 @@ Search_Engine::alpha_beta_with_memory
       insertion_sort <Move_Vector, Move> (moves);
 #endif
 
-      // Minimax over children.
+      /**************************/
+      /* Minimax over children. */
+      /**************************/
 
-#if XXX
-      Move best_move = moves[0];
-#endif
-
-      Move best_move;
-      if (player == WHITE)
-	{
-	  best_move = Move (-INFINITY);
-	}
-      else
-	{
-	  best_move = Move (+INFINITY);
-	}
-
+      Move best_move ((player == WHITE ? -INFINITY : +INFINITY));
       bool at_least_one_legal_move = false;
       for (int i = 0; i < moves.count; i++)
         {
@@ -273,12 +262,7 @@ Search_Engine::alpha_beta_with_memory
                 {
                   if (alpha >= beta)
                     {
-                      /*************************************************/
-                      /* The value of this position is at least alpha, */
-                      /* and since the value we're looking for is no   */
-                      /* greater than beta we bail out.                */
-                      /*************************************************/
-
+                      // The value of this position is at least alpha.
 		      best_move.score = alpha;
                       fail_high = true;
                       break;
@@ -307,12 +291,7 @@ Search_Engine::alpha_beta_with_memory
 
                   if (beta <= alpha)
                     {
-                      /***********************************************/
-                      /* The value of this position is at most beta, */
-                      /* and since the value we're looking for is no */
-                      /* less than alpha we bail out.                */
-                      /***********************************************/
-
+                      // The value of this position is at most beta.
 		      best_move.score = beta;
                       fail_low = true;
                       break;
@@ -335,34 +314,9 @@ Search_Engine::alpha_beta_with_memory
             }
         }
 
-      /**********************************************************/
-      /* If we found at least one move, return the best move we */
-      /* found.                                                 */
-      /**********************************************************/
-
-
-
-      if (at_least_one_legal_move)
-        {
-#if XXX
-          if (player == WHITE)
-            {
-              best_move.score = alpha;
-            }
-          else
-            {
-              best_move.score = beta;
-            }
-#endif
-        }
-
-
-      /*************************************************************/
-      /* Otherwize, the game is over and we determine whether it's */
-      /* a draw or somebody won.                                   */
-      /*************************************************************/
-
-      else
+      // The game is over if there are no further legal moves
+      // available.
+      if (!at_least_one_legal_move)
         {
           if (b.in_check (player))
             {
@@ -384,7 +338,6 @@ Search_Engine::alpha_beta_with_memory
                   mate_val = +MATE_VAL - (100 - depth);
                 }
 
-              // best_move is a win.
               best_move = Move (mate_val);
             }
           else
@@ -394,13 +347,13 @@ Search_Engine::alpha_beta_with_memory
             }
         }
 
+#if USE_TRANS_TABLE
       /*****************************************************************/
       /* If we have no entry for this position, or we have scored this */
       /* position to a deeper depth, then store the results in the     */
       /* transposition table.                                          */
       /*****************************************************************/
 
-#if USE_TRANS_TABLE
       if (!found_tt_entry || depth > entry.depth)
 	{
 	  entry.move = best_move;
