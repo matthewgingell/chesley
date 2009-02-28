@@ -1,6 +1,11 @@
-Bugs:
+Issues:
+
+  * How do I know if a move returned by the search is correct? How do
+    I know it's any good?
 
 Next items:
+
+  * Return draw at 50 move rule, even if somebody is in check.
 
   * Convert ostring functions to to_string functions.
 

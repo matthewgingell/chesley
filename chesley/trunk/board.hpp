@@ -74,13 +74,23 @@ std::ostream & operator<< (std::ostream &os, Kind k);
 struct Move {
   Move () {}
 
-  Move (Kind k, uint32 f, uint32 t, Color c, Kind capture, uint32 score = 0) :
+  Move (Kind k, uint32 f, uint32 t, Color c, Kind capture, int32 score = 0) :
     kind (k), color (c), from (f), to (t), score (score) {
     score = 0;
     flags.capture = capture;
     flags.promote = (Kind) 0;
     flags.castle_qs = 0;
     flags.castle_ks = 0;
+  }
+
+  // Create a null move with a score.
+  Move (int32 score) : score (score) {
+    from = to = 0;
+    kind = NULL_KIND;
+    color = NULL_COLOR;
+    flags.capture = NULL_KIND;
+    flags.promote = NULL_KIND;
+    flags.castle_qs = flags.castle_ks = 0;
   }
 
   struct {
@@ -101,6 +111,14 @@ struct Move {
 inline Move operator- (Move m) {
   m.score = -m.score;
   return m;
+}
+
+inline Move max (Move l, Move r) {
+  return ((l.score > r.score) ? l : r);
+}
+
+inline Move min (Move l, Move r) {
+  return ((l.score < r.score) ? l : r);
 }
 
 // Estimate the value of this move as zero or the value of the piece

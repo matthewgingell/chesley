@@ -15,7 +15,7 @@
 #include "chesley.hpp"
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 10 * 1000;
+const int TIME_OUT = 1 * 1000;
 
 // Putting cctype here, after include of <iostream>, works around a
 // bug in some version of the g++ library.
