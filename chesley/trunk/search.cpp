@@ -264,7 +264,6 @@ Search_Engine::alpha_beta_with_memory
           if (child.apply (moves[i]))
             {
               at_least_one_legal_move = true;
-              Move s = alpha_beta_with_memory (child, depth - 1, alpha, beta);
 
               /***************************/
               /* Maximizing at this node. */
@@ -272,6 +271,21 @@ Search_Engine::alpha_beta_with_memory
 
               if (player == WHITE)
                 {
+                  if (alpha >= beta)
+                    {
+                      /*************************************************/
+                      /* The value of this position is at least alpha, */
+                      /* and since the value we're looking for is no   */
+                      /* greater than beta we bail out.                */
+                      /*************************************************/
+
+		      best_move.score = alpha;
+                      fail_high = true;
+                      break;
+                    }
+
+		  Move s = alpha_beta_with_memory (child, depth - 1, alpha, beta);
+
 		  if (s.score > best_move.score)
 		    {
 		      best_move = moves[i];
@@ -282,18 +296,6 @@ Search_Engine::alpha_beta_with_memory
                     {
                       alpha = s.score;
                     }
-
-                  if (alpha >= beta)
-                    {
-                      /*************************************************/
-                      /* The value of this position is at least alpha, */
-                      /* and since the value we're looking for is no   */
-                      /* greater than beta we bail out.                */
-                      /*************************************************/
-
-                      fail_high = true;
-                      break;
-                    }
                 }
 
               /****************************/
@@ -302,6 +304,22 @@ Search_Engine::alpha_beta_with_memory
 
               else
                 {
+
+                  if (beta <= alpha)
+                    {
+                      /***********************************************/
+                      /* The value of this position is at most beta, */
+                      /* and since the value we're looking for is no */
+                      /* less than alpha we bail out.                */
+                      /***********************************************/
+
+		      best_move.score = beta;
+                      fail_low = true;
+                      break;
+                    }
+
+		  Move s = alpha_beta_with_memory (child, depth - 1, alpha, beta);
+
 		  if (s.score < best_move.score)
 		    {
 		      best_move = moves[i];
@@ -313,17 +331,6 @@ Search_Engine::alpha_beta_with_memory
                       beta = s.score;
                     }
 
-                  if (beta <= alpha)
-                    {
-                      /***********************************************/
-                      /* The value of this position is at most beta, */
-                      /* and since the value we're looking for is no */
-                      /* less than alpha we bail out.                */
-                      /***********************************************/
-
-                      fail_low = true;
-                      break;
-                    }
                 }
             }
         }
