@@ -46,20 +46,13 @@ bool
 Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
   Trans_Table::iterator i = tt.find (hash);
 
-  cout << "fetching: ";
-
   if (i != tt.end ())
     {
       out = i -> second;
-
-      cout << hash  << " : [" << out.lowerbound << ", " << out.upperbound << ", d=" << out.depth << "]" << endl;
-
       return true;
     }
   else
     {
-      cout << hash << " : not found." << endl;
-
       return false;
     }
 }
@@ -67,10 +60,6 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-
-
-  cout << "storing " << hash << " for depth " << in.depth << endl;
-
   // Garbage collect the table when it gets very large.
   const uint32 COUNT_MAX = 10 * 1000 * 1000;
   if (tt.size () > COUNT_MAX)
@@ -88,7 +77,9 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
       cerr << "done." << endl;
     }
 
+
   // Store an item in the table.
+  tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
 
@@ -102,18 +93,20 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
 
 Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
+#if MTDF
+  Move best_move = MTDf (b, 0, 1);
+#else
   Move best_move = alpha_beta_with_memory (b, 1);
-
-  // Move best_move = MTDf (b, 0, 1);
+#endif
 
   for (int i = 2; i <= depth; i++)
     {
       try
         {
-#if 1
-          best_move = alpha_beta_with_memory (b, i);
+#if MTDF
+	  Move best_move = MTDf (b, best_move.score, 1);
 #else
-	  best_move = MTDf (b, best_move.score, i);
+	  best_move = alpha_beta_with_memory (b, i);
 #endif
 
         }
@@ -121,12 +114,10 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
         {
           assert (code == SEARCH_INTERRUPTED);
 	  cerr << "timeout searching ply: " << i << endl;
-	  //	  tt.clear ();
 	  return best_move;
         }
     }
 
-  //  tt.clear ();
   return best_move;
 }
 
@@ -184,37 +175,24 @@ Search_Engine::alpha_beta_with_memory
 
 #if USE_TRANS_TABLE
   TT_Entry entry;
-  bool found_tt_entry = tt_fetch (b.hash, entry);
+  bool found_tt_entry;
 
-  if (found_tt_entry)
-    cout << "Found entry at depth " << entry.depth << " while searching " << depth << endl;
-
-  if (found_tt_entry && !(entry.depth >= depth))
-    cout << "Ignoring because it's too shallow." << endl;
-
+  found_tt_entry = tt_fetch (b.hash, entry);
   if (found_tt_entry && entry.depth >= depth)
     {
-
-      cout << "Using it" << endl;
-
       /***************************************************************/
       /* Bail out if the bounds we have previously computed for this */
       /* node tells us the true minimax value isn't in this subtree. */
       /***************************************************************/
 
-      cout << "alpha = " << alpha << " beta = " << beta << endl;
-      cout << "entry.lowerbound = " << entry.lowerbound << " entry.upperbound = " << entry.upperbound << endl;
-
       if (entry.lowerbound >= beta)
 	{
-	  cout << "returning it" << endl;
 	  entry.move.score = entry.lowerbound;
 	  return entry.move;
 	}
 
       if (entry.upperbound <= alpha)
 	{
-	  cout << "returning it" << endl;
 	  entry.move.score = entry.upperbound;
 	  return entry.move;
 	}
@@ -224,7 +202,6 @@ Search_Engine::alpha_beta_with_memory
       /* [alpha, beta].                                           */
       /************************************************************/
 
-      cout << "narrowing search" << endl;
       alpha = max (alpha, entry.lowerbound);
       beta = min (beta, entry.upperbound);
     }
@@ -249,17 +226,11 @@ Search_Engine::alpha_beta_with_memory
       bool fail_low = false;
       Move_Vector moves (b);
 
+#if ORDER_MOVES
       // Even this trivial move ordering criterion makes a huge
       // difference.
-#if ORDER_MOVES
       insertion_sort <Move_Vector, Move> (moves);
 #endif
-
-
-
-
-
-
 
       // Minimax over children.
       Move best_move = moves[0];
@@ -282,6 +253,18 @@ Search_Engine::alpha_beta_with_memory
                     {
                       alpha = m.score;
                       best_move = moves[i];
+                    }
+
+                  if (alpha >= beta)
+                    {
+                      /*************************************************/
+                      /* The value of this position is at least alpha, */
+                      /* and since the value we're looking for is no   */
+                      /* greater than beta we bail out.                */
+                      /*************************************************/
+
+                      fail_high = true;
+                      break;
                     }
                 }
 
@@ -311,7 +294,6 @@ Search_Engine::alpha_beta_with_memory
                 }
             }
         }
-#endif
 
       /**********************************************************/
       /* If we found at least one move, return the best move we */

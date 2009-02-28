@@ -62,6 +62,9 @@ Session::bench (const string_vector &tokens) {
 
   uint64 start = cpu_time();
   Move m = se.choose_move (board, depth);
+
+  //  Move m = se.alpha_beta (board, depth, -INFINITY, +INFINITY);
+
   uint64 elapsed = cpu_time() - start;
   //  fprintf (out, "Best move at depth %i: %s.\n",
   //	   depth, board.to_calg (m).c_str ());
