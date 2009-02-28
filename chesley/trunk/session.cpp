@@ -195,15 +195,15 @@ Session::handle_end_of_game (Status s) {
   switch (s)
     {
     case GAME_WIN_WHITE:
-      fprintf (out, "result 1-0\n");
+      fprintf (out, "RESULT 1-0 {White mates}\n");
       break;
 
     case GAME_WIN_BLACK:
-      fprintf (out, "result 0-1\n");
+      fprintf (out, "RESULT 0-1 {Black mates}\n");
       break;
 
     case GAME_DRAW:
-      fprintf (out, "result 1/2-1/2\n");
+      fprintf (out, "RESULT 1/2-1/2 {Draw}\n");
       break;
 
     default:
