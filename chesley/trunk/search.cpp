@@ -93,6 +93,10 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
 
 Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
+
+  // Clear statistics.
+  calls_to_alpha_beta = 0;
+
 #if MTDF
   Move best_move = MTDf (b, 0, 1);
 #else
@@ -157,8 +161,13 @@ Search_Engine::MTDf (const Board &root, int f, int d) {
 Move
 Search_Engine::alpha_beta_with_memory
 (const Board &b, int depth, int alpha, int beta) {
-
   Color player = b.flags.to_move;
+
+  /***********************/
+  /* Collect statistics. */
+  /***********************/
+
+  calls_to_alpha_beta++;
 
   /**************************************/
   /* Abort if we have been interrupted. */
@@ -213,7 +222,7 @@ Search_Engine::alpha_beta_with_memory
 
   if (depth == 0)
     {
-      return Move (NULL_KIND, 0, 0, NULL_COLOR, NULL_KIND, eval (b, player));
+      return Move (eval (b, player));
     }
 
   /*****************************************************/
@@ -233,7 +242,21 @@ Search_Engine::alpha_beta_with_memory
 #endif
 
       // Minimax over children.
+
+#if XXX
       Move best_move = moves[0];
+#endif
+
+      Move best_move;
+      if (player == WHITE)
+	{
+	  best_move = Move (-INFINITY);
+	}
+      else
+	{
+	  best_move = Move (+INFINITY);
+	}
+
       bool at_least_one_legal_move = false;
       for (int i = 0; i < moves.count; i++)
         {
@@ -241,7 +264,7 @@ Search_Engine::alpha_beta_with_memory
           if (child.apply (moves[i]))
             {
               at_least_one_legal_move = true;
-              Move m = alpha_beta_with_memory (child, depth - 1, alpha, beta);
+              Move s = alpha_beta_with_memory (child, depth - 1, alpha, beta);
 
               /***************************/
               /* Maximizing at this node. */
@@ -249,10 +272,15 @@ Search_Engine::alpha_beta_with_memory
 
               if (player == WHITE)
                 {
-                  if (m.score > alpha)
+		  if (s.score > best_move.score)
+		    {
+		      best_move = moves[i];
+		      best_move.score = s.score;
+		    }
+
+                  if (s.score > alpha)
                     {
-                      alpha = m.score;
-                      best_move = moves[i];
+                      alpha = s.score;
                     }
 
                   if (alpha >= beta)
@@ -274,10 +302,15 @@ Search_Engine::alpha_beta_with_memory
 
               else
                 {
-                  if (m.score < beta)
+		  if (s.score < best_move.score)
+		    {
+		      best_move = moves[i];
+		      best_move.score = s.score;
+		    }
+
+                  if (s.score < beta)
                     {
-                      beta = m.score;
-                      best_move = moves[i];
+                      beta = s.score;
                     }
 
                   if (beta <= alpha)
@@ -300,8 +333,11 @@ Search_Engine::alpha_beta_with_memory
       /* found.                                                 */
       /**********************************************************/
 
+
+
       if (at_least_one_legal_move)
         {
+#if XXX
           if (player == WHITE)
             {
               best_move.score = alpha;
@@ -310,7 +346,9 @@ Search_Engine::alpha_beta_with_memory
             {
               best_move.score = beta;
             }
+#endif
         }
+
 
       /*************************************************************/
       /* Otherwize, the game is over and we determine whether it's */
@@ -340,12 +378,12 @@ Search_Engine::alpha_beta_with_memory
                 }
 
               // best_move is a win.
-              best_move = Move (NULL_KIND, 0, 0, NULL_COLOR, NULL_KIND, mate_val);
+              best_move = Move (mate_val);
             }
           else
             {
               // best_move is a draw.
-              best_move = Move (NULL_KIND, 0, 0, NULL_COLOR, NULL_KIND, 0);
+              best_move = Move (0);
             }
         }
 

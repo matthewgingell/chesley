@@ -52,7 +52,7 @@ struct Search_Engine {
   Search_Engine (int max_depth = 4) : max_depth (max_depth) {
     assert (max_depth > 0);
     interrupt_search = false;
-    score_count = 0;
+    calls_to_alpha_beta = 0;
   }
 
   /*****************/
@@ -72,8 +72,8 @@ struct Search_Engine {
   /* Statistics. */
   /***************/
 
-  // Count the number of times score has been called.
-  u_int64_t score_count;
+  // Count the number of times alpha beta has been called.
+  u_int64_t calls_to_alpha_beta;
 
   /************/
   /* Queries. */
