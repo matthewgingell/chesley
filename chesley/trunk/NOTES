@@ -1,53 +1,54 @@
-no transpos:
+// method call using depth 5:
+// minimax = alphaBetaTT(board, 5, -MATE, +MATE);
+// TT stands for Transposition Table
 
-gingell$ ./chesley
-Chesley! v0.01
-> bench 5
-Best move to depth 5:
-[MOVE: WHITE PAWN at 12 => 28 score: -16]
-0.13 seconds elapsed.
-> bench 6
-Best move to depth 6:
-[MOVE: WHITE PAWN at 12 => 20 score: 35]
-1.78 seconds elapsed.
-> bench 7
-Best move to depth 7:
-[MOVE: WHITE PAWN at 12 => 20 score: -9]
-13.66 seconds elapsed.
+int alphaBetaTT(ChessBoard board, int depth, int alpha, int beta)
+{
+  int value;
+  TTEntry tte = GetTTEntry(board.getHashKey());
+  if(tte != null && tte.depth >= depth)
+    {
+      if(tte.type == EXACT_VALUE); // stored value is exact
+      return tte.value;
 
-with transpos:
-
-gingell$ ./chesley
-Chesley! v0.01
-> bench 5
-Best move to depth 5:
-[MOVE: WHITE PAWN at 12 => 20 score: -15]
-0.13 seconds elapsed.
-> bench 6
-Best move to depth 6:
-[MOVE: WHITE KNIGHT at 6 => 21 score: 60]
-1.55 seconds elapsed.
-> bench 7
-Best move to depth 7:
-[MOVE: WHITE PAWN at 12 => 20 score: 3]
-8.60 seconds elapsed.
-
-with transpos, ordering:
-
-Chesley! v0.01
-> bench 5
-Best move to depth 5:
-[MOVE: WHITE PAWN at 12 => 20 score: -15]
-0.10 seconds elapsed.
-> bench 6
-Best move to depth 6:
-[MOVE: WHITE KNIGHT at 6 => 21 score: 60]
-0.97 seconds elapsed.
-> bench 7
-Best move to depth 7:
-[MOVE: WHITE PAWN at 12 => 20 score: 4]
-3.48 seconds elapsed.
-
-
-with transpos, ordering, MTDF:
-
+if(tte.type == LOWERBOUND && tte.value > alpha)
+alpha = tte.value; // update lowerbound alpha if needed
+else if(tte.type == UPPERBOUND && tte.value < beta)
+beta = tte.value; // update upperbound beta if needed
+if(alpha >= beta)
+return tte.value; // if lowerbound surpasses upperbound
+}
+if(depth == 0 || board.isEnded())
+{
+value = evaluate(board);
+if(value <= alpha) // a lowerbound value
+StoreTTEntry(board.getHashKey(), value, LOWERBOUND, depth);
+else if(value >= beta) // an upperbound value
+StoreTTEntry(board.getHashKey(), value, UPPERBOUND, depth);
+else // a true minimax value
+StoreTTEntry(board.getHashKey(), value, EXACT, depth);
+return value;
+}
+board.getOrderedMoves();
+int best = -MATE-1;
+int move; ChessBoard nextBoard;
+while (board.hasMoreMoves())
+{
+move = board.getNextMove();
+nextBoard = board.makeMove(move);
+value = -alphaBetaTT(nextBoard, depth-1,-beta,-alpha);
+if(value > best)
+best = value;
+if(best > alpha)
+alpha = best;
+if(best >= beta)
+break;
+14
+}
+if(best <= alpha) // a lowerbound value
+StoreTTEntry(board.getHashKey(), best, LOWERBOUND, depth);
+else if(best >= beta) // an upperbound value
+StoreTTEntry(board.getHashKey(), best, UPPERBOUND, depth);
+else // a true minimax value
+StoreTTEntry(board.getHashKey(), best, EXACT, depth);
+return

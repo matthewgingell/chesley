@@ -3,10 +3,9 @@ SHELL = /bin/sh
 LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
+ALG = -DUSE_TRANS_TABLE=1 -DORDER_MOVES=1 -DMTDF=0
 
-ALG = -DUSE_TRANS_TABLE=0 -DORDER_MOVES=0 -DMTDF=0
-
-#CXX = g++ 
+#CXX = g++
 CXX = g++-mp-4.4
 
 #CXXFLAGS = -g -Wall -m64 $(ALG)
