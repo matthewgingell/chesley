@@ -107,6 +107,11 @@ struct Move {
   uint32 to     :6;  // Destination
 
   int32  score;      // Score for this move.
+
+  bool operator== (Move rhs) {
+    return (from == rhs.from) && (to == rhs.to);
+  }
+
 };
 
 inline Move operator- (Move m) {
