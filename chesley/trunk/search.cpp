@@ -74,8 +74,7 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
 
 Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
-
-  //  return MTDf (b, 0, depth);
+  tt.clear ();
 
   Move best_move = alpha_beta (b, 1);
 
@@ -190,9 +189,15 @@ Search_Engine::alpha_beta
       Move_Vector moves (b);
 
 #if ORDER_MOVES
-      // Even this trivial move ordering criterion makes a huge
-      // difference.
+      // Sort moves on the value of the piece being taken.
       insertion_sort <Move_Vector, Move> (moves);
+
+      // If we found a move in the transposition table, swap it to the
+      // front of the list.
+      if (found_tt_entry)
+	for (int i = 0; i < moves.count; i++)
+	  if (moves[i] == entry.move)
+	    swap (moves[0], moves[i]);
 #endif
 
       /**************************/
@@ -295,21 +300,27 @@ Search_Engine::alpha_beta
       /* Store results in the transposition table. */
       /*********************************************/
 
-      entry.move = best_move;
-      entry.depth = depth;
-
-      if (best_move.score <= alpha)
-	entry.type = TT_Entry :: LOWERBOUND;
-
-      else if (best_move.score >= beta)
-	entry.type = TT_Entry :: UPPERBOUND;
-
-      else
-	entry.type = TT_Entry :: EXACT_VALUE;
-
-      tt_store (b.hash, entry);
-
+#if !TT_POLICY_REPLACE_ALL
+      if (!found_tt_entry || depth >= depth)
 #endif
+	{
+	  entry.move = best_move;
+	  entry.depth = depth;
+
+	  if (best_move.score <= alpha)
+	    entry.type = TT_Entry :: LOWERBOUND;
+
+	  else if (best_move.score >= beta)
+	    entry.type = TT_Entry :: UPPERBOUND;
+
+	  else
+	    entry.type = TT_Entry :: EXACT_VALUE;
+
+	  tt_store (b.hash, entry);
+	}
+
+#endif // USE_TRANS_TABLE
+
     }
 
   return best_move;
