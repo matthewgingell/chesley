@@ -139,7 +139,7 @@ value (const Move &m) {
     case KNIGHT:    return -3;
     case BISHOP:    return -3;
     case QUEEN:     return -9;
-      //    default:     assert (0);
+    default:     assert (0);
     }
 
   // Suppress gcc warning in -DNDEBUG case.

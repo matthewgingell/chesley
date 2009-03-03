@@ -13,20 +13,15 @@
 #include <tr1/unordered_map>
 #include "board.hpp"
 
-// An entry in the transposition table used to memoize searches. Is
-// the best move we have found in a search a particular depth and
-// bounds on its value.
+// The transposition table is used to memoize the search function.
 
 struct TT_Entry {
   Move move;
-  //  int depth;
-
   int16 depth;
 
   enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type : 2;
 
-  TT_Entry () {
-    depth = -1;
+  TT_Entry () { depth = -1;
   }
 
   bool operator == (const TT_Entry &lhs) const {

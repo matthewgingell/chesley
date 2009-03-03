@@ -58,7 +58,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 10 * 1000 * 1000;
+  const uint32 MAX_COUNT = 50 * 1000 * 1000;
   if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
@@ -121,7 +121,7 @@ Search_Engine::MTDf (const Board &root, int f, int d) {
 /* The arguments alpha and beta provide a lower and upper bound on the  */
 /* correct value of the top-level search we a conducting, so any        */
 /* subtree we can prove has a value outside that range can not possibly */
-/* contain the value we're searching for. This allows us to cut of      */
+/* contain the value we're searching for. This allows us to cut off     */
 /* branches of the tree and provides an exponential speed up in the     */
 /* search.                                                              */
 /************************************************************************/
@@ -146,7 +146,6 @@ Search_Engine::alpha_beta
     throw (SEARCH_INTERRUPTED);
 
 #if USE_TRANS_TABLE
-
   /*****************************************************/
   /* Try to find this node in the transposition table. */
   /*****************************************************/
@@ -169,7 +168,7 @@ Search_Engine::alpha_beta
       if (alpha >= beta)
 	  return entry.move;
     }
-#endif
+#endif // USE_TRANS_TABLE
 
   /*********************************************/
   /*  Return heuristic estimate at depth zero. */
@@ -198,7 +197,7 @@ Search_Engine::alpha_beta
 	for (int i = 0; i < moves.count; i++)
 	  if (moves[i] == entry.move)
 	    swap (moves[0], moves[i]);
-#endif
+#endif // ORDER_MOVES
 
       /**************************/
       /* Minimax over children. */
@@ -259,7 +258,6 @@ Search_Engine::alpha_beta
             }
         }
 
-#if 1
       // The game is over if there are no further legal moves
       // available.
       if (best_move.kind == NULL_KIND)
@@ -292,17 +290,13 @@ Search_Engine::alpha_beta
               best_move = Move (0);
             }
         }
-#endif
 
 #if USE_TRANS_TABLE
-
       /*********************************************/
       /* Store results in the transposition table. */
       /*********************************************/
 
-#if !TT_POLICY_REPLACE_ALL
       if (!found_tt_entry || depth >= depth)
-#endif
 	{
 	  entry.move = best_move;
 	  entry.depth = depth;
@@ -318,10 +312,8 @@ Search_Engine::alpha_beta
 
 	  tt_store (b.hash, entry);
 	}
-
 #endif // USE_TRANS_TABLE
 
     }
-
   return best_move;
 }
