@@ -106,7 +106,7 @@ eval (const Board &b, int depth = 0) {
   // between winning in 1 move and 2 moves *at every ply* and may
   // never converge!!!
 
-#if 0
+#if 1
   score +=  b.flags.to_move * (100 - depth);
 #endif
 

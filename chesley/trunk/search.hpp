@@ -19,14 +19,14 @@
 
 struct TT_Entry {
   Move move;
-  int depth;
-  int upperbound;
-  int lowerbound;
+  //  int depth;
+
+  int16 depth;
+
+  enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type : 2;
 
   TT_Entry () {
     depth = -1;
-    upperbound = INFINITY;
-    lowerbound = -INFINITY;
   }
 
   bool operator == (const TT_Entry &lhs) const {
@@ -73,7 +73,7 @@ struct Search_Engine {
   /***************/
 
   // Count the number of times alpha beta has been called.
-  u_int64_t calls_to_alpha_beta;
+  uint64 calls_to_alpha_beta;
 
   /************/
   /* Queries. */
@@ -96,7 +96,7 @@ private:
 
   // Return the best available move with its score using minimax with
   // alpha-beta pruning.
-  Move alpha_beta_with_memory
+  Move alpha_beta
   (const Board &b, int depth, int alpha = -INFINITY, int beta = INFINITY);
 
   // Fetch an entry from the transposition table. Returns false if no

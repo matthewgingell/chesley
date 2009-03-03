@@ -102,6 +102,7 @@ struct Move {
 
   Kind   kind   :4;  // Kind being moved.
   Color  color  :3;  // Color being moved.
+
   uint32 from   :6;  // Origin.
   uint32 to     :6;  // Destination
 
@@ -133,7 +134,7 @@ value (const Move &m) {
     case KNIGHT:    return -3;
     case BISHOP:    return -3;
     case QUEEN:     return -9;
-    default:     assert (0);
+      //    default:     assert (0);
     }
 
   // Suppress gcc warning in -DNDEBUG case.
