@@ -54,10 +54,6 @@ Testing:
   * Add log and debugging infrastructure.
   * Setup automated regression testing.
 
-Move generation:
-
-  * Should be possible to write a much faster check tester.
-
 Session
 
   * Implement Xboard protocol.
@@ -68,10 +64,7 @@ Search
     incredibly irritating end game, repeatedly running the half move
     clock up to 49 then moving a pawn...
   * Quiescence search
-  * Must do timed searches, and do some kind of overall time
-    management for timed games.
-  X Iterative deepening.
-  X Heuristic move ordering.
+  * Time management 
   * Aspiration windows
   * Transposition tables.
   * Static Exchange Evaluation (SEE) for capture ordering.
