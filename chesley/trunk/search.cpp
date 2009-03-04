@@ -58,7 +58,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 50 * 1000 * 1000;
+  const uint32 MAX_COUNT = 10 * 1000 * 1000;
   if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
@@ -74,13 +74,24 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
 
 Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
-  tt.clear ();
-
+  // Always return a search at least to depth one.
+  #if MTDF
+  Move best_move = MTDf (b, 0, 1);
+  #else
   Move best_move = alpha_beta (b, 1);
+  #endif
 
   // Clear statistics.
   calls_to_alpha_beta = 0;
 
+  // Clear the transposition table. Our replacement policy is to
+  // overwrite shallower search values with deeper ones, which will
+  // eventually result in a table full of deep search values for old
+  // positions we're unlikely to see again. To avoid this problem, we
+  // clear the table between searches.
+  tt.clear ();
+
+  // Search repeatedly until we are interrupted or hit ply 'depth'.
   for (int i = 2; i <= depth; i++)
     try {
 #if MTDF
@@ -90,29 +101,63 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 #endif
     } catch (int exp) {
       assert (exp == SEARCH_INTERRUPTED);
-      cerr << "timeout searching ply: " << i << endl;
+      cerr << "interrupt: finished searching ply: " << i - 1 << endl;
       break;
     }
 
   return best_move;
 }
 
+/********************************************************************/
+/* Search_Engine::MTDf ()                                           */
+/*                                                                  */
+/* MTD(f) is a search strategy which makes repeated calls to        */
+/* alpha_beta with a window of (beta - 1, beta). On each call it    */
+/* established a lower or upper bound, till eventually it converges */
+/* on a correct minimax value for this position.                    */
+/*                                                                  */
+/* For move information on this approach, see:                      */
+/*                                                                  */
+/* Aske Plaat: MTD(f): A Minimax Algorithm faster than NegaScout    */
+/* http://www.cs.vu.nl/~aske/mtdf.htm                               */
+/********************************************************************/
+
 Move
 Search_Engine::MTDf (const Board &root, int f, int d) {
+  Move m;
   int g = f, beta;
   int upperbound = +INFINITY, lowerbound = -INFINITY;
+  Move best_move ((root.flags.to_move == WHITE ? -INFINITY : +INFINITY));
 
   while (1)
     {
       if (g == lowerbound) beta = g + 1; else beta = g;
-      g = alpha_beta (root, d, beta - 1, beta).score;
-      if (g < beta) upperbound = g; else lowerbound = g;
+      m = alpha_beta (root, d, beta - 1, beta);
+      g = m.score;
+      if (g < beta)
+	{
+	  // Failed low.
+	  upperbound = g;
+	  if (root.flags.to_move == BLACK)
+	    {
+	      if (g < best_move.score) best_move = m;
+	    }
+	}
+      else
+	{
+	  // Failed high.
+	  if (g > best_move.score) best_move = m;
+	  if (root.flags.to_move == WHITE)
+	    {
+	      if (g > best_move.score) best_move = m;
+	    }
+	  lowerbound = g;
+	}
+
       if (lowerbound >= upperbound) break;
     }
 
-  TT_Entry out;
-  assert (tt_fetch (root.hash, out));
-  return out.move;
+  return best_move;
 }
 
 /************************************************************************/
@@ -162,11 +207,11 @@ Search_Engine::alpha_beta
       if (entry.type == TT_Entry::LOWERBOUND)
 	alpha = max (entry.move.score, alpha);
 
-      if (entry.type == TT_Entry::UPPERBOUND)
+      else if (entry.type == TT_Entry::UPPERBOUND)
 	beta = min (entry.move.score, beta);
 
       if (alpha >= beta)
-	  return entry.move;
+	return entry.move;
     }
 #endif // USE_TRANS_TABLE
 
@@ -191,12 +236,18 @@ Search_Engine::alpha_beta
       // Sort moves on the value of the piece being taken.
       insertion_sort <Move_Vector, Move> (moves);
 
+#if USE_TRANS_TABLE
       // If we found a move in the transposition table, swap it to the
       // front of the list.
       if (found_tt_entry)
 	for (int i = 0; i < moves.count; i++)
 	  if (moves[i] == entry.move)
-	    swap (moves[0], moves[i]);
+	    {
+	      swap (moves[0], moves[i]);
+	      break;
+	    }
+#endif
+
 #endif // ORDER_MOVES
 
       /**************************/
@@ -221,17 +272,17 @@ Search_Engine::alpha_beta
 		    {
 		      best_move = moves[i];
 		      best_move.score = val;
+
+		      if (best_move.score > alpha)
+			{
+			  alpha = best_move.score;
+			}
+
+		      if (best_move.score >= beta)
+			{
+			  break;
+			}
 		    }
-
-                  if (best_move.score > alpha)
-                    {
-                      alpha = best_move.score;
-                    }
-
-                  if (best_move.score >= beta)
-                    {
-                      break;
-                    }
                 }
 
               /****************************/
@@ -244,22 +295,22 @@ Search_Engine::alpha_beta
 		    {
 		      best_move = moves[i];
 		      best_move.score = val;
+
+		      if (best_move.score < beta)
+			{
+			  beta = best_move.score;
+			}
+
+		      if (best_move.score <= alpha)
+			{
+			  break;
+			}
 		    }
-
-                  if (best_move.score < beta) {
-                      beta = best_move.score;
-                    }
-
-                  if (best_move.score <= alpha)
-                    {
-                      break;
-                    }
                 }
             }
         }
 
-      // The game is over if there are no further legal moves
-      // available.
+      // If we couldn't find at least one legal move the game is over.
       if (best_move.kind == NULL_KIND)
         {
           if (b.in_check (player))
@@ -296,17 +347,15 @@ Search_Engine::alpha_beta
       /* Store results in the transposition table. */
       /*********************************************/
 
-      if (!found_tt_entry || depth >= depth)
+      if (!found_tt_entry || entry.depth > depth)
 	{
 	  entry.move = best_move;
 	  entry.depth = depth;
 
 	  if (best_move.score <= alpha)
 	    entry.type = TT_Entry :: LOWERBOUND;
-
 	  else if (best_move.score >= beta)
 	    entry.type = TT_Entry :: UPPERBOUND;
-
 	  else
 	    entry.type = TT_Entry :: EXACT_VALUE;
 
