@@ -169,6 +169,10 @@ struct Move_Vector {
     move[count++] = m;
   }
 
+  void clear () {
+    count = 0;
+  }
+
   Move &operator[] (int i) {
     return move[i];
   }
