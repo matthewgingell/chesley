@@ -13,29 +13,18 @@
 #include <tr1/unordered_map>
 #include "board.hpp"
 
-// The transposition table is used to memoize the search function.
-
+// Entries in the transposition table, which is used is used to
+// memoize the search function.
 struct TT_Entry {
+  TT_Entry () { depth = -1;}
+
   Move move;
   int16 depth;
-
   enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type : 2;
-
-  TT_Entry () { depth = -1;
-  }
-
-  bool operator == (const TT_Entry &lhs) const {
-    return (memcmp (this, &lhs, sizeof (TT_Entry)) == 0);
-  }
-
-  bool operator != (const TT_Entry &lhs) const {
-    return (memcmp (this, &lhs, sizeof (TT_Entry)) != 0);
-  }
 };
 
 // A transposition table type mapping from a 64 bit board hash to a
 // TT_Entry.
-
 typedef std::tr1::unordered_map <uint64, TT_Entry> Trans_Table;
 
 struct Search_Engine {
@@ -79,6 +68,9 @@ struct Search_Engine {
 
   // Return an estimate of the value of a position.
   int32 score (const Board &b, int32 depth = -1);
+
+  // Fetch the principle variation for the most recent search.
+  void fetch_pv (const Board &b, Move_Vector &out);
 
 private:
 

@@ -28,6 +28,20 @@ Search_Engine :: score (const Board &b, int depth) {
   return (iterative_deepening (b, depth >= 0 ? depth : max_depth)).score;
 }
 
+// Fetch the principle variation for the most recent search.
+void 
+Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
+  Board next = b;
+  TT_Entry entry;
+  out.clear ();  
+
+  while (tt_fetch (next.hash, entry))
+    {
+      cerr << "d=" << entry.depth << " " << entry.move << endl;
+      next.apply (entry.move);
+    }
+}
+
 /**************************/
 /* Private implementation */
 /**************************/
@@ -58,7 +72,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 10 * 1000 * 1000;
+  const uint32 MAX_COUNT = 5 * 1000 * 1000;
   if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
@@ -104,6 +118,9 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
       cerr << "interrupt: finished searching ply: " << i - 1 << endl;
       break;
     }
+
+  Move_Vector pv;
+  //  fetch_pv (b, pv);
 
   return best_move;
 }
@@ -347,7 +364,7 @@ Search_Engine::alpha_beta
       /* Store results in the transposition table. */
       /*********************************************/
 
-      if (!found_tt_entry || entry.depth > depth)
+      if (!found_tt_entry || depth > entry.depth)
 	{
 	  entry.move = best_move;
 	  entry.depth = depth;
