@@ -33,12 +33,17 @@ void
 Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
   Board next = b;
   TT_Entry entry;
-  out.clear ();  
+  //  out.clear ();  
 
   while (tt_fetch (next.hash, entry))
     {
+      Board last = next;
       cerr << "d=" << entry.depth << " " << entry.move << endl;
+      out.push (entry.move);
       next.apply (entry.move);
+
+      // In all probability there's a loop in the principal variation.
+      if (out.count > 30) break;
     }
 }
 
@@ -120,7 +125,7 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
     }
 
   Move_Vector pv;
-  //  fetch_pv (b, pv);
+  fetch_pv (b, pv);
 
   return best_move;
 }
@@ -146,13 +151,21 @@ Search_Engine::MTDf (const Board &root, int f, int d) {
   int upperbound = +INFINITY, lowerbound = -INFINITY;
   Move best_move ((root.flags.to_move == WHITE ? -INFINITY : +INFINITY));
 
+  cerr << "Entering MTDf with d=" << d << endl;
+
   while (1)
     {
       if (g == lowerbound) beta = g + 1; else beta = g;
       m = alpha_beta (root, d, beta - 1, beta);
       g = m.score;
+
+      cerr << "testing " << "[" << beta - 1 << ", " << beta << "]" << endl;
+      cerr << "fetched " << m << endl;
+
       if (g < beta)
 	{
+	  cerr << "failed low" << endl;
+
 	  // Failed low.
 	  upperbound = g;
 	  if (root.flags.to_move == BLACK)
@@ -163,13 +176,16 @@ Search_Engine::MTDf (const Board &root, int f, int d) {
       else
 	{
 	  // Failed high.
-	  if (g > best_move.score) best_move = m;
+	  cerr << "failed high" << endl;
+
+	  lowerbound = g;
 	  if (root.flags.to_move == WHITE)
 	    {
 	      if (g > best_move.score) best_move = m;
 	    }
-	  lowerbound = g;
 	}
+
+      cerr << "best move is now: " << best_move << endl << endl;
 
       if (lowerbound >= upperbound) break;
     }
@@ -366,8 +382,8 @@ Search_Engine::alpha_beta
 
       if (!found_tt_entry || depth > entry.depth)
 	{
-	  entry.move = best_move;
 	  entry.depth = depth;
+	  entry.move = best_move;
 
 	  if (best_move.score <= alpha)
 	    entry.type = TT_Entry :: LOWERBOUND;

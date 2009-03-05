@@ -1,46 +1,24 @@
-mtdf:
+no mtdf:
 
-> bench 5
-Best move to depth 5:
-[MOVE: WHITE PAWN at 12 => 28 score: -16]
-0.15 seconds elapsed.
-386882 calls_to_alpha_beta.
-> bench 6
-Best move to depth 6:
-[MOVE: WHITE KNIGHT at 1 => 18 score: 35]
-0.43 seconds elapsed.
-966897 calls_to_alpha_beta.
-> bench 7
-Best move to depth 7:
-[MOVE: WHITE PAWN at 11 => 19 score: 7]
-9.28 seconds elapsed.
-19550696 calls_to_alpha_beta.
-> bench 8
-Best move to depth 8:
-[MOVE: WHITE KNIGHT at 1 => 18 score: 24]
-29.49 seconds elapsed.
-42360461 calls_to_alpha_beta.
-
-no mtdf
-
+gingell$ ./chesley.old 
 Chesley! v0.01
 > bench 5
 Best move to depth 5:
 [MOVE: WHITE PAWN at 12 => 28 score: -16]
-0.04 seconds elapsed.
-96075 calls_to_alpha_beta.
+0.07 seconds elapsed.
+95389 calls_to_alpha_beta.
 > bench 6
 Best move to depth 6:
-[MOVE: WHITE KNIGHT at 1 => 18 score: 35]
-0.63 seconds elapsed.
-1256547 calls_to_alpha_beta.
+[MOVE: WHITE PAWN at 12 => 20 score: 35]
+1.06 seconds elapsed.
+1333933 calls_to_alpha_beta.
 > bench 7
 Best move to depth 7:
 [MOVE: WHITE PAWN at 12 => 20 score: -9]
-2.55 seconds elapsed.
-4783211 calls_to_alpha_beta.
+2.81 seconds elapsed.
+3157458 calls_to_alpha_beta.
 > bench 8
 Best move to depth 8:
-[MOVE: WHITE PAWN at 12 => 20 score: 27]
-30.26 seconds elapsed.
-41881414 calls_to_alpha_beta.
+[MOVE: WHITE PAWN at 12 => 20 score: 33]
+25.06 seconds elapsed.
+23259050 calls_to_alpha_beta.

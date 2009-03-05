@@ -311,6 +311,14 @@ struct Board {
   // Construct a board from the standard starting position.
   static Board startpos ();
 
+  /*************/
+  /* Operators */
+  /*************/
+
+  bool operator== (const Board &rhs) {
+    return (memcmp (this, &rhs, sizeof (Board)) == 0);
+  }
+
   /***********/
   /* Hashing */
   /***********/
