@@ -90,7 +90,8 @@ eval (const Board &b, int depth = 0) {
 
   // This appears to do no good at all.
 #if 0
-  score += 5 * (pop_count (b.attack_set (WHITE)) - pop_count (b.attack_set (BLACK)));
+  score += 20 * (pop_count ((b.attack_set (WHITE) & b.black)) -
+		  pop_count (b.attack_set (BLACK) & b.white));
 #endif
 
   // Encourage preserving the right to castle.
@@ -110,7 +111,7 @@ eval (const Board &b, int depth = 0) {
   score +=  b.flags.to_move * (100 - depth);
 #endif
 
-#if 0
+#if 1
   score += random () % 10;
 #endif
 
