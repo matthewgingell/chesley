@@ -1,24 +1,97 @@
-no mtdf:
+-DUSE_TRANS_TABLE=0 -DORDER_MOVES=0 -DMTDF=0
 
-gingell$ ./chesley.old 
 Chesley! v0.01
 > bench 5
 Best move to depth 5:
-[MOVE: WHITE PAWN at 12 => 28 score: -16]
-0.07 seconds elapsed.
+[Move from 12 => 28 -16]
+0.12 seconds elapsed.
+434471 calls_to_alpha_beta.
+> bench 6
+Best move to depth 6:
+[Move from 12 => 20 35]
+1.74 seconds elapsed.
+6012138 calls_to_alpha_beta.
+> bench 7
+Best move to depth 7:
+[Move from 12 => 20 -9]
+13.34 seconds elapsed.
+46815238 calls_to_alpha_beta.
+
+-DUSE_TRANS_TABLE=0 -DORDER_MOVES=1 -DMTDF=0
+Chesley! v0.01
+> bench 5
+Best move to depth 5:
+[Move from 12 => 28 -16]
+0.09 seconds elapsed.
+275946 calls_to_alpha_beta.
+> bench 6
+Best move to depth 6:
+[Move from 12 => 20 35]
+1.11 seconds elapsed.
+3367666 calls_to_alpha_beta.
+> bench 7
+Best move to depth 7:
+[Move from 12 => 20 -9]
+5.96 seconds elapsed.
+17 392 029 calls_to_alpha_beta.
+
+-DUSE_TRANS_TABLE=1 -DORDER_MOVES=1 -DMTDF=0
+> bench 5
+Best move to depth 5:
+[Move from 12 => 28 -16]
+0.10 seconds elapsed.
+255188 calls_to_alpha_beta.
+> bench 6
+Best move to depth 6:
+[Move from 12 => 20 35]
+1.09 seconds elapsed.
+2310587 calls_to_alpha_beta.
+> bench 7
+Best move to depth 7:
+[Move from 12 => 20 -9]
+6.86 seconds elapsed.
+12815460 calls_to_alpha_beta.
+
+With ordering from TT:
+
+> bench 5
+[Move from 12 => 28 -16]
+0.04 seconds elapsed.
 95389 calls_to_alpha_beta.
 > bench 6
 Best move to depth 6:
-[MOVE: WHITE PAWN at 12 => 20 score: 35]
-1.06 seconds elapsed.
+[Move from 12 => 20 35]
+0.64 seconds elapsed.
 1333933 calls_to_alpha_beta.
 > bench 7
 Best move to depth 7:
-[MOVE: WHITE PAWN at 12 => 20 score: -9]
-2.81 seconds elapsed.
+[Move from 12 => 20 -9]
+1.64 seconds elapsed.
 3157458 calls_to_alpha_beta.
 > bench 8
 Best move to depth 8:
-[MOVE: WHITE PAWN at 12 => 20 score: 33]
-25.06 seconds elapsed.
+[Move from 12 => 20 33]
+14.40 seconds elapsed.
+23259050 calls_to_alpha_beta.
+
+Chesley! v0.01
+> bench 5
+Best move to depth 5:
+[Move from 12 => 28 -16]
+0.04 seconds elapsed.
+95389 calls_to_alpha_beta.
+> bench 6
+Best move to depth 6:
+[Move from 12 => 20 35]
+0.64 seconds elapsed.
+1333933 calls_to_alpha_beta.
+> bench 7
+Best move to depth 7:
+[Move from 12 => 20 -9]
+1.64 seconds elapsed.
+3157458 calls_to_alpha_beta.
+> bench 8
+Best move to depth 8:
+[Move from 12 => 20 33]
+14.45 seconds elapsed.
 23259050 calls_to_alpha_beta.

@@ -86,6 +86,10 @@ private:
   Move alpha_beta
   (const Board &b, int depth, int alpha = -INFINITY, int beta = INFINITY);
 
+  // Attempt to order moves to improve our odds of getting earlier
+  // cutoffs.
+  void order_moves (const Board &b, Move_Vector &moves);
+
   // Fetch an entry from the transposition table. Returns false if no
   // entry is found.
   bool tt_fetch (uint64 hash, TT_Entry &out);

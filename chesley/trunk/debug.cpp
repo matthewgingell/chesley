@@ -85,7 +85,7 @@ Session::perft (const string_vector &tokens)
 {
   int depth = 1;
 
-  board = Board::startpos ();
+  //  board = Board::startpos ();
 
   if (tokens.size () > 1 && is_number (tokens[1]))
     {

@@ -31,10 +31,11 @@ Search_Engine :: score (const Board &b, int depth) {
 // Fetch the principle variation for the most recent search.
 void 
 Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
+#if USE_TRANS_TABLE
+
   Board next = b;
   TT_Entry entry;
-  //  out.clear ();  
-
+  out.clear ();  
   while (tt_fetch (next.hash, entry))
     {
       Board last = next;
@@ -45,6 +46,7 @@ Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
       // In all probability there's a loop in the principal variation.
       if (out.count > 30) break;
     }
+#endif // USE_TRANS_TABLE
 }
 
 /**************************/
@@ -52,36 +54,6 @@ Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
 /**************************/
 
 const int SEARCH_INTERRUPTED = 0x01;
-
-/**********************************************************************/
-/* Transposition tables                                               */
-/*                                                                    */
-/* Operations on the transposition table.                             */
-/**********************************************************************/
-
-// Fetch an entry from the transposition table. Returns false if no
-// entry is found.
-bool
-Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
-  Trans_Table::iterator i = tt.find (hash);
-
-  if (i != tt.end ())
-    {
-      out = i -> second;
-      return true;
-    }
-
-  return false;
-}
-
-// Store an entry in the transposition table.
-void
-Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 5 * 1000 * 1000;
-  if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
-  tt.erase (hash);
-  tt.insert (pair <uint64, TT_Entry> (hash, in));
-}
 
 /**********************************************************************/
 /* Search_Engine::iterative_deepening                                 */
@@ -266,20 +238,21 @@ Search_Engine::alpha_beta
       Move_Vector moves (b);
 
 #if ORDER_MOVES
-      // Sort moves on the value of the piece being taken.
-      insertion_sort <Move_Vector, Move> (moves);
+      order_moves (b, moves);
 
-#if USE_TRANS_TABLE
-      // If we found a move in the transposition table, swap it to the
-      // front of the list.
-      if (found_tt_entry)
-	for (int i = 0; i < moves.count; i++)
+  // If we found a move in the transposition table, swap it to the
+  // front of the list.
+  if (found_tt_entry)
+    {
+      for (int i = 0; i < moves.count; i++)
+	{
 	  if (moves[i] == entry.move)
 	    {
 	      swap (moves[0], moves[i]);
 	      break;
 	    }
-#endif
+	}
+    }
 
 #endif // ORDER_MOVES
 
@@ -344,7 +317,7 @@ Search_Engine::alpha_beta
         }
 
       // If we couldn't find at least one legal move the game is over.
-      if (best_move.kind == NULL_KIND)
+      if (best_move.is_null ())
         {
           if (b.in_check (player))
             {
@@ -397,5 +370,64 @@ Search_Engine::alpha_beta
 #endif // USE_TRANS_TABLE
 
     }
+
+  //  cerr << best_move << endl;
+
   return best_move;
+}
+
+inline int value (const Move &m) { return m.score; }
+
+// Attempt to order moves to improve our odds of getting earlier
+// cutoffs.
+void 
+Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
+
+#if 1
+  for (int i = 0; i < moves.count; i++)
+    switch (moves[i].capture (b))
+      {
+      case NULL_KIND: moves[i].score =  0; break; 
+      case PAWN:      moves[i].score = -1; break;
+      case ROOK:      moves[i].score = -5; break;
+      case KNIGHT:    moves[i].score = -3; break;
+      case BISHOP:    moves[i].score = -3; break;
+      case QUEEN:     moves[i].score = -9; break;
+      case KING:      moves[i].score = -20; break;
+      }
+  
+  insertion_sort <Move_Vector, Move> (moves);
+#endif
+
+  return;
+}
+
+/**********************************************************************/
+/* Transposition tables                                               */
+/*                                                                    */
+/* Operations on the transposition table.                             */
+/**********************************************************************/
+
+// Fetch an entry from the transposition table. Returns false if no
+// entry is found.
+bool
+Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
+  Trans_Table::iterator i = tt.find (hash);
+
+  if (i != tt.end ())
+    {
+      out = i -> second;
+      return true;
+    }
+
+  return false;
+}
+
+// Store an entry in the transposition table.
+void
+Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
+  const uint32 MAX_COUNT = 5 * 1000 * 1000;
+  if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
+  tt.erase (hash);
+  tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
