@@ -445,13 +445,20 @@ Board::set_castling_right (Castling_Right cr, bool v) {
 bool
 Board::apply (const Move &m) {
 
+  Kind kind = m.get_kind (*this);
+  Kind capture = m.capture (*this);
+  Color color = m.get_color (*this);
+  bool is_castle_qs = m.is_castle_qs (*this);
+  bool is_castle_ks = m.is_castle_ks (*this);
+  bool is_en_passant = m.is_en_passant (*this);
+
   /******************/
   /* Update clocks. */
   /******************/
 
   // Reset the 50 move rule clock when a pawn is moved or a capture is
   // made.
-  if (m.flags.capture != NULL_KIND || m.kind == PAWN)
+  if (capture != NULL_KIND || kind == PAWN)
     {
       half_move_clock = 0;
     }
@@ -464,7 +471,7 @@ Board::apply (const Move &m) {
   if (half_move_clock > 50) return false;
 
   // Increment the whole move clock after each move by black.
-  if (m.color == BLACK) full_move_clock++;
+  if (color == BLACK) full_move_clock++;
 
   /*************************/
   /* Update to_move state. */
@@ -476,13 +483,15 @@ Board::apply (const Move &m) {
   /* Handle taking En Passant */
   /****************************/
 
-  if (m.kind == PAWN &&
-      flags.en_passant != 0 &&
-      m.to == flags.en_passant)
+  //  if (m.kind == PAWN &&
+  //      flags.en_passant != 0 &&
+  //      m.to == flags.en_passant)
+
+  if (is_en_passant)
     {
       // Clear the square behind the En Passant destination
       // square.
-      if (m.color == WHITE)
+      if (color == WHITE)
         {
           clear_piece (flags.en_passant - 8);
         }
@@ -498,142 +507,143 @@ Board::apply (const Move &m) {
   /* clearing the En Passant target square.                        */
   /*****************************************************************/
 
-  set_en_passant (0);
-  if (m.kind == PAWN)
-    {
-      if (m.color == WHITE)
-        {
-          if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
-            {
-              set_en_passant (m.from + 8);
-            }
-        }
-      else
-        {
-          if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
-            {
-              set_en_passant (m.from - 8);
-            }
-        }
-    }
+    set_en_passant (0);
+    if (kind == PAWN)
+      {
+	if (color == WHITE)
+	  {
+	    if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
+	      {
+		set_en_passant (m.from + 8);
+	      }
+	  }
+	else
+	  {
+	    if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
+	      {
+		set_en_passant (m.from - 8);
+	      }
+	  }
+      }
+    
+    /****************************/
+    /* Handling castling moves. */
+    /****************************/
 
-  /****************************/
-  /* Handling castling moves. */
-  /****************************/
+    if (is_castle_qs || is_castle_ks)
+      {
+	// Calculate attacked set for testing check.
+	const bitboard attacked = attack_set (invert_color (color));
 
-  if (m.flags.castle_qs || m.flags.castle_ks)
-    {
-      // Calculate attacked set for testing check.
-      const bitboard attacked = attack_set (invert_color (m.color));
+	// Test castle out of, across, or in to check.
+	if (color == WHITE)
+	  {
+	    if (is_castle_qs && !(attacked & 0x1C))
+	      {
+		clear_piece (4);
+		clear_piece (0);
+		set_piece (KING, WHITE, 2);
+		set_piece (ROOK, WHITE, 3);
+		set_castling_right (W_QUEEN_SIDE, false);
+		set_castling_right (W_KING_SIDE, false);
+		flags.w_has_k_castled = 1;
+		return true;
+	      }
 
-      // Test castle out of, across, or in to check.
-      if (m.color == WHITE)
-        {
-          if (m.flags.castle_qs && !(attacked & 0x1C))
-            {
-              clear_piece (4);
-              clear_piece (0);
-              set_piece (KING, WHITE, 2);
-              set_piece (ROOK, WHITE, 3);
-	      set_castling_right (W_QUEEN_SIDE, false);
-	      set_castling_right (W_KING_SIDE, false);
-              flags.w_has_k_castled = 1;
-              return true;
-            }
+	    if (is_castle_ks && !(attacked & 0x70))
+	      {
+		clear_piece (4);
+		clear_piece (7);
+		set_piece (KING, WHITE, 6);
+		set_piece (ROOK, WHITE, 5);
+		set_castling_right (W_QUEEN_SIDE, false);
+		set_castling_right (W_KING_SIDE, false);
+		flags.w_has_k_castled = 1;
+		return true;
+	      }
+	  }
+	else
+	  {
+	    byte attacks = get_byte (attacked, 7);
 
-          if (m.flags.castle_ks && !(attacked & 0x70))
-            {
-              clear_piece (4);
-              clear_piece (7);
-              set_piece (KING, WHITE, 6);
-              set_piece (ROOK, WHITE, 5);
-	      set_castling_right (W_QUEEN_SIDE, false);
-	      set_castling_right (W_KING_SIDE, false);
-              flags.w_has_k_castled = 1;
-              return true;
-            }
-        }
-      else
-        {
-          byte attacks = get_byte (attacked, 7);
+	    if (is_castle_qs && !(attacks & 0x1C))
+	      {
+		clear_piece (60);
+		clear_piece (56);
+		set_piece (KING, BLACK, 58);
+		set_piece (ROOK, BLACK, 59);
+		set_castling_right (B_QUEEN_SIDE, false);
+		set_castling_right (B_KING_SIDE, false);
+		flags.b_has_q_castled = 1;
+		return true;
+	      }
 
-          if (m.flags.castle_qs && !(attacks & 0x1C))
-            {
-              clear_piece (60);
-              clear_piece (56);
-              set_piece (KING, BLACK, 58);
-              set_piece (ROOK, BLACK, 59);
-	      set_castling_right (B_QUEEN_SIDE, false);
-	      set_castling_right (B_KING_SIDE, false);
-              flags.b_has_q_castled = 1;
-              return true;
-            }
+	    if (is_castle_ks && !(attacks & 0x70))
+	      {
+		clear_piece (60);
+		clear_piece (63);
+		set_piece (KING, BLACK, 62);
+		set_piece (ROOK, BLACK, 61);
+		set_castling_right (B_QUEEN_SIDE, false);
+		set_castling_right (B_KING_SIDE, false);
+		flags.b_has_k_castled = 1;
+		return true;
+	      }
+	  }
 
-          if (m.flags.castle_ks && !(attacks & 0x70))
-            {
-              clear_piece (60);
-              clear_piece (63);
-              set_piece (KING, BLACK, 62);
-              set_piece (ROOK, BLACK, 61);
-	      set_castling_right (B_QUEEN_SIDE, false);
-	      set_castling_right (B_KING_SIDE, false);
-              flags.b_has_k_castled = 1;
-              return true;
-            }
-        }
+	return false;
+      }
+    else
+      {
+	/*********************************/
+	/* Handle the non-castling case. */
+	/*********************************/
 
-      return false;
-    }
-  else
-    {
-      /*********************************/
-      /* Handle the non-castling case. */
-      /*********************************/
+	clear_piece (m.from);
+	clear_piece (m.to);
 
-      clear_piece (m.from);
-      clear_piece (m.to);
+	/**********************/
+	/* Handle promotions. */
+	/**********************/
 
-      /**********************/
-      /* Handle promotions. */
-      /**********************/
-      if (m.flags.promote == 0)
-        {
-          set_piece (m.kind, m.color, m.to);
-        }
-      else
-        {
-          set_piece (m.flags.promote, m.color, m.to);
-        }
+	if (m.promote != NULL_KIND)
+	  {
+	    set_piece (m.promote, color, m.to);
+	  }
+	else
+	  {
+	    set_piece (kind, color, m.to);
+	  }
 
-      /**************************/
-      /* Update castling status */
-      /**************************/
+	/**************************/
+	/* Update castling status */
+	/**************************/
 
-      // King moves.
-      if (m.from == 4)
-        {
-	  set_castling_right (W_QUEEN_SIDE, false);
-	  set_castling_right (W_KING_SIDE, false);
-        }
-      else if (m.from == 60)
-        {
-	  set_castling_right (B_QUEEN_SIDE, false);
-	  set_castling_right (B_KING_SIDE, false);
-        }
+	// King moves.
+	if (m.from == 4)
+	  {
+	    set_castling_right (W_QUEEN_SIDE, false);
+	    set_castling_right (W_KING_SIDE, false);
+	  }
+	else if (m.from == 60)
+	  {
+	    set_castling_right (B_QUEEN_SIDE, false);
+	    set_castling_right (B_KING_SIDE, false);
+	  }
 
-      // Rook moves and attacks.
-      if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
-      if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
-      if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
-      if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
+	// Rook moves and attacks.
+	if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
+	if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
+	if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
+	if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
 
-      /*****************/
-      /* Test legality. */
-      /*****************/
+	/*****************/
+	/* Test legality. */
+	/*****************/
 
-      // Return whether this position puts or leaves us in check.
-      return !in_check (m.color);
-    }
+	// Return whether this position puts or leaves us in check.
+	return !in_check (color);
+      }
 }
 
 /***********************************/
@@ -648,12 +658,13 @@ Move_Vector::Move_Vector (const Board &b) {
 Board_Vector::Board_Vector (const Board &b)
 {
   Move_Vector moves (b);
-
   count = 0;
+
   for (int i = 0; i < moves.count; i++)
     {
-      board[count] = b;
-      if (board[count].apply (moves[i])) count++;
+      Board c = b;
+      if (c.apply (moves [i]))
+	push (c);
     }
 }
 
@@ -672,15 +683,10 @@ operator<< (ostream &os, const Board &b)
 std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
-  os << "[MOVE: ";
-  os << m.color << " " << m.kind;
-  os << " at " << m.from << " => " << m.to;
-  if (m.flags.castle_qs) os << " (castling queen side)";
-  if (m.flags.castle_ks) os << " (castling king side)";
-  if (m.flags.promote) os << " (promoting to)  " << m.flags.promote;
-  os << " score: " << m.score ;
-  os << "]";
-  return os;
+  return os << "[Move from " 
+	    << (int) (m.from) << " => " 
+	    << (int) (m.to) 
+	    << " " << m.score << "]";
 }
 
 // Print a board vector.
@@ -712,26 +718,7 @@ Board::from_calg (const string &s) const {
   uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
 
   // Build move.
-  Kind k = get_kind (from);
-  Color c = flags.to_move;
-  Kind capture = get_kind (to);
-  Move m = Move (k, from, to, c, capture);
-
-  // Check for promotion.
-  if (s.length () >= 5)
-    {
-      assert (k == PAWN);
-      m.flags.promote = to_kind (s[4]);
-    }
-
-  // Set castling flags.
-  if (k == KING)
-    {
-      if (from ==  4 && to ==  2) m.flags.castle_qs = 1;
-      if (from ==  4 && to ==  6) m.flags.castle_ks = 1;
-      if (from == 60 && to == 58) m.flags.castle_qs = 1;
-      if (from == 60 && to == 62) m.flags.castle_ks = 1;
-    }
+  Move m = Move (from, to, (s.length () >= 5) ? to_kind (s[4]) : NULL_KIND);
 
   return m;
 }
@@ -748,9 +735,9 @@ Board::to_calg (const Move &m) const {
   s << (int)  (      idx_to_rank (m.to) + 1);
 
   // Promotion case.
-  if (m.flags.promote)
+  if (m.promote != NULL_KIND)
     {
-      s << to_char (m.flags.promote);
+      s << to_char (m.promote);
     }
 
   return s.str();
@@ -872,9 +859,7 @@ Board::to_ascii () const {
   ostringstream s;
 
   // Precede board diagram with status, formated as in FEN strings.
-
   s << (flags.to_move == WHITE ? 'w' : 'b') << " ";
-
 
   if (flags.w_can_k_castle | flags.w_can_q_castle |
       flags.b_can_k_castle | flags.b_can_q_castle)

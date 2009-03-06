@@ -64,7 +64,6 @@ char to_char (Kind k);
 
 // Convert a character code to a piece code, ignoring color.
 Kind to_kind (char k);
-
 std::ostream & operator<< (std::ostream &os, Kind k);
 
 /**************/
@@ -72,47 +71,54 @@ std::ostream & operator<< (std::ostream &os, Kind k);
 /**************/
 
 struct Move {
+
+  // Constructors.
   Move () {}
 
-  Move (Kind k, uint32 f, uint32 t, Color c, Kind capture, int32 score = 0) :
-    kind (k), color (c), from (f), to (t), score (score) {
-    score = 0;
-    flags.capture = capture;
-    flags.promote = (Kind) 0;
-    flags.castle_qs = 0;
-    flags.castle_ks = 0;
+  // Construct a move;
+  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, int32 score = 0) 
+    :from (from), to (to), promote (promote), score (score) {
+  };
+
+  // Construct a null move with a score. 
+  explicit Move (int32 score) 
+    :from (0), to (0), promote (NULL_KIND), score (score) {
+  };
+
+  // Is this a null move?
+  bool is_null () const {
+    return to == from;
   }
 
-  // Create a null move with a score.
-  Move (int32 score) : score (score) {
-    from = to = 0;
-    kind = NULL_KIND;
-    color = NULL_COLOR;
-    flags.capture = NULL_KIND;
-    flags.promote = NULL_KIND;
-    flags.castle_qs = flags.castle_ks = 0;
-  }
+  // Kind of color of the piece being moved.
+  Color get_color (const Board &b) const;
 
-  struct {
-    Kind     capture   : 4; // Kind being captured.
-    Kind     promote   : 4; // Kind being promoted to.
-    unsigned castle_qs : 1; // Is this a qs castle?
-    unsigned castle_ks : 1; // Is this a ks castle?
-  } flags;
+  // Get the kind of the piece being moved.
+  Kind get_kind (const Board &b) const; 
 
-  Kind   kind   :4;  // Kind being moved.
-  Color  color  :3;  // Color being moved.
+  // Returns the piece being captured, or NULL_KIND if these is no
+  // such piece.
+  Kind capture (const Board &b) const;
 
-  uint32 from   :6;  // Origin.
-  uint32 to     :6;  // Destination
+  // Is this move an en passant capture.
+  bool is_en_passant (const Board &b) const;
 
-  int32  score;      // Score for this move.
+  // Is this a Queen side castle.
+  bool is_castle_qs (const Board &b) const;
 
-  bool operator== (Move rhs) {
-    return (from == rhs.from) && (to == rhs.to);
-  }
+  // Is this a King side castle.
+  bool is_castle_ks (const Board &b) const;
 
+  // State
+  uint16 from;
+  uint16 to;
+  Kind promote;
+  int32 score;
 };
+
+inline bool operator== (const Move &lhs, Move &rhs) {
+  return (lhs.from == rhs.from) && (lhs.to == rhs.to);
+}
 
 inline Move operator- (Move m) {
   m.score = -m.score;
@@ -125,25 +131,6 @@ inline Move max (Move l, Move r) {
 
 inline Move min (Move l, Move r) {
   return ((l.score < r.score) ? l : r);
-}
-
-// Estimate the value of this move as zero or the value of the piece
-// being captured.
-inline int
-value (const Move &m) {
-  switch (m.flags.capture)
-    {
-    case NULL_KIND: return  0;
-    case PAWN:      return -1;
-    case ROOK:      return -5;
-    case KNIGHT:    return -3;
-    case BISHOP:    return -3;
-    case QUEEN:     return -9;
-    default:     assert (0);
-    }
-
-  // Suppress gcc warning in -DNDEBUG case.
-  return 0;
 }
 
 std::ostream & operator<< (std::ostream &, const Move &);
@@ -330,18 +317,10 @@ struct Board {
   static uint64 get_zobrist_piece_key (Color c, Kind k, int32 idx) {
     uint32 i = (c == BLACK ? 0 : 1);
     uint32 j = (int32) k;
-
     assert (c != NULL_COLOR);
     assert (k != NULL_KIND);
     assert (idx < 64);
-
-    if ((i * (64 * 6) + j * (64) + idx) >= 2 * 6 * 64)
-      {
-	std::cerr << i * (64 * 6) + j * (64) + idx << std::endl;
-      }
-
     assert ((i * (64 * 6) + j * (64) + idx) < 2 * 6 * 64);
-
     return zobrist_piece_keys[i * (64 * 6) + j * (64) + idx];
   }
 
@@ -533,7 +512,7 @@ struct Board {
   void
   set_piece (Kind k, Color c, uint32 idx) {
     assert (k != NULL_KIND);
-    assert (c >= BLACK && c <= WHITE);
+    assert (c == BLACK || c == WHITE);
     assert (idx >= 0 && idx < 64);
 
     // Update color and piece sets.
@@ -733,5 +712,67 @@ inline int count (const Board_Vector &bv) {
 }
 
 std::ostream & operator<< (std::ostream &os, Board_Vector bv);
+
+/*********/
+/* Moves */
+/*********/
+
+// Kind of color of the piece being moved.
+Color 
+inline Move::get_color (const Board &b) const {
+  return b.get_color (from);
+}
+
+// Get the kind of the piece being moved.
+inline Kind 
+Move::get_kind (const Board &b) const {
+  return b.get_kind (from);
+}
+
+// Returns the piece being captured, or NULL_KIND if these is no
+// such piece.
+inline Kind 
+Move::capture (const Board &b) const {
+  return b.get_kind (to);
+}
+
+// Is this move an en passant capture.
+inline bool 
+Move::is_en_passant (const Board &b) const {
+  // If the piece being moved is a pawn, the square being moved to is
+  // empty, and the to square and and the from sqare are on different
+  // files, then this is an enpassant capture.
+  return get_kind (b) == PAWN
+    && ((test_bit (b.occupied, to) == 0))
+    && (Board::idx_to_file (to) != Board::idx_to_file (from));
+}
+
+// Is this a Queen side castle.
+inline bool 
+Move::is_castle_qs (const Board &b) const {
+  if (b.get_kind (from) == KING)
+    {
+      if (b.flags.to_move == WHITE && from == 4 && to == 2) 
+	return true;
+      if (b.flags.to_move == BLACK && from == 60 && to == 58) 
+	return true;
+    }
+
+  return false;
+}
+
+// Is this a King side castle.
+inline bool 
+Move::is_castle_ks (const Board &b) const {
+  if (b.get_kind (from) == KING)
+    {
+      if (b.flags.to_move == WHITE && from == 4 && to == 6) 
+	return true;
+      if (b.flags.to_move == BLACK && from == 60 && to == 62) 
+	return true;
+    }
+
+  return false;
+}
 
 #endif // _BOARD_

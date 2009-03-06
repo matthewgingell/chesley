@@ -111,7 +111,7 @@ eval (const Board &b, int depth = 0) {
   score +=  b.flags.to_move * (100 - depth);
 #endif
 
-#if 1
+#if 0
   score += random () % 10;
 #endif
 

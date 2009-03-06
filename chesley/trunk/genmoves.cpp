@@ -37,11 +37,9 @@ Board::perft (int d) const {
   uint64 sum = 0;
 
   if (d == 0) return 1;
-
   Board_Vector children (*this);
   for (int i = 0; i < children.count; i++)
     sum += children[i].perft (d - 1);
-
   return sum;
 }
 
@@ -55,9 +53,8 @@ Board :: divide (int d) const {
     {
       Board child = *this;
       std::cerr << to_calg (moves[i]) << " ";
-
-      child.apply (moves [i]);
-      std::cerr << child.perft (d - 1) << std::endl;
+      if (child.apply (moves [i]))
+	std::cerr << child.perft (d - 1) << std::endl;
     }
 }
 
@@ -129,18 +126,7 @@ Board::gen_pawn_moves (Move_Vector &out) const
 	{
 	  int to_idx = bit_idx (to);
 
-	  // Determine whether or not this is a capture.
-	  Kind is_capture;
-	  if (test_bit (other_pieces (), to_idx))
-	    {
-	      is_capture = get_kind (to_idx);
-	    }
-	  else
-	    {
-	      is_capture = NULL_KIND;
-	    }
-
-	  Move m (PAWN, bit_idx (from), to_idx, c, is_capture);
+	  Move m (bit_idx (from), to_idx);
 
 	  // Handle the case of a promotion.
 	  if ((c == WHITE && idx_to_rank (to_idx) == 7) ||
@@ -149,7 +135,7 @@ Board::gen_pawn_moves (Move_Vector &out) const
 	      // Generate a move for each possible promotion.
 	      for (int k = (int) ROOK; k <= (int) QUEEN; k++)
 		{
-		  m.flags.promote = (Kind) k;
+		  m.promote = (Kind) k;
 		  out.push (m);
 		}
 	    }
@@ -173,7 +159,6 @@ Board::gen_pawn_moves (Move_Vector &out) const
 inline void
 Board::gen_rook_moves (Move_Vector &out) const
 {
-  Color c = flags.to_move;
   bitboard our_rooks = rooks & our_pieces ();
 
   // For each rook
@@ -190,20 +175,7 @@ Board::gen_rook_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
-	  // Determine whether or not this is a capture.
-	  Kind is_capture;
-	  if (test_bit (other_pieces (), to_idx))
-	    {
-	      is_capture = get_kind (to_idx);
-	    }
-	  else
-	    {
-	      is_capture = NULL_KIND;
-	    }
-
-	  out.push
-	    (Move (ROOK, from,  to_idx, c, is_capture));
+	  out.push (Move (from,  to_idx));
 	  to = clear_lsb (to);
 	}
 
@@ -218,7 +190,6 @@ Board::gen_rook_moves (Move_Vector &out) const
 inline void
 Board::gen_knight_moves (Move_Vector &out) const
 {
-  Color c = flags.to_move;
   bitboard our_knights = knights & our_pieces ();
 
   // For each knight:
@@ -231,20 +202,7 @@ Board::gen_knight_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
-	  // Determine whether or not this is a capture.
-	  Kind is_capture;
-	  if (test_bit (other_pieces (), to_idx))
-	    {
-	      is_capture = get_kind (to_idx);
-	    }
-	  else
-	    {
-	      is_capture = NULL_KIND;
-	    }
-
-	  out.push
-	    (Move (KNIGHT, from, to_idx, c, is_capture));
+	  out.push (Move (from, to_idx));
 	  to = clear_lsb (to);
 	}
       our_knights = clear_lsb (our_knights);
@@ -259,7 +217,6 @@ Board::gen_knight_moves (Move_Vector &out) const
 inline void
 Board::gen_bishop_moves (Move_Vector &out) const
 {
-  Color c = flags.to_move;
   bitboard our_bishops = bishops & our_pieces ();
 
   // For each bishop;
@@ -277,20 +234,7 @@ Board::gen_bishop_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
-	  // Determine whether or not this is a capture.
-	  Kind is_capture;
-	  if (test_bit (other_pieces (), to_idx))
-	    {
-	      is_capture = get_kind (to_idx);
-	    }
-	  else
-	    {
-	      is_capture = NULL_KIND;
-	    }
-
-	  out.push
-	    (Move (BISHOP, from, to_idx, c, is_capture));
+	  out.push (Move (from, to_idx));
 	  to = clear_lsb (to);
 	}
       our_bishops = clear_lsb (our_bishops);
@@ -304,7 +248,6 @@ Board::gen_bishop_moves (Move_Vector &out) const
 inline void
 Board::gen_queen_moves (Move_Vector &out) const
 {
-  Color c = flags.to_move;
   bitboard our_queens = queens & our_pieces ();
 
   // For each queen.
@@ -324,20 +267,7 @@ Board::gen_queen_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
-	  // Determine whether or not this is a capture.
-	  Kind is_capture;
-	  if (test_bit (other_pieces (), to_idx))
-	    {
-	      is_capture = get_kind (to_idx);
-	    }
-	  else
-	    {
-	      is_capture = NULL_KIND;
-	    }
-
-	  out.push
-	    (Move (QUEEN, from,  to_idx, c, is_capture));
+	  out.push (Move (from,  to_idx));
 	  to = clear_lsb (to);
 	}
       our_queens = clear_lsb (our_queens);
@@ -368,20 +298,7 @@ Board::gen_king_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
-	  // Determine whether or not this is a capture.
-	  Kind is_capture;
-	  if (test_bit (other_pieces (), to_idx))
-	    {
-	      is_capture = get_kind (to_idx);
-	    }
-	  else
-	    {
-	      is_capture = NULL_KIND;
-	    }
-
-	  out.push
-	    (Move (KING, from,  to_idx, c, is_capture));
+	  out.push (Move (from,  to_idx));
 	  to = clear_lsb (to);
 	}
     }
@@ -395,37 +312,20 @@ Board::gen_king_moves (Move_Vector &out) const
       byte row = occ_0 (4);
 
       if (flags.w_can_q_castle && (row & 0xE) == 0)
-	{
-	  Move m (KING, 4, 2, WHITE, NULL_KIND);
-	  m.flags.castle_qs = 1;
-	  out.push (m);
-	}
+	out.push (Move (4, 2));
+
 
       if (flags.w_can_k_castle && (row & 0x60) == 0)
-	{
-	  Move m (KING, 4, 6, WHITE, NULL_KIND);
-	  m.flags.castle_ks = 1;
-	  out.push (m);
-	}
+	out.push (Move (4, 6));
     }
-
-  if (c == BLACK)
+  else
     {
       byte row = occ_0 (60);
-
+      
       if (flags.b_can_q_castle && (row & 0xE) == 0)
-	{
-	  Move m (KING, 60, 58, BLACK, NULL_KIND);
-	  m.flags.castle_qs = 1;
-	  out.push (m);
-	}
-
+	out.push (Move (60, 58));
+      
       if (flags.b_can_k_castle && (row & 0x60) == 0)
-	{
-	  Move m (KING, 60, 62, BLACK, NULL_KIND);
-	  m.flags.castle_ks = 1;
-	  out.push (m);
-	}
+	out.push (Move (60, 62));
     }
-
 }
