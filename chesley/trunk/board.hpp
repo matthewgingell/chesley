@@ -14,6 +14,7 @@
 #include <string>
 
 #include "util.hpp"
+#include "types.hpp"
 
 /*********/
 /* Types */
@@ -31,7 +32,6 @@ struct Board_Vector;
 typedef bits64 bitboard;
 
 void print_board (bitboard b);
-void print_masks (bitboard b);
 
 /*****************/
 /*  Color type.  */
@@ -76,64 +76,42 @@ struct Move {
   Move () {}
 
   // Construct a move;
-  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, int32 score = 0) 
+  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, score_t score = 0) 
     :from (from), to (to), promote (promote), score (score) {
   };
 
   // Construct a null move with a score. 
-  explicit Move (int32 score) 
+  explicit Move (score_t score) 
     :from (0), to (0), promote (NULL_KIND), score (score) {
   };
 
   // Is this a null move?
-  bool is_null () const {
-    return to == from;
-  }
+  inline bool is_null () const;
 
   // Kind of color of the piece being moved.
-  Color get_color (const Board &b) const;
+  inline Color get_color (const Board &b) const;
 
   // Get the kind of the piece being moved.
-  Kind get_kind (const Board &b) const; 
+  inline Kind get_kind (const Board &b) const; 
 
-  // Returns the piece being captured, or NULL_KIND if these is no
-  // such piece.
-  Kind capture (const Board &b) const;
+  // Returns the piece being captured, or NULL_KIND if this is not a
+  // capture.
+  inline Kind capture (const Board &b) const;
 
   // Is this move an en passant capture.
-  bool is_en_passant (const Board &b) const;
+  inline bool is_en_passant (const Board &b) const;
 
   // Is this a Queen side castle.
-  bool is_castle_qs (const Board &b) const;
+  inline bool is_castle_qs (const Board &b) const;
 
   // Is this a King side castle.
-  bool is_castle_ks (const Board &b) const;
+  inline bool is_castle_ks (const Board &b) const;
 
   // State
-  uint16 from;
-  uint16 to;
-  Kind promote;
-  int32 score;
+  int8 from, to;
+  Kind promote :16;
+  score_t score;
 };
-
-inline bool operator== (const Move &lhs, Move &rhs) {
-  return (lhs.from == rhs.from) && (lhs.to == rhs.to);
-}
-
-inline Move operator- (Move m) {
-  m.score = -m.score;
-  return m;
-}
-
-inline Move max (Move l, Move r) {
-  return ((l.score > r.score) ? l : r);
-}
-
-inline Move min (Move l, Move r) {
-  return ((l.score < r.score) ? l : r);
-}
-
-std::ostream & operator<< (std::ostream &, const Move &);
 
 /****************/
 /* Move vectors */
@@ -146,9 +124,7 @@ struct Move_Vector {
   // moves exist.
   static int const SIZE = 256;
 
-  Move_Vector () {
-    count = 0;
-  }
+  Move_Vector () : count (0) {}
 
   Move_Vector (const Board &b);
 
@@ -190,9 +166,6 @@ enum Castling_Right
 std::ostream & operator<< (std::ostream &, const Board &);
 
 struct Board {
-
-  // Must be called to initialize static members in correct order.
-  static const void precompute_tables ();
 
   /*************/
   /* Constants */
@@ -277,11 +250,14 @@ struct Board {
   uint32 half_move_clock; // Used for 50-move rule.
   uint32 full_move_clock; // Clock after each black move.
 
-  int32 score;
+  score_t score;
 
   /************************************/
   /* Constructors and initialization. */
   /************************************/
+
+  // Must be called to initialize static members in correct order.
+  static const void precompute_tables ();
 
   Board () {}
 
@@ -356,14 +332,17 @@ struct Board {
   bitboard attack_set (Color) const;
 
   // Get the number of legal moves available from this position.
-  int child_count ();
+  int child_count () const;
 
   // Get the status of the game.
-  Status get_status ();
+  Status get_status () const;
+
+  // Return whether the square idx is attacked by a piece of color c.
+  bool is_attacked (int idx, Color c) const;
 
   // Return whether color c is in check.
   bool in_check (Color c) const;
-
+  
   // Return the color of a piece on a square.
   Color get_color (uint32 idx) const {
     if (test_bit (white, idx)) return WHITE;
@@ -403,9 +382,9 @@ struct Board {
     return x >= 0 && x <= 7 && y >= 0 && y <= 7;
   }
 
-  /****************/
-  /* Flags setter */
-  /****************/
+  /*****************/
+  /* Flags setters */
+  /*****************/
 
   // It is crucial to use the following routines to set board flags,
   // rather than accessing those fields directly, becase otherwise the
@@ -621,40 +600,6 @@ struct Board {
   inline void gen_queen_moves  (Move_Vector &moves) const;
   inline void gen_king_moves   (Move_Vector &moves) const;
 
-  /*********************************/
-  /* Precomputed table generation. */
-  /*********************************/
-
-  // Bit masks for rotated coordinates.
-  static bitboard *init_masks_0 ();
-  static bitboard *init_masks_45 ();
-  static bitboard *init_masks_90 ();
-  static bitboard *init_masks_135 ();
-
-  // Maps from normal to rotated coordinates.
-  static int *init_rot_45 ();
-  static int *init_rot_90 ();
-  static int *init_rot_135 ();
-
-  // Assessors for diagonals.
-  static byte *init_diag_shifts_45 ();
-  static byte *init_diag_bitpos_45 ();
-  static byte *init_diag_widths_45 ();
-  static byte *init_diag_shifts_135 ();
-  static byte *init_diag_bitpos_135 ();
-  static byte *init_diag_widths_135 ();
-
-  // Attack tables.
-  static bitboard *init_knight_attacks_tbl ();
-  static bitboard *init_king_attacks_tbl ();
-  static bitboard *init_rank_attacks_tbl ();
-  static bitboard *init_file_attacks_tbl ();
-  static bitboard *init_45d_attacks_tbl ();
-  static bitboard *init_135d_attacks_tbl ();
-
-  // Zobrist keys.
-  static void init_zobrist_keys ();
-
   /***********/
   /* Testing */
   /***********/
@@ -687,14 +632,11 @@ struct Board_Vector {
 
   static int const SIZE = 256;
 
-  Board_Vector () {
-    count = 0;
-  }
+  Board_Vector () : count (0) {}
 
   Board_Vector (const Board &b);
 
   void push (const Board &b) {
-    assert (count < SIZE);
     board[count++] = b;
   }
 
@@ -703,7 +645,7 @@ struct Board_Vector {
   }
 
   Board board[SIZE];
-  int count;
+  byte count;
 };
 
 // Count as a function for sorting purposes.
@@ -717,9 +659,15 @@ std::ostream & operator<< (std::ostream &os, Board_Vector bv);
 /* Moves */
 /*********/
 
+// Is this a null move?
+inline bool
+Move::is_null () const { 
+  return to == from;
+}
+
 // Kind of color of the piece being moved.
-Color 
-inline Move::get_color (const Board &b) const {
+inline Color 
+Move::get_color (const Board &b) const {
   return b.get_color (from);
 }
 
@@ -774,5 +722,13 @@ Move::is_castle_ks (const Board &b) const {
 
   return false;
 }
+
+// Equality on moves.
+inline bool operator== (const Move &lhs, Move &rhs) {
+  return (lhs.from == rhs.from) && (lhs.to == rhs.to);
+}
+
+// Output for moves.
+std::ostream & operator<< (std::ostream &, const Move &);
 
 #endif // _BOARD_

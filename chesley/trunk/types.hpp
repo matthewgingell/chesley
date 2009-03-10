@@ -8,6 +8,9 @@
 #ifndef __TYPES__
 #define __TYPES__
 
+
+// Standard integer types.
+
 #include <stdint.h>
 
 typedef int8_t  int8;
@@ -21,5 +24,8 @@ typedef uint32_t uint32;
 typedef uint64_t uint64;
 
 typedef uint8 byte;
+
+// Score type for a chess position.
+typedef int32 score_t;
 
 #endif // __TYPES__

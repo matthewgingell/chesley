@@ -14,16 +14,114 @@
   _Rotated bitboards in FUSc#_ by Johannes Buchner:
   http://page.mi.fu-berlin.de/~fusch/publications/Joe-Paper_rotated_bitboards.pdf
 
-
   Additional, attack matrices for each type of move are precomputed
   here.
-
 
   Matthew Gingell
   gingell@adacore.com
 */
 
 #include "chesley.hpp"
+
+/***************************************/
+/* Construction of precomputed tables. */
+/***************************************/
+
+bool Board::have_precomputed_tables = false;
+
+bitboard *Board::KNIGHT_ATTACKS_TBL;
+bitboard *Board::KING_ATTACKS_TBL;
+bitboard *Board::RANK_ATTACKS_TBL;
+bitboard *Board::FILE_ATTACKS_TBL;
+bitboard *Board::DIAG_45_ATTACKS_TBL;
+bitboard *Board::DIAG_135_ATTACKS_TBL;
+
+bitboard *Board::masks_0;
+bitboard *Board::masks_45;
+bitboard *Board::masks_90;
+bitboard *Board::masks_135;
+
+int *Board::rot_45;
+int *Board::rot_90;
+int *Board::rot_135;
+
+byte *Board::diag_shifts_45;
+byte *Board::diag_bitpos_45;
+byte *Board::diag_widths_45;
+
+byte *Board::diag_shifts_135;
+byte *Board::diag_bitpos_135;
+byte *Board::diag_widths_135;
+
+uint64 *Board::zobrist_piece_keys;
+uint64 *Board::zobrist_enpassant_keys;
+uint64  Board::zobrist_key_white_to_move;
+uint64  Board::zobrist_w_castle_q_key;
+uint64  Board::zobrist_w_castle_k_key;
+uint64  Board::zobrist_b_castle_q_key;
+uint64  Board::zobrist_b_castle_k_key;
+
+// Bit masks for rotated coordinates.
+bitboard *init_masks_0 ();
+bitboard *init_masks_45 ();
+bitboard *init_masks_90 ();
+bitboard *init_masks_135 ();
+
+// Maps from normal to rotated coordinates.
+int *init_rot_45 ();
+int *init_rot_90 ();
+int *init_rot_135 ();
+
+// Assessors for diagonals.
+byte *init_diag_shifts_45 ();
+byte *init_diag_bitpos_45 ();
+byte *init_diag_widths_45 ();
+byte *init_diag_shifts_135 ();
+byte *init_diag_bitpos_135 ();
+byte *init_diag_widths_135 ();
+
+// Attack tables.
+bitboard *init_knight_attacks_tbl ();
+bitboard *init_king_attacks_tbl ();
+bitboard *init_rank_attacks_tbl ();
+bitboard *init_file_attacks_tbl ();
+bitboard *init_45d_attacks_tbl ();
+bitboard *init_135d_attacks_tbl ();
+
+// Zobrist keys.
+static void init_zobrist_keys ();
+
+// Precompute all tables.
+const void
+Board::precompute_tables () {
+  Board::masks_0 = init_masks_0 ();
+  Board::masks_45 = init_masks_45 ();
+  Board::masks_90 = init_masks_90 ();
+  Board::masks_135 = init_masks_135 ();
+
+  Board::rot_45 = init_rot_45 ();
+  Board::rot_90 = init_rot_90 ();
+  Board::rot_135 = init_rot_135 ();
+
+  Board::diag_shifts_45 = init_diag_shifts_45 ();
+  Board::diag_bitpos_45 = init_diag_bitpos_45 ();
+  Board::diag_widths_45 = init_diag_widths_45 ();
+
+  Board::diag_shifts_135 = init_diag_shifts_135 ();
+  Board::diag_bitpos_135 = init_diag_bitpos_135 ();
+  Board::diag_widths_135 = init_diag_widths_135 ();
+
+  Board::KNIGHT_ATTACKS_TBL = init_knight_attacks_tbl ();
+  Board::KING_ATTACKS_TBL = init_king_attacks_tbl ();
+  Board::RANK_ATTACKS_TBL = init_rank_attacks_tbl ();
+  Board::FILE_ATTACKS_TBL = init_file_attacks_tbl ();
+  Board::DIAG_45_ATTACKS_TBL = init_45d_attacks_tbl ();
+  Board::DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
+
+  init_zobrist_keys ();
+
+  have_precomputed_tables = true;
+}
 
 /*****************************************************************/
 /* Generate tables and masks for maintaining rotated bit boards. */
@@ -44,7 +142,7 @@
 */
 
 bitboard *
-Board::init_masks_0 () {
+init_masks_0 () {
   bitboard *masks = new bits64[64];
   for (int i = 0; i < 64; i++)
       masks[i] = 1llu << i;
@@ -87,7 +185,7 @@ Board::init_masks_0 () {
 
 // Rotate normal indices 45 degrees.
 int *
-Board::init_rot_45 () {
+init_rot_45 () {
   int *rot = new int[64];
   int idx_00 = 0;
 
@@ -106,7 +204,7 @@ Board::init_rot_45 () {
 
 // Table of normal index to shift to fetch occupancy pattern.
 byte *
-Board :: init_diag_shifts_45 () {
+init_diag_shifts_45 () {
   static byte rotated[64];
   static byte unrotated[] =
     {
@@ -127,17 +225,17 @@ Board :: init_diag_shifts_45 () {
       63,
     };
 
-  assert (rot_45 != 0);
+  assert (Board::rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[rot_45[i]] = unrotated[i];
+    rotated[Board::rot_45[i]] = unrotated[i];
 
   return rotated;
 }
 
 // Find the position of a bit within a diagonal occupancy byte.
 byte *
-Board :: init_diag_bitpos_45  () {
+init_diag_bitpos_45  () {
   static byte rotated[64];
   static byte unrotated[] =
     {
@@ -158,17 +256,17 @@ Board :: init_diag_bitpos_45  () {
       0,
     };
 
-  assert (rot_45 != 0);
+  assert (Board::rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated [rot_45[i]] = unrotated[i];
+    rotated [Board::rot_45[i]] = unrotated[i];
 
   return rotated;
 }
 
 // Find the width of a diagonal given a normal position.
 byte *
-Board :: init_diag_widths_45 () {
+init_diag_widths_45 () {
   static byte rotated[64];
   static byte unrotated[] =
   {
@@ -189,16 +287,16 @@ Board :: init_diag_widths_45 () {
     1
   };
 
-  assert (rot_45 != 0);
+  assert (Board::rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[rot_45[i]] = unrotated[i];
+    rotated[Board::rot_45[i]] = unrotated[i];
 
   return rotated;
 }
 
 bitboard *
-Board::init_masks_45 () {
+init_masks_45 () {
   bits64 *masks = new bits64[64];
   int idx_00 = 0;
 
@@ -231,7 +329,7 @@ Board::init_masks_45 () {
 */
 
 bitboard *
-Board::init_masks_90 () {
+init_masks_90 () {
   bitboard *masks = new bits64[64];
 
   int idx_00 = 0;
@@ -243,7 +341,7 @@ Board::init_masks_90 () {
 }
 
 int *
-Board::init_rot_90 () {
+init_rot_90 () {
   int *rot = new int[64];
 
   int idx_00 = 0;
@@ -287,7 +385,7 @@ Board::init_rot_90 () {
 
 // Table of normal index => bit shift to fetch occupancy pattern..
 byte *
-Board :: init_diag_shifts_135 () {
+init_diag_shifts_135 () {
   static byte rotated[64];
   static byte unrotated[] =
     {
@@ -308,17 +406,17 @@ Board :: init_diag_shifts_135 () {
       63,
     };
 
-  assert (rot_135 != 0);
+  assert (Board::rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[rot_135[i]] = unrotated[i];
+    rotated[Board::rot_135[i]] = unrotated[i];
 
   return rotated;
 }
 
 // Find the position of a bit within a diagonal occupancy byte.
 byte *
-Board :: init_diag_bitpos_135  () {
+init_diag_bitpos_135  () {
   static byte rotated[64];
   static byte unrotated[] =
     {
@@ -339,17 +437,17 @@ Board :: init_diag_bitpos_135  () {
       0,
     };
 
-  assert (rot_135 != 0);
+  assert (Board::rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated [rot_135[i]] = unrotated[i];
+    rotated [Board::rot_135[i]] = unrotated[i];
 
   return rotated;
 }
 
 // Find the width of a diagonal given a normal position.
 byte *
-Board :: init_diag_widths_135  () {
+init_diag_widths_135  () {
   static byte rotated[64];
   static byte unrotated[] =
   {
@@ -370,16 +468,16 @@ Board :: init_diag_widths_135  () {
     1
   };
 
-  assert (rot_135 != 0);
+  assert (Board::rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[rot_135[i]] = unrotated[i];
+    rotated[Board::rot_135[i]] = unrotated[i];
 
   return rotated;
 }
 
 bitboard *
-Board::init_masks_135 () {
+init_masks_135 () {
   bitboard *masks = new bits64[64];
   int idx_00 = 0;
 
@@ -397,7 +495,7 @@ Board::init_masks_135 () {
 }
 
 int *
-Board::init_rot_135 () {
+init_rot_135 () {
   int *rot = new int[64];
   int idx_00 = 0;
 
@@ -414,19 +512,13 @@ Board::init_rot_135 () {
   return rot;
 }
 
-// Debug
-void print_masks (bitboard *b) {
-  for (int i = 0; i < 64; i++)
-    print_bits (b[i]);
-}
-
 /**********************************************/
 /* Generate tables for generating piece moves */
 /**********************************************/
 
 // Precompute bitboards for rank attack.
 bitboard *
-Board::init_rank_attacks_tbl () {
+init_rank_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
   // For each position on the board.
@@ -470,7 +562,7 @@ Board::init_rank_attacks_tbl () {
 
 // Precompute bitboards for file attack.
 bitboard *
-Board::init_file_attacks_tbl () {
+init_file_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
   // For each position on the board.
@@ -521,7 +613,7 @@ Board::init_file_attacks_tbl () {
 
 // Precompute bitboards for knight moves.
 bitboard *
-Board::init_knight_attacks_tbl()
+init_knight_attacks_tbl()
 {
   const int moves[8][2] =
     {{ 2, 1}, { 1, 2}, {-1, 2}, {-2, 1},
@@ -540,7 +632,7 @@ Board::init_knight_attacks_tbl()
 	  int nx = x + moves[v][0];
 	  int ny = y + moves[v][1];
 
-	  if (in_bounds (nx, ny))
+	  if (Board::in_bounds (nx, ny))
 	    {
 	      rv[off] = set_bit (rv[off], nx + ny * 8);
 	    }
@@ -551,7 +643,7 @@ Board::init_knight_attacks_tbl()
 
 // Precompute bitboards for king moves.
 bitboard *
-Board::init_king_attacks_tbl()
+init_king_attacks_tbl()
 {
   const int moves[8][2] =
     {{ 1, 0}, { 1, 1}, { 0, 1}, {-1, 1},
@@ -570,7 +662,7 @@ Board::init_king_attacks_tbl()
 	  int nx = x + moves[v][0];
 	  int ny = y + moves[v][1];
 
-	  if (in_bounds (nx, ny))
+	  if (Board::in_bounds (nx, ny))
 	    {
 	      rv[off] = set_bit (rv[off], nx + ny * 8);
 	    }
@@ -581,15 +673,15 @@ Board::init_king_attacks_tbl()
 
 // Precompute attacks along tht 56 - 07 diagonal.
 bitboard *
-Board::init_45d_attacks_tbl () {
+init_45d_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
   // For each position on the board.
   for (int from = 0; from < 64; from++)
     {
       bitboard destinations;
-      int from_bit = diag_bitpos_45[from];
-      int pat_len = diag_widths_45[from];
+      int from_bit = Board::diag_bitpos_45[from];
+      int pat_len = Board::diag_widths_45[from];
       int b;
 
       // For each pattern
@@ -628,15 +720,15 @@ Board::init_45d_attacks_tbl () {
 
 // Precompute attacks along tht 0 - 63 diagonal.
 bitboard *
-Board::init_135d_attacks_tbl () {
+init_135d_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
   // For each position on the board.
   for (int from = 0; from < 64; from++)
     {
       bitboard destinations;
-      int from_bit = diag_bitpos_135[from];
-      int pat_len = diag_widths_135[from];
+      int from_bit = Board::diag_bitpos_135[from];
+      int pat_len = Board::diag_widths_135[from];
       int b;
 
       // For each pattern
@@ -677,40 +769,22 @@ Board::init_135d_attacks_tbl () {
 /* Generate tables of random bit-vectors for use as Zobrist hashing. */
 /*********************************************************************/
 
-// Keys hashing player to move status
-uint64  Board::zobrist_key_white_to_move = 0x0;
-
-// Keys hashing for piece locations.
-uint64 *Board::zobrist_piece_keys = NULL;
-
-// Keys hashing for enpassant status
-uint64 *Board::zobrist_enpassant_keys = NULL;
-
-// Keys reflecting castling right.
-uint64  Board::zobrist_w_castle_k_key = 0x0;
-uint64  Board::zobrist_w_castle_q_key = 0x0;
-uint64  Board::zobrist_b_castle_k_key = 0x0;
-uint64  Board::zobrist_b_castle_q_key = 0x0;
-
 // Initialize all the above keys to random bit strings.
 void
-Board::init_zobrist_keys () {
-  zobrist_key_white_to_move = random64();
+init_zobrist_keys () {
+  Board::zobrist_key_white_to_move = random64();
 
-  zobrist_piece_keys = new uint64[2 * 6 * 64];
+  Board::zobrist_piece_keys = new uint64[2 * 6 * 64];
   for (int i = 0; i < 2 * 6 * 64; i++)
-    zobrist_piece_keys[i] = random64();
+    Board::zobrist_piece_keys[i] = random64();
 
-  zobrist_enpassant_keys = new uint64[64];
-  zobrist_enpassant_keys[0] = 0;
+  Board::zobrist_enpassant_keys = new uint64[64];
+  Board::zobrist_enpassant_keys[0] = 0;
   for (int i = 1; i < 64; i++)
-    zobrist_enpassant_keys[i] = random64();
+    Board::zobrist_enpassant_keys[i] = random64();
 
-
-  zobrist_w_castle_q_key = random64 ();
-  zobrist_w_castle_k_key = random64 ();
-  zobrist_b_castle_q_key = random64 ();
-  zobrist_b_castle_k_key = random64 ();
-
-
+  Board::zobrist_w_castle_q_key = random64 ();
+  Board::zobrist_w_castle_k_key = random64 ();
+  Board::zobrist_b_castle_q_key = random64 ();
+  Board::zobrist_b_castle_k_key = random64 ();
 }

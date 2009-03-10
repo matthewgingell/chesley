@@ -12,33 +12,34 @@
 #include <cstdlib>
 #include "bits64.hpp"
 #include "board.hpp"
+#include "types.hpp"
 #include "util.hpp"
 
 // Material values.
 
-static const int INFINITY   = 1000 * 1000 * 1000;
+static const score_t INFINITY   = 30 * 1000;
 
-static const int QUEEN_VAL  = 900;
-static const int ROOK_VAL   = 500;
-static const int BISHOP_VAL = 300;
-static const int KNIGHT_VAL = 300;
-static const int PAWN_VAL   = 100;
+static const score_t QUEEN_VAL  = 900;
+static const score_t ROOK_VAL   = 500;
+static const score_t BISHOP_VAL = 300;
+static const score_t KNIGHT_VAL = 300;
+static const score_t PAWN_VAL   = 100;
 
-static const int MATE_VAL   = 1000 * 1000;
+static const score_t MATE_VAL   = 29 * 1000;
 
 // Positional values of having castled and retaining the right to
 // castle.
-static const int KS_CASTLE_VAL  = 75;
-static const int QS_CASTLE_VAL  = 50;
-static const int CAN_CASTLE_VAL = 10;
+static const score_t KS_CASTLE_VAL  = 75;
+static const score_t QS_CASTLE_VAL  = 50;
+static const score_t CAN_CASTLE_VAL = 10;
 
 // Simple table driven positional bonuses.
-int
+score_t
 eval_simple_positional (Board b);
 
-inline int
+inline score_t
 eval_material (const Board &b) {
-  int score = 0;
+  score_t score = 0;
 
   /*******************************/
   /* Evaluate material strength. */
@@ -64,9 +65,9 @@ eval_material (const Board &b) {
 
 // Evaluate a position statically. Positive scores favor white and
 // negative scores favor black.
-inline int
+inline score_t
 eval (const Board &b, int depth = 0) {
-  int score = 0;
+  score_t score = 0;
 
   score += eval_material (b);
 
