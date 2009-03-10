@@ -22,7 +22,7 @@ Search_Engine :: choose_move (Board &b, int depth) {
 }
 
 // Return an estimate of the value of a position.
-int
+score_t
 Search_Engine :: score (const Board &b, int depth) {
   interrupt_search = false;
   return (iterative_deepening (b, depth >= 0 ? depth : max_depth)).score;
@@ -74,13 +74,6 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 
   // Clear statistics.
   calls_to_alpha_beta = 0;
-
-  // Clear the transposition table. Our replacement policy is to
-  // overwrite shallower search values with deeper ones, which will
-  // eventually result in a table full of deep search values for old
-  // positions we're unlikely to see again. To avoid this problem, we
-  // clear the table between searches.
-  tt.clear ();
 
   // Search repeatedly until we are interrupted or hit ply 'depth'.
   for (int i = 2; i <= depth; i++)
@@ -178,7 +171,7 @@ Search_Engine::MTDf (const Board &root, int f, int d) {
 
 Move
 Search_Engine::alpha_beta
-(const Board &b, int depth, int alpha, int beta) {
+(const Board &b, int depth, score_t alpha, score_t beta) {
   Color player = b.flags.to_move;
   Move best_move ((player == WHITE ? -INFINITY : +INFINITY));
 
@@ -240,20 +233,21 @@ Search_Engine::alpha_beta
 #if ORDER_MOVES
       order_moves (b, moves);
 
-  // If we found a move in the transposition table, swap it to the
-  // front of the list.
-  if (found_tt_entry)
-    {
-      for (int i = 0; i < moves.count; i++)
+      // If we found a move in the transposition table, swap it to the
+      // front of the list.
+#if USE_TRANS_TABLES
+      if (found_tt_entry)
 	{
-	  if (moves[i] == entry.move)
+	  for (int i = 0; i < moves.count; i++)
 	    {
-	      swap (moves[0], moves[i]);
-	      break;
+	      if (moves[i] == entry.move)
+		{
+		  swap (moves[0], moves[i]);
+		  break;
+		}
 	    }
 	}
-    }
-
+#endif // USE_TRANS_TABLES
 #endif // ORDER_MOVES
 
       /**************************/
@@ -266,7 +260,7 @@ Search_Engine::alpha_beta
           if (child.apply (moves[i]))
             {
 	      Move s = alpha_beta (child, depth - 1, alpha, beta);
-	      int val = s.score;
+	      score_t val = s.score;
 
               /***************************/
               /* Maximizing at this node. */
@@ -376,28 +370,28 @@ Search_Engine::alpha_beta
   return best_move;
 }
 
-inline int value (const Move &m) { return m.score; }
+// Estimate the value of a move.
+inline int value (const Move &m) { 
+  return m.score; 
+}
 
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void 
 Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
 
-#if 1
   for (int i = 0; i < moves.count; i++)
     switch (moves[i].capture (b))
       {
-      case NULL_KIND: moves[i].score =  0; break; 
       case PAWN:      moves[i].score = -1; break;
       case ROOK:      moves[i].score = -5; break;
       case KNIGHT:    moves[i].score = -3; break;
       case BISHOP:    moves[i].score = -3; break;
       case QUEEN:     moves[i].score = -9; break;
-      case KING:      moves[i].score = -20; break;
+      default:        moves[i].score =  0; break;
       }
-  
+
   insertion_sort <Move_Vector, Move> (moves);
-#endif
 
   return;
 }
@@ -412,10 +406,24 @@ Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
 // entry is found.
 bool
 Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
+  static int count = 0;
+  static int hits = 0;
+
   Trans_Table::iterator i = tt.find (hash);
+  count++;
+
+  if (count % 100000 == 0) 
+    {
+      cerr << "Hit ratio: " 
+	   << (int) ((float (hits) / float (count)) * 100) << "%"  
+	   << endl;
+      
+      count = hits = 0;
+    }
 
   if (i != tt.end ())
     {
+      hits++;
       out = i -> second;
       return true;
     }
@@ -426,8 +434,15 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 5 * 1000 * 1000;
-  if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
+  const uint32 MAX_COUNT = 10 * 1000 * 1000;
+  //  if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
+
+  if (tt.size () > MAX_COUNT) 
+    {
+      cerr << "Throwing away transposition table." << endl;
+      tt.clear ();
+    }
+
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }

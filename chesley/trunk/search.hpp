@@ -11,6 +11,9 @@
 #define _SEARCH_
 
 #include <tr1/unordered_map>
+
+//#include <map>
+
 #include "board.hpp"
 
 // Entries in the transposition table, which is used is used to
@@ -26,6 +29,7 @@ struct TT_Entry {
 // A transposition table type mapping from a 64 bit board hash to a
 // TT_Entry.
 typedef std::tr1::unordered_map <uint64, TT_Entry> Trans_Table;
+//typedef std::map <uint64, TT_Entry> Trans_Table;
 
 struct Search_Engine {
 
@@ -67,7 +71,7 @@ struct Search_Engine {
   Move choose_move (Board &b, int32 depth = -1);
 
   // Return an estimate of the value of a position.
-  int32 score (const Board &b, int32 depth = -1);
+  score_t score (const Board &b, int32 depth = -1);
 
   // Fetch the principle variation for the most recent search.
   void fetch_pv (const Board &b, Move_Vector &out);
@@ -84,7 +88,8 @@ private:
   // Return the best available move with its score using minimax with
   // alpha-beta pruning.
   Move alpha_beta
-  (const Board &b, int depth, int alpha = -INFINITY, int beta = INFINITY);
+  (const Board &b, int depth, 
+   score_t alpha = -INFINITY, score_t beta = INFINITY);
 
   // Attempt to order moves to improve our odds of getting earlier
   // cutoffs.

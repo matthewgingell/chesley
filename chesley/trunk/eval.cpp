@@ -136,7 +136,7 @@ simple_positional_value[5][2][64] = {
 
 // Evaluate a the positional strength of a based based on the
 // preceding table.
-int32
+score_t
 eval_simple_positional (Board b) {
   const int WHITE_IDX = 0;
   const int BLACK_IDX = 1;

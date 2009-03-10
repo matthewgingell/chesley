@@ -54,7 +54,6 @@ to_char (Kind k) {
 // Convert a character code to a piece code, ignoring color.
 Kind
 to_kind (char k) {
-
   k = toupper (k);
   switch (k)
     {
@@ -65,9 +64,7 @@ to_kind (char k) {
       case 'Q': return QUEEN;
       case 'K': return KING;
     }
-
   assert (0);
-
   return NULL_KIND;
 }
 
@@ -122,68 +119,6 @@ INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     "P P P P P P P P"  // 1
     "R N B Q K B N R"; // 0
 #endif
-
-/*************************************/
-/* Initialization of static members. */
-/*************************************/
-
-bool Board::have_precomputed_tables = false;
-
-bitboard *Board::KNIGHT_ATTACKS_TBL = 0;
-bitboard *Board::KING_ATTACKS_TBL = 0;
-bitboard *Board::RANK_ATTACKS_TBL = 0;
-bitboard *Board::FILE_ATTACKS_TBL = 0 ;
-bitboard *Board::DIAG_45_ATTACKS_TBL = 0;
-bitboard *Board::DIAG_135_ATTACKS_TBL = 0;
-
-bitboard *Board::masks_0 = 0;
-bitboard *Board::masks_45 = 0;
-bitboard *Board::masks_90 = 0;
-bitboard *Board::masks_135 = 0;
-
-int *Board::rot_45 = 0;
-int *Board::rot_90 = 0;
-int *Board::rot_135 = 0;
-
-byte *Board::diag_shifts_45 = 0;
-byte *Board::diag_bitpos_45 = 0;
-byte *Board::diag_widths_45 = 0;
-
-byte *Board::diag_shifts_135 = 0;
-byte *Board::diag_bitpos_135 = 0;
-byte *Board::diag_widths_135 = 0;
-
-// Initialize tables.
-const void
-Board::precompute_tables () {
-  masks_0 = init_masks_0 ();
-  masks_45 = init_masks_45 ();
-  masks_90 = init_masks_90 ();
-  masks_135 = init_masks_135 ();
-
-  rot_45 = init_rot_45 ();
-  rot_90 = init_rot_90 ();
-  rot_135 = init_rot_135 ();
-
-  diag_shifts_45 = init_diag_shifts_45 ();
-  diag_bitpos_45 = init_diag_bitpos_45 ();
-  diag_widths_45 = init_diag_widths_45 ();
-
-  diag_shifts_135 = init_diag_shifts_135 ();
-  diag_bitpos_135 = init_diag_bitpos_135 ();
-  diag_widths_135 = init_diag_widths_135 ();
-
-  KNIGHT_ATTACKS_TBL = init_knight_attacks_tbl ();
-  KING_ATTACKS_TBL = init_king_attacks_tbl ();
-  RANK_ATTACKS_TBL = init_rank_attacks_tbl ();
-  FILE_ATTACKS_TBL = init_file_attacks_tbl ();
-  DIAG_45_ATTACKS_TBL = init_45d_attacks_tbl ();
-  DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
-
-  init_zobrist_keys ();
-
-  have_precomputed_tables = true;
-}
 
 /*****************/
 /* Constructors. */
@@ -326,59 +261,56 @@ Board::attack_set (Color c) const {
 
 // Get the number of legal moves available from this position.
 int
-Board::child_count () {
+Board::child_count () const {
   return (Board_Vector (*this)).count;
 }
 
 // Get the status of the game. {
 Status
-Board::get_status () {
+Board::get_status () const {
   if (child_count () > 0) return GAME_IN_PROGRESS;
   if (in_check (WHITE)) return GAME_WIN_BLACK;
   if (in_check (BLACK)) return GAME_WIN_WHITE;
   return GAME_DRAW;
 }
 
-// Return whether color c is in check.
+// Return whether the square at idx is attacked by a piece of color c.
 bool
-Board::in_check (Color c) const
+Board::is_attacked (int idx, Color c) const
 {
-  // Take advantage of the symmetry that if a king could move like an
-  // X and capture an X, then that X is able to attack us and we are
-  // in check.
+  // Take advantage of the symmetry that, if the piece at index could
+  // move like an X and capture an X, then that X is able to attack it
 
-  bitboard king = kings & color_to_board (c);
-  bitboard them = color_to_board (invert_color (c));
+  bitboard them = color_to_board (c);
   bitboard attacks;
-  int from = bit_idx (king);
-
+  
   // Are we attacked along a rank?
-  attacks = RANK_ATTACKS_TBL[from * 256 + occ_0 (from)];
+  attacks = RANK_ATTACKS_TBL[idx * 256 + occ_0 (idx)];
   if (attacks & (them & (queens | rooks))) return true;
 
   // Are we attack along a file?
-  attacks = FILE_ATTACKS_TBL[from * 256 + occ_90 (from)];
+  attacks = FILE_ATTACKS_TBL[idx * 256 + occ_90 (idx)];
   if (attacks & (them & (queens | rooks))) return true;
 
   // Are we attacked along a 45 degree diagonal.
-  attacks = DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)];
+  attacks = DIAG_45_ATTACKS_TBL[256 * idx + occ_45 (idx)];
   if (attacks & (them & (queens | bishops))) return true;
 
   // Are we attacked along a 135 degree diagonal.
-  attacks = DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)];
+  attacks = DIAG_135_ATTACKS_TBL[256 * idx + occ_135 (idx)];
     if (attacks & (them & (queens | bishops))) return true;
 
   // Are we attacked by a knight?
-  attacks = KNIGHT_ATTACKS_TBL[from];
+  attacks = KNIGHT_ATTACKS_TBL[idx];
   if (attacks & (them & knights)) return true;
 
   // Are we attacked by a king?
-  attacks = KING_ATTACKS_TBL[from];
+  attacks = KING_ATTACKS_TBL[idx];
   if (attacks & (them & kings)) return true;
 
   // Are we attacked by a pawn?
   bitboard their_pawns = pawns & them;
-  if (c == WHITE)
+  if (c != WHITE)
     {
       attacks = (((their_pawns & ~file (7)) >> 7)
                  | ((their_pawns & ~file (0)) >> 9));
@@ -388,10 +320,17 @@ Board::in_check (Color c) const
       attacks = (((their_pawns & ~file (0)) << 7)
                  | ((their_pawns & ~file (7)) << 9));
     }
-
-  if (attacks & king) return true;
+  if (attacks & masks_0[idx]) return true;
 
   return false;
+}
+
+// Return whether color c is in check.
+bool
+Board::in_check (Color c) const
+{
+  int idx = bit_idx (kings & color_to_board (c));
+  return is_attacked (idx, invert_color (c));
 }
 
 /***************************/
@@ -444,7 +383,7 @@ Board::set_castling_right (Castling_Right cr, bool v) {
 // because it places or leaves the color to move in check.
 bool
 Board::apply (const Move &m) {
-
+ 
   Kind kind = m.get_kind (*this);
   Kind capture = m.capture (*this);
   Color color = m.get_color (*this);
@@ -483,22 +422,13 @@ Board::apply (const Move &m) {
   /* Handle taking En Passant */
   /****************************/
 
-  //  if (m.kind == PAWN &&
-  //      flags.en_passant != 0 &&
-  //      m.to == flags.en_passant)
-
   if (is_en_passant)
     {
-      // Clear the square behind the En Passant destination
-      // square.
+      // Clear the square behind destination square.
       if (color == WHITE)
-        {
-          clear_piece (flags.en_passant - 8);
-        }
+	clear_piece (flags.en_passant - 8);
       else
-        {
-          clear_piece (flags.en_passant + 8);
-        }
+	clear_piece (flags.en_passant + 8);
     }
 
   /*****************************************************************/
@@ -507,143 +437,130 @@ Board::apply (const Move &m) {
   /* clearing the En Passant target square.                        */
   /*****************************************************************/
 
-    set_en_passant (0);
-    if (kind == PAWN)
-      {
-	if (color == WHITE)
-	  {
-	    if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
-	      {
-		set_en_passant (m.from + 8);
-	      }
-	  }
-	else
-	  {
-	    if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
-	      {
-		set_en_passant (m.from - 8);
-	      }
-	  }
+  set_en_passant (0);
+  if (kind == PAWN)
+    {
+      if (color == WHITE) {
+	if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
+	  set_en_passant (m.from + 8);
+      } else {
+	if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
+	  set_en_passant (m.from - 8);
       }
+    }
     
-    /****************************/
-    /* Handling castling moves. */
-    /****************************/
+  /****************************/
+  /* Handling castling moves. */
+  /****************************/
 
-    if (is_castle_qs || is_castle_ks)
-      {
-	// Calculate attacked set for testing check.
-	const bitboard attacked = attack_set (invert_color (color));
+  if (is_castle_qs || is_castle_ks)
+    {
+      // Calculate attacked set for testing check.
+      const bitboard attacked = attack_set (invert_color (color));
 
-	// Test castle out of, across, or in to check.
-	if (color == WHITE)
-	  {
-	    if (is_castle_qs && !(attacked & 0x1C))
-	      {
-		clear_piece (4);
-		clear_piece (0);
-		set_piece (KING, WHITE, 2);
-		set_piece (ROOK, WHITE, 3);
-		set_castling_right (W_QUEEN_SIDE, false);
-		set_castling_right (W_KING_SIDE, false);
-		flags.w_has_k_castled = 1;
-		return true;
-	      }
+      // Test castle out of, across, or in to check.
+      if (color == WHITE)
+	{
+	  if (is_castle_qs && !(attacked & 0x1C))
+	    {
+	      clear_piece (4);
+	      clear_piece (0);
+	      set_piece (KING, WHITE, 2);
+	      set_piece (ROOK, WHITE, 3);
+	      set_castling_right (W_QUEEN_SIDE, false);
+	      set_castling_right (W_KING_SIDE, false);
+	      flags.w_has_k_castled = 1;
+	      return true;
+	    }
+	  if (is_castle_ks && !(attacked & 0x70))
+	    {
+	      clear_piece (4);
+	      clear_piece (7);
+	      set_piece (KING, WHITE, 6);
+	      set_piece (ROOK, WHITE, 5);
+	      set_castling_right (W_QUEEN_SIDE, false);
+	      set_castling_right (W_KING_SIDE, false);
+	      flags.w_has_k_castled = 1;
+	      return true;
+	    }
+	}
+      else
+	{
+	  byte attacks = get_byte (attacked, 7);
+	  if (is_castle_qs && !(attacks & 0x1C))
+	    {
+	      clear_piece (60);
+	      clear_piece (56);
+	      set_piece (KING, BLACK, 58);
+	      set_piece (ROOK, BLACK, 59);
+	      set_castling_right (B_QUEEN_SIDE, false);
+	      set_castling_right (B_KING_SIDE, false);
+	      flags.b_has_q_castled = 1;
+	      return true;
+	    }
+	  if (is_castle_ks && !(attacks & 0x70))
+	    {
+	      clear_piece (60);
+	      clear_piece (63);
+	      set_piece (KING, BLACK, 62);
+	      set_piece (ROOK, BLACK, 61);
+	      set_castling_right (B_QUEEN_SIDE, false);
+	      set_castling_right (B_KING_SIDE, false);
+	      flags.b_has_k_castled = 1;
+	      return true;
+	    }
+	}
 
-	    if (is_castle_ks && !(attacked & 0x70))
-	      {
-		clear_piece (4);
-		clear_piece (7);
-		set_piece (KING, WHITE, 6);
-		set_piece (ROOK, WHITE, 5);
-		set_castling_right (W_QUEEN_SIDE, false);
-		set_castling_right (W_KING_SIDE, false);
-		flags.w_has_k_castled = 1;
-		return true;
-	      }
-	  }
-	else
-	  {
-	    byte attacks = get_byte (attacked, 7);
+      return false;
+    }
+  else
+    {
+      /*********************************/
+      /* Handle the non-castling case. */
+      /*********************************/
 
-	    if (is_castle_qs && !(attacks & 0x1C))
-	      {
-		clear_piece (60);
-		clear_piece (56);
-		set_piece (KING, BLACK, 58);
-		set_piece (ROOK, BLACK, 59);
-		set_castling_right (B_QUEEN_SIDE, false);
-		set_castling_right (B_KING_SIDE, false);
-		flags.b_has_q_castled = 1;
-		return true;
-	      }
+      clear_piece (m.from);
+      clear_piece (m.to);
 
-	    if (is_castle_ks && !(attacks & 0x70))
-	      {
-		clear_piece (60);
-		clear_piece (63);
-		set_piece (KING, BLACK, 62);
-		set_piece (ROOK, BLACK, 61);
-		set_castling_right (B_QUEEN_SIDE, false);
-		set_castling_right (B_KING_SIDE, false);
-		flags.b_has_k_castled = 1;
-		return true;
-	      }
-	  }
+      /**********************/
+      /* Handle promotions. */
+      /**********************/
 
-	return false;
-      }
-    else
-      {
-	/*********************************/
-	/* Handle the non-castling case. */
-	/*********************************/
+      if (m.promote != NULL_KIND)
+	set_piece (m.promote, color, m.to);
+      else
+	set_piece (kind, color, m.to);
 
-	clear_piece (m.from);
-	clear_piece (m.to);
+      /**************************/
+      /* Update castling status */
+      /**************************/
 
-	/**********************/
-	/* Handle promotions. */
-	/**********************/
+      // King moves.
+      if (m.from == 4)
+	{
+	  set_castling_right (W_QUEEN_SIDE, false);
+	  set_castling_right (W_KING_SIDE, false);
+	}
+      else if (m.from == 60)
+	{
+	  set_castling_right (B_QUEEN_SIDE, false);
+	  set_castling_right (B_KING_SIDE, false);
+	}
 
-	if (m.promote != NULL_KIND)
-	  {
-	    set_piece (m.promote, color, m.to);
-	  }
-	else
-	  {
-	    set_piece (kind, color, m.to);
-	  }
+      // Rook moves and attacks.
 
-	/**************************/
-	/* Update castling status */
-	/**************************/
+      if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
+      if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
+      if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
+      if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
 
-	// King moves.
-	if (m.from == 4)
-	  {
-	    set_castling_right (W_QUEEN_SIDE, false);
-	    set_castling_right (W_KING_SIDE, false);
-	  }
-	else if (m.from == 60)
-	  {
-	    set_castling_right (B_QUEEN_SIDE, false);
-	    set_castling_right (B_KING_SIDE, false);
-	  }
-
-	// Rook moves and attacks.
-	if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
-	if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
-	if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
-	if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
-
-	/*****************/
-	/* Test legality. */
-	/*****************/
-
-	// Return whether this position puts or leaves us in check.
-	return !in_check (color);
-      }
+      /*****************/
+      /* Test legality. */
+      /*****************/
+      
+      // Return whether this position puts or leaves us in check.
+      return !in_check (color);
+    }
 }
 
 /***********************************/
@@ -658,13 +575,12 @@ Move_Vector::Move_Vector (const Board &b) {
 Board_Vector::Board_Vector (const Board &b)
 {
   Move_Vector moves (b);
-  count = 0;
 
+  count = 0;
   for (int i = 0; i < moves.count; i++)
     {
       Board c = b;
-      if (c.apply (moves [i]))
-	push (c);
+      if (c.apply (moves [i])) push (c);
     }
 }
 
@@ -702,9 +618,7 @@ ostream &
 operator<< (ostream &os, const Move_Vector &moves)
 {
   for (int i = 0; i < moves.count; i++)
-    {
-      os << moves.move[i] << endl;
-    }
+    os << moves.move[i] << endl;
   return os;
 }
 
@@ -824,24 +738,37 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   // en passant target square, this is "-". If a pawn has just made a
   // 2-square move, this is the position "behind" the pawn.
 
-  if (toks[3][0] != '-')
-    {
-      b.set_en_passant ((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
-    }
-
+  if (toks.size () >= 3) {
+    if (toks[3][0] != '-') 
+      b.set_en_passant 
+	((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
+  } else {
+    b.set_en_passant (0);
+  }
+  
+  // These fields are not expected when we are parsing an EPD command.
   if (!EPD)
     {
-
+      
       // 5. Halfmove clock: This is the number of halfmoves since the last
       // pawn advance or capture. This is used to determine if a draw can
       // be claimed under the fifty-move rule.
-
-      if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
+      
+      if (toks.size () >= 4) {
+	if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
+      } else {
+	b.half_move_clock = 0;
+      }
 
       // 6. Fullmove number: The number of the full move. It starts at 1,
       // and is incremented after Black's move.
 
-      if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
+      if (toks.size () >= 5) {
+	if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
+      } else {
+	b.full_move_clock = 0;
+      }
+
     }
 
   return b;
@@ -1017,6 +944,7 @@ Board ::to_fen () const {
 Board
 Board::from_ascii (const string &str) {
   Board b;
+
   Board::common_init (b);
   assert (0);
   return b;
@@ -1043,16 +971,12 @@ void
 Board::print_tree (int depth)
 {
   if (depth == 0)
-    {
-      cerr<< *this << endl;
-    }
+    cerr<< *this << endl;
   else
     {
       Board_Vector children (*this);
       for (int i = 0; i < children.count; i++)
-        {
-          children[i].print_tree (depth - 1);
-        }
+	children[i].print_tree (depth - 1);
     }
 }
 

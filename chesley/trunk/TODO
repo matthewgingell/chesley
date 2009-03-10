@@ -3,13 +3,13 @@ Issues:
   * How do I know if a move returned by the search is correct? How do
     I know it's any good?
 
+  * Detect insufficient material to mate.
+
 Next items:
 
   * 8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1: best move is Ka1b1. Must
     search to play 20, which is nearly free with trans tables. Check
     it in testsuite.
-
-  * Fix Fen parsing.
 
   * Return draw at 50 move rule, even if somebody is in check.
 
@@ -18,11 +18,6 @@ Next items:
   * Hunt for things that can be made const.
 
   * Use 16 bit types for indexes, scores, and depths.
-
-  * Cleanup junky initialize code now we understand C++ global
-    initialization,
-
-  * Don't put so much junk in Move.
 
   * Must have a good way of measuring search correctness, strength,
     and speed before we try to improved them.
@@ -66,7 +61,6 @@ Search
   * Quiescence search
   * Time management 
   * Aspiration windows
-  * Transposition tables.
   * Static Exchange Evaluation (SEE) for capture ordering.
   * Null move heuristic
 
