@@ -10,6 +10,8 @@
 #ifndef _SEARCH_
 #define _SEARCH_
 
+#include <cstring>
+
 #include <boost/unordered_map.hpp>
 
 #include "board.hpp"
@@ -25,6 +27,8 @@ struct Search_Engine {
     assert (max_depth > 0);
     interrupt_search = false;
     calls_to_alpha_beta = 0;
+    memset (hh_white, 0, sizeof (hh_white));
+    memset (hh_black, 0, sizeof (hh_black));
   }
 
   /*************************/
@@ -47,6 +51,8 @@ struct Search_Engine {
   /* History tables */
   /******************/
 
+  int hh_white[64][64];
+  int hh_black[64][64];
 
   /*****************/
   /* Search state. */
