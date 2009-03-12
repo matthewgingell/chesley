@@ -10,26 +10,10 @@
 #ifndef _SEARCH_
 #define _SEARCH_
 
-#include <tr1/unordered_map>
-
-//#include <map>
+#include <boost/unordered_map.hpp>
 
 #include "board.hpp"
-
-// Entries in the transposition table, which is used is used to
-// memoize the search function.
-struct TT_Entry {
-  TT_Entry () { depth = -1;}
-
-  Move move;
-  int16 depth;
-  enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type : 2;
-};
-
-// A transposition table type mapping from a 64 bit board hash to a
-// TT_Entry.
-typedef std::tr1::unordered_map <uint64, TT_Entry> Trans_Table;
-//typedef std::map <uint64, TT_Entry> Trans_Table;
+#include "eval.hpp"
 
 struct Search_Engine {
 
@@ -43,15 +27,33 @@ struct Search_Engine {
     calls_to_alpha_beta = 0;
   }
 
+  /*************************/
+  /* Transposition tables. */
+  /*************************/
+
+  struct TT_Entry {
+    TT_Entry () { depth = -1;}
+    Move move;
+    int32 depth;
+    enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type;
+  };
+  
+  // A table type mapping from a 64-bit key to a TT_Entry.
+  typedef boost::unordered_map <uint64, TT_Entry> Trans_Table;
+
+  Trans_Table tt;
+
+  /******************/
+  /* History tables */
+  /******************/
+
+
   /*****************/
   /* Search state. */
   /*****************/
 
   // Default maximum depth for tree searches.
   int max_depth;
-
-  // Transposition table.
-  Trans_Table tt;
 
   // If set true, the search should conclude as quickly as possible.
   bool interrupt_search;
@@ -89,7 +91,7 @@ private:
   // alpha-beta pruning.
   Move alpha_beta
   (const Board &b, int depth, 
-   score_t alpha = -INFINITY, score_t beta = INFINITY);
+   score_t alpha = -INF, score_t beta = +INF);
 
   // Attempt to order moves to improve our odds of getting earlier
   // cutoffs.
