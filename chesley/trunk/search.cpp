@@ -63,47 +63,53 @@ Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
 
 #if USE_HIST_HEURISTIC
-  // Age the history table 
+
+  // Age the history table. Old results age exponentially, so
+  // hopefully we don't end up with a table full of junk values.
+
   for (int from = 0; from < 64; from++)
-    {
-      for (int to = 0; to < 64; to++)
-	{
+    for (int to = 0; to < 64; to++)
+      {
  	  hh_white[from][to] /= 2;
 	  hh_black[from][to] /= 2;
-	}
-    }
+      }
+
 #endif // USE_HIST_HEURISTIC
 
 
   // Always return a search at least to depth one.
-#if USE_MTDF
-  Move best_move = MTDf (b, 0, 1);
-#else
-  Move best_move = alpha_beta (b, 1);
-#endif // USE_MTDF
+  Move best = alpha_beta (b, 1);
 
   // Clear statistics.
   calls_to_alpha_beta = 0;
 
   // Search repeatedly until we are interrupted or hit ply 'depth'.
   for (int i = 2; i <= depth; i++)
-    try {
-#if USE_MTDF
-      best_move = MTDf (b, best_move.score, i);
-#else
-      best_move = alpha_beta (b, i);
-#endif // USE_MTDF
-    } 
-    catch (int exp) 
-      {
-	assert (exp == SEARCH_INTERRUPTED);
-	cerr << "interrupt: finished searching ply: " << i - 1 << endl;
-	break;
-      }
+    {
+      try 
+	{
+	  // Do an aspiration search. Guess that the score to ply i is
+	  // within one pawn of the search to ply i - 1. If this fails
+	  // to find an exact value, give up and do a search with a
+	  // full width window.
 
+	  int alpha = best.score - 100;
+	  int beta =  best.score + 100;
+	  best = alpha_beta (b, i, alpha, beta);
+	  if (best.score <= alpha || best.score >= beta)
+	    best = alpha_beta (b, i, -INF, +INF);
+	} 
+      catch (int exp) 
+	{
+	  assert (exp == SEARCH_INTERRUPTED);
+	  cerr << "interrupt: finished searching ply: " << i - 1 << endl;
+	  break;
+	}
+    }
+  
   Move_Vector pv;
   fetch_pv (b, pv);
-  return best_move;
+  return best;
 }
 
 /********************************************************************/
@@ -197,9 +203,6 @@ Search_Engine::alpha_beta
 
       else if (entry.type == TT_Entry::UPPERBOUND)
 	beta = min (entry.move.score, beta);
-
-      if (alpha >= beta) 
-	return entry.move;
     }
 #endif // USE_TRANS_TABLE
 
@@ -236,9 +239,9 @@ Search_Engine::alpha_beta
 	      Move s = alpha_beta (child, depth - 1, alpha, beta);
 	      score_t val = s.score;
 
-              /***************************/
+              /****************************/
               /* Maximizing at this node. */
-              /***************************/
+              /****************************/
 
               if (player == WHITE)
                 {
