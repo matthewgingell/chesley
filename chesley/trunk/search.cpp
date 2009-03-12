@@ -38,11 +38,8 @@ Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
   while (tt_fetch (next.hash, entry))
     {
       Board last = next;
-      //      cerr << "d=" << entry.depth << " " << entry.move << endl;
       out.push (entry.move);
       next.apply (entry.move);
-
-      // In all probability there's a loop in the principal variation.
       if (out.count > 30) break;
     }
 #endif // USE_TRANS_TABLE
@@ -64,12 +61,26 @@ const int SEARCH_INTERRUPTED = 0x01;
 
 Move
 Search_Engine::iterative_deepening (const Board &b, int depth) {
+
+#if USE_HIST_HEURISTIC
+  // Age the history table 
+  for (int from = 0; from < 64; from++)
+    {
+      for (int to = 0; to < 64; to++)
+	{
+ 	  hh_white[from][to] /= 2;
+	  hh_black[from][to] /= 2;
+	}
+    }
+#endif // USE_HIST_HEURISTIC
+
+
   // Always return a search at least to depth one.
-  #if MTDF
+#if USE_MTDF
   Move best_move = MTDf (b, 0, 1);
-  #else
+#else
   Move best_move = alpha_beta (b, 1);
-  #endif
+#endif // USE_MTDF
 
   // Clear statistics.
   calls_to_alpha_beta = 0;
@@ -77,20 +88,21 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
   // Search repeatedly until we are interrupted or hit ply 'depth'.
   for (int i = 2; i <= depth; i++)
     try {
-#if MTDF
+#if USE_MTDF
       best_move = MTDf (b, best_move.score, i);
 #else
       best_move = alpha_beta (b, i);
-#endif
-    } catch (int exp) {
-      assert (exp == SEARCH_INTERRUPTED);
-      cerr << "interrupt: finished searching ply: " << i - 1 << endl;
-      break;
-    }
+#endif // USE_MTDF
+    } 
+    catch (int exp) 
+      {
+	assert (exp == SEARCH_INTERRUPTED);
+	cerr << "interrupt: finished searching ply: " << i - 1 << endl;
+	break;
+      }
 
   Move_Vector pv;
   fetch_pv (b, pv);
-
   return best_move;
 }
 
@@ -109,52 +121,31 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 /********************************************************************/
 
 Move
-Search_Engine::MTDf (const Board &root, int f, int d) {
-  Move m;
-  int g = f, beta;
+Search_Engine::MTDf (const Board &root, int g, int d) {
+  int beta;
   score_t upperbound = +INF, lowerbound = -INF;
-  Move best_move ((root.flags.to_move == WHITE ? -INF : +INF));
-
-  cerr << "Entering MTDf with d=" << d << endl;
 
   while (1)
     {
       if (g == lowerbound) beta = g + 1; else beta = g;
-      m = alpha_beta (root, d, beta - 1, beta);
-      g = m.score;
+      g = alpha_beta (root, d, beta - 1, beta).score;
 
-      cerr << "testing " << "[" << beta - 1 << ", " << beta << "]" << endl;
-      cerr << "fetched " << m << endl;
-
+      TT_Entry e = tt[root.hash];
+      if (e.type == TT_Entry::EXACT_VALUE) 
+	return e.move;
+      
       if (g < beta)
 	{
-	  cerr << "failed low" << endl;
-
-	  // Failed low.
 	  upperbound = g;
-	  if (root.flags.to_move == BLACK)
-	    {
-	      if (g < best_move.score) best_move = m;
-	    }
 	}
       else
 	{
-	  // Failed high.
-	  cerr << "failed high" << endl;
-
 	  lowerbound = g;
-	  if (root.flags.to_move == WHITE)
-	    {
-	      if (g > best_move.score) best_move = m;
-	    }
 	}
-
-      cerr << "best move is now: " << best_move << endl << endl;
-
       if (lowerbound >= upperbound) break;
     }
 
-  return best_move;
+  return tt[root.hash].move;
 }
 
 /************************************************************************/
@@ -345,8 +336,22 @@ Search_Engine::alpha_beta
 	  tt_store (b.hash, entry);
 	}
 #endif // USE_TRANS_TABLE
-
     }
+
+#if USE_HIST_HEURISTIC
+  /*****************************************/
+  /* Enter this move in the history table. */ 
+  /*****************************************/
+
+  if (player == WHITE) 
+    {
+      hh_white[best_move.from][best_move.to] += 1 << depth;
+    }
+  else
+    {
+      hh_black[best_move.from][best_move.to] += 1 << depth;
+    }
+#endif // USE_HIST_HEURISTIC
 
   return best_move;
 }
@@ -362,18 +367,34 @@ void
 Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
+  Color player = b.flags.to_move;
 
   for (int i = 0; i < moves.count; i++)
     {
       assert (moves[i].score == 0);
+
+      /* If we previously computed that moves[i] is the best move from
+	 this position, make sure it is search first. */
       if (have_entry && moves[i] == e.move)
 	{
 	  moves[i].score = -INF;
 	}
+#if USE_HIST_HEURISTIC
       else
 	{
-	  moves[i].score = -eval_piece (moves[i].capture (b));
+
+	  /* Otherwise, score based on it's rate and depth of cutoffs
+	     recently. */
+	  if (player == WHITE)
+	    {
+	      moves[i].score = -hh_white [moves[i].from][moves[i].to];
+	    }
+	  else
+	    {
+	      moves[i].score = -hh_black [moves[i].from][moves[i].to];
+	    }
 	}
+#endif // USE_HIST_HEURISTIC
     }
   
   insertion_sort <Move_Vector, Move> (moves);
