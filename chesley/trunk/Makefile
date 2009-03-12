@@ -8,8 +8,7 @@ ALG = -DUSE_TRANS_TABLE=1 -DORDER_MOVES=1 -DMTDF=0
 #CXX = g++
 CXX = g++-mp-4.4
 
-#CXXFLAGS = -g -Wall -m64 $(ALG)
-CXXFLAGS = -g -Wall -m64 -O3 -funroll-all-loops $(ALG) -DNDEBUG
+CXXFLAGS = -g -Wall -m64 -O3 $(ALG) -DNDEBUG
 
 all: chesley
 

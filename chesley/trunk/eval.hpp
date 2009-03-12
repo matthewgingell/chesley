@@ -17,7 +17,7 @@
 
 // Material values.
 
-static const score_t INFINITY   = 30 * 1000;
+static const score_t INF        = 1000 * 1000;
 
 static const score_t QUEEN_VAL  = 900;
 static const score_t ROOK_VAL   = 500;
@@ -25,7 +25,7 @@ static const score_t BISHOP_VAL = 300;
 static const score_t KNIGHT_VAL = 300;
 static const score_t PAWN_VAL   = 100;
 
-static const score_t MATE_VAL   = 29 * 1000;
+static const score_t MATE_VAL   = 500 * 1000;
 
 // Positional values of having castled and retaining the right to
 // castle.
@@ -36,6 +36,19 @@ static const score_t CAN_CASTLE_VAL = 10;
 // Simple table driven positional bonuses.
 score_t
 eval_simple_positional (Board b);
+
+
+// Return the value of a piece.
+inline score_t eval_piece (Kind k) {
+  switch (k) {
+  case PAWN: return PAWN_VAL;
+  case ROOK: return ROOK_VAL;
+  case KNIGHT: return KNIGHT_VAL;
+  case BISHOP: return BISHOP_VAL;
+  case QUEEN: return QUEEN_VAL;
+  default: return 0;
+  }
+}
 
 inline score_t
 eval_material (const Board &b) {
@@ -92,7 +105,7 @@ eval (const Board &b, int depth = 0) {
   // This appears to do no good at all.
 #if 0
   score += 20 * (pop_count ((b.attack_set (WHITE) & b.black)) -
-		  pop_count (b.attack_set (BLACK) & b.white));
+		 pop_count (b.attack_set (BLACK) & b.white));
 #endif
 
   // Encourage preserving the right to castle.

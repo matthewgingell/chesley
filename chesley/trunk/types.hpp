@@ -8,7 +8,6 @@
 #ifndef __TYPES__
 #define __TYPES__
 
-
 // Standard integer types.
 
 #include <stdint.h>
@@ -27,5 +26,16 @@ typedef uint8 byte;
 
 // Score type for a chess position.
 typedef int32 score_t;
+
+// This type is used to index tables, so PAWN must always be set to
+// zero, etc.
+enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
+
+// Convert a kind to a character code.
+char to_char (Kind k);
+
+// Convert a character code to a piece code, ignoring color.
+Kind to_kind (char k);
+std::ostream & operator<< (std::ostream &os, Kind k);
 
 #endif // __TYPES__

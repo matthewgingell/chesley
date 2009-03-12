@@ -51,21 +51,6 @@ enum Status { GAME_IN_PROGRESS = 0, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
 
 std::ostream & operator<< (std::ostream &os, Status s);
 
-/******************/
-/*  Piece kinds.  */
-/******************/
-
-// This type is used to index tables, so PAWN must always be set to
-// zero, etc.
-enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
-
-// Convert a kind to a character code.
-char to_char (Kind k);
-
-// Convert a character code to a piece code, ignoring color.
-Kind to_kind (char k);
-std::ostream & operator<< (std::ostream &os, Kind k);
-
 /**************/
 /* Move type. */
 /**************/
@@ -249,8 +234,6 @@ struct Board {
   // Clocks
   uint32 half_move_clock; // Used for 50-move rule.
   uint32 full_move_clock; // Clock after each black move.
-
-  score_t score;
 
   /************************************/
   /* Constructors and initialization. */
