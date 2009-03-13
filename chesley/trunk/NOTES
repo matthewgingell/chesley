@@ -1,37 +1,21 @@
-With HH:
+with /= 3
 
 Chesley! v0.01
 > bench 7
+Transposition table has 126665 entries.
 Best move to depth 7:
 [Move from 6 => 21 -9]
-0.82 seconds elapsed.
-1434624 calls_to_alpha_beta.
+0.76 seconds elapsed.
+1431180 calls_to_alpha_beta.
 > bench 8
+Transposition table has 896798 entries.
 Best move to depth 8:
 [Move from 12 => 20 26]
-4.90 seconds elapsed.
-6485343 calls_to_alpha_beta.
+4.80 seconds elapsed.
+6731864 calls_to_alpha_beta.
 > bench 9
+Transposition table has 2604066 entries.
 Best move to depth 9:
 [Move from 12 => 20 4]
-44.45 seconds elapsed.
-56212812 calls_to_alpha_beta.
-
-With HH, aspiration:
-
-Chesley! v0.01
-> bench 7
-Best move to depth 7:
-[Move from 6 => 21 -9]
-0.78 seconds elapsed.
-1420225 calls_to_alpha_beta.
-> bench 8
-Best move to depth 8:
-[Move from 12 => 20 26]
-4.92 seconds elapsed.
-6516362 calls_to_alpha_beta.
-> bench 9  bench 9
-Best move to depth 9:
-[Move from 12 => 20 4]
-24.87 seconds elapsed.
-42043965 calls_to_alpha_beta.
+17.91 seconds elapsed.
+28352662 calls_to_alpha_beta.

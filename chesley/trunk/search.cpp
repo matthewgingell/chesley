@@ -38,6 +38,7 @@ Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
   while (tt_fetch (next.hash, entry))
     {
       Board last = next;
+      cerr << entry.move << endl;
       out.push (entry.move);
       next.apply (entry.move);
       if (out.count > 30) break;
@@ -64,8 +65,10 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 
 #if USE_HIST_HEURISTIC
 
-  // Age the history table. Old results age exponentially, so
-  // hopefully we don't end up with a table full of junk values.
+  /***************************************************************/
+  /* Age the history table. Old results age exponentially, so    */
+  /* hopefully we don't end up with a table full of junk values. */
+  /***************************************************************/
 
   for (int from = 0; from < 64; from++)
     for (int to = 0; to < 64; to++)
@@ -76,28 +79,20 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 
 #endif // USE_HIST_HEURISTIC
 
-
   // Always return a search at least to depth one.
   Move best = alpha_beta (b, 1);
 
   // Clear statistics.
   calls_to_alpha_beta = 0;
 
-  // Search repeatedly until we are interrupted or hit ply 'depth'.
+  /******************************************************************/
+  /* Search repeatedly until we are interrupted or hit ply 'depth'. */
+  /******************************************************************/
   for (int i = 2; i <= depth; i++)
     {
       try 
 	{
-	  // Do an aspiration search. Guess that the score to ply i is
-	  // within one pawn of the search to ply i - 1. If this fails
-	  // to find an exact value, give up and do a search with a
-	  // full width window.
-
-	  int alpha = best.score - 100;
-	  int beta =  best.score + 100;
-	  best = alpha_beta (b, i, alpha, beta);
-	  if (best.score <= alpha || best.score >= beta)
-	    best = alpha_beta (b, i, -INF, +INF);
+	  best = alpha_beta (b, i, -INF, +INF);
 	} 
       catch (int exp) 
 	{
@@ -106,52 +101,10 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 	  break;
 	}
     }
-  
-  Move_Vector pv;
-  fetch_pv (b, pv);
+
+  cerr << "Transposition table has " << tt.size ()  << " entries." << endl;
+
   return best;
-}
-
-/********************************************************************/
-/* Search_Engine::MTDf ()                                           */
-/*                                                                  */
-/* MTD(f) is a search strategy which makes repeated calls to        */
-/* alpha_beta with a window of (beta - 1, beta). On each call it    */
-/* established a lower or upper bound, till eventually it converges */
-/* on a correct minimax value for this position.                    */
-/*                                                                  */
-/* For move information on this approach, see:                      */
-/*                                                                  */
-/* Aske Plaat: MTD(f): A Minimax Algorithm faster than NegaScout    */
-/* http://www.cs.vu.nl/~aske/mtdf.htm                               */
-/********************************************************************/
-
-Move
-Search_Engine::MTDf (const Board &root, int g, int d) {
-  int beta;
-  score_t upperbound = +INF, lowerbound = -INF;
-
-  while (1)
-    {
-      if (g == lowerbound) beta = g + 1; else beta = g;
-      g = alpha_beta (root, d, beta - 1, beta).score;
-
-      TT_Entry e = tt[root.hash];
-      if (e.type == TT_Entry::EXACT_VALUE) 
-	return e.move;
-      
-      if (g < beta)
-	{
-	  upperbound = g;
-	}
-      else
-	{
-	  lowerbound = g;
-	}
-      if (lowerbound >= upperbound) break;
-    }
-
-  return tt[root.hash].move;
 }
 
 /************************************************************************/
@@ -185,6 +138,7 @@ Search_Engine::alpha_beta
     throw (SEARCH_INTERRUPTED);
 
 #if USE_TRANS_TABLE
+
   /*****************************************************/
   /* Try to find this node in the transposition table. */
   /*****************************************************/
@@ -197,13 +151,12 @@ Search_Engine::alpha_beta
     {
       if (entry.type == TT_Entry::EXACT_VALUE)
 	return entry.move;
-
       if (entry.type == TT_Entry::LOWERBOUND)
 	alpha = max (entry.move.score, alpha);
-
       else if (entry.type == TT_Entry::UPPERBOUND)
 	beta = min (entry.move.score, beta);
     }
+
 #endif // USE_TRANS_TABLE
 
   /*********************************************/
@@ -221,11 +174,10 @@ Search_Engine::alpha_beta
 
   else
     {
+      // Generate moves available from this position and sort them
+      // from best to worst by their heuristic value.
       Move_Vector moves (b);
-
-#if ORDER_MOVES
       order_moves (b, moves);
-#endif // ORDER_MOVES
 
       /**************************/
       /* Minimax over children. */
@@ -328,7 +280,7 @@ Search_Engine::alpha_beta
 	{
 	  entry.depth = depth;
 	  entry.move = best_move;
-	
+
 	  if (best_move.score <= alpha)
 	    entry.type = TT_Entry :: LOWERBOUND;
 	  else if (best_move.score >= beta)
@@ -377,7 +329,7 @@ Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
       assert (moves[i].score == 0);
 
       /* If we previously computed that moves[i] is the best move from
-	 this position, make sure it is search first. */
+	 this position, make sure it is searched first. */
       if (have_entry && moves[i] == e.move)
 	{
 	  moves[i].score = -INF;
@@ -385,7 +337,6 @@ Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
 #if USE_HIST_HEURISTIC
       else
 	{
-
 	  /* Otherwise, score based on it's rate and depth of cutoffs
 	     recently. */
 	  if (player == WHITE)
@@ -411,28 +362,11 @@ Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
 
 // Fetch an entry from the transposition table. Returns false if no
 // entry is found.
-bool
+inline bool
 Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
-  static int count = 0;
-  static int hits = 0;
-
   Trans_Table::iterator i = tt.find (hash);
-  count++;
-
-  if (count % 1000000 == 0) 
+  if (i != tt.end ()) 
     {
-      //      cerr << "Hit ratio: " 
-      //	   << (int) ((float (hits) / float (count)) * 100) << "%"  
-      //	   << endl;
-
-      //     cerr << "load factor is " << tt.load_factor () << endl;
-      
-      count = hits = 0;
-    }
-
-  if (i != tt.end ())
-    {
-      hits++;
       out = i -> second;
       return true;
     }
@@ -441,17 +375,10 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 }
 
 // Store an entry in the transposition table.
-void
+inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 1 * 1000 * 1000;
-  //  if (tt.size () > MAX_COUNT) tt.erase (tt.begin ());
-
-  if (tt.size () > MAX_COUNT) 
-    {
-      //      cerr << "Throwing away transposition table." << endl;
-      tt.clear ();
-    }
-
+  const uint32 MAX_COUNT = 25 * 1000 * 1000;
+  if (tt.size () >= MAX_COUNT) tt.erase (tt.begin ());
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
