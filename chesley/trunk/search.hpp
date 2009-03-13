@@ -91,8 +91,6 @@ private:
   // are interrupted.
   Move iterative_deepening (const Board &b, int depth);
 
-  Move MTDf (const Board &root, int f, int d);
-
   // Return the best available move with its score using minimax with
   // alpha-beta pruning.
   Move alpha_beta
@@ -101,14 +99,17 @@ private:
 
   // Attempt to order moves to improve our odds of getting earlier
   // cutoffs.
-  void order_moves (const Board &b, Move_Vector &moves);
+  inline void 
+  order_moves (const Board &b, Move_Vector &moves);
 
   // Fetch an entry from the transposition table. Returns false if no
   // entry is found.
+  inline 
   bool tt_fetch (uint64 hash, TT_Entry &out);
 
   // Store an entry from the transposition table.
-  void tt_store (uint64 hash, const TT_Entry &in);
+  inline void 
+  tt_store (uint64 hash, const TT_Entry &in);
 };
 
 #endif // _SEARCH_
