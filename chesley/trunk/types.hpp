@@ -27,6 +27,9 @@ typedef uint8 byte;
 // Score type for a chess position.
 typedef int32 score_t;
 
+// Hash type for a chess position.
+typedef uint64 hash_t;
+
 // This type is used to index tables, so PAWN must always be set to
 // zero, etc.
 enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };

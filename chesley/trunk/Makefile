@@ -3,7 +3,7 @@ SHELL = /bin/sh
 LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
-ALG = -DUSE_TRANS_TABLE=1 -DORDER_MOVES=1 -DUSE_HIST_HEURISTIC=1 -DUSE_MTDF=0
+ALG = -DUSE_TRANS_TABLE=1 -DUSE_HIST_HEURISTIC=1
 
 #CXX = g++
 CXX = g++-mp-4.4

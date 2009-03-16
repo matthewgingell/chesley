@@ -100,6 +100,94 @@ operator<< (std::ostream &os, Color c) {
     }
 }
 
+/******************/
+/* Board::History */
+/******************/
+
+// Manage a history associated with a state of place and location in
+// a search tree. 
+// 
+// We manage bookkeeping for two types of information: The log of
+// all the positions and moves which have actually been played, and
+// a temporary set of board hash signature counts which are
+// incremented and decremented during as a particular traversal of a
+// search tree. 
+//
+// This distinction is only made for efficiency purposes and to
+// minimize the amount of work done in the actual tree search
+// itself.
+
+// Increment the number of times 'b' occurs in a search path.
+void 
+Board::History::push (const Board &b) {
+  boost::unordered_map <hash_t, uint32> :: iterator i;
+  i = counts.find (b.hash);
+  if (i == counts.end()) {
+    counts[b.hash] = 1;
+  } else {
+    i -> second++;
+  }
+}
+
+// Decrement the number of times 'b' occurs in a search path.
+void 
+Board::History::pop (const Board &b) {
+  boost::unordered_map <hash_t, uint32> :: iterator i;
+  i = counts.find (b.hash);
+  if (i == counts.end()) {
+    assert (false);
+  } else {
+    i -> second--;
+    if (i -> second == 0)
+      {
+	counts.erase (i);
+      }
+  }   
+}
+
+// Determine whether 'b' is the third repitition of a position in this
+// history.
+bool 
+Board::History::is_triple_repetition (const Board &b) {
+  boost::unordered_map <hash_t, uint32> :: iterator i;
+ 
+#if 0
+  cerr << "checking whether " << b.hash << " is a tripple rep:" << endl;
+  for (i = counts.begin (); i != counts.end (); i++)
+    {
+      cerr << i -> first << ":" << i -> second << endl;
+    }
+  cerr << endl;
+#endif
+
+  i = counts.find (b.hash);
+  if (i == counts.end()) {
+    return false;
+  } else {
+
+    if (i -> second == 2) 
+      {
+	cerr << "Found triple repetition." << endl;
+      }
+
+    return (i -> second == 2);
+  }   
+}
+
+// Commit a move to the history, storing all the information
+// associated with it to the permanent log for this state of play.
+void 
+Board::History::commit (const Board &b, const Move &m) {
+  // Append this board to the positions list.
+  positions.push_back (b);
+
+  // Append this move to the moves list.  
+  moves.push_back (m);
+
+  // Add this board to the repetitions table.
+  push (b);
+}
+
 /*************/
 /* Constants */
 /*************/
@@ -269,6 +357,7 @@ Board::child_count () const {
 Status
 Board::get_status () const {
   if (child_count () > 0) return GAME_IN_PROGRESS;
+  if (half_move_clock >= 50) return GAME_DRAW;
   if (in_check (WHITE)) return GAME_WIN_BLACK;
   if (in_check (BLACK)) return GAME_WIN_WHITE;
   return GAME_DRAW;
@@ -278,7 +367,7 @@ Board::get_status () const {
 bool
 Board::is_attacked (int idx, Color c) const
 {
-  // Take advantage of the symmetry that, if the piece at index could
+  // Take advantage of the symmetry that if the piece at index could
   // move like an X and capture an X, then that X is able to attack it
 
   bitboard them = color_to_board (c);
@@ -405,9 +494,6 @@ Board::apply (const Move &m) {
     {
       half_move_clock++;
     }
-
-  // 50 move rule.
-  if (half_move_clock > 50) return false;
 
   // Increment the whole move clock after each move by black.
   if (color == BLACK) full_move_clock++;
