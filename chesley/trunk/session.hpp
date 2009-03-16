@@ -42,6 +42,9 @@ struct Session {
   // State of play.
   static Board board;
 
+  // History of this game.
+  static Board::History h;
+
   // Color the engine is playing.
   static Color our_color;
 

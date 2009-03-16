@@ -43,7 +43,7 @@ struct Search_Engine {
   };
   
   // A table type mapping from a 64-bit key to a TT_Entry.
-  typedef boost::unordered_map <uint64, TT_Entry> Trans_Table;
+  typedef boost::unordered_map <hash_t, TT_Entry> Trans_Table;
 
   Trans_Table tt;
 
@@ -76,25 +76,25 @@ struct Search_Engine {
   /************/
 
   // Choose a move, score it, and return it.
-  Move choose_move (Board &b, int32 depth = -1);
+  Move choose_move (Board &b, Board::History &h, int32 depth = -1);
 
   // Return an estimate of the value of a position.
-  score_t score (const Board &b, int32 depth = -1);
+  score_t score (const Board &b, Board::History &h, int32 depth = -1);
 
   // Fetch the principle variation for the most recent search.
   void fetch_pv (const Board &b, Move_Vector &out);
 
-private:
+  //private:
 
   // Do a depth first search repeatedly, each time increasing the
   // depth by one. This allows us to return a reasonable move if we
   // are interrupted.
-  Move iterative_deepening (const Board &b, int depth);
+  Move iterative_deepening (const Board &b, Board::History &h, int depth);
 
   // Return the best available move with its score using minimax with
   // alpha-beta pruning.
   Move alpha_beta
-  (const Board &b, int depth, 
+  (const Board &b, Board::History &h, int depth,
    score_t alpha = -INF, score_t beta = +INF);
 
   // Attempt to order moves to improve our odds of getting earlier

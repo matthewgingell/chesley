@@ -45,6 +45,7 @@ const char *Session::prompt = "> ";
 /*********/
 
 Board Session::board;
+Board::History Session::h;
 Search_Engine Session::se;
 Color Session::our_color;
 bool Session::op_is_computer;
@@ -118,7 +119,7 @@ void Session::write_prompt ()
 
 Move Session::get_move () {
   timeout = mclock () + TIME_OUT;
-  return se.choose_move (board);
+  return se.choose_move (board, h);
 }
 
 /***************************/
@@ -152,6 +153,7 @@ Session::cmd_loop ()
 	{
 	  work ();
 	  usleep (100000);
+	  //	  cerr << "waiting for input..." << endl;
 	}
     }
 }
@@ -165,18 +167,27 @@ Session::cmd_loop ()
 void
 Session::work ()
 {
-  // If the game isn't over yet, generate a move and send it to
-  // the client.
+  // If the game isn't over yet, generate a move, send it to the
+  // client, and commit it.
   if (running
       && board.get_status () == GAME_IN_PROGRESS
       && board.flags.to_move == our_color)
     {
       Move best = get_move ();
 
+
+      if (best.is_null ())
+	{
+	  cerr << "get_move returned null move." << endl;
+	}
+
       if (board.apply (best))
 	{
+	  h.commit (board, best);
 	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
 	}
+
+      cerr << board << endl;
 
       Status s = board.get_status ();
       if (s != GAME_IN_PROGRESS)
@@ -195,15 +206,15 @@ Session::handle_end_of_game (Status s) {
   switch (s)
     {
     case GAME_WIN_WHITE:
-      fprintf (out, "RESULT 1-0 {White mates}\n");
+      fprintf (out, "1-0 {White mates}\n");
       break;
 
     case GAME_WIN_BLACK:
-      fprintf (out, "RESULT 0-1 {Black mates}\n");
+      fprintf (out, "0-1 {Black mates}\n");
       break;
 
     case GAME_DRAW:
-      fprintf (out, "RESULT 1/2-1/2 {Draw}\n");
+      fprintf (out, "1/2-1/2 {Draw}\n");
       break;
 
     default:

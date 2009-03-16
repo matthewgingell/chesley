@@ -13,6 +13,9 @@
 #include <iostream>
 #include <string>
 
+#include <boost/unordered_map.hpp>
+#include <vector>
+
 #include "util.hpp"
 #include "types.hpp"
 
@@ -152,9 +155,42 @@ std::ostream & operator<< (std::ostream &, const Board &);
 
 struct Board {
 
+  /*********/
+  /* Types */
+  /*********/
+
+  // Manage a history associated with a state of place and location in
+  // a search tree.
+  
+  struct History {
+
+    std::vector <Board> positions;
+    std::vector <Move> moves;
+    boost::unordered_map <hash_t, uint32> counts;
+
+    // Increment the number of times 'b' occurs in a search path.
+    void push (const Board &b);
+
+    // Decrement the number of times 'b' occurs in a search path.
+    void pop (const Board &b);
+
+    // Determine whether 'b' is the third repitition of a position in
+    // this history.
+    bool is_triple_repetition (const Board &b);
+
+    // Commit a move to the history, storing all the information
+    // associated with it to the permanent log for this state of play.
+    void commit (const Board &b, const Move &m);
+
+  };
+
   /*************/
   /* Constants */
   /*************/
+
+  void foo (History &hist) {
+    return;
+  }
 
   static const std::string INITIAL_POSITIONS;
 
@@ -498,7 +534,7 @@ struct Board {
   }
 
   // Apply a move to this board.
-  bool apply (const Move &m);
+  bool apply (const Move &m, const History &h);
 
   /**********/
   /* Boards */

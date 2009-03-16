@@ -42,6 +42,32 @@ Session::debug_execute (char *line) {
 
 	  test_hashing (depth);
 	}
+
+      if (token == "ab")
+	{
+	  // Call alpha on this position with the specified window and
+	  // depth.
+
+	  timeout = mclock () + 1000.0 * 1000.0 * 1000.0;
+	  se.interrupt_search = false;
+
+	  if (tokens.size () == 4)
+	    {
+	      int depth = to_int (tokens[1]);
+	      int alpha = to_int (tokens[2]);
+	      int beta =  to_int (tokens[3]);
+	      
+	      cerr << "Calling alphabeta with ("
+		   << "depth:" << depth << " "
+		   << "alpha:" << alpha << " "
+		   << "beta:" << beta 
+		   << ")" << endl;
+
+	      se.calls_to_alpha_beta = 0;
+	      cerr << se.alpha_beta (board, h, depth, alpha, beta) << endl;
+	      fprintf (out, "%lli calls_to_alpha_beta.\n", se.calls_to_alpha_beta);
+	    }
+	}
     }
 
   return true;
@@ -61,7 +87,7 @@ Session::bench (const string_vector &tokens) {
   timeout = mclock () + 1000.0 * 1000.0 * 1000.0;
 
   uint64 start = cpu_time();
-  Move m = se.choose_move (board, depth);
+  Move m = se.choose_move (board, h, depth);
 
   //  Move m = se.alpha_beta (board, depth, -INFINITY, +INFINITY);
 
