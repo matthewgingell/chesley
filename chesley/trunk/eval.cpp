@@ -136,27 +136,20 @@ simple_positional_value[5][2][64] = {
 
 // Evaluate a the positional strength of a based based on the
 // preceding table.
-score_t
-eval_simple_positional (Board b) {
-  const int WHITE_IDX = 0;
-  const int BLACK_IDX = 1;
-  int bonus = 0;
+Score
+eval_simple_positional (const Board &b) {
+  Score bonus = 0;
 
-  for (int ci = WHITE_IDX; ci <= BLACK_IDX; ci++)
-    for (int ki = PAWN; ki <= QUEEN; ki++)
+  for (int c = WHITE; c <= BLACK; c++)
+    for (int k = PAWN; k <= QUEEN; k++)
       {
-	Color c = (ci == WHITE_IDX ? WHITE : BLACK);
-	Kind k = (Kind) ki;
-	assert (ki != NULL_KIND);
 	bitboard pieces = 
-	  b.kind_to_board (k) & 
-	  b.color_to_board (c);
-	
+	  b.color_to_board ((Color) c) & 
+	  b.kind_to_board ((Kind) k);
 	while (pieces)
 	  {
 	    int idx = bit_idx (pieces);
-	    bonus += (int) c * 
-	      simple_positional_value[k][ci][idx];
+	    bonus += sign ((Color) c) * simple_positional_value[k][c][idx];
 	    pieces = clear_lsb (pieces);
 	  }
     }

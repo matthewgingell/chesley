@@ -16,8 +16,9 @@
 #include <boost/unordered_map.hpp>
 #include <vector>
 
-#include "util.hpp"
+#include "bits64.hpp"
 #include "types.hpp"
+#include "util.hpp"
 
 /*********/
 /* Types */
@@ -32,7 +33,7 @@ struct Board_Vector;
 /*  Bitboard type. */
 /*******************/
 
-typedef bits64 bitboard;
+typedef uint64 bitboard;
 
 void print_board (bitboard b);
 
@@ -40,11 +41,17 @@ void print_board (bitboard b);
 /*  Color type.  */
 /*****************/
 
-enum Color { WHITE = 1, NULL_COLOR = 0, BLACK = -1 };
+enum Color { NULL_COLOR = -1, WHITE = 0, BLACK = 1 };
 
 std::ostream & operator<< (std::ostream &, Color);
 
-inline Color invert_color (Color c) { return (Color) -c; }
+inline Color invert_color (Color c) { 
+  return (c == WHITE) ? BLACK : WHITE;
+}
+
+inline int sign (Color c) {
+  return (c == WHITE) ? +1 :  -1;
+}
 
 /*****************/
 /*  Status type  */
@@ -61,15 +68,18 @@ std::ostream & operator<< (std::ostream &os, Status s);
 struct Move {
 
   // Constructors.
+
+  // It's important we have a null constructor here, as we build large
+  // arrays of moves we never access. 
   Move () {}
 
   // Construct a move;
-  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, score_t score = 0) 
+  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0) 
     :from (from), to (to), promote (promote), score (score) {
   };
 
   // Construct a null move with a score. 
-  explicit Move (score_t score) 
+  explicit Move (Score score) 
     :from (0), to (0), promote (NULL_KIND), score (score) {
   };
 
@@ -98,8 +108,20 @@ struct Move {
   // State
   int8 from, to;
   Kind promote :16;
-  score_t score;
+  Score score;
 };
+
+inline bool 
+less_than (const Move &lhs, const Move &rhs)
+{
+  return lhs.score < rhs.score;
+}
+
+inline bool 
+more_than (const Move &lhs, const Move &rhs)
+{
+  return lhs.score > rhs.score;
+}
 
 /****************/
 /* Move vectors */
@@ -112,16 +134,27 @@ struct Move_Vector {
   // moves exist.
   static int const SIZE = 256;
 
-  Move_Vector () : count (0) {}
-
+  Move_Vector ();
+  Move_Vector (const Move &m);
+  Move_Vector (const Move_Vector &mv);
+  Move_Vector (const Move &m, const Move_Vector &mv);
+  Move_Vector (const Move_Vector &mv, const Move &m);
+  Move_Vector (const Move_Vector &mvl, const Move_Vector &mvr);
   Move_Vector (const Board &b);
 
-  void push (const Move &m) {
-    move[count++] = m;
+  Move_Vector &operator= (const Move_Vector &mv) {
+    memcpy (move, mv.move, mv.count * sizeof (Move));
+    count = mv.count;
+    return *this;
   }
+
 
   void clear () {
     count = 0;
+  }
+
+  void push (const Move &m) {
+    move[count++] = m;
   }
 
   Move &operator[] (int i) {
@@ -176,7 +209,7 @@ struct Board {
 
     // Determine whether 'b' is the third repitition of a position in
     // this history.
-    bool is_triple_repetition (const Board &b);
+    bool is_triple_repetition (const Board &b) const;
 
     // Commit a move to the history, storing all the information
     // associated with it to the permanent log for this state of play.
@@ -187,10 +220,6 @@ struct Board {
   /*************/
   /* Constants */
   /*************/
-
-  void foo (History &hist) {
-    return;
-  }
 
   static const std::string INITIAL_POSITIONS;
 
@@ -452,6 +481,26 @@ struct Board {
     return pawns;
   }
 
+  // Const version returs by copy.
+  bitboard
+  kind_to_board (Kind k) const {
+    switch (k)
+      {
+      case NULL_KIND: assert (0); break;
+      case PAWN: return pawns; break;
+      case ROOK: return rooks; break;
+      case KNIGHT: return knights; break;
+      case BISHOP: return bishops; break;
+      case KING: return kings; break;
+      case QUEEN: return queens; break;
+      default: assert (0);
+      }
+
+    // Suppress gcc warning in -DNDEBUG case.
+    return pawns;
+  }
+
+
   // Map a color to the corresponding bitboard.
   bitboard &
   color_to_board (Color color) {
@@ -534,7 +583,7 @@ struct Board {
   }
 
   // Apply a move to this board.
-  bool apply (const Move &m, const History &h);
+  bool apply (const Move &m);
 
   /**********/
   /* Boards */

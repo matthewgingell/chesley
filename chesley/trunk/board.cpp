@@ -148,7 +148,7 @@ Board::History::pop (const Board &b) {
 // Determine whether 'b' is the third repitition of a position in this
 // history.
 bool 
-Board::History::is_triple_repetition (const Board &b) {
+Board::History::is_triple_repetition (const Board &b) const {
   boost::unordered_map <hash_t, uint32> :: iterator i;
  
 #if 0
@@ -160,7 +160,7 @@ Board::History::is_triple_repetition (const Board &b) {
   cerr << endl;
 #endif
 
-  i = counts.find (b.hash);
+  //  i = counts.find (b.hash);
   if (i == counts.end()) {
     return false;
   } else {
@@ -356,8 +356,8 @@ Board::child_count () const {
 // Get the status of the game. {
 Status
 Board::get_status () const {
-  if (child_count () > 0) return GAME_IN_PROGRESS;
   if (half_move_clock >= 50) return GAME_DRAW;
+  if (child_count () > 0) return GAME_IN_PROGRESS;
   if (in_check (WHITE)) return GAME_WIN_BLACK;
   if (in_check (BLACK)) return GAME_WIN_WHITE;
   return GAME_DRAW;
@@ -419,6 +419,7 @@ bool
 Board::in_check (Color c) const
 {
   int idx = bit_idx (kings & color_to_board (c));
+  assert (idx >= 0 && idx < 64);
   return is_attacked (idx, invert_color (c));
 }
 
@@ -472,7 +473,7 @@ Board::set_castling_right (Castling_Right cr, bool v) {
 // because it places or leaves the color to move in check.
 bool
 Board::apply (const Move &m) {
- 
+
   Kind kind = m.get_kind (*this);
   Kind capture = m.capture (*this);
   Color color = m.get_color (*this);
@@ -497,6 +498,12 @@ Board::apply (const Move &m) {
 
   // Increment the whole move clock after each move by black.
   if (color == BLACK) full_move_clock++;
+
+  // There is no legal move with a half move clock greater than 50.
+  if (half_move_clock > 50)
+    {
+      return false;
+    }
 
   /*************************/
   /* Update to_move state. */
@@ -649,14 +656,9 @@ Board::apply (const Move &m) {
     }
 }
 
-/***********************************/
-/* Move vectors and board vectors. */
-/***********************************/
-
-Move_Vector::Move_Vector (const Board &b) {
-  count = 0;
-  b.gen_all_moves (*this);
-}
+/******************/
+/* Board vectors. */
+/******************/
 
 Board_Vector::Board_Vector (const Board &b)
 {
@@ -696,15 +698,6 @@ ostream &
 operator<< (ostream &os, Board_Vector bv) {
   for (int i = 0; i < bv.count; i++)
     os << "Position #" << i << bv[i] << endl;
-  return os;
-}
-
-// Print a move vector
-ostream &
-operator<< (ostream &os, const Move_Vector &moves)
-{
-  for (int i = 0; i < moves.count; i++)
-    os << moves.move[i] << endl;
   return os;
 }
 

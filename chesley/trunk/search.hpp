@@ -11,7 +11,6 @@
 #define _SEARCH_
 
 #include <cstring>
-
 #include <boost/unordered_map.hpp>
 
 #include "board.hpp"
@@ -27,8 +26,7 @@ struct Search_Engine {
     assert (max_depth > 0);
     interrupt_search = false;
     calls_to_alpha_beta = 0;
-    memset (hh_white, 0, sizeof (hh_white));
-    memset (hh_black, 0, sizeof (hh_black));
+    memset (hh_table, 0, sizeof (hh_table));
   }
 
   /*************************/
@@ -36,7 +34,7 @@ struct Search_Engine {
   /*************************/
 
   struct TT_Entry {
-    TT_Entry () { depth = -1;}
+    TT_Entry () : move(0), depth (0) {}
     Move move;
     int32 depth;
     enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type;
@@ -51,8 +49,7 @@ struct Search_Engine {
   /* History tables */
   /******************/
 
-  int hh_white[64][64];
-  int hh_black[64][64];
+  int hh_table[64][64];
 
   /*****************/
   /* Search state. */
@@ -76,40 +73,35 @@ struct Search_Engine {
   /************/
 
   // Choose a move, score it, and return it.
-  Move choose_move (Board &b, Board::History &h, int32 depth = -1);
-
-  // Return an estimate of the value of a position.
-  score_t score (const Board &b, Board::History &h, int32 depth = -1);
+  Move choose_move (Board &b, int32 depth = -1);
 
   // Fetch the principle variation for the most recent search.
   void fetch_pv (const Board &b, Move_Vector &out);
 
-  //private:
+private:
 
-  // Do a depth first search repeatedly, each time increasing the
-  // depth by one. This allows us to return a reasonable move if we
-  // are interrupted.
-  Move iterative_deepening (const Board &b, Board::History &h, int depth);
+  // Initialize a new search and return its value.
+  Score new_search (const Board &b, int depth);
 
-  // Return the best available move with its score using minimax with
-  // alpha-beta pruning.
-  Move alpha_beta
-  (const Board &b, Board::History &h, int depth,
-   score_t alpha = -INF, score_t beta = +INF);
+  // Memoized minimax search.
+  Score search_with_memory (const Board &b, int depth, Move_Vector &pv, 
+			    Score alpha = -INF, Score beta = INF);
 
-  // Attempt to order moves to improve our odds of getting earlier
-  // cutoffs.
-  inline void 
-  order_moves (const Board &b, Move_Vector &moves);
+  // Minimax search.
+  Score search (const Board &b, int depth, Move_Vector &pv, 
+		Score alpha = -INF, Score beta = INF);
 
-  // Fetch an entry from the transposition table. Returns false if no
-  // entry is found.
-  inline 
-  bool tt_fetch (uint64 hash, TT_Entry &out);
+  // Fetch a transposition table entry. 
+  inline bool tt_fetch (uint64 hash, TT_Entry &out);
 
-  // Store an entry from the transposition table.
-  inline void 
-  tt_store (uint64 hash, const TT_Entry &in);
+  // Store a transposition table entry. 
+  inline void tt_store (uint64 hash, const TT_Entry &in);
+
+  // Heuristically order a list of moves by value.
+  inline void order_moves (const Board &b, Move_Vector &moves);
+
+  // Search repeatedly from depth 1 to 'depth.;
+  Score iterative_deepening (const Board &b, int depth);
 };
 
 #endif // _SEARCH_

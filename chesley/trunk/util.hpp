@@ -16,6 +16,8 @@
 #include <sys/time.h>
 #include <vector>
 
+#include "types.hpp"
+
 /* Utility macros. */
 
 #if 0
@@ -422,9 +424,8 @@ bubble_sort (T &items) {
 }
 
 // Insertion sort implementation.  Client type must 1) define a
-// function count, 2) define a function value and 3) be accessible
-// with operator[].
-template <typename V, typename I> 
+// function count, 2) be accessible with operator[].
+template <typename V, typename I, bool cmp (const I&, const I&)>
 inline void 
 insertion_sort (V &items) {
   int len = count (items);
@@ -432,8 +433,7 @@ insertion_sort (V &items) {
     {
       I index = items[i];
       int j = i;
-
-      while ((j > 0) && (value (items[j - 1]) > value (index)))
+      while ((j > 0) && cmp(items[j - 1], index))
 	{
 	  items[j] = items[j - 1];
 	  j = j - 1;

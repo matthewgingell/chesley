@@ -3,12 +3,13 @@ SHELL = /bin/sh
 LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
-ALG = -DUSE_TRANS_TABLE=1 -DUSE_HIST_HEURISTIC=1
+ALG =
 
 #CXX = g++
 CXX = g++-mp-4.4
 
-CXXFLAGS = -g -Wall -m64 -O3 $(ALG) -DNDEBUG
+CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+
 
 all: chesley
 
