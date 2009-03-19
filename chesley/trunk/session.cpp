@@ -1,13 +1,17 @@
 /*
    This file provides the Session object, representing a Chesley's
-   session over the Universal Chess Interface (UCI).
+   session. This file provides the protocol independent part of the
+   implementation.
 
    Matthew Gingell
    gingell@adacore.com
 */
 
-#include <cstring>
+#include <cctype>
 #include <cstdio>
+#include <cstring>
+#include <fstream>
+#include <iostream>
 #include <signal.h>
 #include <string>
 #include <sys/time.h>
@@ -17,15 +21,7 @@
 // For now we use a hardcoded timeout in milliseconds.
 const int TIME_OUT = 1 * 1000;
 
-// Putting cctype here, after include of <iostream>, works around a
-// bug in some version of the g++ library.
-
-#include <cctype>
-
 using namespace std;
-
-#include <iostream>
-#include <fstream>
 
 /*********************/
 /* Session variables */
@@ -64,7 +60,6 @@ Session::init_session () {
   setvbuf (out, NULL, _IONBF, 0);
   tty = isatty (fileno (in));
 
-  // Set ui.
   if (tty)
     {
       ui = INTERACTIVE;
@@ -78,7 +73,7 @@ Session::init_session () {
   // Set initial game state.
   our_color = BLACK;
   board = Board :: startpos ();
-  se = Search_Engine (100);
+  se = Search_Engine ();
   op_is_computer = false;
   running = false;
 
@@ -139,10 +134,12 @@ Session::cmd_loop ()
   write_prompt ();
   while (true)
     {
-      // Block for input.
       char *line = get_line (in);
 
-      if ((!line) || (!execute (line))) done = true;
+      if ((!line) || (!execute (line))) 
+	{
+	  done = true;
+	}
       if (line) free (line);
       if (done) break;
 
@@ -152,7 +149,6 @@ Session::cmd_loop ()
       while (!fdready (fileno (in)))
 	{
 	  work ();
-	  // Don't busy wait.
 	  usleep (100000);
 	}
     }

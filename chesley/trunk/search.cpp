@@ -1,4 +1,3 @@
-
 /*
   Implementation of the engine's search strategy.
 
@@ -19,26 +18,8 @@ using namespace std;
 Move
 Search_Engine :: choose_move (Board &b, int depth) {
   Move_Vector pv;
-
-  new_search (b, depth);
-  fetch_pv (b, pv);
+  new_search (b, depth, pv);
   return pv[0];
-}
-
-// Fetch the principle variation for the most recent search.
-void 
-Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
-  Board next = b;
-  TT_Entry entry;
-
-  out.clear ();  
-  while (tt_fetch (next.hash, entry))
-    {
-      Board last = next;
-      out.push (entry.move);
-      if(!next.apply (entry.move)) break;
-      if (out.count > 30) break;
-    }
 }
 
 /**************************/
@@ -56,13 +37,11 @@ const int SEARCH_INTERRUPTED = 0x01;
 /**********************************************************************/
 
 Score
-Search_Engine :: new_search (const Board &b, int depth) {
-
-  /***************************************************************/
-  /* Age the history table. Old results age exponentially, so    */
-  /* hopefully we don't end up with a table full of junk values. */
-  /***************************************************************/
-
+Search_Engine :: new_search 
+(const Board &b, int depth, Move_Vector &pv) 
+{
+  // Age the history table. Old results age exponentially, so
+  // hopefully we don't end up with a table full of junk values.
   for (int from = 0; from < 64; from++)
     for (int to = 0; to < 64; to++)
       hh_table[from][to] /= 2;
@@ -70,7 +49,7 @@ Search_Engine :: new_search (const Board &b, int depth) {
   // Clear statistics.
   calls_to_alpha_beta = 0;
 
-  return iterative_deepening (b, depth);
+  return iterative_deepening (b, depth, pv);
 }
 
 /**********************************************************************/
@@ -82,8 +61,9 @@ Search_Engine :: new_search (const Board &b, int depth) {
 /**********************************************************************/
 
 Score 
-Search_Engine::iterative_deepening (const Board &b, int depth) {
-  Move_Vector pv;
+Search_Engine::iterative_deepening 
+(const Board &b, int depth, Move_Vector &pv) 
+{
   Score s = search_with_memory (b, 1, pv);
 
   for (int i = 2; i <= depth; i++) 
@@ -105,16 +85,21 @@ Search_Engine::iterative_deepening (const Board &b, int depth) {
 
 Score
 Search_Engine :: search_with_memory 
-(const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta)
+(const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta) 
 {
   TT_Entry entry;
   bool found_tt_entry;
   Score original_alpha = alpha;
 
-    // Throw away the transposition table if we are approaching a 50
-  // move draw.
+  /*******************************************************************/
+  /* Throw away the transposition table when we are approaching a 50 */
+  /* move rule draw.                                                 */
+  /*******************************************************************/
+
   if (b.half_move_clock >= 40)
-    tt.clear ();
+    {
+      tt.clear ();
+    }
 
   /*****************************************************/
   /* Try to find this node in the transposition table. */
@@ -123,48 +108,37 @@ Search_Engine :: search_with_memory
   found_tt_entry = tt_fetch (b.hash, entry);
   if (found_tt_entry && entry.depth == depth)
     {
-      pv.push (entry.move);
-
       if (entry.type == TT_Entry::EXACT_VALUE)
-	alpha = pv[0].score;
+	alpha = entry.move.score;
       
       else if (entry.type == TT_Entry::LOWERBOUND)
-	alpha = max (pv[0].score, alpha);
+	alpha = max (entry.move.score, alpha);
       
       else if (entry.type == TT_Entry::UPPERBOUND)
-	beta = min (pv[0].score, beta);
+	beta = min (entry.move.score, beta);
     }
 
-  /***************************/
-  /* Otherwise search for it */
-  /***************************/
-
-  else 
-    {
-      alpha = search (b, depth, pv, alpha, beta);
-    }
+  alpha = search (b, depth, pv, alpha, beta);
   
   /****************************************************/
   /* Update the transposition table with this result. */
   /****************************************************/
 
-  if (!found_tt_entry || depth > entry.depth)
+  if (pv.count > 0 && (!found_tt_entry || depth >= entry.depth))
     {
+      pv.push (entry.move);
+
       entry.move = pv[0];
       entry.depth = depth;
 
       if (alpha <= original_alpha) 
-	{
-	  entry.type = TT_Entry :: LOWERBOUND;
-	}
+	entry.type = TT_Entry :: LOWERBOUND;
+
       else if (alpha >= beta)
-	{ 
-	  entry.type = TT_Entry :: UPPERBOUND;
-	}
+	entry.type = TT_Entry :: UPPERBOUND;
+
       else
-	{
-	  entry.type = TT_Entry :: EXACT_VALUE;
-	}
+	entry.type = TT_Entry :: EXACT_VALUE;
 
       tt_store (b.hash, entry);
     }
@@ -176,6 +150,7 @@ Score
 Search_Engine :: search 
 (const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta) 
 {
+  pv.clear ();
   bool found_move = false;
   Color player = b.flags.to_move;
 
@@ -203,7 +178,7 @@ Search_Engine :: search
 
   /* If repetition, return draw. */
   
-  else if (depth <= 0) 
+  else if (depth == 0) 
     {
       alpha = eval (b);
     }
@@ -214,19 +189,18 @@ Search_Engine :: search
   
   else {
 
-    pv.clear ();
-
 #if 0
     // Null move heuristic.
-    if (depth > 3) 
+    if (depth > 3 && depth % 4 == 0) 
       {
-	Move_Vector null_pv;
 	Board c = b;
 	c.set_color (invert_color (player));
 	int val = -search_with_memory 
-	  (c, max (depth - 3, 0), null_pv, -beta, -beta + 1);
+	  (c, max (depth - 3, 0), pv, -beta, -beta + 1);
 	if (val >= beta)
 	  return beta;
+	else
+	  pv.clear ();
       }
 #endif
 	
@@ -242,11 +216,10 @@ Search_Engine :: search
 	Board c = b;
 	Move_Vector cpv;
 
-	moves[i].score = 0;
 	if (c.apply (moves[i]))
 	  {
 	    found_move = true;
-	    int cs = -search (c, depth - 1, cpv, -beta, -alpha);
+	    int cs = -search_with_memory (c, depth - 1, cpv, -beta, -alpha);
 
 	    if (cs > alpha)
 	      {
@@ -282,13 +255,15 @@ Search_Engine :: search
 	    alpha = 0;
 	  }
       }
+    else
+      {
+	/**********************************************/
+	/* Update the history table with this result. */
+	/**********************************************/
+	
+	hh_table[pv[0].from][pv[0].to] += 1 << depth;
+      }
   }
-
-  /**********************************************/
-  /* Update the history table with this result. */
-  /**********************************************/
-
-  hh_table[pv[0].from][pv[0].to] += 1 << depth;
 
   return alpha;
 }
