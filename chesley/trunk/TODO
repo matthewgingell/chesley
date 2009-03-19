@@ -8,10 +8,8 @@ Issues:
 Next items:
 
   * 8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - - 0 1: best move is Ka1b1. Must
-    search to play 20, which is nearly free with trans tables. Check
+    search to ply 20, which is nearly free with trans tables. Check
     it in testsuite.
-
-  * Return draw at 50 move rule, even if somebody is in check.
 
   * Convert ostring functions to to_string functions.
 
@@ -49,10 +47,6 @@ Testing:
   * Add log and debugging infrastructure.
   * Setup automated regression testing.
 
-Session
-
-  * Implement Xboard protocol.
-
 Search
 
   * Implement 3 fold repetition detection. Right now Chesley plays and
@@ -63,8 +57,8 @@ Search
   * Aspiration windows
   * Static Exchange Evaluation (SEE) for capture ordering.
   * Null move heuristic
+  * Try MTDf again...
 
-  Debug MTD(f)
 
 Eval
 

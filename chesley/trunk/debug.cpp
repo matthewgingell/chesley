@@ -132,19 +132,18 @@ Session::perft (const string_vector &tokens)
 bool
 Session::play_self (const string_vector &tokens)
 {
-  board = Board::startpos ();
+  Status s;
 
-  //  while (status == GAME_IN_PROGRESS)
+  board = Board::startpos ();
+  while ((s = get_status ()) == GAME_IN_PROGRESS)
     {
       cerr << board << endl << endl;
-      // Move m = get_move ();
-      // board.apply (m);
+      Move m = find_a_move ();
+      board.apply (m);
     }
-
-  // Print the position that caused us to break out of the loop.
   cerr << board << endl << endl;
 
-  //  handle_end_of_game (status);
+  handle_end_of_game (s);
 
   return true;
 }

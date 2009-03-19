@@ -34,34 +34,7 @@ static const Score QS_CASTLE_VAL  = 50;
 static const Score CAN_CASTLE_VAL = 10;
 
 // Simple table driven positional bonuses.
-Score
-eval_simple_positional (const Board &b);
-
-// Return the value of a piece.
-inline Score eval_piece (Kind k) {
-  switch (k) {
-  case PAWN: return PAWN_VAL;
-  case ROOK: return ROOK_VAL;
-  case KNIGHT: return KNIGHT_VAL;
-  case BISHOP: return BISHOP_VAL;
-  case QUEEN: return QUEEN_VAL;
-  default: return 0;
-  }
-}
-
-// Return a score for a capture.
-inline Score eval_capture (const Board &b, const Move &m) {
-  Kind capture = m.capture (b);
-
-  if (capture != NULL_KIND) 
-    {
-      return eval_piece (capture) - eval_piece (m.get_kind (b));
-    }
-  else
-    {
-      return 0;
-    }
-}
+Score eval_simple_positional (const Board &b);
 
 inline Score
 eval_material (const Board &b) {

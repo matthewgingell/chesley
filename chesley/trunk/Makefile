@@ -5,11 +5,9 @@ OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 ALG =
 
-#CXX = g++
 CXX = g++-mp-4.4
 
 CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
-
 
 all: chesley
 
