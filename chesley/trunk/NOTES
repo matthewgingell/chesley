@@ -18,12 +18,12 @@ Best move to depth 7:
 Best move to depth 8:
 [Move from 12 => 20 26]
 4.63 seconds elapsed.
-6383111 calls_to_alpha_beta.
+6 383 111 calls_to_alpha_beta.
 > bench 9
 Best move to depth 9:
 [Move from 12 => 20 4]
 16.63 seconds elapsed.
-26399730 calls_to_alpha_beta.
+26 399 730 calls_to_alpha_beta.
 
 Chesley! v0.01 w/ std::vector <Board> history;
 > bench 5
@@ -45,12 +45,18 @@ Best move to depth 7:
 Best move to depth 8:
 [Move from 12 => 20 26]
 5.20 seconds elapsed.
-6383111 calls_to_alpha_beta.
+6 383 111 calls_to_alpha_beta.
 > bench 9
 Best move to depth 9:
 [Move from 12 => 20 4]
 18.20 seconds elapsed.
-26399730 calls_to_alpha_beta.
+26 399 730 calls_to_alpha_beta.
 > 
 
 Chesley! v0.01 w/ std::vector <uint64> history;
+
+> bench 9
+Best move to depth 9:
+[Move from 12 => 20 5]
+29.81 seconds elapsed.
+70024533 calls_to_alpha_beta.

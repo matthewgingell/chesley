@@ -17,29 +17,28 @@
 
 // Material values.
 
-static const score_t INF        = 1000 * 1000;
+static const Score INF        = 1000 * 1000;
 
-static const score_t QUEEN_VAL  = 900;
-static const score_t ROOK_VAL   = 500;
-static const score_t BISHOP_VAL = 300;
-static const score_t KNIGHT_VAL = 300;
-static const score_t PAWN_VAL   = 100;
+static const Score QUEEN_VAL  = 900;
+static const Score ROOK_VAL   = 500;
+static const Score BISHOP_VAL = 300;
+static const Score KNIGHT_VAL = 300;
+static const Score PAWN_VAL   = 100;
 
-static const score_t MATE_VAL   = 500 * 1000;
+static const Score MATE_VAL   = 500 * 1000;
 
 // Positional values of having castled and retaining the right to
 // castle.
-static const score_t KS_CASTLE_VAL  = 75;
-static const score_t QS_CASTLE_VAL  = 50;
-static const score_t CAN_CASTLE_VAL = 10;
+static const Score KS_CASTLE_VAL  = 75;
+static const Score QS_CASTLE_VAL  = 50;
+static const Score CAN_CASTLE_VAL = 10;
 
 // Simple table driven positional bonuses.
-score_t
-eval_simple_positional (Board b);
-
+Score
+eval_simple_positional (const Board &b);
 
 // Return the value of a piece.
-inline score_t eval_piece (Kind k) {
+inline Score eval_piece (Kind k) {
   switch (k) {
   case PAWN: return PAWN_VAL;
   case ROOK: return ROOK_VAL;
@@ -50,9 +49,23 @@ inline score_t eval_piece (Kind k) {
   }
 }
 
-inline score_t
+// Return a score for a capture.
+inline Score eval_capture (const Board &b, const Move &m) {
+  Kind capture = m.capture (b);
+
+  if (capture != NULL_KIND) 
+    {
+      return eval_piece (capture) - eval_piece (m.get_kind (b));
+    }
+  else
+    {
+      return 0;
+    }
+}
+
+inline Score
 eval_material (const Board &b) {
-  score_t score = 0;
+  Score score = 0;
 
   /*******************************/
   /* Evaluate material strength. */
@@ -78,9 +91,9 @@ eval_material (const Board &b) {
 
 // Evaluate a position statically. Positive scores favor white and
 // negative scores favor black.
-inline score_t
+inline Score
 eval (const Board &b, int depth = 0) {
-  score_t score = 0;
+  Score score = 0;
 
   score += eval_material (b);
 
@@ -122,14 +135,14 @@ eval (const Board &b, int depth = 0) {
   // never converge!!!
 
 #if 1
-  score +=  b.flags.to_move * (100 - depth);
+  score +=  sign (b.flags.to_move) * (100 - depth);
 #endif
 
 #if 0
   score += random () % 10;
 #endif
 
-  return score;
+  return sign (b.flags.to_move) * score;
 }
 
 #endif // _EVAL_

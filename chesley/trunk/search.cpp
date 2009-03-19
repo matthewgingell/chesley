@@ -1,3 +1,4 @@
+
 /*
   Implementation of the engine's search strategy.
 
@@ -14,35 +15,30 @@ using namespace std;
 /* Public interface */
 /********************/
 
-// Choose a move, score it, and return it.
+// Compute the principal variation and return it's first move.
 Move
-Search_Engine :: choose_move (Board &b, Board::History &h, int depth) {
-  interrupt_search = false;
-  return iterative_deepening (b, h, depth >= 0 ? depth : max_depth);
-}
+Search_Engine :: choose_move (Board &b, int depth) {
+  Move_Vector pv;
 
-// Return an estimate of the value of a position.
-score_t
-Search_Engine :: score (const Board &b, Board::History &h, int depth) {
-  interrupt_search = false;
-  return (iterative_deepening (b, h, depth >= 0 ? depth : max_depth)).score;
+  new_search (b, depth);
+  fetch_pv (b, pv);
+  return pv[0];
 }
 
 // Fetch the principle variation for the most recent search.
 void 
 Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
-#if USE_TRANS_TABLE
   Board next = b;
   TT_Entry entry;
+
   out.clear ();  
   while (tt_fetch (next.hash, entry))
     {
       Board last = next;
       out.push (entry.move);
-      next.apply (entry.move);
+      if(!next.apply (entry.move)) break;
       if (out.count > 30) break;
     }
-#endif // USE_TRANS_TABLE
 }
 
 /**************************/
@@ -52,17 +48,16 @@ Search_Engine :: fetch_pv (const Board &b, Move_Vector &out) {
 const int SEARCH_INTERRUPTED = 0x01;
 
 /**********************************************************************/
-/* Search_Engine::iterative_deepening                                 */
+/* Search_Engine :: new_search ()                                     */
 /*                                                                    */
-/* Do a depth first search repeatedly, each time increasing the depth */
-/* by one. This allows us to return a reasonable move if we are       */
-/* interrupted.                                                       */
+/* This is the top level entry point to the tree search. It take care */
+/* of initializing search state, then calls lower level routines to   */
+/* generate a score and populate the principal variation.             */
 /**********************************************************************/
 
-Move
-Search_Engine::iterative_deepening (const Board &b, Board::History &h, int depth) {
+Score
+Search_Engine :: new_search (const Board &b, int depth) {
 
-#if USE_HIST_HEURISTIC
   /***************************************************************/
   /* Age the history table. Old results age exponentially, so    */
   /* hopefully we don't end up with a table full of junk values. */
@@ -70,59 +65,123 @@ Search_Engine::iterative_deepening (const Board &b, Board::History &h, int depth
 
   for (int from = 0; from < 64; from++)
     for (int to = 0; to < 64; to++)
-      {
- 	  hh_white[from][to] /= 2;
-	  hh_black[from][to] /= 2;
-      }
-#endif // USE_HIST_HEURISTIC
-
-  // Always return a search at least to depth one.
-  Move best = alpha_beta (b, h, 1);
-
+      hh_table[from][to] /= 2;
+  
   // Clear statistics.
   calls_to_alpha_beta = 0;
 
-  /******************************************************************/
-  /* Search repeatedly until we are interrupted or hit ply 'depth'. */
-  /******************************************************************/
-
-  for (int i = 2; i <= depth; i++)
-    {
-      try 
-	{
-	  best = alpha_beta (b, h, i, -INF, +INF);
-	} 
-      catch (int exp) 
-	{
-	  assert (exp == SEARCH_INTERRUPTED);
-	  cerr << "interrupt: finished searching ply: " << (i - 1) << endl;
-	  break;
-	}
-    }
-
-  return best;
+  return iterative_deepening (b, depth);
 }
 
-/************************************************************************/
-/* Search_Engine::alpha_beta ()                                         */
-/*                                                                      */
-/* The arguments alpha and beta provide a lower and upper bound on the  */
-/* correct value of the top-level search we a conducting, so any        */
-/* subtree we can prove has a value outside that range can not possibly */
-/* contain the value we're searching for. This allows us to cut off     */
-/* branches of the tree and provides an exponential speed up in the     */
-/* search.                                                              */
-/************************************************************************/
+/**********************************************************************/
+/* Search_Engine::iterative_deepening                                 */
+/*                                                                    */
+/* Do a depth first search repeatedly, each time increasing the depth */
+/* by one. This allows us to return a reasonable move if we are       */
+/* interrupted.                                                       */
+/**********************************************************************/
 
-Move
-Search_Engine::alpha_beta
-(const Board &b, Board::History &h, int depth, score_t alpha, score_t beta) {
+Score 
+Search_Engine::iterative_deepening (const Board &b, int depth) {
+  Move_Vector pv;
+  Score s = search_with_memory (b, 1, pv);
+
+  for (int i = 2; i <= depth; i++) 
+    {
+      pv.clear ();
+      s = search_with_memory (b, i, pv);
+    }
+
+  return s;
+}
+
+/***********************************************************************/
+/* Search_Engine :: search_with_memory ()                              */
+/*                                                                     */
+/* This routine wraps search and memoizes lookups in the transposition */
+/* table.                                                              */
+/*                                                                     */
+/***********************************************************************/
+
+Score
+Search_Engine :: search_with_memory 
+(const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta)
+{
+  TT_Entry entry;
+  bool found_tt_entry;
+  Score original_alpha = alpha;
+
+    // Throw away the transposition table if we are approaching a 50
+  // move draw.
+  if (b.half_move_clock >= 40)
+    tt.clear ();
+
+  /*****************************************************/
+  /* Try to find this node in the transposition table. */
+  /*****************************************************/
+
+  found_tt_entry = tt_fetch (b.hash, entry);
+  if (found_tt_entry && entry.depth == depth)
+    {
+      pv.push (entry.move);
+
+      if (entry.type == TT_Entry::EXACT_VALUE)
+	alpha = pv[0].score;
+      
+      else if (entry.type == TT_Entry::LOWERBOUND)
+	alpha = max (pv[0].score, alpha);
+      
+      else if (entry.type == TT_Entry::UPPERBOUND)
+	beta = min (pv[0].score, beta);
+    }
+
+  /***************************/
+  /* Otherwise search for it */
+  /***************************/
+
+  else 
+    {
+      alpha = search (b, depth, pv, alpha, beta);
+    }
+  
+  /****************************************************/
+  /* Update the transposition table with this result. */
+  /****************************************************/
+
+  if (!found_tt_entry || depth > entry.depth)
+    {
+      entry.move = pv[0];
+      entry.depth = depth;
+
+      if (alpha <= original_alpha) 
+	{
+	  entry.type = TT_Entry :: LOWERBOUND;
+	}
+      else if (alpha >= beta)
+	{ 
+	  entry.type = TT_Entry :: UPPERBOUND;
+	}
+      else
+	{
+	  entry.type = TT_Entry :: EXACT_VALUE;
+	}
+
+      tt_store (b.hash, entry);
+    }
+
+  return alpha;
+}
+
+Score
+Search_Engine :: search 
+(const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta) 
+{
+  bool found_move = false;
   Color player = b.flags.to_move;
-  Move best ((player == WHITE ? -INF : +INF));
 
-  /***********************/
-  /* Collect statistics. */
-  /***********************/
+  /**********************/
+  /* Update statistics. */
+  /**********************/
 
   calls_to_alpha_beta++;
 
@@ -130,215 +189,108 @@ Search_Engine::alpha_beta
   /* Abort if we have been interrupted. */
   /**************************************/
 
-  if (interrupt_search)
-    throw (SEARCH_INTERRUPTED);
+  // if (interrupt_search)
+  // throw (SEARCH_INTERRUPTED);
 
-#if 1
-  /* If 50 moves have passed without a capture or a move
-     by a pawn, score this child as a draw. */
-  if (b.half_move_clock >= 50)
+  /******************************/
+  /* Handle the leaf node case. */
+  /******************************/
+
+  if (b.half_move_clock == 49) 
     {
-      return Move (0);
+      alpha = 0;
     }
+
+  /* If repetition, return draw. */
   
-  /* If this child exceeds the triple repetition rule,
-     score it as a draw. */
-  else if (h.is_triple_repetition (b))
+  else if (depth <= 0) 
     {
-      return Move (0);
-    }
-#endif
-
-
-#if USE_TRANS_TABLE
-  /*****************************************************/
-  /* Try to find this node in the transposition table. */
-  /*****************************************************/
-
-  TT_Entry entry;
-  bool found_tt_entry;
-
-  found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && entry.depth == depth)
-    {
-      if (entry.type == TT_Entry::EXACT_VALUE)
-	return entry.move;
-
-      else if (entry.type == TT_Entry::LOWERBOUND)
-	alpha = max (entry.move.score, alpha);
-
-      else if (entry.type == TT_Entry::UPPERBOUND)
-	beta = min (entry.move.score, beta);
-
-      if (alpha >= beta) 
-	return entry.move;
-    }
-#endif // USE_TRANS_TABLE
-
-  /*********************************************/
-  /*  Return heuristic estimate at depth zero. */
-  /*********************************************/
-
-  if (depth == 0)
-    {
-      best = Move (eval (b, player));
+      alpha = eval (b);
     }
 
   /*****************************************************/
   /* Otherwise recurse over the children of this node. */
   /*****************************************************/
+  
+  else {
 
-  else
-    {
-      // Generate moves available from this position and sort them
-      // from best to worst by their estimated value.
-      Move_Vector moves (b);
-      order_moves (b, moves);
+    pv.clear ();
 
-      /**************************/
-      /* Minimax over children. */
-      /**************************/
+#if 0
+    // Null move heuristic.
+    if (depth > 3) 
+      {
+	Move_Vector null_pv;
+	Board c = b;
+	c.set_color (invert_color (player));
+	int val = -search_with_memory 
+	  (c, max (depth - 3, 0), null_pv, -beta, -beta + 1);
+	if (val >= beta)
+	  return beta;
+      }
+#endif
+	
+    Move_Vector moves (b);
+    order_moves (b, moves);
 
-      // Push this position on to the history.
-      h.push (b);
+    /**************************/
+    /* Minimax over children. */
+    /**************************/
 
-      for (int i = 0; i < moves.count; i++)
-        {
-          Board child (b);
-          if (child.apply (moves[i]))
-            {
-	      score_t val;
-	      Move s = alpha_beta (child, h, depth - 1, alpha, beta);
-	      val = s.score;
+    for (int i = 0; i < moves.count; i++)
+      {
+	Board c = b;
+	Move_Vector cpv;
 
-              /****************************/
-              /* Maximizing at this node. */
-              /****************************/
+	moves[i].score = 0;
+	if (c.apply (moves[i]))
+	  {
+	    found_move = true;
+	    int cs = -search (c, depth - 1, cpv, -beta, -alpha);
 
-              if (player == WHITE)
-                {
-		  if (val > best.score)
-		    {
-		      best = moves[i];
-		      best.score = val;
+	    if (cs > alpha)
+	      {
+		alpha = cs;
+		moves[i].score = alpha;
+		pv = Move_Vector (moves[i], cpv);
+	      }
 
-		      if (val > alpha)
-			{
-			  alpha = val;
-			}
+	    if (alpha >= beta)
+	      {
+		break;
+	      }
+	  }
+      }
 
-		      if (val >= beta)
-			{
-			  break;
-			}
-		    }
-                }
+    // If we couldn't find at least one legal move the game is over.
+    if (!found_move)
+      {
+	if (b.in_check (player))
+	  {
+	    /*********************************************************/
+	    /* We need to provide a bonus to shallower wins over     */
+	    /* deeper ones, since if we're ambivalent between near   */
+	    /* and far wins at every ply the search will happily     */
+	    /* prove it can mate in N forever and never actually get */
+	    /* there.                                                */
+	    /*********************************************************/
 
-              /****************************/
-              /* Minimizing at this node. */
-              /****************************/
+	    alpha = -MATE_VAL - depth;
+	  }
+	else
+	  {
+	    alpha = 0;
+	  }
+      }
+  }
 
-              else
-                {
-		  if (val < best.score)
-		    {
-		      best = moves[i];
-		      best.score = val;
+  /**********************************************/
+  /* Update the history table with this result. */
+  /**********************************************/
 
-		      if (val < beta)
-			{
-			  beta = val;
-			}
+  hh_table[pv[0].from][pv[0].to] += 1 << depth;
 
-		      if (val <= alpha)
-			{
-			  break;
-			}
-		    }
-                }
-            }
-        }
-
-      
-      // Pop this position from the history.
-      h.pop (b);
-
-      // If we couldn't find at least one legal move the game is over.
-      if (best.is_null ())
-        {
-          if (b.in_check (player))
-            {
-               /*********************************************************/
-               /* We need to provide a bonus to shallower wins over     */
-               /* deeper ones, since if we're ambivalent between near   */
-               /* and far wins at every ply the search will happily     */
-               /* prove it can mate in N forever and never actually get */
-               /* there.                                                */
-               /*********************************************************/
-
-              int mate_val;
-              if (player == WHITE)
-                {
-                  mate_val = -MATE_VAL + (100 - depth);
-                }
-              else
-                {
-                  mate_val = +MATE_VAL - (100 - depth);
-                }
-
-              best = Move (mate_val);
-            }
-          else
-            {
-              // best is a draw.
-              best = Move (0);
-            }
-        }
-
-#if USE_TRANS_TABLE
-      /*********************************************/
-      /* Store results in the transposition table. */
-      /*********************************************/
-
-      if (!found_tt_entry || depth > entry.depth)
-	{
-	  entry.depth = depth;
-	  entry.move = best;
-
-	  if (best.score <= alpha)
-	    entry.type = TT_Entry :: LOWERBOUND;
-	  else if (best.score >= beta)
-	    entry.type = TT_Entry :: UPPERBOUND;
-	  else
-	    entry.type = TT_Entry :: EXACT_VALUE;
-
-	  tt_store (b.hash, entry);
-	}
-#endif // USE_TRANS_TABLE
-
-    }
-
-#if USE_HIST_HEURISTIC
-  /*****************************************/
-  /* Enter this move in the history table. */ 
-  /*****************************************/
-
-  if (player == WHITE) 
-    {
-      hh_white[best.from][best.to] += 1 << depth;
-    }
-  else
-    {
-      hh_black[best.from][best.to] += 1 << depth;
-    }
-#endif // USE_HIST_HEURISTIC
-
-  return best;
-}
-
-// Estimate the value of a move.
-inline int value (const Move &m) { 
-  return m.score; 
+  return alpha;
 }
 
 // Attempt to order moves to improve our odds of getting earlier
@@ -347,36 +299,23 @@ void
 Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
-  Color player = b.flags.to_move;
 
   for (int i = 0; i < moves.count; i++)
     {
-      assert (moves[i].score == 0);
-
-      /* If we previously computed that moves[i] is the best move from
-	 this position, make sure it is searched first. */
+      // If we previously computed that moves[i] was the best move
+      // from this position, make sure it is searched first.
       if (have_entry && moves[i] == e.move)
 	{
-	  moves[i].score = -INF;
+	  moves[i].score = +INF;
 	}
-#if USE_HIST_HEURISTIC
       else
 	{
-	  /* Otherwise, score based on it's rate and depth of cutoffs
-	     recently. */
-	  if (player == WHITE)
-	    {
-	      moves[i].score = -hh_white [moves[i].from][moves[i].to];
-	    }
-	  else
-	    {
-	      moves[i].score = -hh_black [moves[i].from][moves[i].to];
-	    }
+	  // Award a bonus for rate and depth of recent cutoffs.
+	  moves[i].score += hh_table[moves[i].from][moves[i].to];
 	}
-#endif // USE_HIST_HEURISTIC
     }
   
-  insertion_sort <Move_Vector, Move> (moves);
+  insertion_sort <Move_Vector, Move, less_than> (moves);
 }
 
 /**********************************************************************/
@@ -395,15 +334,16 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
       out = i -> second;
       return true;
     }
-
-  return false;
+  else
+    {
+      out = TT_Entry ();
+      return false;
+    }
 }
 
 // Store an entry in the transposition table.
 inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  const uint32 MAX_COUNT = 25 * 1000 * 1000;
-  if (tt.size () >= MAX_COUNT) tt.erase (tt.begin ());
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }

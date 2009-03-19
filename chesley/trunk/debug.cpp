@@ -64,7 +64,7 @@ Session::debug_execute (char *line) {
 		   << ")" << endl;
 
 	      se.calls_to_alpha_beta = 0;
-	      cerr << se.alpha_beta (board, h, depth, alpha, beta) << endl;
+	      //	      cerr << se.alpha_beta (board, depth, alpha, beta) << endl;
 	      fprintf (out, "%lli calls_to_alpha_beta.\n", se.calls_to_alpha_beta);
 	    }
 	}
@@ -87,7 +87,7 @@ Session::bench (const string_vector &tokens) {
   timeout = mclock () + 1000.0 * 1000.0 * 1000.0;
 
   uint64 start = cpu_time();
-  Move m = se.choose_move (board, h, depth);
+  Move m = se.choose_move (board, depth);
 
   //  Move m = se.alpha_beta (board, depth, -INFINITY, +INFINITY);
 

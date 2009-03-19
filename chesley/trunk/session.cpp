@@ -119,7 +119,7 @@ void Session::write_prompt ()
 
 Move Session::get_move () {
   timeout = mclock () + TIME_OUT;
-  return se.choose_move (board, h);
+  return se.choose_move (board, 6);
 }
 
 /***************************/
@@ -152,8 +152,8 @@ Session::cmd_loop ()
       while (!fdready (fileno (in)))
 	{
 	  work ();
+	  // Don't busy wait.
 	  usleep (100000);
-	  //	  cerr << "waiting for input..." << endl;
 	}
     }
 }
@@ -175,7 +175,6 @@ Session::work ()
     {
       Move best = get_move ();
 
-
       if (best.is_null ())
 	{
 	  cerr << "get_move returned null move." << endl;
@@ -183,8 +182,11 @@ Session::work ()
 
       if (board.apply (best))
 	{
-	  h.commit (board, best);
 	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
+	}
+      else
+	{
+	  cerr << "get_move returned move that didn't apply." << endl;
 	}
 
       cerr << board << endl;
