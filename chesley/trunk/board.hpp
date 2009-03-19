@@ -53,14 +53,6 @@ inline int sign (Color c) {
   return (c == WHITE) ? +1 :  -1;
 }
 
-/*****************/
-/*  Status type  */
-/*****************/
-
-enum Status { GAME_IN_PROGRESS = 0, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
-
-std::ostream & operator<< (std::ostream &os, Status s);
-
 /**************/
 /* Move type. */
 /**************/
@@ -381,9 +373,6 @@ struct Board {
 
   // Get the number of legal moves available from this position.
   int child_count () const;
-
-  // Get the status of the game.
-  Status get_status () const;
 
   // Return whether the square idx is attacked by a piece of color c.
   bool is_attacked (int idx, Color c) const;

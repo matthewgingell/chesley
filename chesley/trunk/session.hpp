@@ -10,13 +10,44 @@
 #ifndef _Session_
 #define _Session_
 
-#include <stdio.h>
+#include <cstdio>
 #include <unistd.h>
-#include "board.hpp"
-#include "search.hpp"
-#include "util.hpp"
+#include "chesley.hpp"
+
+enum Status { GAME_IN_PROGRESS, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
+enum UI_Mode { INTERACTIVE, BATCH };
+enum Protocol { NATIVE, UCI, XBOARD };
+
+std::ostream & operator<< (std::ostream &os, Status s);
 
 struct Session {
+  
+  /****************************/
+  /* Static session variables */
+  /****************************/
+
+  // State of the chess board.
+  static Board board;
+
+  // Color the engine is playing.
+  static Color our_color;
+
+  // Is the opponent a computer?
+  static bool op_is_computer;
+
+  /*****************/
+  /* Engine state. */
+  /*****************/
+
+  // Is session running or paused?
+  static bool running;
+
+  // Time in milliseconds since the epoch at which to interrupt an
+  // ongoing search, or zero if no timeout is set.
+  static uint64 timeout;
+
+  // Command prompt;
+  static const char *prompt;
 
   /****************/
   /* Constructors */
@@ -31,45 +62,33 @@ struct Session {
   /* Methods. */
   /************/
 
-  // Enter the command loop. Control does not return to the caller
-  // until the user session is over.
+  // Enter the command loop, which will not return until the session
+  // is over.
   static void cmd_loop ();
-
-  /***************/
-  /* Game state. */
-  /***************/
-
-  // State of play.
-  static Board board;
-
-  // History of this game.
-  static Board::History h;
-
-  // Color the engine is playing.
-  static Color our_color;
-
-  // Search engine begin used.
-  static Search_Engine se;
-
-  // Is the opponent a computer?
-  static bool op_is_computer;
 
 private:
 
   /*******************/
   /* Interface mode. */
   /*******************/
+  
+  // User interface mode.
+  static UI_Mode ui_mode;
 
-  enum UI { INTERACTIVE, BATCH, UCI, XBOARD };
-  static UI ui;
+  // Protocol mode.
+  static Protocol protocol;
 
-  /****************/
-  /* I/O handling */
-  /****************/
+  /*****************/
+  /* Search state. */
+  /*****************/
 
-  static FILE *in;
-  static FILE *out;
-  static const char *prompt;
+  static Search_Engine se;
+
+  /**************************************/
+  /* I/O handling and command dispatch. */
+  /**************************************/
+
+  static FILE *in, *out;
   static bool tty;
 
   // Handle an alarm signal.
@@ -78,10 +97,10 @@ private:
   // Write the command prompt.
   static void write_prompt ();
 
-  // Command handling.
+  // Execute a command line.
   static bool execute (char *line);
 
-  // XBoard specific command handling.
+  // Execute an xboard specific command line.
   static bool xbd_execute (char *line);
 
   // Execute a debugging command.
@@ -94,29 +113,25 @@ private:
   /* Flow control */
   /****************/
 
-  // Is session running or paused?
-  static bool running;
-
-  // Control is turned over to us, either to make a move, ponder,
-  // analyze, etc.
+  // Control is turned over to the engine to do as it wishes until
+  // either the timeout expires, there is input pending from the user,
+  // or the interface needs to block and wait for input from the user.
   static void work ();
 
-  // Time in milliseconds since the epoch to interrupt an ongoing
-  // search.
-  static uint64 timeout;
+  // Determine the current status of this game.
+  static Status get_status ();
 
-  // Initiate a timed search.
-  static Move get_move ();
-
-  // Report and clean up when a game ends.
+  // Set session state to reflect the game has ended.
   static void handle_end_of_game (Status s);
+
+  // Find a move to play.
+  static Move find_a_move ();
 
   /************/
   /* Commands */
   /************/
 
-  // Process a string in Extended Position Notation. This can include
-  // tests, etc.
+  // Process a string in Extended Position Notation.
   static bool epd (const string_vector &tokens);
 
   /**********************/
@@ -134,9 +149,6 @@ private:
 
   // Check that hash keys are correctly generated to depth 'd'.
   static void test_hashing (int d);
-
-
-
 };
 
 #endif /* _Session_ */

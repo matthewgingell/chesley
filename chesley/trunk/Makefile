@@ -21,11 +21,11 @@ play: chesley
 
 playself: chesley
 	xboard -debug -fcp ./chesley -scp ./chesley -coords -size	\
-	Medium -mode TwoMachines
+	Small -mode TwoMachines
 
 playold: chesley
 	xboard -debug -fcp ./chesley -scp ./chesley.old -coords -size	\
-	Large -mode TwoMachines
+	Small -mode TwoMachines
 
 check: chesley
 	./run_tests.rb

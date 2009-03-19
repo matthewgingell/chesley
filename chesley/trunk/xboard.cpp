@@ -15,8 +15,8 @@ using namespace std;
 // Set xboard protocol mode.
 bool
 Session::set_xboard_mode (const string_vector &tokens) {
-  ui = XBOARD;
-  prompt = NULL;
+  protocol = XBOARD;
+  ui_mode = BATCH;
 
   // Set chatting for ICS.
   fprintf (out, "tellicsnoalias set 1 %s v%s\n", ENGINE_ID_STR, VERSION_STR);
@@ -201,14 +201,19 @@ Session::xbd_execute (char *line) {
 	{
 	  Move m = board.from_calg (tokens[1]);
 
-	  board.apply (m);
-	  Status s = board.get_status ();
+	  bool applied = board.apply (m);
+
+	  // The client should never pass us a move that doesn't
+	  // apply.
+	  assert (applied);
+
+	    // This move may have ended the game.
+	  Status s = get_status ();
 	  if (s != GAME_IN_PROGRESS)
 	    {
 	      handle_end_of_game (s);
 	    }
 	}
-
 
       /**************/
       /* ? command. */

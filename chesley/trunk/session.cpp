@@ -23,28 +23,31 @@ const int TIME_OUT = 1 * 1000;
 
 using namespace std;
 
-/*********************/
-/* Session variables */
-/*********************/
+/****************************/
+/* Static session variables */
+/****************************/
 
-Session::UI   Session::ui;
-FILE         *Session::in;
-FILE         *Session::out;
-bool          Session::tty;
-bool          Session::running;
-uint64        Session::timeout;
+// I/O State.
+FILE *Session::in;
+FILE *Session::out;
+bool  Session::tty;
 
-const char *Session::prompt = "> ";
+// Game state
+Board   Session::board;
+Color   Session::our_color;
+bool    Session::op_is_computer;
 
-/*********/
-/* State */
-/*********/
+// Interface mode.
+UI_Mode Session::ui_mode;
+Protocol Session::protocol;
 
-Board Session::board;
-Board::History Session::h;
+// Search state.
 Search_Engine Session::se;
-Color Session::our_color;
-bool Session::op_is_computer;
+
+// Engine state.
+bool        Session::running;
+uint64      Session::timeout;
+const char *Session::prompt;
 
 /******************************/
 /* Initialize the environment */
@@ -53,29 +56,30 @@ bool Session::op_is_computer;
 void
 Session::init_session () {
 
+  // Set initial game state.
+  board = Board :: startpos ();
+  our_color = BLACK;
+  op_is_computer = false;
+
+  // Set initial engine state.
+  running = false;
+  timeout = 0;
+
+  // Set initial search state.
+  se = Search_Engine ();
+
   // Setup I/O.
   in = stdin;
   out = stdout;
   setvbuf (in, NULL, _IONBF, 0);
   setvbuf (out, NULL, _IONBF, 0);
   tty = isatty (fileno (in));
+  
+  // Set interface mode.
+  ui_mode = tty ? INTERACTIVE : BATCH;
+  protocol = NATIVE;
 
-  if (tty)
-    {
-      ui = INTERACTIVE;
-    }
-  else
-    {
-      ui = BATCH;
-      prompt = (char *) 0;
-    }
-
-  // Set initial game state.
-  our_color = BLACK;
-  board = Board :: startpos ();
-  se = Search_Engine ();
-  op_is_computer = false;
-  running = false;
+  prompt = ui_mode == INTERACTIVE ? "> " : "";
 
   // Setup periodic alarm.
   struct itimerval timer;
@@ -89,22 +93,19 @@ Session::init_session () {
   return;
 }
 
-/*******************************************************************/
-/* Catch an alarm periodically. This is used for asynchronous I/O. */
-/* handling.                                                       */
-/*******************************************************************/
-
 void
 Session::handle_alarm (int sig) {
-  // Interrupt an ongoing search when time has elapsed.
+  // We should return from the work loop as quickly as possible is the
+  // timeout we have set has elapsed or if there is input waiting from
+  // the user.
   if (mclock () > timeout || fdready (fileno (in)))
-      se.interrupt_search = true;
+    se.interrupt_search = true;
 }
 
 // Write the command prompt.
 void Session::write_prompt ()
 {
-  if (prompt && (ui == INTERACTIVE))
+  if (prompt && (ui_mode == INTERACTIVE))
     fprintf (out, "%s", prompt);
 }
 
@@ -112,10 +113,10 @@ void Session::write_prompt ()
 /* Searching */
 /*************/
 
-Move Session::get_move () {
-  timeout = mclock () + TIME_OUT;
-  return se.choose_move (board, 6);
-}
+//Move Session::get_move () {
+//  timeout = mclock () + TIME_OUT;
+//  return se.choose_move (board, 6);
+//}
 
 /***************************/
 /* Top level command loop. */
@@ -126,26 +127,30 @@ Session::cmd_loop ()
 {
   bool done = false;
 
-  if (ui == INTERACTIVE)
-    {
-      fprintf (out, PROLOGUE);
-    }
+  if (ui_mode == INTERACTIVE)
+    fprintf (out, PROLOGUE);
 
   write_prompt ();
   while (true)
     {
       char *line = get_line (in);
 
-      if ((!line) || (!execute (line))) 
-	{
-	  done = true;
-	}
-      if (line) free (line);
-      if (done) break;
+      // End session on EOF or false from execute.
+      if (!line || !execute (line)) 
+	done = true;
+
+      // Discard the malloc'd line return by get_line.
+      if (line) 
+	free (line);
+
+      // Bail out of the command loop when we're done.
+      if (done)
+	break;
 
       write_prompt ();
 
-      // Loop and do some work until input is ready.
+      // Hand control over to the 'work' function until input is
+      // ready.
       while (!fdready (fileno (in)))
 	{
 	  work ();
@@ -158,49 +163,96 @@ Session::cmd_loop ()
 /* Flow control */
 /****************/
 
-// Control is turned over to us, either to make a move, ponder,
-// analyze, garbage collect, etc.
+// Control is turned over to the engine to do as it wishes until
+// either the timeout expires, there is input pending from the user,
+// or the interface needs to block and wait for input from the user.
 void
 Session::work ()
 {
-  // If the game isn't over yet, generate a move, send it to the
-  // client, and commit it.
-  if (running
-      && board.get_status () == GAME_IN_PROGRESS
-      && board.flags.to_move == our_color)
+  Status s = get_status ();  
+
+  // If the game is over, return and block for input.
+  if (s != GAME_IN_PROGRESS) 
+    return;
+
+  // If we aren't running, return and block for input.
+  if (!running) 
+    return;
+
+  // If it isn't our turn, return and block for input.
+  if (board.flags.to_move != our_color) 
+    return;
+
+  // Otherwise the game is still running and it's our turn, so compute
+  // and send a move.
+  else
     {
-      Move best = get_move ();
+      Move m = find_a_move ();
 
-      if (best.is_null ())
-	{
-	  cerr << "get_move returned null move." << endl;
-	}
+      // We should never get back a null move.
+      assert (!m.is_null());
 
-      if (board.apply (best))
-	{
-	  fprintf (out, "move %s\n", board.to_calg (best).c_str ());
-	}
-      else
-	{
-	  cerr << "get_move returned move that didn't apply." << endl;
-	}
+      // Apply the move.
+      bool applied = board.apply (m);
+      
+      // We should never get back a move that doesn't apply.
+      assert (applied);
 
-      cerr << board << endl;
-
-      Status s = board.get_status ();
-      if (s != GAME_IN_PROGRESS)
-	{
-	  handle_end_of_game (s);
-	}
+      // Send the move to the client.
+      fprintf (out, "move %s\n", board.to_calg (m).c_str ());
     }
+
+  // This move may have ended the game.
+  s = get_status ();
+  if (s != GAME_IN_PROGRESS)
+    handle_end_of_game (s);
 
   return;
 }
 
-// Report and clean up when a game ends.
+// Determine the current status of this game.
+Status 
+Session :: get_status () {
+  Color player = board.flags.to_move;
+
+  // Check 50 move rule.
+  if (board.half_move_clock == 50) 
+    return GAME_DRAW;
+
+  // Check for triple repetition.
+  // if (TODO) return GAME_DRAW;
+
+  // Check whether there are any moves legal moves for the current
+  // player from this position
+  if (board.child_count () == 0)
+    {
+      // This is checkmate. 
+      if (board.in_check (player))
+	{
+	  if (player == WHITE) 
+	    return GAME_WIN_BLACK;
+	  else
+	    return GAME_WIN_WHITE;
+	}
+
+      // This is a stalemate.
+      else 
+	{
+	  return GAME_DRAW;
+	}
+    }
+  else
+    {
+      // Otherwise the game is still in progress.
+      return GAME_IN_PROGRESS;
+    }
+}
+
+// Set session state to reflect that the game has ended.
 void
 Session::handle_end_of_game (Status s) {
 
+  // Write output to client.
   switch (s)
     {
     case GAME_WIN_WHITE:
@@ -219,7 +271,16 @@ Session::handle_end_of_game (Status s) {
       assert (0);
     }
 
-  //  running = false;
+  // We should halt and block for user input.
+  running = false;
+
+  timeout = 0;
+}
+
+// Find a move to play.
+Move 
+Session::find_a_move () {
+  return se.choose_move (board, 5);
 }
 
 /*************************************/
@@ -229,29 +290,18 @@ Session::handle_end_of_game (Status s) {
 bool
 Session::execute (char *line) {
 
-  /*******************************************************************/
-  /* Give the ui-specific handler a chance to process this command   */
-  /* before handing it to the handler below.                         */
-  /*******************************************************************/
-
-  if (ui == XBOARD)
-    {
-      if (!xbd_execute (line))
-	{
-	  return false;
-	}
-    }
+  // Pass this command to the protocol specific handler.
+  if (protocol == XBOARD && !xbd_execute (line))
+    return false;
 
   // Apply a debugging command.
   if (!debug_execute (line))
-    {
-      return false;
-    }
+    return false;
 
+  // Otherwise, execute a standard command.  
   string_vector tokens = tokenize (line);
   int count = tokens.size ();
 
-  // Execute a standard command.
   if (count > 0)
     {
       string token = downcase (tokens[0]);
@@ -368,7 +418,6 @@ Session::execute (char *line) {
 	  if (tokens.size () >= 2)
 	    {
 	      perft (tokens);
-	      // fprintf (out, "%lli\n", board.perft (to_int (tokens[1])));
 	      return true;
 	    }
 	}
@@ -411,11 +460,27 @@ Session::execute (char *line) {
 	}
 
       // Warn about unrecognized commands in interactive mode.
-      if (ui == INTERACTIVE)
+      if (ui_mode == INTERACTIVE)
 	{
 	  //	  fprintf (out, "Unrecognized command.\n");
 	}
     }
 
   return true;
+}
+
+/*****************/
+/*  Status type  */
+/*****************/
+
+std::ostream &
+operator<< (std::ostream &os, Status s) {
+  switch (s)
+    {
+    case GAME_IN_PROGRESS: os << "GAME_IN_PROGRESS"; break;
+    case GAME_WIN_WHITE:   os << "GAME_WIN_WHITE"; break;
+    case GAME_WIN_BLACK:   os << "GAME_WIN_BLACK"; break;
+    case GAME_DRAW:        os << "GAME_DRAW"; break;
+    }
+  return os;
 }
