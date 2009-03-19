@@ -175,19 +175,6 @@ Session::xbd_execute (char *line) {
 	  // ignored.
 	}
 
-      /********************/
-      /* sd DEPTH command */
-      /********************/
-
-      if (token == "sd")
-	{
-	  int d;
-	  if (sscanf (token.c_str (), "%i", &d) > 0)
-	    {
-	      se.max_depth = d;
-	    }
-	}
-
       /******************/
       /* time N command */
       /******************/

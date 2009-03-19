@@ -12,7 +12,6 @@
 
 #include <cstring>
 #include <boost/unordered_map.hpp>
-
 #include "board.hpp"
 #include "eval.hpp"
 
@@ -22,8 +21,7 @@ struct Search_Engine {
   /* Constructors and initialization. */
   /************************************/
 
-  Search_Engine (int max_depth = 4) : max_depth (max_depth) {
-    assert (max_depth > 0);
+  Search_Engine () {
     interrupt_search = false;
     calls_to_alpha_beta = 0;
     memset (hh_table, 0, sizeof (hh_table));
@@ -45,18 +43,9 @@ struct Search_Engine {
 
   Trans_Table tt;
 
-  /******************/
-  /* History tables */
-  /******************/
-
-  int hh_table[64][64];
-
   /*****************/
   /* Search state. */
   /*****************/
-
-  // Default maximum depth for tree searches.
-  int max_depth;
 
   // If set true, the search should conclude as quickly as possible.
   bool interrupt_search;
@@ -75,13 +64,16 @@ struct Search_Engine {
   // Choose a move, score it, and return it.
   Move choose_move (Board &b, int32 depth = -1);
 
-  // Fetch the principle variation for the most recent search.
-  void fetch_pv (const Board &b, Move_Vector &out);
-
 private:
 
+  // History tables. 
+  uint64 hh_table[64][64];
+
   // Initialize a new search and return its value.
-  Score new_search (const Board &b, int depth);
+  Score new_search (const Board &b, int depth, Move_Vector &pv);
+
+  // Search repeatedly from depth 1 to 'depth.;
+  Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
 
   // Memoized minimax search.
   Score search_with_memory (const Board &b, int depth, Move_Vector &pv, 
@@ -91,17 +83,14 @@ private:
   Score search (const Board &b, int depth, Move_Vector &pv, 
 		Score alpha = -INF, Score beta = INF);
 
+  // Heuristically order a list of moves by value.
+  inline void order_moves (const Board &b, Move_Vector &moves);
+
   // Fetch a transposition table entry. 
   inline bool tt_fetch (uint64 hash, TT_Entry &out);
 
   // Store a transposition table entry. 
   inline void tt_store (uint64 hash, const TT_Entry &in);
-
-  // Heuristically order a list of moves by value.
-  inline void order_moves (const Board &b, Move_Vector &moves);
-
-  // Search repeatedly from depth 1 to 'depth.;
-  Score iterative_deepening (const Board &b, int depth);
 };
 
 #endif // _SEARCH_
