@@ -104,14 +104,12 @@ struct Move {
 };
 
 inline bool 
-less_than (const Move &lhs, const Move &rhs)
-{
+less_than (const Move &lhs, const Move &rhs) {
   return lhs.score < rhs.score;
 }
 
 inline bool 
-more_than (const Move &lhs, const Move &rhs)
-{
+more_than (const Move &lhs, const Move &rhs) {
   return lhs.score > rhs.score;
 }
 
@@ -139,8 +137,7 @@ struct Move_Vector {
     count = mv.count;
     return *this;
   }
-
-
+  
   void clear () {
     count = 0;
   }
@@ -179,35 +176,6 @@ enum Castling_Right
 std::ostream & operator<< (std::ostream &, const Board &);
 
 struct Board {
-
-  /*********/
-  /* Types */
-  /*********/
-
-  // Manage a history associated with a state of place and location in
-  // a search tree.
-  
-  struct History {
-
-    std::vector <Board> positions;
-    std::vector <Move> moves;
-    boost::unordered_map <hash_t, uint32> counts;
-
-    // Increment the number of times 'b' occurs in a search path.
-    void push (const Board &b);
-
-    // Decrement the number of times 'b' occurs in a search path.
-    void pop (const Board &b);
-
-    // Determine whether 'b' is the third repitition of a position in
-    // this history.
-    bool is_triple_repetition (const Board &b) const;
-
-    // Commit a move to the history, storing all the information
-    // associated with it to the permanent log for this state of play.
-    void commit (const Board &b, const Move &m);
-
-  };
 
   /*************/
   /* Constants */
@@ -319,7 +287,7 @@ struct Board {
   /*************/
 
   bool operator== (const Board &rhs) {
-    return (memcmp (this, &rhs, sizeof (Board)) == 0);
+    return hash == rhs.hash;
   }
 
   /***********/
@@ -424,7 +392,7 @@ struct Board {
   /*****************/
 
   // It is crucial to use the following routines to set board flags,
-  // rather than accessing those fields directly, becase otherwise the
+  // rather than accessing those fields directly. Otherwise the
   // incrementally maintained hash key will not be properly updated.
 
   // Set color.
@@ -470,7 +438,7 @@ struct Board {
     return pawns;
   }
 
-  // Const version returs by copy.
+  // Const version returns by copy.
   bitboard
   kind_to_board (Kind k) const {
     switch (k)

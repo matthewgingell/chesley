@@ -96,7 +96,8 @@ Search_Engine :: search_with_memory
   /* move rule draw.                                                 */
   /*******************************************************************/
 
-  if (b.half_move_clock >= 40)
+  if (b.half_move_clock == 40 || 
+      b.half_move_clock == 41)
     {
       tt.clear ();
     }

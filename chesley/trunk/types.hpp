@@ -34,14 +34,6 @@ typedef uint64 hash_t;
 // zero, etc.
 enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
-inline void operator++ (Kind &k) {
-  k = (Kind) (k + 1);
-}
-
-inline void operator-- (Kind &k) {
-  k = (Kind) (k - 1);
-}
-
 // Convert a kind to a character code.
 char to_char (Kind k);
 
