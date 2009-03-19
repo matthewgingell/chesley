@@ -134,17 +134,17 @@ Session::play_self (const string_vector &tokens)
 {
   board = Board::startpos ();
 
-  while (board.get_status () == GAME_IN_PROGRESS)
+  //  while (status == GAME_IN_PROGRESS)
     {
       cerr << board << endl << endl;
-      Move m = get_move ();
-      board.apply (m);
+      // Move m = get_move ();
+      // board.apply (m);
     }
 
   // Print the position that caused us to break out of the loop.
   cerr << board << endl << endl;
 
-  handle_end_of_game (board.get_status ());
+  //  handle_end_of_game (status);
 
   return true;
 }

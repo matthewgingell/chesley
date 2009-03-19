@@ -12,22 +12,6 @@
 
 using namespace std;
 
-/*******************/
-/*  Status type.  */
-/******************/
-
-std::ostream &
-operator<< (std::ostream &os, Status s) {
-  switch (s)
-    {
-    case GAME_IN_PROGRESS: os << "GAME_IN_PROGRESS"; break;
-    case GAME_WIN_WHITE:   os << "GAME_WIN_WHITE"; break;
-    case GAME_WIN_BLACK:   os << "GAME_WIN_BLACK"; break;
-    case GAME_DRAW:        os << "GAME_DRAW"; break;
-    }
-  return os;
-}
-
 /**************/
 /* Kind type. */
 /**************/
@@ -351,16 +335,6 @@ Board::attack_set (Color c) const {
 int
 Board::child_count () const {
   return (Board_Vector (*this)).count;
-}
-
-// Get the status of the game. {
-Status
-Board::get_status () const {
-  if (half_move_clock >= 50) return GAME_DRAW;
-  if (child_count () > 0) return GAME_IN_PROGRESS;
-  if (in_check (WHITE)) return GAME_WIN_BLACK;
-  if (in_check (BLACK)) return GAME_WIN_WHITE;
-  return GAME_DRAW;
 }
 
 // Return whether the square at idx is attacked by a piece of color c.
