@@ -40,13 +40,19 @@ Score
 Search_Engine :: new_search 
 (const Board &b, int depth, Move_Vector &pv) 
 {
-  // Age the history table. Old results age exponentially, so
-  // hopefully we don't end up with a table full of junk values.
-  for (int color = 0; color < 2; color++)
-    for (int d = 0; d < 2; d++)
-      for (int from = 0; from < 64; from++)
-	for (int to = 0; to < 64; to++)
-	  hh_table[b.flags.to_move][depth][from][to] = 0;
+  // Clear the history table.
+  memset (hh_table, 0, sizeof (hh_table));
+
+  // Clear the transposition table.
+
+  for (Trans_Table::iterator i = tt.begin (); i != tt.end (); i++) 
+    {
+      i -> second.depth -= 1;
+      if (i -> second.depth == 0) 
+	{
+	  tt.erase (i);
+	}
+    }
   
   // Clear statistics.
   calls_to_alpha_beta = 0;
@@ -93,23 +99,12 @@ Search_Engine :: search_with_memory
   bool found_tt_entry;
   Score original_alpha = alpha;
 
-  /*******************************************************************/
-  /* Throw away the transposition table when we are approaching a 50 */
-  /* move rule draw.                                                 */
-  /*******************************************************************/
-
-  if (b.half_move_clock == 40 || 
-      b.half_move_clock == 41)
-    {
-      tt.clear ();
-    }
-
   /*****************************************************/
   /* Try to find this node in the transposition table. */
   /*****************************************************/
 
   found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && entry.depth == depth)
+  if (found_tt_entry && entry.depth == depth && b.half_move_clock <= 40)
     {
       if (entry.type == TT_Entry::EXACT_VALUE)
 	alpha = entry.move.score;
@@ -173,16 +168,18 @@ Search_Engine :: search
   /* Handle the leaf node case. */
   /******************************/
 
+#if 0
   if (b.half_move_clock == 49) 
     {
       alpha = 0;
     }
+#endif
 
   /* If repetition, return draw. */
   
-  else if (depth == 0) 
+  if (depth == 0) 
     {
-      alpha = eval (b);
+      alpha = qsearch (b, 2, alpha, beta);
     }
 
   /*****************************************************/
@@ -298,6 +295,64 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
   
   insertion_sort <Move_Vector, Move, less_than> (moves);
 }
+
+// Quiescence search. 
+Score 
+Search_Engine::qsearch 
+(const Board &b, int depth, Score alpha, Score beta) 
+{
+  static int d = 0;
+  Board c;
+  Move_Vector moves (b);
+
+  if (depth < d)
+    {
+      d = depth;
+      cerr << depth << endl;
+    }
+
+  Score s = eval (b);
+
+  if (s >= beta) 
+    {
+      return s;
+    }
+
+  for (int i = 0; i < moves.count; i++)
+    moves[i].score = 
+      eval_piece (moves[i].capture (b)) -
+      eval_piece (moves[i].get_kind (b));
+
+  insertion_sort <Move_Vector, Move, less_than> (moves);
+
+  for (int i = 0; i < moves.count; i++)
+    {
+      if (moves[i].capture (b) == NULL_KIND)
+	continue;
+
+      if (moves[i].capture (b) == KING)
+	continue;
+
+      c = b;
+      if (c.apply (moves[i]))
+	{
+	  s = -qsearch (c, depth - 1, -beta, -alpha);
+
+	  if (s > alpha)
+	    {
+	      alpha = s;
+	    }
+
+	  if (alpha >= beta)
+	    {
+	      break;
+	    }
+	}
+    }
+
+  return s;
+}
+
 
 /**********************************************************************/
 /* Transposition tables                                               */

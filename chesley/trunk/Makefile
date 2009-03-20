@@ -8,6 +8,7 @@ ALG =
 CXX = g++-mp-4.4
 
 CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+#CXXFLAGS = -Wall -m64 -O3 $(ALG)
 
 all: chesley
 
