@@ -124,8 +124,7 @@ Search_Engine :: search_with_memory
   /****************************************************/
   /* Update the transposition table with this result. */
   /****************************************************/
-
-  if (pv.count > 0 && (!found_tt_entry || depth >= entry.depth))
+  if (pv.count > 0 && (!found_tt_entry || depth > entry.depth))
     {
       pv.push (entry.move);
 
@@ -192,16 +191,19 @@ Search_Engine :: search
 
 #if 0
     // Null move heuristic.
-    if (depth > 3 && depth % 4 == 0) 
+    if (depth % 3 == 0) 
       {
-	Board c = b;
-	c.set_color (invert_color (player));
-	int val = -search_with_memory 
-	  (c, max (depth - 3, 0), pv, -beta, -beta + 1);
-	if (val >= beta)
-	  return beta;
-	else
-	  pv.clear ();
+	Move_Vector dummy_pv;
+	int rd = depth - 4;
+	if (!b.in_check (player) && rd > 0)
+	  {
+	    Board c = b;
+	    c.set_color (invert_color (player));
+	    int val = -search_with_memory 
+	      (c, rd, dummy_pv, -beta, -beta + 1);
+	    if (val >= beta)
+	      return beta;
+	  }
       }
 #endif
 	
@@ -320,6 +322,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
+  if ((tt.size () > TT_SIZE)) tt.erase (tt.begin ());
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }

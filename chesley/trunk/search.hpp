@@ -25,14 +25,16 @@ struct Search_Engine {
     interrupt_search = false;
     calls_to_alpha_beta = 0;
     memset (hh_table, 0, sizeof (hh_table));
+    tt.rehash (TT_SIZE);
   }
 
   /*************************/
   /* Transposition tables. */
   /*************************/
 
+  static const uint32 TT_SIZE = 10 * 1000 * 1000;
+
   struct TT_Entry {
-    TT_Entry () : move(0), depth (0) {}
     Move move;
     int32 depth;
     enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type;
