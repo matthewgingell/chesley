@@ -17,7 +17,7 @@
 
 struct Search_Engine {
 
-  static const uint32 TT_SIZE = 25 * 1000 * 1000;
+  static const uint32 TT_SIZE = 10 * 1000 * 1000;
 
   /************************************/
   /* Constructors and initialization. */
@@ -84,6 +84,10 @@ private:
   // Minimax search.
   Score search (const Board &b, int depth, Move_Vector &pv, 
 		Score alpha = -INF, Score beta = INF);
+
+  // Quiescence search. 
+  Score qsearch (const Board &b, int depth, 
+		 Score alpha = -INF, Score beta = INF);
 
   // Heuristically order a list of moves by value.
   inline void order_moves (const Board &b, int depth, Move_Vector &moves);

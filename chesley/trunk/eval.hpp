@@ -33,6 +33,18 @@ static const Score KS_CASTLE_VAL  = 75;
 static const Score QS_CASTLE_VAL  = 50;
 static const Score CAN_CASTLE_VAL = 10;
 
+inline Score eval_piece (Kind k) {
+  switch (k)
+    {
+    case PAWN:      return PAWN_VAL;
+    case ROOK:      return ROOK_VAL;
+    case KNIGHT:    return KNIGHT_VAL;
+    case BISHOP:    return BISHOP_VAL;
+    case QUEEN:     return QUEEN_VAL;
+    default:   return 0;
+    }
+}
+
 // Simple table driven positional bonuses.
 Score eval_simple_positional (const Board &b);
 
@@ -69,6 +81,9 @@ eval (const Board &b, int depth = 0) {
   Score score = 0;
 
   score += eval_material (b);
+
+  if (b.half_move_clock == 50) return 0;
+
 
   /***************************/
   /* Evaluate pawn structure */
