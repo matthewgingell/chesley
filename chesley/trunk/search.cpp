@@ -291,11 +291,8 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
       else
 	{
 	  // Award a bonus for rate and depth of recent cutoffs.
-	  moves[i].score += hh_table[b.flags.to_move][depth][moves[i].from][moves[i].to];
-
-	  if (depth > 1)
-	    moves[i].score += hh_table[b.flags.to_move][depth][moves[i].from][moves[i].to] / 2;
-
+	  moves[i].score += 
+	    hh_table[b.flags.to_move][depth][moves[i].from][moves[i].to];
 	}
     }
   

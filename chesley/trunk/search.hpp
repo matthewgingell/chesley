@@ -17,7 +17,7 @@
 
 struct Search_Engine {
 
-  static const uint32 TT_SIZE = 50 * 1000 * 1000;
+  static const uint32 TT_SIZE = 25 * 1000 * 1000;
 
   /************************************/
   /* Constructors and initialization. */

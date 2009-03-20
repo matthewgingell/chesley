@@ -271,7 +271,7 @@ Session::handle_end_of_game (Status s) {
 // Find a move to play.
 Move 
 Session::find_a_move () {
-  return se.choose_move (board, 6);
+  return se.choose_move (board, 7);
 }
 
 /*************************************/
