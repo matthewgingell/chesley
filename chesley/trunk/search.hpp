@@ -17,6 +17,8 @@
 
 struct Search_Engine {
 
+  static const uint32 TT_SIZE = 50 * 1000 * 1000;
+
   /************************************/
   /* Constructors and initialization. */
   /************************************/
@@ -31,8 +33,6 @@ struct Search_Engine {
   /*************************/
   /* Transposition tables. */
   /*************************/
-
-  static const uint32 TT_SIZE = 10 * 1000 * 1000;
 
   struct TT_Entry {
     Move move;
@@ -69,7 +69,7 @@ struct Search_Engine {
 private:
 
   // History tables. 
-  uint64 hh_table[64][64];
+  uint64 hh_table[2][100][64][64];
 
   // Initialize a new search and return its value.
   Score new_search (const Board &b, int depth, Move_Vector &pv);
@@ -86,7 +86,7 @@ private:
 		Score alpha = -INF, Score beta = INF);
 
   // Heuristically order a list of moves by value.
-  inline void order_moves (const Board &b, Move_Vector &moves);
+  inline void order_moves (const Board &b, int depth, Move_Vector &moves);
 
   // Fetch a transposition table entry. 
   inline bool tt_fetch (uint64 hash, TT_Entry &out);
