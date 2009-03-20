@@ -42,9 +42,11 @@ Search_Engine :: new_search
 {
   // Age the history table. Old results age exponentially, so
   // hopefully we don't end up with a table full of junk values.
-  for (int from = 0; from < 64; from++)
-    for (int to = 0; to < 64; to++)
-      hh_table[from][to] /= 2;
+  for (int color = 0; color < 2; color++)
+    for (int d = 0; d < 2; d++)
+      for (int from = 0; from < 64; from++)
+	for (int to = 0; to < 64; to++)
+	  hh_table[b.flags.to_move][depth][from][to] = 0;
   
   // Clear statistics.
   calls_to_alpha_beta = 0;
@@ -208,7 +210,7 @@ Search_Engine :: search
 #endif
 	
     Move_Vector moves (b);
-    order_moves (b, moves);
+    order_moves (b, depth, moves);
 
     /**************************/
     /* Minimax over children. */
@@ -264,7 +266,7 @@ Search_Engine :: search
 	/* Update the history table with this result. */
 	/**********************************************/
 	
-	hh_table[pv[0].from][pv[0].to] += 1 << depth;
+	hh_table[player][depth][pv[0].from][pv[0].to] += 1 << depth;
       }
   }
 
@@ -274,7 +276,7 @@ Search_Engine :: search
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void 
-Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
+Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
 
@@ -282,14 +284,18 @@ Search_Engine::order_moves (const Board &b, Move_Vector &moves) {
     {
       // If we previously computed that moves[i] was the best move
       // from this position, make sure it is searched first.
-      if (have_entry && moves[i] == e.move)
+      if (have_entry && moves[i] == e.move && depth >= e.depth - 1)
 	{
 	  moves[i].score = +INF;
 	}
       else
 	{
 	  // Award a bonus for rate and depth of recent cutoffs.
-	  moves[i].score += hh_table[moves[i].from][moves[i].to];
+	  moves[i].score += hh_table[b.flags.to_move][depth][moves[i].from][moves[i].to];
+
+	  if (depth > 1)
+	    moves[i].score += hh_table[b.flags.to_move][depth][moves[i].from][moves[i].to] / 2;
+
 	}
     }
   

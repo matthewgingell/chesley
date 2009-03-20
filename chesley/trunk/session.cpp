@@ -109,15 +109,6 @@ void Session::write_prompt ()
     fprintf (out, "%s", prompt);
 }
 
-/*************/
-/* Searching */
-/*************/
-
-//Move Session::get_move () {
-//  timeout = mclock () + TIME_OUT;
-//  return se.choose_move (board, 6);
-//}
-
 /***************************/
 /* Top level command loop. */
 /***************************/
@@ -280,7 +271,7 @@ Session::handle_end_of_game (Status s) {
 // Find a move to play.
 Move 
 Session::find_a_move () {
-  return se.choose_move (board, 5);
+  return se.choose_move (board, 6);
 }
 
 /*************************************/
