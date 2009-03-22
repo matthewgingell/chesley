@@ -8,7 +8,7 @@ ALG =
 CXX = g++-mp-4.4
 
 CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
-#CXXFLAGS = -Wall -m64 -O3 $(ALG)
+#CXXFLAGS = -g -Wall $(ALG)
 
 all: chesley
 
@@ -16,7 +16,7 @@ chesley: $(OBJS) *.hpp
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
 
 play: chesley
-	xboard -debug -fcp ./chesley  -coords -size Medium
+	xboard -debug -fcp ./chesley  -coords -size Huge
 
 playself: chesley
 	xboard -debug -fcp ./chesley -scp ./chesley -coords -size	\

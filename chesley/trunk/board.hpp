@@ -147,6 +147,7 @@ struct Move_Vector {
   }
 
   Move &operator[] (int i) {
+    assert (i < count);
     return move[i];
   }
 

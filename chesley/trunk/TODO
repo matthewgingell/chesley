@@ -28,6 +28,8 @@ Next items:
 
   * Add help command.
 
+  * Detect insufficient mating material. 
+
 Interface:
 
   * Finish and clean up implementation of Xboard protocol.

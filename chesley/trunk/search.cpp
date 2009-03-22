@@ -44,7 +44,7 @@ Search_Engine :: new_search
   memset (hh_table, 0, sizeof (hh_table));
 
   // Clear the transposition table.
-
+#if 0
   for (Trans_Table::iterator i = tt.begin (); i != tt.end (); i++) 
     {
       i -> second.depth -= 1;
@@ -53,6 +53,7 @@ Search_Engine :: new_search
 	  tt.erase (i);
 	}
     }
+#endif
   
   // Clear statistics.
   calls_to_alpha_beta = 0;
@@ -72,15 +73,50 @@ Score
 Search_Engine::iterative_deepening 
 (const Board &b, int depth, Move_Vector &pv) 
 {
-  Score s = search_with_memory (b, 1, pv);
+  Score s;
+  
+  try 
+    {
+      s = search_with_memory (b, 1, pv);
+    }
+  catch (...)
+    {
+      assert (false);
+    }
+
+  assert (pv.count > 0);
 
   for (int i = 2; i <= depth; i++) 
     {
-      pv.clear ();
-      s = search_with_memory (b, i, pv);
+      Move_Vector tmp;
+      calls_to_alpha_beta = 0;
+
+      try 
+	{
+	  s = search_with_memory (b, i, tmp);
+	  assert (tmp.count > 0);
+	  cerr << "best move to depth " << i << " is " << tmp[0] << endl;
+	}
+      catch (int except)
+	{
+	  assert (except == SEARCH_INTERRUPTED);
+	  cerr << "caught exception at depth = " << i << endl;
+	  break;
+	}
+
+      if (tmp.count > 0)
+	pv = tmp;
+
+      cerr << "Completed search to depth " << i << " in " 
+      	   << calls_to_alpha_beta << " calls to search." 
+      	   << endl;
     }
 
-  return s;
+  assert (pv.count > 0);
+
+
+  cerr << "Returning move " << pv[0] << endl;
+  return pv[0].score;
 }
 
 /***********************************************************************/
@@ -98,6 +134,8 @@ Search_Engine :: search_with_memory
   TT_Entry entry;
   bool found_tt_entry;
   Score original_alpha = alpha;
+
+  assert (pv.count == 0);
 
   /*****************************************************/
   /* Try to find this node in the transposition table. */
@@ -117,7 +155,12 @@ Search_Engine :: search_with_memory
     }
 
   alpha = search (b, depth, pv, alpha, beta);
-  
+
+  if (pv.count == 0 && found_tt_entry)
+    {
+      pv.push (entry.move);
+    }
+
   /****************************************************/
   /* Update the transposition table with this result. */
   /****************************************************/
@@ -151,18 +194,18 @@ Search_Engine :: search
   bool found_move = false;
   Color player = b.flags.to_move;
 
+  /**************************************/
+  /* Abort if we have been interrupted. */
+  /**************************************/
+  
+  if (interrupt_search)
+    throw (SEARCH_INTERRUPTED);
+
   /**********************/
   /* Update statistics. */
   /**********************/
 
   calls_to_alpha_beta++;
-
-  /**************************************/
-  /* Abort if we have been interrupted. */
-  /**************************************/
-
-  // if (interrupt_search)
-  // throw (SEARCH_INTERRUPTED);
 
   /******************************/
   /* Handle the leaf node case. */
@@ -179,7 +222,7 @@ Search_Engine :: search
   
   if (depth == 0) 
     {
-      alpha = qsearch (b, 2, alpha, beta);
+      alpha = qsearch (b, -1, alpha, beta);
     }
 
   /*****************************************************/
@@ -193,7 +236,7 @@ Search_Engine :: search
     if (depth % 3 == 0) 
       {
 	Move_Vector dummy_pv;
-	int rd = depth - 4;
+	int rd = depth - 3;
 	if (!b.in_check (player) && rd > 0)
 	  {
 	    Board c = b;
@@ -262,8 +305,8 @@ Search_Engine :: search
 	/**********************************************/
 	/* Update the history table with this result. */
 	/**********************************************/
-	
-	hh_table[player][depth][pv[0].from][pv[0].to] += 1 << depth;
+	if (pv.count > 0)
+	  hh_table[player][depth][pv[0].from][pv[0].to] += 1 << depth;
       }
   }
 
@@ -301,56 +344,61 @@ Score
 Search_Engine::qsearch 
 (const Board &b, int depth, Score alpha, Score beta) 
 {
-  static int d = 0;
   Board c;
   Move_Vector moves (b);
+  bool found_move = false;
 
-  if (depth < d)
-    {
-      d = depth;
-      cerr << depth << endl;
-    }
-
-  Score s = eval (b);
-
-  if (s >= beta) 
-    {
-      return s;
-    }
-
+  alpha = max (alpha, eval (b));
+  if (depth == 0 || alpha >= beta)
+    return alpha;
+  
   for (int i = 0; i < moves.count; i++)
-    moves[i].score = 
-      eval_piece (moves[i].capture (b)) -
-      eval_piece (moves[i].get_kind (b));
-
+    moves[i].score = eval_piece (moves[i].capture (b));
   insertion_sort <Move_Vector, Move, less_than> (moves);
-
+  
   for (int i = 0; i < moves.count; i++)
     {
-      if (moves[i].capture (b) == NULL_KIND)
-	continue;
-
-      if (moves[i].capture (b) == KING)
-	continue;
-
+      if (moves[i].capture (b) == NULL_KIND) continue;
       c = b;
       if (c.apply (moves[i]))
 	{
-	  s = -qsearch (c, depth - 1, -beta, -alpha);
+	  found_move = true;
+	  alpha = max (alpha, -qsearch (c, depth - 1, -beta, -alpha));
+	  if (alpha >= beta) break;
+	}
+    }
 
-	  if (s > alpha)
+  // We can not ignore non-capturing moves in the case this may be a
+  // draw or checkmate.
+  if (!found_move) 
+    {
+      // Exit if we find at least one legal move.
+      for (int i = 0; i < moves.count; i++)
+	{
+	  if (moves[i].capture (b) != NULL_KIND) continue;
+	  c = b;
+	  if (c.apply (moves[i])) 
 	    {
-	      alpha = s;
-	    }
-
-	  if (alpha >= beta)
-	    {
+	      found_move = true;
 	      break;
+	    }
+	}
+
+      // Otherwise, this is check or checkmate. 
+      if (!found_move)
+	{
+	  if (b.in_check (b.flags.to_move))
+	    {
+	      alpha = -MATE_VAL - depth;
+	    }
+	  else 
+	    {
+	      alpha = 0;
 	    }
 	}
     }
 
-  return s;
+  return alpha;
 }
 
 
@@ -380,7 +428,9 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  if ((tt.size () > TT_SIZE)) tt.erase (tt.begin ());
+  if ((tt.size () > TT_SIZE)) 
+    tt.erase (random64 ());
+    
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
