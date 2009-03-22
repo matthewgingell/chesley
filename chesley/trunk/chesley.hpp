@@ -8,6 +8,8 @@
 #ifndef __CHESLEY__
 #define __CHESLEY__
 
+#include "vsn.inc"
+
 #include "bits64.hpp"
 #include "board.hpp"
 #include "eval.hpp"
@@ -19,6 +21,6 @@
 #define ENGINE_ID_STR     "Chesley!"
 #define VERSION_STR       "0.01"
 #define ENGINE_AUTHOR_STR "Matthew Gingell"
-#define PROLOGUE          "Chesley! v" VERSION_STR "\n"
+#define PROLOGUE          "Chesley! v" VERSION_STR " r" SVN_REVISION "\n"
 
 #endif // __CHESLEY__

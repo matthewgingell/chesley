@@ -98,8 +98,7 @@ Session::handle_alarm (int sig) {
   // We should return from the work loop as quickly as possible is the
   // timeout we have set has elapsed or if there is input waiting from
   // the user.
-  if ((timeout > 0 && mclock () > timeout)
-      || fdready (fileno (in)))
+  if ((timeout > 0 && mclock () > timeout) || fdready (fileno (in)))
     se.interrupt_search = true;
 }
 
@@ -132,12 +131,10 @@ Session::cmd_loop ()
 	done = true;
 
       // Discard the malloc'd line return by get_line.
-      if (line) 
-	free (line);
+      if (line) free (line);
 
       // Bail out of the command loop when we're done.
-      if (done)
-	break;
+      if (done) break;
 
       write_prompt ();
 

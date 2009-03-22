@@ -9,7 +9,9 @@
 #ifndef _EVAL_
 #define _EVAL_
 
+
 #include <cstdlib>
+#include <iostream>
 #include "bits64.hpp"
 #include "board.hpp"
 #include "types.hpp"
@@ -102,10 +104,11 @@ eval (const Board &b, int depth = 0) {
   score += eval_simple_positional (b);
 #endif
 
-  // This appears to do no good at all.
+
 #if 0
-  score += 20 * (pop_count ((b.attack_set (WHITE) & b.black)) -
-		 pop_count (b.attack_set (BLACK) & b.white));
+  int asw = pop_count (b.attack_set (WHITE));
+  int asb = pop_count (b.attack_set (BLACK));
+  score += (asw - asb) / 5;
 #endif
 
   // Encourage preserving the right to castle.
