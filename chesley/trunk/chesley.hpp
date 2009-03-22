@@ -19,8 +19,8 @@
 #include "util.hpp"
 
 #define ENGINE_ID_STR     "Chesley!"
-#define VERSION_STR       "0.01"
+#define VERSION_STR       SVN_REVISION
 #define ENGINE_AUTHOR_STR "Matthew Gingell"
-#define PROLOGUE          "Chesley! v" VERSION_STR " r" SVN_REVISION "\n"
+#define PROLOGUE          "Chesley! r" SVN_REVISION "\n"
 
 #endif // __CHESLEY__

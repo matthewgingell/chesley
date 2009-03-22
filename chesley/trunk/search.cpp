@@ -66,6 +66,9 @@ Search_Engine::iterative_deepening
 {
   Score s;
   
+
+  // Show thinking.
+
   // Search progressively deeper play until we are interrupted.
   for (int i = 1; i <= depth; i++) 
     {
@@ -76,7 +79,6 @@ Search_Engine::iterative_deepening
 	{
 	  s = search_with_memory (b, i, tmp);
 	  assert (tmp.count > 0);
-	  cerr << "best move to depth " << i << " is " << tmp[0] << endl;
 	}
       catch (int except)
 	{
@@ -88,9 +90,12 @@ Search_Engine::iterative_deepening
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0) pv = tmp;
 
-      cerr << "Completed search to depth " << i << " in " 
-      	   << calls_to_alpha_beta << " calls to search." 
-      	   << endl;
+      cerr << b.full_move_clock << ":" << b.half_move_clock
+	   << ": ply: " << i << " " 
+	   << "score: " << pv[0].score << " ";
+      for (int j = 0; j < pv.count; j++)
+	cerr << b.to_calg (pv[j]) << " ";
+      cerr << endl;
     }
 
   // Check that we got at least one move.
@@ -121,16 +126,13 @@ Search_Engine :: search_with_memory
   /* Try to find this node in the transposition table. */
   /*****************************************************/
 
+#if 0
   found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && entry.depth >= depth 
+  if (found_tt_entry && entry.depth == depth 
       && b.half_move_clock <= 48) 
     {
       if (entry.type == TT_Entry::EXACT_VALUE)
-	{
-	  //	  pv = Move_Vector (entry.move);
-	  //	  return entry.move.score;
-	  alpha = entry.move.score;
-	}
+	alpha = entry.move.score;
       
       else if (entry.type == TT_Entry::LOWERBOUND)
 	alpha = max (entry.move.score, alpha);
@@ -138,21 +140,24 @@ Search_Engine :: search_with_memory
       else if (entry.type == TT_Entry::UPPERBOUND)
 	beta = min (entry.move.score, beta);
     }
+#endif
 
   alpha = search (b, depth, pv, alpha, beta);
 
+#if 0
   if (pv.count == 0 && found_tt_entry)
     {
       pv.push (entry.move);
     }
+#endif
 
+
+#if 0
   /****************************************************/
   /* Update the transposition table with this result. */
   /****************************************************/
   if (pv.count > 0 && (!found_tt_entry || depth >= entry.depth))
     {
-      pv.push (entry.move);
-
       entry.move = pv[0];
       entry.depth = depth;
 
@@ -167,6 +172,7 @@ Search_Engine :: search_with_memory
 
       tt_store (b.hash, entry);
     }
+#endif
 
   return alpha;
 }
@@ -200,6 +206,7 @@ Search_Engine :: search
   if (depth == 0) 
     {
       alpha = qsearch (b, -1, alpha, beta);
+      //      alpha = eval (b);
     }
 
   /*****************************************************/
@@ -321,16 +328,18 @@ Score
 Search_Engine::qsearch 
 (const Board &b, int depth, Score alpha, Score beta) 
 {
+  int val = eval (b);
+
+  if (val >= beta) 
+    return beta;
+
+  if (val > alpha)
+    alpha = val;
+
   Board c;
   Move_Vector moves (b);
   bool found_move = false;
-
-  // Return if the static evaluation for this position causes a
-  // cutoff.
-  alpha = max (alpha, eval (b));
-  if (depth == 0 || alpha >= beta)
-    return alpha;
-  
+ 
   // Sort moves on a MVV basis.
   for (int i = 0; i < moves.count; i++) 
     {
