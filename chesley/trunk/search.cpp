@@ -44,19 +44,8 @@ Search_Engine :: new_search
   memset (hh_table, 0, sizeof (hh_table));
 
   // Clear the transposition table.
-  //  tt.clear ();
+  // tt.clear ();
 
-#if 1
-  for (Trans_Table::iterator i = tt.begin (); i != tt.end (); i++) 
-    {
-      i -> second.depth -= 1;
-      if (i -> second.depth == 0) 
-	{
-	  tt.erase (i);
-	}
-    }
-#endif
-  
   // Clear statistics.
   calls_to_alpha_beta = 0;
 
@@ -77,18 +66,8 @@ Search_Engine::iterative_deepening
 {
   Score s;
   
-  try 
-    {
-      s = search_with_memory (b, 1, pv);
-    }
-  catch (...)
-    {
-      assert (false);
-    }
-
-  assert (pv.count > 0);
-
-  for (int i = 2; i <= depth; i++) 
+  // Search progressively deeper play until we are interrupted.
+  for (int i = 1; i <= depth; i++) 
     {
       Move_Vector tmp;
       calls_to_alpha_beta = 0;
@@ -106,18 +85,17 @@ Search_Engine::iterative_deepening
 	  break;
 	}
 
-      if (tmp.count > 0)
-	pv = tmp;
+      // If we got back a principle variation, return it to the caller.
+      if (tmp.count > 0) pv = tmp;
 
       cerr << "Completed search to depth " << i << " in " 
       	   << calls_to_alpha_beta << " calls to search." 
       	   << endl;
     }
 
+  // Check that we got at least one move.
   assert (pv.count > 0);
 
-
-  cerr << "Returning move " << pv[0] << endl;
   return pv[0].score;
 }
 
@@ -144,10 +122,15 @@ Search_Engine :: search_with_memory
   /*****************************************************/
 
   found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && entry.depth == depth && b.half_move_clock <= 40)
+  if (found_tt_entry && entry.depth >= depth 
+      && b.half_move_clock <= 48) 
     {
       if (entry.type == TT_Entry::EXACT_VALUE)
-	alpha = entry.move.score;
+	{
+	  //	  pv = Move_Vector (entry.move);
+	  //	  return entry.move.score;
+	  alpha = entry.move.score;
+	}
       
       else if (entry.type == TT_Entry::LOWERBOUND)
 	alpha = max (entry.move.score, alpha);
@@ -166,7 +149,7 @@ Search_Engine :: search_with_memory
   /****************************************************/
   /* Update the transposition table with this result. */
   /****************************************************/
-  if (pv.count > 0 && (!found_tt_entry || depth > entry.depth))
+  if (pv.count > 0 && (!found_tt_entry || depth >= entry.depth))
     {
       pv.push (entry.move);
 
@@ -192,9 +175,10 @@ Score
 Search_Engine :: search 
 (const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta) 
 {
-  pv.clear ();
   bool found_move = false;
   Color player = b.flags.to_move;
+
+  assert (pv.count == 0);
 
   /**************************************/
   /* Abort if we have been interrupted. */
@@ -212,15 +196,6 @@ Search_Engine :: search
   /******************************/
   /* Handle the leaf node case. */
   /******************************/
-
-#if 0
-  if (b.half_move_clock == 49) 
-    {
-      alpha = 0;
-    }
-#endif
-
-  /* If repetition, return draw. */
   
   if (depth == 0) 
     {
@@ -308,10 +283,10 @@ Search_Engine :: search
 	/* Update the history table with this result. */
 	/**********************************************/
 	if (pv.count > 0)
-	  hh_table[player][depth][pv[0].from][pv[0].to] += 1 << depth;
+	  hh_table[player][depth][pv[0].from][pv[0].to] += 1;
       }
   }
-
+  
   return alpha;
 }
 
@@ -326,7 +301,7 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
     {
       // If we previously computed that moves[i] was the best move
       // from this position, make sure it is searched first.
-      if (have_entry && moves[i] == e.move && depth >= e.depth - 1)
+      if (have_entry && depth <= e.depth && moves[i] == e.move)
 	{
 	  moves[i].score = +INF;
 	}
@@ -350,14 +325,21 @@ Search_Engine::qsearch
   Move_Vector moves (b);
   bool found_move = false;
 
+  // Return if the static evaluation for this position causes a
+  // cutoff.
   alpha = max (alpha, eval (b));
   if (depth == 0 || alpha >= beta)
     return alpha;
   
-  for (int i = 0; i < moves.count; i++)
-    moves[i].score = eval_piece (moves[i].capture (b));
+  // Sort moves on a MVV basis.
+  for (int i = 0; i < moves.count; i++) 
+    {
+      if (moves[i].capture (b) == NULL_KIND) continue;
+      moves[i].score = moves[i].capture (b);
+    }
   insertion_sort <Move_Vector, Move, less_than> (moves);
-  
+
+  // Minimax on captures.
   for (int i = 0; i < moves.count; i++)
     {
       if (moves[i].capture (b) == NULL_KIND) continue;

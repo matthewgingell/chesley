@@ -9,7 +9,6 @@
 #ifndef _EVAL_
 #define _EVAL_
 
-
 #include <cstdlib>
 #include <iostream>
 #include "bits64.hpp"
@@ -38,12 +37,12 @@ static const Score CAN_CASTLE_VAL = 10;
 inline Score eval_piece (Kind k) {
   switch (k)
     {
-    case PAWN:      return PAWN_VAL;
-    case ROOK:      return ROOK_VAL;
-    case KNIGHT:    return KNIGHT_VAL;
-    case BISHOP:    return BISHOP_VAL;
-    case QUEEN:     return QUEEN_VAL;
-    default:   return 0;
+    case PAWN:   return PAWN_VAL;
+    case ROOK:   return ROOK_VAL;
+    case KNIGHT: return KNIGHT_VAL;
+    case BISHOP: return BISHOP_VAL;
+    case QUEEN:  return QUEEN_VAL;
+    default:     return 0;
     }
 }
 
@@ -82,9 +81,9 @@ inline Score
 eval (const Board &b, int depth = 0) {
   Score score = 0;
 
-  score += eval_material (b);
-
   if (b.half_move_clock == 50) return 0;
+
+  score += eval_material (b);
 
   /***************************/
   /* Evaluate pawn structure */
@@ -96,20 +95,7 @@ eval (const Board &b, int depth = 0) {
   /* Evaluate positional strength. */
   /*********************************/
 
-  // Do table driven adjustments for individual pieces. Each (color,
-  // piece, location) tuple is assigned a static value and we sum over
-  // the board to obtain an estimate of the value of this position.
-
-#if 1
   score += eval_simple_positional (b);
-#endif
-
-
-#if 0
-  int asw = pop_count (b.attack_set (WHITE));
-  int asb = pop_count (b.attack_set (BLACK));
-  score += (asw - asb) / 5;
-#endif
 
   // Encourage preserving the right to castle.
   score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
@@ -118,15 +104,6 @@ eval (const Board &b, int depth = 0) {
   // Encourage castling, and prefer king side to queen side.
   score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
   score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
-
-  // All else being equal, prefer positions at a shallower rather than
-  // a deeper depth. If we don't do this, minimax will be ambivalent
-  // between winning in 1 move and 2 moves *at every ply* and may
-  // never converge!!!
-
-#if 1
-  score += sign (b.flags.to_move) * (100 - depth);
-#endif
 
 #if 0
   score += random () % 10;
