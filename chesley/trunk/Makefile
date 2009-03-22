@@ -23,6 +23,7 @@ chesley: $(OBJS)
 
 # Create the version number file from svn info.
 vsn.inc: *.hpp *.cpp
+	svn update
 	svn info |  \
 	sed -n 's/Revision: \([0-9]*\)/#define SVN_REVISION \"\1\"/p' > $@
 
