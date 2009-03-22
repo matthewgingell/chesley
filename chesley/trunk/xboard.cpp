@@ -53,7 +53,7 @@ Session::xbd_execute (char *line) {
 	  fprintf (out, "feature sigterm=1\n");
 	  fprintf (out, "feature reuse=1\n");
 	  fprintf (out, "feature analyze=0\n");
-	  fprintf (out, "feature myname=\"Chesley The Chess Engine!\"\n");
+	  fprintf (out, "feature myname=\"Chesley The Chess Engine v 0.3!\"\n");
 	  fprintf (out, "feature colors=0\n");
 	  fprintf (out, "feature ics=1\n");
 	  fprintf (out, "feature name=1\n");

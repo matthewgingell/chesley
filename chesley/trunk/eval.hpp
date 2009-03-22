@@ -84,7 +84,6 @@ eval (const Board &b, int depth = 0) {
 
   if (b.half_move_clock == 50) return 0;
 
-
   /***************************/
   /* Evaluate pawn structure */
   /***************************/
@@ -123,7 +122,7 @@ eval (const Board &b, int depth = 0) {
   // never converge!!!
 
 #if 1
-  score +=  sign (b.flags.to_move) * (100 - depth);
+  score += sign (b.flags.to_move) * (100 - depth);
 #endif
 
 #if 0
