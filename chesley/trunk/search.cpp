@@ -44,7 +44,9 @@ Search_Engine :: new_search
   memset (hh_table, 0, sizeof (hh_table));
 
   // Clear the transposition table.
-#if 0
+  //  tt.clear ();
+
+#if 1
   for (Trans_Table::iterator i = tt.begin (); i != tt.end (); i++) 
     {
       i -> second.depth -= 1;
@@ -429,7 +431,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
   if ((tt.size () > TT_SIZE)) 
-    tt.erase (random64 ());
+    tt.clear ();
     
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
