@@ -43,7 +43,7 @@ void print_board (bitboard b);
 
 enum Color { NULL_COLOR = -1, WHITE = 0, BLACK = 1 };
 
-std::ostream & operator<< (std::ostream &, Color);
+std::ostream & operator<< (std::ostream &os, Color c);
 
 inline Color invert_color (Color c) { 
   return (c == WHITE) ? BLACK : WHITE;
@@ -174,7 +174,7 @@ enum Castling_Right
 /* Chess board state type. */
 /***************************/
 
-std::ostream & operator<< (std::ostream &, const Board &);
+std::ostream & operator<< (std::ostream &os, const Board &b);
 
 struct Board {
 
@@ -647,7 +647,7 @@ struct Board {
 };
 
 // Output human readable board.
-std::ostream & operator<< (std::ostream &, const Board &);
+std::ostream & operator<< (std::ostream &os, const Board &b);
 
 /*****************/
 /* Board vectors */
@@ -755,6 +755,6 @@ inline bool operator== (const Move &lhs, Move &rhs) {
 }
 
 // Output for moves.
-std::ostream & operator<< (std::ostream &, const Move &);
+std::ostream & operator<< (std::ostream &os, const Move &b);
 
 #endif // _BOARD_

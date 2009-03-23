@@ -11,7 +11,8 @@ SRCS = $(wildcard *.cpp)
 ALG =
 
 CXX = g++-mp-4.4
-CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+#CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+CXXFLAGS = -g -Wall -m64 $(ALG)
 
 all: chesley
 
