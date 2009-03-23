@@ -77,6 +77,10 @@ static string_vector rest (const string_vector &in) IS_UNUSED;
 static std::string 
 join (const string_vector &in, const std::string &delim) IS_UNUSED;
 
+// Stream insertion.
+static std::ostream &
+operator<< (std::ostream &os, const string_vector &in) IS_UNUSED;
+
 /***********************/
 /* Character functions */
 /***********************/
@@ -282,6 +286,11 @@ static std::string join
   return out;
 }
 
+// Stream insertion.
+static std::ostream &
+operator<< (std::ostream &os, const string_vector &in) {
+  return os << join (in, ", ");
+}
 
 /****************/
 /* IO functions */

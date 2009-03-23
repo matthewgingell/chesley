@@ -642,9 +642,7 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   //
   // A FEN record contains six fields. The separator between fields is
   // a space. The fields are:
-
-  if (!EPD) assert (toks.size () >= 6);
-
+  //
   // 1. Piece placement (from white's perspective). Each rank is
   // described, starting with rank 8 and ending with rank 1; within
   // each rank, the contents of each square are described from file a
@@ -656,9 +654,10 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   // lowercase ("pnbrqk"). Blank squares are noted using digits 1
   // through 8 (the number of blank squares), and "/" separate ranks.
 
+  if (!toks.size () >= 1) return b;
+
   int row = 7, file = 0;
   string::const_iterator i;
-
   for (i = toks[0].begin (); i < toks[0].end (); i++)
     {
       // Handle a piece code.
@@ -675,6 +674,8 @@ Board::from_fen (const string_vector &toks, bool EPD) {
     }
 
   // 2. Active color. "w" means white moves next, "b" means black.
+  
+  if (!toks.size () >= 2) return b;
 
   b.set_color (tolower (toks[1][0]) == 'w' ? WHITE : BLACK);
 
@@ -688,28 +689,33 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   b.set_castling_right (B_QUEEN_SIDE, false);
   b.set_castling_right (B_KING_SIDE, false);
 
+  if (!toks.size () >= 3) return b;
+
   for (i = toks[2].begin (); i < toks[2].end (); i++)
     {
       switch (*i)
-        {
-        case 'Q': b.set_castling_right (W_QUEEN_SIDE, true); break;
-        case 'K': b.set_castling_right (W_KING_SIDE, true); break;
-        case 'q': b.set_castling_right (B_QUEEN_SIDE, true); break;
-        case 'k': b.set_castling_right (B_KING_SIDE, true); break;
-        }
+	{
+	case 'Q': b.set_castling_right (W_QUEEN_SIDE, true); break;
+	case 'K': b.set_castling_right (W_KING_SIDE, true); break;
+	case 'q': b.set_castling_right (B_QUEEN_SIDE, true); break;
+	case 'k': b.set_castling_right (B_KING_SIDE, true); break;
+	}
     }
 
   // 4. En passant target square in algebraic notation. If there's no
   // en passant target square, this is "-". If a pawn has just made a
   // 2-square move, this is the position "behind" the pawn.
 
-  if (toks.size () >= 3) {
-    if (toks[3][0] != '-') 
-      b.set_en_passant 
-	((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
-  } else {
-    b.set_en_passant (0);
-  }
+  if (!toks.size () >= 4) 
+    {
+      b.set_en_passant (0);
+    }
+  else
+    {
+      if (toks[3][0] != '-') 
+	b.set_en_passant 
+	  ((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
+    }
   
   // These fields are not expected when we are parsing an EPD command.
   if (!EPD)
@@ -719,7 +725,7 @@ Board::from_fen (const string_vector &toks, bool EPD) {
       // pawn advance or capture. This is used to determine if a draw can
       // be claimed under the fifty-move rule.
       
-      if (toks.size () >= 4) {
+      if (toks.size () >= 5) {
 	if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
       } else {
 	b.half_move_clock = 0;
@@ -728,7 +734,7 @@ Board::from_fen (const string_vector &toks, bool EPD) {
       // 6. Fullmove number: The number of the full move. It starts at 1,
       // and is incremented after Black's move.
 
-      if (toks.size () >= 5) {
+      if (toks.size () >= 6) {
 	if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
       } else {
 	b.full_move_clock = 0;
