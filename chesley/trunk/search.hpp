@@ -78,16 +78,19 @@ private:
   Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
 
   // Memoized minimax search.
-  Score search_with_memory (const Board &b, int depth, Move_Vector &pv, 
-			    Score alpha = -INF, Score beta = INF);
+  Score search_with_memory 
+  (const Board &b, int depth, int ply, 
+   Move_Vector &pv, Score alpha = -INF, Score beta = INF);
 
   // Minimax search.
-  Score search (const Board &b, int depth, Move_Vector &pv, 
-		Score alpha = -INF, Score beta = INF);
+  Score search 
+  (const Board &b, int depth, int ply,
+   Move_Vector &pv, Score alpha = -INF, Score beta = INF);
 
   // Quiescence search. 
-  Score qsearch (const Board &b, int depth, 
-		 Score alpha = -INF, Score beta = INF);
+  Score qsearch 
+  (const Board &b, int depth, int ply,
+   Score alpha = -INF, Score beta = INF);
 
   // Heuristically order a list of moves by value.
   inline void order_moves (const Board &b, int depth, Move_Vector &moves);
