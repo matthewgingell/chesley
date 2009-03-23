@@ -27,6 +27,7 @@ static const Score KNIGHT_VAL = 300;
 static const Score PAWN_VAL   = 100;
 
 static const Score MATE_VAL   = 500 * 1000;
+static const Score CONTEMPT_VAL   = 1000;
 
 // Positional values of having castled and retaining the right to
 // castle.
@@ -78,7 +79,7 @@ eval_material (const Board &b) {
 // Evaluate a position statically. Positive scores favor white and
 // negative scores favor black.
 inline Score
-eval (const Board &b, int depth = 0) {
+eval (const Board &b) {
   Score score = 0;
 
   if (b.half_move_clock == 50) return 0;

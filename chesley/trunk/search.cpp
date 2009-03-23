@@ -44,7 +44,7 @@ Search_Engine :: new_search
   memset (hh_table, 0, sizeof (hh_table));
 
   // Clear the transposition table.
-  // tt.clear ();
+  tt.clear ();
 
   // Clear statistics.
   calls_to_alpha_beta = 0;
@@ -66,9 +66,6 @@ Search_Engine::iterative_deepening
 {
   Score s;
   
-
-  // Show thinking.
-
   // Search progressively deeper play until we are interrupted.
   for (int i = 1; i <= depth; i++) 
     {
@@ -77,7 +74,7 @@ Search_Engine::iterative_deepening
 
       try 
 	{
-	  s = search_with_memory (b, i, tmp);
+	  s = search_with_memory (b, i, 0, tmp);
 	  assert (tmp.count > 0);
 	}
       catch (int except)
@@ -90,11 +87,12 @@ Search_Engine::iterative_deepening
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0) pv = tmp;
 
+      // Show thinking.
       cerr << b.full_move_clock << ":" << b.half_move_clock
 	   << ": ply: " << i << " " 
 	   << "score: " << pv[0].score << " ";
       for (int j = 0; j < pv.count; j++)
-	cerr << b.to_calg (pv[j]) << " ";
+	cerr << b.to_calg (pv[j]) << "(" << pv[j].score << ") ";
       cerr << endl;
     }
 
@@ -114,7 +112,8 @@ Search_Engine::iterative_deepening
 
 Score
 Search_Engine :: search_with_memory 
-(const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta) 
+(const Board &b, int depth, int ply, 
+ Move_Vector &pv, Score alpha, Score beta) 
 {
   TT_Entry entry;
   bool found_tt_entry;
@@ -142,7 +141,7 @@ Search_Engine :: search_with_memory
     }
 #endif
 
-  alpha = search (b, depth, pv, alpha, beta);
+  alpha = search (b, depth, ply, pv, alpha, beta);
 
 #if 0
   if (pv.count == 0 && found_tt_entry)
@@ -175,11 +174,13 @@ Search_Engine :: search_with_memory
 #endif
 
   return alpha;
+  
 }
 
 Score
 Search_Engine :: search 
-(const Board &b, int depth, Move_Vector &pv, Score alpha, Score beta) 
+(const Board &b, int depth, int ply, 
+ Move_Vector &pv, Score alpha, Score beta) 
 {
   bool found_move = false;
   Color player = b.flags.to_move;
@@ -199,14 +200,13 @@ Search_Engine :: search
 
   calls_to_alpha_beta++;
 
-  /******************************/
-  /* Handle the leaf node case. */
-  /******************************/
+  /********************************************************/
+  /* Return the result of a quiescence search at depth 0. */
+  /********************************************************/
   
   if (depth == 0) 
     {
-      alpha = qsearch (b, -1, alpha, beta);
-      //      alpha = eval (b);
+      alpha = qsearch (b, -1, ply, alpha, beta);
     }
 
   /*****************************************************/
@@ -215,8 +215,11 @@ Search_Engine :: search
   
   else {
 
-#if 0
-    // Null move heuristic.
+#ifdef ENABLE_NULL_MOVE
+    /************************/
+    /* Null move heuristic. */
+    /************************/
+
     if (depth % 3 == 0) 
       {
 	Move_Vector dummy_pv;
@@ -226,7 +229,7 @@ Search_Engine :: search
 	    Board c = b;
 	    c.set_color (invert_color (player));
 	    int val = -search_with_memory 
-	      (c, rd, dummy_pv, -beta, -beta + 1);
+	      (c, rd, ply + 1, dummy_pv, -beta, -beta + 1);
 	    if (val >= beta)
 	      return beta;
 	  }
@@ -248,7 +251,10 @@ Search_Engine :: search
 	if (c.apply (moves[i]))
 	  {
 	    found_move = true;
-	    int cs = -search_with_memory (c, depth - 1, cpv, -beta, -alpha);
+
+	    // Recursively score the child.
+	    int cs = -search_with_memory 
+	      (c, depth - 1, ply + 1, cpv, -beta, -alpha);
 
 	    if (cs > alpha)
 	      {
@@ -264,7 +270,7 @@ Search_Engine :: search
 	  }
       }
 
-    // If we couldn't find at least one legal move the game is over.
+    // If none of the moves we tried applied, then the game is over.
     if (!found_move)
       {
 	if (b.in_check (player))
@@ -277,11 +283,11 @@ Search_Engine :: search
 	    /* there.                                                */
 	    /*********************************************************/
 
-	    alpha = -MATE_VAL - depth;
+	    alpha = -(MATE_VAL - ply);
 	  }
 	else
 	  {
-	    alpha = 0;
+	    alpha = -(CONTEMPT_VAL - ply);
 	  }
       }
     else
@@ -293,7 +299,7 @@ Search_Engine :: search
 	  hh_table[player][depth][pv[0].from][pv[0].to] += 1;
       }
   }
-  
+
   return alpha;
 }
 
@@ -326,67 +332,65 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
 // Quiescence search. 
 Score 
 Search_Engine::qsearch 
-(const Board &b, int depth, Score alpha, Score beta) 
+(const Board &b, int depth, int ply, 
+ Score alpha, Score beta) 
 {
-  int val = eval (b);
+  alpha = max (alpha, eval (b) - ply);
 
-  if (val >= beta) 
-    return beta;
-
-  if (val > alpha)
-    alpha = val;
-
-  Board c;
-  Move_Vector moves (b);
-  bool found_move = false;
+  if (alpha < beta) 
+    {
+      Board c;
+      Move_Vector moves (b);
+      bool found_move = false;
  
-  // Sort moves on a MVV basis.
-  for (int i = 0; i < moves.count; i++) 
-    {
-      if (moves[i].capture (b) == NULL_KIND) continue;
-      moves[i].score = moves[i].capture (b);
-    }
-  insertion_sort <Move_Vector, Move, less_than> (moves);
-
-  // Minimax on captures.
-  for (int i = 0; i < moves.count; i++)
-    {
-      if (moves[i].capture (b) == NULL_KIND) continue;
-      c = b;
-      if (c.apply (moves[i]))
+      // Sort moves on a MVV basis.
+      for (int i = 0; i < moves.count; i++) 
 	{
-	  found_move = true;
-	  alpha = max (alpha, -qsearch (c, depth - 1, -beta, -alpha));
-	  if (alpha >= beta) break;
+	  if (moves[i].capture (b) == NULL_KIND) continue;
+	  moves[i].score = moves[i].capture (b);
 	}
-    }
+      insertion_sort <Move_Vector, Move, less_than> (moves);
 
-  // We can not ignore non-capturing moves in the case this may be a
-  // draw or checkmate.
-  if (!found_move) 
-    {
-      // Exit if we find at least one legal move.
+      // Minimax on captures.
       for (int i = 0; i < moves.count; i++)
 	{
-	  if (moves[i].capture (b) != NULL_KIND) continue;
+	  if (moves[i].capture (b) == NULL_KIND) continue;
 	  c = b;
-	  if (c.apply (moves[i])) 
+	  if (c.apply (moves[i]))
 	    {
 	      found_move = true;
-	      break;
+	      alpha = max (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
+	      if (alpha >= beta) break;
 	    }
 	}
 
-      // Otherwise, this is check or checkmate. 
-      if (!found_move)
+      // We can not ignore non-capturing moves in the case this may be a
+      // draw or checkmate.
+      if (!found_move) 
 	{
-	  if (b.in_check (b.flags.to_move))
+	  // Exit if we find at least one legal move.
+	  for (int i = 0; i < moves.count; i++)
 	    {
-	      alpha = -MATE_VAL - depth;
+	      if (moves[i].capture (b) != NULL_KIND) continue;
+	      c = b;
+	      if (c.apply (moves[i])) 
+		{
+		  found_move = true;
+		  break;
+		}
 	    }
-	  else 
+
+	  // Otherwise, this is check or checkmate. 
+	  if (!found_move)
 	    {
-	      alpha = 0;
+	      if (b.in_check (b.flags.to_move))
+		{
+		  alpha = -(MATE_VAL - ply);
+		}
+	      else 
+		{
+		  alpha = -(CONTEMPT_VAL - ply);
+		}
 	    }
 	}
     }

@@ -11,8 +11,8 @@ SRCS = $(wildcard *.cpp)
 ALG =
 
 CXX = g++-mp-4.4
-#CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
-CXXFLAGS = -g -Wall -m64 $(ALG)
+CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+#CXXFLAGS = -g -Wall -m64 $(ALG)
 
 all: chesley
 
@@ -32,7 +32,7 @@ play: chesley
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley 
-	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Huge	\
+	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Large	\
 	-mode TwoMachines
 
 # Run an xboard game of Chesley against chesley.old.
