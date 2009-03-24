@@ -1,17 +1,187 @@
-Chesley! v0.01 r67
-> bench 5
-[Move from 1 => 18 -75]
-0.02 seconds elapsed.
-17696 calls_to_alpha_beta.
-> bench 6
-[Move from 1 => 18 100]
+* Findings:
+
+  We get the same scores and moves back for minimax, alphabeta,
+  alphabeta w/ ordering, alphabeta w/ ordering / w/ ordering from
+  transposition tables. 
+
+
+
+All enchancements off:
+
+Chesley! r71
+> bench 3
+[Move from 1 => 18 39]
+0.01 seconds elapsed.
+9323 calls_to_alpha_beta.
+> bench 4
+[Move from 1 => 18 -4]
 0.07 seconds elapsed.
-38757 calls_to_alpha_beta.
+206604 calls_to_alpha_beta.
+> bench 5
+[Move from 12 => 28 90]
+1.48 seconds elapsed.
+5072213 calls_to_alpha_beta.
+> bench 6
+Best move at depth 6: e2e3.
+Best move to depth 6:
+[Move from 12 => 20 -70]
+47.25 seconds elapsed.
+124132537 calls_to_alpha_beta.
+
+Alphabeta:
+Chesley! r71
+> bench 3
+Best move at depth 3: b1c3.
+Best move to depth 3:
+[Move from 1 => 18 39]
+0.00 seconds elapsed.
+4712 calls_to_alpha_beta.
+> bench 4
+Best move at depth 4: b1c3.
+Best move to depth 4:
+[Move from 1 => 18 -4]
+0.02 seconds elapsed.
+51043 calls_to_alpha_beta.
+> bench 5
+Best move at depth 5: e2e4.
+Best move to depth 5:
+[Move from 12 => 28 90]
+0.12 seconds elapsed.
+378402 calls_to_alpha_beta.
+> bench 6
+Best move at depth 6: e2e3.
+Best move to depth 6:
+[Move from 12 => 20 -70]
+1.71 seconds elapsed.
+5577667 calls_to_alpha_beta.
+
+Alphabeta w/ ordering (history heuristic): (chesley.abo)
+
+Chesley! r71
+> bench 3
+Best move at depth 3: b1c3.
+Best move to depth 3:
+[Move from 1 => 18 39]
+0.00 seconds elapsed.
+712 calls_to_alpha_beta.
+> bench 4
+Best move at depth 4: b1c3.
+Best move to depth 4:
+[Move from 1 => 18 -4]
+0.01 seconds elapsed.
+3849 calls_to_alpha_beta.
+> bench 5
+Best move at depth 5: e2e4.
+Best move to depth 5:
+[Move from 12 => 28 90]
+0.03 seconds elapsed.
+36895 calls_to_alpha_beta.
+> bench 6
+Best move at depth 6: e2e3.
+Best move to depth 6:
+[Move from 12 => 20 -70]
+0.08 seconds elapsed.
+141041 calls_to_alpha_beta.
 > bench 7
-[Move from 12 => 28 -66]
-1.04 seconds elapsed.
-1060358 calls_to_alpha_beta.
+Best move at depth 7: e2e3.
+Best move to depth 7:
+[Move from 12 => 20 99]
+0.46 seconds elapsed.
+877151 calls_to_alpha_beta.
 > bench 8
-[Move from 12 => 20 94]
-7.39 seconds elapsed.
-4249225 calls_to_alpha_beta.
+Best move at depth 8: e2e3.
+Best move to depth 8:
+[Move from 12 => 20 -81]
+2.99 seconds elapsed.
+4911813 calls_to_alpha_beta.
+
+Alphabeta w/ ordering (history heuristic && tt): (chesley.abot)
+
+Chesley! r71
+> bench 3
+Best move at depth 3: b1c3.
+Best move to depth 3:
+[Move from 1 => 18 39]
+0.00 seconds elapsed.
+524 calls_to_alpha_beta.
+> bench 4
+Best move at depth 4: b1c3.
+Best move to depth 4:
+[Move from 1 => 18 -4]
+0.00 seconds elapsed.
+1413 calls_to_alpha_beta.
+> bench 5
+Best move at depth 5: e2e4.
+Best move to depth 5:
+[Move from 12 => 28 90]
+0.02 seconds elapsed.
+31977 calls_to_alpha_beta.
+> bench 6
+Best move at depth 6: e2e3.
+Best move to depth 6:
+[Move from 12 => 20 -70]
+0.12 seconds elapsed.
+209578 calls_to_alpha_beta.
+> bench 7
+Best move at depth 7: e2e3.
+Best move to depth 7:
+[Move from 12 => 20 99]
+0.39 seconds elapsed.
+685156 calls_to_alpha_beta.
+> bench 8
+Best move at depth 8: e2e3.
+Best move to depth 8:
+[Move from 12 => 20 -81]
+1.94 seconds elapsed.
+2086716 calls_to_alpha_beta.
+
+Alphabeta w/ ordering (history heuristic && tt) and bounds tightening
+from tt:
+
+Chesley! r71
+> bench 3
+Best move at depth 3: b1c3.
+Best move to depth 3:
+[Move from 1 => 18 39]
+0.00 seconds elapsed.
+524 calls_to_alpha_beta.
+> bench 4
+Best move at depth 4: b1c3.
+Best move to depth 4:
+[Move from 1 => 18 -4]
+0.00 seconds elapsed.
+1413 calls_to_alpha_beta.
+> bench 5
+Best move at depth 5: e2e4.
+Best move to depth 5:
+[Move from 12 => 28 90]
+0.02 seconds elapsed.
+30410 calls_to_alpha_beta.
+> bench 6
+Best move at depth 6: e2e3.
+Best move to depth 6:
+[Move from 12 => 20 -70]
+0.12 seconds elapsed.
+200558 calls_to_alpha_beta.
+> bench 7
+Best move at depth 7: e2e3.
+Best move to depth 7:
+[Move from 12 => 20 99]
+0.33 seconds elapsed.
+562409 calls_to_alpha_beta.
+> bench 8
+Best move at depth 8: e2e3.
+Best move to depth 8:
+[Move from 12 => 20 -81]
+1.47 seconds elapsed.
+1710330 calls_to_alpha_beta.
+
+gingell$ ./chesley
+Chesley! r71
+> bench 10
+Best move at depth 10: e2e3.
+Best move to depth 10:
+[Move from 12 => 20 -87]
+49.58 seconds elapsed.
+41011861 calls_to_alpha_beta.
+
