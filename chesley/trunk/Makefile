@@ -8,7 +8,13 @@ SHELL = /bin/sh
 LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
-ALG =
+
+# Turn on and off various parts of the search algorithm. Options are:
+#
+# ENABLE_TRANS_TABLE, ENABLE_QSEARCH, ENABLE_NULL_MOVE,
+# ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA
+
+ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE
 
 CXX = g++-mp-4.4
 CXXFLAGS = -g -Wall -m64 -O3 $(ALG)

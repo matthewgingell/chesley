@@ -94,6 +94,7 @@ Search_Engine::iterative_deepening
       for (int j = 0; j < pv.count; j++)
 	cerr << b.to_calg (pv[j]) << "(" << pv[j].score << ") ";
       cerr << endl;
+
     }
 
   // Check that we got at least one move.
@@ -115,55 +116,54 @@ Search_Engine :: search_with_memory
 (const Board &b, int depth, int ply, 
  Move_Vector &pv, Score alpha, Score beta) 
 {
-  TT_Entry entry;
-  bool found_tt_entry;
-  Score original_alpha = alpha;
+  Score s;
 
   assert (pv.count == 0);
 
+#ifdef ENABLE_TRANS_TABLE
   /*****************************************************/
   /* Try to find this node in the transposition table. */
   /*****************************************************/
 
-#if 0
+  TT_Entry entry;
+  bool have_exact = false;
+  bool found_tt_entry = false;
   found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && entry.depth == depth 
-      && b.half_move_clock <= 48) 
+  if (found_tt_entry && entry.depth == depth && b.half_move_clock <= 49) 
     {
-      if (entry.type == TT_Entry::EXACT_VALUE)
-	alpha = entry.move.score;
-      
-      else if (entry.type == TT_Entry::LOWERBOUND)
+      if (entry.type == TT_Entry::LOWERBOUND)
 	alpha = max (entry.move.score, alpha);
       
       else if (entry.type == TT_Entry::UPPERBOUND)
 	beta = min (entry.move.score, beta);
+
+      else if (entry.type == TT_Entry::EXACT_VALUE)
+	have_exact = true;
     }
-#endif
 
-  alpha = search (b, depth, ply, pv, alpha, beta);
-
-#if 0
-  if (pv.count == 0 && found_tt_entry)
+  if (have_exact)
     {
       pv.push (entry.move);
+      return entry.move.score;
     }
-#endif
+  else
+#endif /* ENABLE_TRANS_TABLE */
 
+  s = search (b, depth, ply, pv, alpha, beta);
 
-#if 0
+#ifdef ENABLE_TRANS_TABLE
   /****************************************************/
   /* Update the transposition table with this result. */
   /****************************************************/
-  if (pv.count > 0 && (!found_tt_entry || depth >= entry.depth))
+  if (pv.count > 0 && (!found_tt_entry || depth > entry.depth))
     {
       entry.move = pv[0];
       entry.depth = depth;
 
-      if (alpha <= original_alpha) 
+      if (s >= beta) 
 	entry.type = TT_Entry :: LOWERBOUND;
 
-      else if (alpha >= beta)
+      else if (s <= alpha)
 	entry.type = TT_Entry :: UPPERBOUND;
 
       else
@@ -171,10 +171,9 @@ Search_Engine :: search_with_memory
 
       tt_store (b.hash, entry);
     }
-#endif
+#endif/* ENABLE_TRANS_TABLE */
 
-  return alpha;
-  
+  return s;  
 }
 
 Score
@@ -206,7 +205,11 @@ Search_Engine :: search
   
   if (depth == 0) 
     {
+#ifdef ENABLE_QSEARCH
       alpha = qsearch (b, -1, ply, alpha, beta);
+#else
+      alpha = eval (b) - ply;
+#endif /* ENABLE_QSEARCH */
     }
 
   /*****************************************************/
@@ -234,10 +237,13 @@ Search_Engine :: search
 	      return beta;
 	  }
       }
-#endif
+#endif /* ENABLE_NULL_MOVE */
 	
     Move_Vector moves (b);
+
+#ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves);
+#endif
 
     /**************************/
     /* Minimax over children. */
@@ -263,10 +269,13 @@ Search_Engine :: search
 		pv = Move_Vector (moves[i], cpv);
 	      }
 
+#ifdef ENABLE_ALPHA_BETA
 	    if (alpha >= beta)
 	      {
 		break;
 	      }
+#endif /* ENABLE_ALPHA_BETA */
+
 	  }
       }
 
@@ -314,7 +323,7 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
     {
       // If we previously computed that moves[i] was the best move
       // from this position, make sure it is searched first.
-      if (have_entry && depth <= e.depth && moves[i] == e.move)
+      if (have_entry && moves[i] == e.move)
 	{
 	  moves[i].score = +INF;
 	}
@@ -398,7 +407,6 @@ Search_Engine::qsearch
   return alpha;
 }
 
-
 /**********************************************************************/
 /* Transposition tables                                               */
 /*                                                                    */
@@ -425,9 +433,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  if ((tt.size () > TT_SIZE)) 
-    tt.clear ();
-    
+  if ((tt.size () > TT_SIZE)) tt.clear ();
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
