@@ -147,6 +147,14 @@ struct Move_Vector {
   }
 
   Move &operator[] (int i) {
+
+    if (!(i < count))
+      {
+	std::cerr << i << std::endl;
+	std::cerr << (int) count << std::endl;
+	abort();
+      }
+
     assert (i < count);
     return move[i];
   }

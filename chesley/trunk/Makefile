@@ -11,14 +11,15 @@ SRCS = $(wildcard *.cpp)
 
 # Turn on and off various parts of the search algorithm. Options are:
 #
-# ENABLE_TRANS_TABLE, ENABLE_QSEARCH, ENABLE_NULL_MOVE,
-# ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA
+# ENABLE_ASPIRATION, ENABLE_TRANS_TABLE, ENABLE_QSEARCH,
+# ENABLE_NULL_MOVE, ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA
 
-ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE -DENABLE_QSEARCH
+ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
+-DENABLE_QSEARCH -DENABLE_ASPIRATION_WINDOW # -DENABLE_NULL_MOVE
 
+LIBS =
 CXX = g++-mp-4.4
 CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
-#CXXFLAGS = -g -Wall -m64 $(ALG)
 
 all: chesley
 
@@ -38,13 +39,13 @@ play: chesley
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley 
-	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Large	\
+	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Small	\
 	-mode TwoMachines
 
 # Run an xboard game of Chesley against chesley.old.
 playold: chesley
 	xboard -debug -fcp ./chesley -scp ./chesley.old -coords -size	\
-	Huge -mode TwoMachines
+	Small -mode TwoMachines
 
 # Run the test suites.
 check: chesley

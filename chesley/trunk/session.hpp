@@ -66,7 +66,7 @@ struct Session {
   // is over.
   static void cmd_loop ();
 
-private:
+  //private:
 
   /*******************/
   /* Interface mode. */

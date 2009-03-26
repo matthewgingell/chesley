@@ -86,6 +86,16 @@ eval (const Board &b) {
 
   score += eval_material (b);
 
+  /*********************/
+  /* Evaluate mobility */
+  /*********************/
+
+#if 0
+  Score as_white = pop_count (b.attack_set (WHITE));
+  Score as_black = pop_count (b.attack_set (BLACK));
+  score += 5 * (as_white - as_black);
+#endif
+
   /***************************/
   /* Evaluate pawn structure */
   /***************************/

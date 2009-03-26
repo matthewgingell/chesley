@@ -79,13 +79,19 @@ private:
 
   // Memoized minimax search.
   Score search_with_memory 
-  (const Board &b, int depth, int ply, 
-   Move_Vector &pv, Score alpha = -INF, Score beta = INF);
+  (const Board &b, 
+   int depth, int ply, 
+   Move_Vector &pv, 
+   Score alpha = -INF, Score beta = INF,
+   bool do_null_move = true);
 
   // Minimax search.
   Score search 
-  (const Board &b, int depth, int ply,
-   Move_Vector &pv, Score alpha = -INF, Score beta = INF);
+  (const Board &b, 
+   int depth, int ply,
+   Move_Vector &pv, 
+   Score alpha = -INF, Score beta = INF,
+   bool do_null_move = true);
 
   // Quiescence search. 
   Score qsearch 

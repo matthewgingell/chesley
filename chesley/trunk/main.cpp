@@ -20,5 +20,6 @@ int main()
 {
   initialize_all ();
   Session::cmd_loop ();
+
   return 0;
 }

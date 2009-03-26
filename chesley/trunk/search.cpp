@@ -19,6 +19,7 @@ Move
 Search_Engine :: choose_move (Board &b, int depth) {
   Move_Vector pv;
   new_search (b, depth, pv);
+  assert (pv.count > 0);
   return pv[0];
 }
 
@@ -64,7 +65,7 @@ Score
 Search_Engine::iterative_deepening 
 (const Board &b, int depth, Move_Vector &pv) 
 {
-  Score s;
+  Score s = 0;
   
   // Search progressively deeper play until we are interrupted.
   for (int i = 1; i <= depth; i++) 
@@ -74,8 +75,29 @@ Search_Engine::iterative_deepening
 
       try 
 	{
+#ifdef ENABLE_ASPIRATION_WINDOW
+	  const int WINDOW = 25;
+	  const int lower = s - WINDOW;
+	  const int upper = s + WINDOW;
+
+	  // Do an aspiration search.
+	  if (i > 1) 
+	    {
+	      s = search_with_memory 
+		(b, i, 0, tmp, lower, upper);
+
+	      // Search again with a full window if we fail to find
+	      // the best move in the aspiration window, or if this
+	      // search failed to return at least one move.
+	      if (s <= lower || s >= upper || tmp.count == 0)
+		{
+		  tmp.clear ();
+		  s = search_with_memory (b, i, 0, tmp);
+		}
+	    }
+#else
 	  s = search_with_memory (b, i, 0, tmp);
-	  assert (tmp.count > 0);
+#endif /* ENABLE_ASPIRATION_WINDOW */
 	}
       catch (int except)
 	{
@@ -85,16 +107,19 @@ Search_Engine::iterative_deepening
 	}
 
       // If we got back a principle variation, return it to the caller.
-      if (tmp.count > 0) pv = tmp;
-
-      // Show thinking.
-      cerr << b.full_move_clock << ":" << b.half_move_clock
-	   << ": ply: " << i << " " 
-	   << "score: " << pv[0].score << " ";
-      for (int j = 0; j < pv.count; j++)
-	cerr << b.to_calg (pv[j]) << "(" << pv[j].score << ") ";
-      cerr << endl;
-
+      if (tmp.count > 0)
+	{
+	  pv = tmp;
+#if 1
+	  // Show thinking.
+	  cerr << b.full_move_clock << ":" << b.half_move_clock
+	       << " " << pv[0].score
+	       << ": ply: " << i << " ";
+	  for (int j = 0; j < pv.count; j++)
+	    cerr << b.to_calg (pv[j]) << " ";
+	  cerr << endl;
+	}
+#endif
     }
 
   // Check that we got at least one move.
@@ -113,8 +138,11 @@ Search_Engine::iterative_deepening
 
 Score
 Search_Engine :: search_with_memory 
-(const Board &b, int depth, int ply, 
- Move_Vector &pv, Score alpha, Score beta) 
+(const Board &b, 
+ int depth, int ply, 
+ Move_Vector &pv, 
+ Score alpha, Score beta,
+ bool do_null_move)
 {
   Score s;
 
@@ -149,7 +177,7 @@ Search_Engine :: search_with_memory
   else
 #endif /* ENABLE_TRANS_TABLE */
 
-  s = search (b, depth, ply, pv, alpha, beta);
+  s = search (b, depth, ply, pv, alpha, beta, do_null_move);
 
 #ifdef ENABLE_TRANS_TABLE
   /****************************************************/
@@ -178,8 +206,11 @@ Search_Engine :: search_with_memory
 
 Score
 Search_Engine :: search 
-(const Board &b, int depth, int ply, 
- Move_Vector &pv, Score alpha, Score beta) 
+(const Board &b, 
+ int depth, int ply, 
+ Move_Vector &pv, 
+ Score alpha, Score beta,
+ bool do_null_move)
 {
   bool found_move = false;
   Color player = b.flags.to_move;
@@ -203,7 +234,7 @@ Search_Engine :: search
   /* Return the result of a quiescence search at depth 0. */
   /********************************************************/
   
-  if (depth == 0) 
+  if (depth <= 0) 
     {
 #ifdef ENABLE_QSEARCH
       alpha = qsearch (b, -1, ply, alpha, beta);
@@ -223,18 +254,24 @@ Search_Engine :: search
     /* Null move heuristic. */
     /************************/
 
-    if (depth % 3 == 0) 
+    // Since we have not Zugzwang detection, just disable null move if
+    // there are fewer than 15 pieces on the board.
+    if (do_null_move && 
+	pop_count (b.occupied) > 15 &&
+	!b.in_check ((player)))
       {
-	Move_Vector dummy_pv;
-	int rd = depth - 3;
-	if (!b.in_check (player) && rd > 0)
+	Move_Vector dummy;
+	Board c = b;
+	c.set_color (invert_color (player));
+
+	const int R = 3;
+	
+	int val = -search_with_memory 
+	  (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
+
+	if (val >= beta) 
 	  {
-	    Board c = b;
-	    c.set_color (invert_color (player));
-	    int val = -search_with_memory 
-	      (c, rd, ply + 1, dummy_pv, -beta, -beta + 1);
-	    if (val >= beta)
-	      return beta;
+	    return val;
 	  }
       }
 #endif /* ENABLE_NULL_MOVE */
@@ -260,8 +297,8 @@ Search_Engine :: search
 
 	    // Recursively score the child.
 	    int cs = -search_with_memory 
-	      (c, depth - 1, ply + 1, cpv, -beta, -alpha);
-
+	      (c, depth - 1, ply + 1, cpv, -beta, -alpha, !do_null_move);
+	    
 	    if (cs > alpha)
 	      {
 		alpha = cs;
@@ -350,13 +387,12 @@ Search_Engine::qsearch
     {
       Board c;
       Move_Vector moves (b);
-      bool found_move = false;
  
       // Sort moves on a MVV basis.
       for (int i = 0; i < moves.count; i++) 
 	{
 	  if (moves[i].capture (b) == NULL_KIND) continue;
-	  moves[i].score = moves[i].capture (b);
+	  moves[i].score = eval_piece (moves[i].capture (b));
 	}
       insertion_sort <Move_Vector, Move, less_than> (moves);
 
@@ -367,39 +403,8 @@ Search_Engine::qsearch
 	  c = b;
 	  if (c.apply (moves[i]))
 	    {
-	      found_move = true;
 	      alpha = max (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
 	      if (alpha >= beta) break;
-	    }
-	}
-
-      // We can not ignore non-capturing moves in the case this may be a
-      // draw or checkmate.
-      if (!found_move) 
-	{
-	  // Exit if we find at least one legal move.
-	  for (int i = 0; i < moves.count; i++)
-	    {
-	      if (moves[i].capture (b) != NULL_KIND) continue;
-	      c = b;
-	      if (c.apply (moves[i])) 
-		{
-		  found_move = true;
-		  break;
-		}
-	    }
-
-	  // Otherwise, this is check or checkmate. 
-	  if (!found_move)
-	    {
-	      if (b.in_check (b.flags.to_move))
-		{
-		  alpha = -(MATE_VAL - ply);
-		}
-	      else 
-		{
-		  alpha = -(CONTEMPT_VAL - ply);
-		}
 	    }
 	}
     }
