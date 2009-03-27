@@ -99,7 +99,7 @@ Search_Engine::iterative_deepening
       s = search_with_memory (b, i, 0, tmp);
 #endif /* ENABLE_ASPIRATION_WINDOW */
 
-      if (s == SEARCH_INTERRUPTED)
+      if (interrupt_search)
 	{
 	  cerr << "search interrupted at depth = " << i << endl;
 	  break;
@@ -499,10 +499,6 @@ Search_Engine::is_triple_rep (const Board &b) {
     {
       int count = i -> second;
       assert (count >= 0 && count < 4);
-
-      if (count == 3)
-	cerr << "hit a triple rep." << endl;
-
       return (count == 3);
     }
 }
