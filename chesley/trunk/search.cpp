@@ -91,15 +91,19 @@ Search_Engine::iterative_deepening
 	      s = search_with_memory (b, i, 0, tmp);
 	    }
 	}
+      else
+	{
+	  s = search_with_memory (b, i, 0, tmp);
+	}
 #else
       s = search_with_memory (b, i, 0, tmp);
+#endif /* ENABLE_ASPIRATION_WINDOW */
 
       if (s == SEARCH_INTERRUPTED)
 	{
 	  cerr << "search interrupted at depth = " << i << endl;
 	  break;
 	}
-#endif /* ENABLE_ASPIRATION_WINDOW */
 
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0)
@@ -220,7 +224,7 @@ Search_Engine :: search
   /**********************************************/
 
   if (b.half_move_clock == 50 || is_triple_rep (b))
-    return -(CONTEMPT_VAL - ply);
+    return 0; // -(CONTEMPT_VAL - ply);
 
   /**************************************/
   /* Abort if we have been interrupted. */
@@ -338,7 +342,7 @@ Search_Engine :: search
 	  }
 	else
 	  {
-	    alpha = -(CONTEMPT_VAL - ply);
+	    alpha = 0; // -(CONTEMPT_VAL - ply);
 	  }
       }
     else
