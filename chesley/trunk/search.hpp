@@ -45,6 +45,15 @@ struct Search_Engine {
 
   Trans_Table tt;
 
+  /*********************/
+  /* Repetition table. */
+  /*********************/
+  
+  // A table type mapping from a 64-bit key to a repetition count.
+  typedef boost::unordered_map <hash_t, int> Rep_Table;
+
+  Rep_Table rt;
+
   /*****************/
   /* Search state. */
   /*****************/
@@ -65,6 +74,19 @@ struct Search_Engine {
 
   // Choose a move, score it, and return it.
   Move choose_move (Board &b, int32 depth = -1);
+
+  /*********************************/
+  /* Triple repetition management. */
+  /*********************************/
+
+  // Add an entry to the repetition table. 
+  void rt_push (const Board &b);
+  
+  // Remove an entry to the repetition table. 
+  void rt_pop (const Board &b);
+  
+  // Test whether this board is a third repetition.
+  bool is_triple_rep (const Board &b);
 
 private:
 

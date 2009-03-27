@@ -78,6 +78,7 @@ Session::xbd_execute (char *line) {
       if (token == "new")
 	{
 	  board = Board :: startpos ();
+	  se.rt.clear ();
 	  our_color = BLACK;
 	  running = true;
 	}
