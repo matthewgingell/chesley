@@ -27,8 +27,6 @@ Search_Engine :: choose_move (Board &b, int depth) {
 /* Private implementation */
 /**************************/
 
-const int SEARCH_INTERRUPTED = 0x01;
-
 /**********************************************************************/
 /* Search_Engine :: new_search ()                                     */
 /*                                                                    */
@@ -73,38 +71,35 @@ Search_Engine::iterative_deepening
       Move_Vector tmp;
       calls_to_alpha_beta = 0;
 
-      try 
-	{
 #ifdef ENABLE_ASPIRATION_WINDOW
-	  const int WINDOW = 25;
-	  const int lower = s - WINDOW;
-	  const int upper = s + WINDOW;
+      const int WINDOW = 25;
+      const int lower = s - WINDOW;
+      const int upper = s + WINDOW;
 
-	  // Do an aspiration search.
-	  if (i > 1) 
-	    {
-	      s = search_with_memory 
-		(b, i, 0, tmp, lower, upper);
-
-	      // Search again with a full window if we fail to find
-	      // the best move in the aspiration window, or if this
-	      // search failed to return at least one move.
-	      if (s <= lower || s >= upper || tmp.count == 0)
-		{
-		  tmp.clear ();
-		  s = search_with_memory (b, i, 0, tmp);
-		}
-	    }
-#else
-	  s = search_with_memory (b, i, 0, tmp);
-#endif /* ENABLE_ASPIRATION_WINDOW */
-	}
-      catch (int except)
+      // Do an aspiration search.
+      if (i > 1) 
 	{
-	  assert (except == SEARCH_INTERRUPTED);
-	  cerr << "caught exception at depth = " << i << endl;
+	  s = search_with_memory 
+	    (b, i, 0, tmp, lower, upper);
+
+	  // Search again with a full window if we fail to find the
+	  // best move in the aspiration window or if this search
+	  // failed to return at least one move.
+	  if (s <= lower || s >= upper || tmp.count == 0)
+	    {
+	      tmp.clear ();
+	      s = search_with_memory (b, i, 0, tmp);
+	    }
+	}
+#else
+      s = search_with_memory (b, i, 0, tmp);
+
+      if (s == SEARCH_INTERRUPTED)
+	{
+	  cerr << "search interrupted at depth = " << i << endl;
 	  break;
 	}
+#endif /* ENABLE_ASPIRATION_WINDOW */
 
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0)
@@ -113,6 +108,7 @@ Search_Engine::iterative_deepening
 #if 1
 	  // Show thinking.
 	  cerr << b.full_move_clock << ":" << b.half_move_clock
+	       << " " << calls_to_alpha_beta
 	       << " " << pv[0].score
 	       << ": ply: " << i << " ";
 	  for (int j = 0; j < pv.count; j++)
@@ -121,10 +117,10 @@ Search_Engine::iterative_deepening
 	}
 #endif
     }
-
+  
   // Check that we got at least one move.
   assert (pv.count > 0);
-
+  
   return pv[0].score;
 }
 
@@ -177,7 +173,9 @@ Search_Engine :: search_with_memory
   else
 #endif /* ENABLE_TRANS_TABLE */
 
+  rt_push (b);
   s = search (b, depth, ply, pv, alpha, beta, do_null_move);
+  rt_pop (b);
 
 #ifdef ENABLE_TRANS_TABLE
   /****************************************************/
@@ -217,12 +215,19 @@ Search_Engine :: search
 
   assert (pv.count == 0);
 
+  /**********************************************/
+  /* Check 50 move and triple repitition rules. */
+  /**********************************************/
+
+  if (b.half_move_clock == 50 || is_triple_rep (b))
+    return -(CONTEMPT_VAL - ply);
+
   /**************************************/
   /* Abort if we have been interrupted. */
   /**************************************/
   
   if (interrupt_search)
-    throw (SEARCH_INTERRUPTED);
+    return SEARCH_INTERRUPTED;
 
   /**********************/
   /* Update statistics. */
@@ -391,7 +396,8 @@ Search_Engine::qsearch
       // Sort moves on a MVV basis.
       for (int i = 0; i < moves.count; i++) 
 	{
-	  if (moves[i].capture (b) == NULL_KIND) continue;
+	  if (moves[i].capture (b) == NULL_KIND) 
+	    continue;
 	  moves[i].score = eval_piece (moves[i].capture (b));
 	}
       insertion_sort <Move_Vector, Move, less_than> (moves);
@@ -403,8 +409,10 @@ Search_Engine::qsearch
 	  c = b;
 	  if (c.apply (moves[i]))
 	    {
-	      alpha = max (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
-	      if (alpha >= beta) break;
+	      alpha = max 
+		(alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
+	      if (alpha >= beta) 
+		break;
 	    }
 	}
     }
@@ -442,3 +450,56 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
+
+/**********************************************************************/
+/* Repetition tables.                                                 */
+/*                                                                    */
+/* Operations on repetition tables. These are used to enforce the     */
+/* triple Repetition rule.                                            */
+/**********************************************************************/
+
+// Add an entry to the repetition table. 
+void
+Search_Engine::rt_push (const Board &b) {
+  Rep_Table::iterator i = rt.find (b.hash);
+
+  if (i == rt.end ())
+    {
+      rt[b.hash] = 1;
+    }
+  else
+    {
+      i -> second += 1;
+    }
+}
+
+// Remove an entry to the repetition table. 
+void
+Search_Engine::rt_pop (const Board &b) {
+  Rep_Table::iterator i = rt.find (b.hash);
+
+  assert (i != rt.end ());
+  i -> second -= 1;
+}
+
+// Test whether this board is a third repetition.
+bool
+Search_Engine::is_triple_rep (const Board &b) {
+  Rep_Table::iterator i = rt.find (b.hash);
+
+  if (i == rt.end ()) 
+    {
+      return false;
+    }
+  else
+    {
+      int count = i -> second;
+      assert (count >= 0 && count < 4);
+
+      if (count == 3)
+	cerr << "hit a triple rep." << endl;
+
+      return (count == 3);
+    }
+}
+

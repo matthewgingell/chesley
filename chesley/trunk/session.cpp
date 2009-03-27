@@ -19,7 +19,7 @@
 #include "chesley.hpp"
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = .1 * 1000; 
+const int TIME_OUT = 1 * 1000; 
 
 using namespace std;
 
@@ -158,14 +158,14 @@ Session::cmd_loop ()
 void
 Session::work ()
 {
-  Status s = get_status ();  
+  // If we aren't running, return and block for input.
+  if (!running) 
+    return;
+
+  Status s = get_status ();
 
   // If the game is over, return and block for input.
   if (s != GAME_IN_PROGRESS) 
-    return;
-
-  // If we aren't running, return and block for input.
-  if (!running) 
     return;
 
   // If it isn't our turn, return and block for input.
@@ -183,9 +183,12 @@ Session::work ()
 
       // Apply the move.
       bool applied = board.apply (m);
-      
+
       // We should never get back a move that doesn't apply.
       assert (applied);
+
+      // Add this move to the triple repetition table.
+      se.rt_push (board);
 
       // Send the move to the client.
       fprintf (out, "move %s\n", board.to_calg (m).c_str ());
@@ -208,8 +211,9 @@ Session :: get_status () {
   if (board.half_move_clock == 50) 
     return GAME_DRAW;
 
-  // Check for triple repetition.
-  // if (TODO) return GAME_DRAW;
+  // Check for a triple repetition.
+  if (se.is_triple_rep (board)) 
+    return GAME_DRAW;
 
   // Check whether there are any moves legal moves for the current
   // player from this position
