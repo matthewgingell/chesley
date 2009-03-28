@@ -14,7 +14,7 @@ using namespace std;
 /* Public interface */
 /********************/
 
-// Compute the principal variation and return it's first move.
+// Compute the principal variation and return its first move.
 Move
 Search_Engine :: choose_move (Board &b, int depth) {
   Move_Vector pv;
@@ -41,13 +41,14 @@ Search_Engine :: new_search
 {
   // Clear the history table.
   memset (hh_table, 0, sizeof (hh_table));
-
+  
   // Clear the transposition table.
   tt.clear ();
-
+  
   // Clear statistics.
-  calls_to_alpha_beta = 0;
-
+  calls_to_search = 0;
+  calls_to_qsearch = 0;
+  
   return iterative_deepening (b, depth, pv);
 }
 
@@ -69,7 +70,8 @@ Search_Engine::iterative_deepening
   for (int i = 1; i <= depth; i++) 
     {
       Move_Vector tmp;
-      calls_to_alpha_beta = 0;
+      calls_to_search = 0;
+      calls_to_qsearch = 0;
 
 #ifdef ENABLE_ASPIRATION_WINDOW
       const int WINDOW = 25;
@@ -81,7 +83,7 @@ Search_Engine::iterative_deepening
 	{
 	  s = search_with_memory 
 	    (b, i, 0, tmp, lower, upper);
-
+	  
 	  // Search again with a full window if we fail to find the
 	  // best move in the aspiration window or if this search
 	  // failed to return at least one move.
@@ -112,7 +114,8 @@ Search_Engine::iterative_deepening
 #if 1
 	  // Show thinking.
 	  cerr << b.full_move_clock << ":" << b.half_move_clock
-	       << " " << calls_to_alpha_beta
+	       << " " << calls_to_search 
+	       << " " << calls_to_qsearch 
 	       << " " << pv[0].score
 	       << ": ply: " << i << " ";
 	  for (int j = 0; j < pv.count; j++)
@@ -126,6 +129,36 @@ Search_Engine::iterative_deepening
   assert (pv.count > 0);
   
   return pv[0].score;
+}
+
+// Search driver.
+Score 
+Search_Engine::MTDf (const Board &b, Score guess, int depth, Move_Vector pv) {
+  Score g = guess;
+  Score upperbound = +INF, lowerbound = -INF;
+  
+  do
+    {
+      cerr << g << endl;
+
+      int beta;
+      Move_Vector dummy;
+      if (g == lowerbound) beta = g + 1; else beta = g;
+      g = search_with_memory 
+	(b, depth, 0, dummy, beta - 1, beta + 1, true);
+      if (g < beta) upperbound = g; else lowerbound = g;
+    }
+  while (lowerbound < upperbound);
+
+  search_with_memory 
+    (b, depth, 0, pv, g - 1, g + 1, false);
+
+  cerr << "pv: " << pv << endl;
+
+  cerr << tt[b.hash].move << endl;
+
+
+  return g;
 }
 
 /***********************************************************************/
@@ -157,7 +190,10 @@ Search_Engine :: search_with_memory
   bool have_exact = false;
   bool found_tt_entry = false;
   found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && entry.depth == depth && b.half_move_clock <= 49) 
+  if (found_tt_entry && 
+      entry.depth == depth && 
+      // Try to deal with the graph history problem:
+      b.half_move_clock < 50 && rep_count (b) < 3) 
     {
       if (entry.type == TT_Entry::LOWERBOUND)
 	alpha = max (entry.move.score, alpha);
@@ -237,7 +273,7 @@ Search_Engine :: search
   /* Update statistics. */
   /**********************/
 
-  calls_to_alpha_beta++;
+  calls_to_search++;
 
   /********************************************************/
   /* Return the result of a quiescence search at depth 0. */
@@ -321,7 +357,6 @@ Search_Engine :: search
 		break;
 	      }
 #endif /* ENABLE_ALPHA_BETA */
-
 	  }
       }
 
@@ -390,26 +425,51 @@ Search_Engine::qsearch
 (const Board &b, int depth, int ply, 
  Score alpha, Score beta) 
 {
+  /**********************/
+  /* Update statistics. */
+  /**********************/
+
+  calls_to_qsearch++;
+
+  /**************************************/
+  /* Do static evaluation at this node. */
+  /**************************************/
+
   alpha = max (alpha, eval (b) - ply);
+
+  /**************************************/
+  /* Recurse and minimax over children. */ 
+  /**************************************/
 
   if (alpha < beta) 
     {
       Board c;
-      Move_Vector moves (b);
- 
-      // Sort moves on a MVV basis.
+      Move_Vector moves;
+      
+      b.gen_captures (moves);
+
+      /******************/
+      /* Sort captures. */
+      /******************/
+
       for (int i = 0; i < moves.count; i++) 
 	{
-	  if (moves[i].capture (b) == NULL_KIND) 
-	    continue;
+	  assert (moves[i].capture (b) != NULL_KIND);
 	  moves[i].score = eval_piece (moves[i].capture (b));
 	}
       insertion_sort <Move_Vector, Move, less_than> (moves);
 
-      // Minimax on captures.
+      //      cerr << moves << endl;
+      
+      /**************************/
+      /* Minimax over captures. */
+      /**************************/
+
       for (int i = 0; i < moves.count; i++)
 	{
-	  if (moves[i].capture (b) == NULL_KIND) continue;
+	  if (moves[i].capture (b) == NULL_KIND) 
+	    continue;
+
 	  c = b;
 	  if (c.apply (moves[i]))
 	    {
@@ -484,6 +544,20 @@ Search_Engine::rt_pop (const Board &b) {
 
   assert (i != rt.end ());
   i -> second -= 1;
+}
+
+// Fetch the repetition count for a position. 
+int
+Search_Engine::rep_count (const Board &b) {
+  Rep_Table::iterator i = rt.find (b.hash);
+  if (i == rt.end ()) 
+    {
+      return 0;
+    }
+  else
+    {
+      return i -> second;
+    }
 }
 
 // Test whether this board is a third repetition.

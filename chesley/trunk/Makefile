@@ -20,7 +20,6 @@ ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
 LIBS =
 CXX = g++-mp-4.4
 CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
-#CXXFLAGS = -g -Wall $(ALG)
 
 all: chesley
 

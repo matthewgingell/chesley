@@ -63,9 +63,11 @@ Session::debug_execute (char *line) {
 		   << "beta:" << beta 
 		   << ")" << endl;
 
-	      se.calls_to_alpha_beta = 0;
-	      //	      cerr << se.alpha_beta (board, depth, alpha, beta) << endl;
-	      fprintf (out, "%lli calls_to_alpha_beta.\n", se.calls_to_alpha_beta);
+	      se.calls_to_search = 0;
+	      se.calls_to_qsearch = 0;
+
+	      fprintf (out, "%lli calls_to_search.\n", se.calls_to_search);
+	      fprintf (out, "%lli calls_to_qsearch.\n", se.calls_to_qsearch);
 	    }
 	}
     }
@@ -97,7 +99,8 @@ Session::bench (const string_vector &tokens) {
 
   fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
 
-  fprintf (out, "%lli calls_to_alpha_beta.\n", se.calls_to_alpha_beta);
+  fprintf (out, "%lli calls_to_search.\n", se.calls_to_search);
+  fprintf (out, "%lli calls_to_qsearch.\n", se.calls_to_qsearch);
 
   return true;
 }
