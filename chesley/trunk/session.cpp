@@ -19,7 +19,7 @@
 #include "chesley.hpp"
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 1 * 1000; 
+const int TIME_OUT = 0.1 * 1000; 
 
 using namespace std;
 
@@ -275,7 +275,7 @@ Move
 Session::find_a_move () {
   se.interrupt_search = false;
   timeout = mclock () + TIME_OUT;
-  return se.choose_move (board, 100);
+  return se.choose_move (board, 99);
 }
 
 /*************************************/

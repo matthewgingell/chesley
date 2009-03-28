@@ -626,6 +626,7 @@ struct Board {
   /***************************************/
 
   void gen_all_moves (Move_Vector &moves) const;
+  void gen_captures (Move_Vector &moves) const;
 
   inline void gen_pawn_moves   (Move_Vector &moves) const;
   inline void gen_rook_moves   (Move_Vector &moves) const;
@@ -715,7 +716,14 @@ Move::get_kind (const Board &b) const {
 // such piece.
 inline Kind 
 Move::capture (const Board &b) const {
-  return b.get_kind (to);
+  if (is_en_passant (b))
+    {
+      return PAWN;
+    }
+  else
+    {
+      return b.get_kind (to);
+    }
 }
 
 // Is this move an en passant capture.

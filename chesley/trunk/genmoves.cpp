@@ -30,6 +30,204 @@ Board::gen_all_moves (Move_Vector &out) const
   gen_king_moves (out);
 }
 
+// Generate captures
+void
+Board::gen_captures (Move_Vector &out) const
+{
+  Color c = flags.to_move;
+
+  /***************************/
+  /* Generate pawn captures. */
+  /***************************/
+
+  bitboard our_pawns = pawns & our_pieces ();
+  while (our_pawns)
+    {
+      bitboard from = clear_msbs (our_pawns);
+      bitboard to;
+
+      if (c == WHITE)
+	{
+	  // Capture forward right.
+	  to |= ((from & ~file(0)) << 7) & black;
+
+	  // Capture forward left.
+	  to |= ((from & ~file(7)) << 9) & black;
+
+	  // Pawns which can reach the En Passant square.
+	  if (flags.en_passant != 0 &&
+	      ((bit_idx ((from & ~file(0)) << 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file(7)) << 9) == flags.en_passant)))
+	    {
+	      to |= masks_0[flags.en_passant];
+	    }
+	}
+      else
+	{
+	  // Capture forward left.
+	  to |= ((from & ~file(7)) >> 7) & white;
+
+	  // Capture forward right.
+	  to |= ((from & ~file(0)) >> 9) & white;
+
+	  // Pawns which can reach the En Passant square.
+	  if (flags.en_passant != 0 &&
+	      ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file(0)) >> 9) == flags.en_passant)))
+	    {
+	      to |= masks_0[flags.en_passant];
+	    }
+	}
+
+      // Collect each destination in the moves list.
+      while (to)
+	{
+	  int to_idx = bit_idx (to);
+
+	  Move m (bit_idx (from), to_idx);
+	  // Handle non-promotion case;
+	  out.push (m);
+
+	  to = clear_lsb (to);
+	}
+      our_pawns = clear_lsb (our_pawns);
+    }
+
+  /***************************/
+  /* Generate rook captures. */
+  /***************************/
+
+  bitboard our_rooks = rooks & our_pieces ();
+
+  // For each rook
+  while (our_rooks)
+    {
+      int from = bit_idx (our_rooks);
+
+      bitboard to =
+	(RANK_ATTACKS_TBL[from * 256 + occ_0 (from)] |
+	 FILE_ATTACKS_TBL[from * 256 + occ_90 (from)])
+	& ~our_pieces ();
+
+      to &= other_pieces ();
+
+      // Collect each destination in the moves list.
+      while (to)
+	{
+	  int to_idx = bit_idx (to);
+	  out.push (Move (from,  to_idx));
+	  to = clear_lsb (to);
+	}
+
+      our_rooks = clear_lsb (our_rooks);
+    }
+  
+  /*****************************/
+  /* Generate knight captures. */
+  /*****************************/
+
+  bitboard our_knights = knights & our_pieces ();
+
+  // For each knight:
+  while (our_knights)
+    {
+      int from = bit_idx (our_knights);
+      bitboard to = KNIGHT_ATTACKS_TBL[from] & ~our_pieces ();
+      to &= other_pieces ();
+
+      // Collect each destination in the moves list.
+      while (to)
+	{
+	  int to_idx = bit_idx (to);
+	  out.push (Move (from, to_idx));
+	  to = clear_lsb (to);
+	}
+      our_knights = clear_lsb (our_knights);
+    }
+
+  /*****************************/
+  /* Generate bishop captures. */
+  /*****************************/
+
+  bitboard our_bishops = bishops & our_pieces ();
+  
+  // For each bishop;
+  while (our_bishops)
+    {
+      // Look up destinations in moves table and collect each in 'out'.
+      int from = bit_idx (our_bishops);
+      bitboard to;
+
+      to = (DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
+	    DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
+	& ~our_pieces ();
+
+      to &= other_pieces ();
+
+      // Collect each destination in the moves list.
+      while (to)
+	{
+	  int to_idx = bit_idx (to);
+	  out.push (Move (from, to_idx));
+	  to = clear_lsb (to);
+	}
+      our_bishops = clear_lsb (our_bishops);
+    }
+
+  /****************************/
+  /* Generate queen captures. */
+  /****************************/
+
+  bitboard our_queens = queens & our_pieces ();
+
+  // For each queen.
+  while (our_queens)
+    {
+      // Look up destinations in moves table and collect each in 'out'.
+      int from = bit_idx (our_queens);
+
+      bitboard to =
+	(RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
+	 | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
+	 | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
+	 | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
+	& ~our_pieces ();
+
+      to &= other_pieces ();
+
+      // Collect each destination in the moves list.
+      while (to)
+	{
+	  int to_idx = bit_idx (to);
+	  out.push (Move (from,  to_idx));
+	  to = clear_lsb (to);
+	}
+      our_queens = clear_lsb (our_queens);
+    }
+  
+  /***************************/
+  /* Generate king captures. */
+  /***************************/
+
+  bitboard our_king = kings & our_pieces ();
+
+  if (our_king)
+    {
+      int from = bit_idx (our_king);
+      bitboard to = KING_ATTACKS_TBL[from] & ~our_pieces ();
+      to &= other_pieces ();
+
+      // Collect each destination in the moves list.
+      while (to)
+	{
+	  int to_idx = bit_idx (to);
+	  out.push (Move (from,  to_idx));
+	  to = clear_lsb (to);
+	}
+    }
+}
+
+
 // Generate the number of moves available at ply d. Used for debugging
 // the move generator.
 uint64

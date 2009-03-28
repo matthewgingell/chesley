@@ -25,7 +25,8 @@ struct Search_Engine {
 
   Search_Engine () {
     interrupt_search = false;
-    calls_to_alpha_beta = 0;
+    calls_to_search = 0;
+    calls_to_qsearch = 0;
     memset (hh_table, 0, sizeof (hh_table));
     tt.rehash (TT_SIZE);
   }
@@ -65,9 +66,10 @@ struct Search_Engine {
   /* Statistics. */
   /***************/
 
-  // Count the number of times alpha beta has been called.
-  uint64 calls_to_alpha_beta;
-
+  // Count the number of times search and qsearch have been called.
+  uint64 calls_to_search; 
+  uint64 calls_to_qsearch; 
+  
   /************/
   /* Queries. */
   /************/
@@ -84,6 +86,9 @@ struct Search_Engine {
   
   // Remove an entry to the repetition table. 
   void rt_pop (const Board &b);
+
+  // Fetch the repetition count for a position.
+  int rep_count (const Board &b);
   
   // Test whether this board is a third repetition.
   bool is_triple_rep (const Board &b);
@@ -99,6 +104,9 @@ private:
   // Search repeatedly from depth 1 to 'depth.;
   Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
 
+  // Search driver.
+  Score MTDf (const Board &b, Score guess, int depth, Move_Vector pv);
+  
   // Memoized minimax search.
   Score search_with_memory 
   (const Board &b, 
