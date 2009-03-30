@@ -525,7 +525,11 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Store an entry in the transposition table.
 inline void
 Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  if ((tt.size () > TT_SIZE)) tt.clear ();
+  if ((tt.size () > TT_SIZE)) 
+    {
+      cerr << "Garbage collecting..." << endl;
+      tt.clear ();
+    }
   tt.erase (hash);
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
@@ -542,6 +546,8 @@ void
 Search_Engine::rt_push (const Board &b) {
   Rep_Table::iterator i = rt.find (b.hash);
 
+  assert (rt.size () < 1000);
+
   if (i == rt.end ())
     {
       rt[b.hash] = 1;
@@ -556,9 +562,9 @@ Search_Engine::rt_push (const Board &b) {
 void
 Search_Engine::rt_pop (const Board &b) {
   Rep_Table::iterator i = rt.find (b.hash);
-
   assert (i != rt.end ());
   i -> second -= 1;
+  if (i -> second == 0) rt.erase (b.hash);
 }
 
 // Fetch the repetition count for a position. 
