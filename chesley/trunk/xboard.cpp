@@ -77,7 +77,9 @@ Session::xbd_execute (char *line) {
 
       if (token == "new")
 	{
+	  collect_new_game ();
 	  board = Board :: startpos ();
+	  collect_statistics ();
 	  se.rt.clear ();
 	  our_color = BLACK;
 	  running = true;
@@ -203,6 +205,7 @@ Session::xbd_execute (char *line) {
 	  Move m = board.from_calg (tokens[1]);
 
 	  bool applied = board.apply (m);
+	  collect_statistics ();
 
 	  // The client should never pass us a move that doesn't
 	  // apply.

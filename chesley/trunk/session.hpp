@@ -84,6 +84,18 @@ struct Session {
 
   static Search_Engine se;
 
+  /**************/
+  /* Statistics */
+  /**************/
+
+  static void collect_new_game ();
+  static void collect_statistics ();
+  static void collect_game_over ();
+
+  static int counts_this_game [6][64];
+  static int counts_all_games [6][64];
+  static int num_games;
+
   /**************************************/
   /* I/O handling and command dispatch. */
   /**************************************/
@@ -146,6 +158,8 @@ struct Session {
 
   // Play a game with engine taking both sides.
   static bool play_self (const string_vector &tokens);
+
+  static bool  gen_stats (const string_vector &tokens);
 
   // Check that hash keys are correctly generated to depth 'd'.
   static void test_hashing (int d);
