@@ -31,7 +31,7 @@ chesley: vsn.inc $(OBJS)
 vsn.inc: *.cpp *.hpp
 	svn info -r HEAD |  \
 	sed -n 's/Revision: \([0-9]*\)/#define SVN_REVISION \"\1\"/p' > $@
-	touch session.cpp
+#	touch session.cpp
 
 # Run an xboard game with chesley.
 play: chesley
@@ -39,13 +39,13 @@ play: chesley
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley 
-	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Small	\
+	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Huge	\
 	-mode TwoMachines
 
 # Run an xboard game of Chesley against chesley.old.
 playold: chesley
 	xboard -debug -fcp ./chesley -scp ./chesley.old -coords -size	\
-	Small -mode TwoMachines
+	Huge -mode TwoMachines
 
 # Run the test suites.
 check: chesley

@@ -13,7 +13,6 @@
 
 using namespace std;
 
-
 /**************************************/
 /* Parse and execute a debug command. */
 /**************************************/
@@ -148,6 +147,30 @@ Session::play_self (const string_vector &tokens)
   return true;
 }
 
+bool
+Session::gen_stats (const string_vector &tokens)
+{
+  Status s;
+
+  while (1)
+    {
+      board = Board::startpos ();
+      collect_new_game ();
+      se.rt.clear ();
+      se.tt.clear ();
+      do
+	{
+	  Move m = find_a_move ();
+	  assert (board.apply (m));
+	  collect_statistics ();
+	  se.rt_push (board);
+	  s = get_status ();
+	} while  (s == GAME_IN_PROGRESS);
+      handle_end_of_game (s);
+    }
+
+  return true;
+}
 
 // Check that hash keys are correctly generated to depth 'd'.
 int

@@ -12,6 +12,7 @@
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <iomanip>
 #include <signal.h>
 #include <string>
 #include <sys/time.h>
@@ -19,7 +20,7 @@
 #include "chesley.hpp"
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 0.1 * 1000; 
+const int TIME_OUT = 90 * 1000; 
 
 using namespace std;
 
@@ -48,6 +49,11 @@ Search_Engine Session::se;
 bool        Session::running;
 uint64      Session::timeout;
 const char *Session::prompt;
+
+// Statistics.
+int Session::counts_this_game [6][64];
+int Session::counts_all_games [6][64];
+int Session::num_games;
 
 /******************************/
 /* Initialize the environment */
@@ -90,7 +96,114 @@ Session::init_session () {
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
 
+  // Initialize statistics.
+  memset (counts_this_game, 0, sizeof (counts_this_game));
+  memset (counts_all_games, 0, sizeof (counts_all_games));
+  num_games = 0;
+
   return;
+}
+
+// Called each time a game begins.
+void
+Session::collect_new_game () {
+  cerr << "collecting new game" << endl;
+  memset (counts_this_game, 0, sizeof (counts_this_game));
+  num_games++;
+}
+
+// Called after each move application.
+void 
+Session::collect_statistics () {
+  if (board.flags.to_move == WHITE)
+    {
+      for (int k = PAWN; k <= KING; k++)
+	{
+	  bitboard pieces = 
+	    board.kind_to_board ((Kind) k) & board.white;
+	  
+	  while (pieces)
+	    {
+	      int loc = bit_idx (pieces);
+	      counts_this_game [k][loc]++;
+	      pieces = clear_lsb (pieces);
+	    }
+	}
+    }
+}
+
+// Called when the a game ends.
+void 
+Session::collect_game_over () {
+  cerr << "collecting game over." << endl;
+  
+  Status s = get_status ();
+  int sign;
+
+  // We count net wins for white.
+  if (s == GAME_WIN_WHITE) 
+    sign = 1;
+  else if (s == GAME_WIN_BLACK) 
+    sign = -1;
+  else return;
+
+  // Update date counts for all games.
+  for (int k = PAWN; k <= KING; k++)
+    for (int loc = 0; loc < 64; loc++)
+      counts_all_games[k][loc] += sign * counts_this_game[k][loc];
+
+  for (int i = 0; i < 64; i++)
+    {
+      cerr << "(" << counts_this_game [KNIGHT][i] << ":";
+      cerr << counts_all_games [KNIGHT][i] << ") ";
+    }
+  cerr << endl;
+
+  // Generate frequencies.
+  double freqs [64];
+
+  int least = 1000 * 1000 * 1000;
+  for (int i = 0; i < 64; i++)
+    least = min (least, counts_all_games [KNIGHT][i]);
+
+  for (int i = 0; i < 64; i++)
+    freqs[i] = counts_all_games[KNIGHT][i] + -least;
+
+  int sum = 0;
+  for (int i = 0; i < 64; i++)
+    sum += freqs [i];
+    
+  for (int i = 0; i < 64; i++)
+    freqs [i] /= sum;
+
+  cerr << endl;
+  cerr << "Distribution after " << num_games << " games." 
+       << " " << board.full_move_clock << " moves." 
+       << endl << endl;
+  cerr.precision (3);
+  for (int y = 7; y >= 0; y--)
+    {
+      for (int x = 0; x < 8; x++)
+	{
+	  cerr << fixed << freqs [x + 8 * y] << " ";
+	}
+      cerr << endl;
+    }
+
+  cerr << endl;
+
+  for (int y = 7; y >= 0; y--)
+    {
+      for (int x = 0; x < 8; x++)
+	{
+	  cerr << setw (8) << setiosflags (ios::right) <<
+	    counts_all_games[KNIGHT][x + 8 * y];
+	}
+      cerr << endl;
+    }
+
+
+  cerr << endl;
 }
 
 void
@@ -183,6 +296,7 @@ Session::work ()
 
       // Apply the move.
       bool applied = board.apply (m);
+      collect_statistics ();
 
       // We should never get back a move that doesn't apply.
       assert (applied);
@@ -266,6 +380,8 @@ Session::handle_end_of_game (Status s) {
 
   // We should halt and block for user input.
   running = false;
+
+  collect_game_over ();
 
   timeout = 0;
 }
@@ -424,6 +540,16 @@ Session::execute (char *line) {
       if (token == "playself")
 	{
 	  return play_self (tokens);
+	}
+
+
+      /**********************************/
+      /* The play against self command. */
+      /**********************************/
+
+      if (token == "genstats")
+	{
+	  return gen_stats (tokens);
 	}
 
       /************************/

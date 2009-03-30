@@ -65,9 +65,13 @@ Search_Engine::iterative_deepening
 (const Board &b, int depth, Move_Vector &pv) 
 {
   Score s = 0;
-  
+
+  interrupt_search = false;
+  s = search (b, 1, 0, pv);
+  assert (!interrupt_search);
+
   // Search progressively deeper play until we are interrupted.
-  for (int i = 1; i <= depth; i++) 
+  for (int i = 2; i <= depth; i++) 
     {
       Move_Vector tmp;
       calls_to_search = 0;
@@ -121,8 +125,8 @@ Search_Engine::iterative_deepening
 	  for (int j = 0; j < pv.count; j++)
 	    cerr << b.to_calg (pv[j]) << " ";
 	  cerr << endl;
-	}
 #endif
+	}
     }
   
   // Check that we got at least one move.
@@ -267,7 +271,7 @@ Search_Engine :: search
   /**************************************/
   
   if (interrupt_search)
-    return SEARCH_INTERRUPTED;
+    return 0;
 
   /**********************/
   /* Update statistics. */
@@ -425,11 +429,20 @@ Search_Engine::qsearch
 (const Board &b, int depth, int ply, 
  Score alpha, Score beta) 
 {
+  Move_Vector dummy;
+
   /**********************/
   /* Update statistics. */
   /**********************/
 
   calls_to_qsearch++;
+
+#if 1
+  if (b.in_check (b.flags.to_move) && b.child_count () == 0)
+    {
+      return -(MATE_VAL - ply);
+    }
+#endif
 
   /**************************************/
   /* Do static evaluation at this node. */
@@ -455,7 +468,9 @@ Search_Engine::qsearch
       for (int i = 0; i < moves.count; i++) 
 	{
 	  assert (moves[i].capture (b) != NULL_KIND);
-	  moves[i].score = eval_piece (moves[i].capture (b));
+	  moves[i].score = 
+	    25 * eval_piece (moves[i].capture (b)) -
+	    eval_piece (moves[i].get_kind (b));
 	}
       insertion_sort <Move_Vector, Move, less_than> (moves);
 

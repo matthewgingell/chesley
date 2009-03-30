@@ -1,6 +1,17 @@
 /*
+  eval.hpp
+
   Here we define a function for evaluating the strength of a position
-  heuristically.
+  heuristically. Internally, the convention is that scores favoring
+  white are positive and those for black are negative. However, scores
+  returned to the player are multiplied correct sign and are
+  appropriate for maximization.
+
+  The starting point for the approach taken here is Tomasz Michniewski's
+  proposal for "Unified Evaluation" tournements. The full discussion
+  of that very simple scoring strategy is avaiable at:
+  
+  http://chessprogramming.wikispaces.com/simplified+evaluation+function
 
   Matthew Gingell
   gingell@adacore.com
@@ -9,35 +20,21 @@
 #ifndef _EVAL_
 #define _EVAL_
 
-#include <cstdlib>
+#include "chesley.hpp"
+
 #include <iostream>
-#include "bits64.hpp"
-#include "board.hpp"
-#include "types.hpp"
-#include "util.hpp"
 
-// Material values.
-
-static const Score INF        = 1000 * 1000;
+/********************/
+/* Material values. */
+/********************/
 
 static const Score QUEEN_VAL  = 900;
 static const Score ROOK_VAL   = 500;
-static const Score BISHOP_VAL = 300;
-static const Score KNIGHT_VAL = 300;
+static const Score BISHOP_VAL = 330;
+static const Score KNIGHT_VAL = 320;
 static const Score PAWN_VAL   = 100;
-
-static const Score SEARCH_INTERRUPTED = INF + 1000;
-
-static const Score MATE_VAL = 500 * 1000;
-static const Score CONTEMPT_VAL = 1000;
-static const Score DRAW_VAL = CONTEMPT_VAL;
-
-
-// Positional values of having castled and retaining the right to
-// castle.
-static const Score KS_CASTLE_VAL  = 75;
-static const Score QS_CASTLE_VAL  = 50;
-static const Score CAN_CASTLE_VAL = 10;
+static const Score MATE_VAL   = 500  * 1000;
+static const Score INF        = 1000 * 1000;
 
 inline Score eval_piece (Kind k) {
   switch (k)
@@ -51,16 +48,88 @@ inline Score eval_piece (Kind k) {
     }
 }
 
-// Simple table driven positional bonuses.
-Score eval_simple_positional (const Board &b);
+/*********************/
+/* Castling bonuses. */
+/*********************/
 
+static const Score KS_CASTLE_VAL  = 75;
+static const Score QS_CASTLE_VAL  = 50;
+static const Score CAN_CASTLE_VAL = 10;
+
+/*************************/
+/* Evaluation functions. */
+/*************************/
+
+// Compute the net material value for this position.
+inline Score eval_material (const Board &b);
+
+// Compute a simple net positional value from the piece square table.
+Score eval_piece_squares (const Board &b);
+
+// Compute a score for this position.
+inline Score
+eval (const Board &b) {
+  Score score = 0;
+
+  /*********************/
+  /* Evaluate material */
+  /*********************/
+
+  //  std::cerr << "eval_material (b): " << eval_material (b) << std::endl;
+  score += eval_material (b);
+
+  /*********************/
+  /* Evaluate mobility */
+  /*********************/
+
+#if 0
+  Score as_white = pop_count (b.attack_set (WHITE));
+  Score as_black = pop_count (b.attack_set (BLACK));
+  score += 5 * (as_white - as_black);
+#endif
+
+  /***************************/
+  /* Evaluate pawn structure */
+  /***************************/
+
+  // ??????????
+
+  /*********************************/
+  /* Evaluate positional strength. */
+  /*********************************/
+  
+  score += eval_piece_squares (b);
+
+  /**********************/
+  /* Evaluate castling. */
+  /**********************/
+
+  // Encourage preserving the right to castle.
+  score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
+  score += CAN_CASTLE_VAL * (b.flags.w_can_k_castle - b.flags.b_can_k_castle);
+
+  // Encourage castling.
+  score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
+  score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
+
+#if 1
+  /***********************************************/
+  /* Add some random noise for variety of games. */ 
+  /***********************************************/
+
+  score += random () % 10;
+#endif
+
+  /************************************************/
+  /* Return appropriately signed score to caller. */
+  /************************************************/
+  return sign (b.flags.to_move) * score;
+}
+
+// Compute the net material value for this position.
 inline Score
 eval_material (const Board &b) {
   Score score = 0;
-
-  /*******************************/
-  /* Evaluate material strength. */
-  /*******************************/
 
   score += PAWN_VAL * (pop_count (b.pawns & b.white) -
 		       pop_count (b.pawns & b.black));
@@ -78,51 +147,6 @@ eval_material (const Board &b) {
 			pop_count (b.queens & b.black));
 
   return score;
-}
-
-// Evaluate a position statically. Positive scores favor white and
-// negative scores favor black.
-inline Score
-eval (const Board &b) {
-  Score score = 0;
-
-  score += eval_material (b);
-
-  /*********************/
-  /* Evaluate mobility */
-  /*********************/
-
-#if 0
-  Score as_white = pop_count (b.attack_set (WHITE));
-  Score as_black = pop_count (b.attack_set (BLACK));
-  score += 5 * (as_white - as_black);
-#endif
-
-  /***************************/
-  /* Evaluate pawn structure */
-  /***************************/
-
-  // ????
-
-  /*********************************/
-  /* Evaluate positional strength. */
-  /*********************************/
-
-  score += eval_simple_positional (b);
-
-  // Encourage preserving the right to castle.
-  score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
-  score += CAN_CASTLE_VAL * (b.flags.w_can_k_castle - b.flags.b_can_k_castle);
-
-  // Encourage castling, and prefer king side to queen side.
-  score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
-  score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
-
-#if 1
-  score += random () % 5;
-#endif
-
-  return sign (b.flags.to_move) * score;
 }
 
 #endif // _EVAL_
