@@ -232,7 +232,7 @@ Session::cmd_loop ()
   bool done = false;
 
   if (ui_mode == INTERACTIVE)
-    fprintf (out, PROLOGUE);
+    fprintf (out, "%s\n", get_prologue ());
 
   write_prompt ();
   while (true)

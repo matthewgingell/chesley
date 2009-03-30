@@ -8,7 +8,7 @@
 #ifndef __CHESLEY__
 #define __CHESLEY__
 
-#include "vsn.inc"
+#include <cstdio>
 
 #include "bits64.hpp"
 #include "board.hpp"
@@ -18,9 +18,16 @@
 #include "types.hpp"
 #include "util.hpp"
 
+extern char *SVN_REVISION;
+
 #define ENGINE_ID_STR     "Chesley!"
-#define VERSION_STR       SVN_REVISION
 #define ENGINE_AUTHOR_STR "Matthew Gingell"
-#define PROLOGUE          "Chesley! r" SVN_REVISION "\n"
+
+inline 
+char *get_prologue () {
+  static char buf[1024];
+  sprintf (buf, "%s r%s", ENGINE_ID_STR, SVN_REVISION);
+  return buf;
+}
 
 #endif // __CHESLEY__
