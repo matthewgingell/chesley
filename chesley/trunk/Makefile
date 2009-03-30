@@ -24,14 +24,14 @@ CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
 all: chesley
 
 # Build the chesley binary.
-chesley: vsn.inc $(OBJS)
+chesley: $(OBJS) vsn.o
 	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
 
 # Create the version number file from svn info.
-vsn.inc: *.cpp *.hpp
-	svn info -r HEAD |  \
-	sed -n 's/Revision: \([0-9]*\)/#define SVN_REVISION \"\1\"/p' > $@
-#	touch session.cpp
+vsn.o: *.cpp *.hpp
+	svn info -r HEAD | sed -n 's/Revision: \([0-9]*\)/const char	\
+	*SVN_REVISION = \"\1\";/p' > vsn.cpp
+	$(CXX) -c $(CXXFLAGS) vsn.cpp -o $@
 
 # Run an xboard game with chesley.
 play: chesley
