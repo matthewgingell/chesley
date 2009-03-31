@@ -17,18 +17,11 @@ Next items:
 
   * Use 16 bit types for indexes, scores, and depths.
 
-  * Must have a good way of measuring search correctness, strength,
-    and speed before we try to improved them.
-
-  * Document MTDf
-
   * Collect and analyize search statistics.
 
   * Use readline and completions.
 
   * Add help command.
-
-  * Detect insufficient mating material. 
 
 Interface:
 
@@ -51,16 +44,9 @@ Testing:
 
 Search
 
-  * Implement 3 fold repetition detection. Right now Chesley plays and
-    incredibly irritating end game, repeatedly running the half move
-    clock up to 49 then moving a pawn...
-  * Quiescence search
   * Time management 
-  * Aspiration windows
   * Static Exchange Evaluation (SEE) for capture ordering.
-  * Null move heuristic
   * Try MTDf again...
-
 
 Eval
 

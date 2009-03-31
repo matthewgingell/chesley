@@ -7,7 +7,7 @@
 
 #include "chesley.hpp"
 
-/***************************************************************************/
+/**************************************************************************/
 /*  piece_square_table:                                                   */
 /*                                                                        */
 /*  This is a table of bonuses for each piece-location pair. The table    */
@@ -116,18 +116,16 @@ static int piece_square_table[6][64] =
 
 #endif
 
-// Evaluate a the positional strength of a based based on the
-// preceding table.
+// Evaluate a positional strength based on the preceding table.
 Score
-eval_piece_squares (const Board &b) {
-  Score bonus = 0;
-
+sum_piece_squares (const Board &b) {
   // Sum over all colors and kinds.
+  Score bonus = 0;
   for (int c = WHITE; c <= BLACK; c++)
     for (int k = PAWN; k <= KING; k++)
       {
 	bitboard pieces =  
-	  b.color_to_board ((Color) c) &  b.kind_to_board ((Kind) k);
+	  b.color_to_board ((Color) c) & b.kind_to_board ((Kind) k);
 
 	while (pieces)
 	  {
@@ -138,6 +136,5 @@ eval_piece_squares (const Board &b) {
 	    pieces = clear_lsb (pieces);
 	  }
     }
-
   return bonus;
 }

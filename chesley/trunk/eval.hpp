@@ -64,7 +64,7 @@ static const Score CAN_CASTLE_VAL = 10;
 inline Score eval_material (const Board &b);
 
 // Compute a simple net positional value from the piece square table.
-Score eval_piece_squares (const Board &b);
+Score sum_piece_squares (const Board &b);
 
 // Compute a score for this position.
 inline Score
@@ -98,7 +98,7 @@ eval (const Board &b) {
   /* Evaluate positional strength. */
   /*********************************/
   
-  score += eval_piece_squares (b);
+  score += sum_piece_squares (b);
 
   /**********************/
   /* Evaluate castling. */
@@ -112,7 +112,7 @@ eval (const Board &b) {
   score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
   score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
 
-#if 1
+#if 0
   /***********************************************/
   /* Add some random noise for variety of games. */ 
   /***********************************************/
