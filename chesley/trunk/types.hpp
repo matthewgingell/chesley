@@ -32,7 +32,7 @@ typedef uint64 hash_t;
 
 // This type is used to index tables, so PAWN must always be set to
 // zero, etc.
-enum Kind { NULL_KIND = -1, PAWN, ROOK, KNIGHT, BISHOP, QUEEN, KING };
+enum Kind { NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING };
 
 // Convert a kind to a character code.
 char to_char (Kind k);
