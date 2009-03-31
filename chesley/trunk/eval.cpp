@@ -134,8 +134,7 @@ eval_piece_squares (const Board &b) {
 	    int idx = bit_idx (pieces);
 	    int xfrm = 56 - 8 * (idx / 8) + idx % 8;
 	    if (c == BLACK) xfrm = 63 - xfrm;
-	    if (c == BLACK)
-	      bonus += sign ((Color) c) * piece_square_table[k][xfrm];
+	    bonus += sign ((Color) c) * piece_square_table[k][xfrm];
 	    pieces = clear_lsb (pieces);
 	  }
     }
