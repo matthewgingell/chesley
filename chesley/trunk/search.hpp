@@ -27,6 +27,7 @@ struct Search_Engine {
     interrupt_search = false;
     calls_to_search = 0;
     calls_to_qsearch = 0;
+    post = true;
     memset (hh_table, 0, sizeof (hh_table));
     tt.rehash (TT_SIZE);
   }
@@ -61,6 +62,9 @@ struct Search_Engine {
 
   // If set true, the search should conclude as quickly as possible.
   bool interrupt_search;
+
+  // If true, thinking output will be written.
+  bool post;
 
   /***************/
   /* Statistics. */

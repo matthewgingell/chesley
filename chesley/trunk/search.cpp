@@ -6,6 +6,8 @@
 */
 
 #include <cassert>
+#include <iostream>
+#include <iomanip>
 #include "chesley.hpp"
 
 using namespace std;
@@ -66,16 +68,21 @@ Search_Engine::iterative_deepening
 {
   Score s = 0;
 
-  interrupt_search = false;
-  s = search (b, 1, 0, pv);
-  assert (!interrupt_search);
+  // Print header for posting thinking.
+  if (post) 
+    {
+      cerr << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl;
+      cerr << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation" 
+	   << endl;
+    }
 
   // Search progressively deeper play until we are interrupted.
-  for (int i = 2; i <= depth; i++) 
+  for (int i = 1; i <= depth; i++) 
     {
       Move_Vector tmp;
       calls_to_search = 0;
       calls_to_qsearch = 0;
+      uint64 start_time = cpu_time ();
 
 #ifdef ENABLE_ASPIRATION_WINDOW
       const int WINDOW = 25;
@@ -85,8 +92,7 @@ Search_Engine::iterative_deepening
       // Do an aspiration search.
       if (i > 1) 
 	{
-	  s = search_with_memory 
-	    (b, i, 0, tmp, lower, upper);
+	  s = search_with_memory  (b, i, 0, tmp, lower, upper);
 	  
 	  // Search again with a full window if we fail to find the
 	  // best move in the aspiration window or if this search
@@ -107,7 +113,6 @@ Search_Engine::iterative_deepening
 
       if (interrupt_search)
 	{
-	  cerr << "search interrupted at depth = " << i << endl;
 	  break;
 	}
 
@@ -115,20 +120,26 @@ Search_Engine::iterative_deepening
       if (tmp.count > 0)
 	{
 	  pv = tmp;
-#if 1
+
 	  // Show thinking.
-	  cerr << b.full_move_clock << ":" << b.half_move_clock
-	       << " " << calls_to_search 
-	       << " " << calls_to_qsearch 
-	       << " " << pv[0].score
-	       << ": ply: " << i << " ";
-	  for (int j = 0; j < pv.count; j++)
-	    cerr << b.to_calg (pv[j]) << " ";
-	  cerr << endl;
-#endif
+	  if (post)
+	    {
+	      double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
+	      cerr 
+		<< setw (3)  << i
+		<< setw (10) << calls_to_search
+		<< setw (10) << calls_to_qsearch
+		<< setw (8)  << setiosflags (ios::fixed) << setprecision (2) 
+		<< elapsed
+		<< setw (8)  << pv[0].score 
+		<< "   ";
+	      for (int j = 0; j < pv.count; j++)
+		cerr << b.to_calg (pv[j]) << " ";
+	      cerr << endl;
+	    }
 	}
     }
-  
+
   // Check that we got at least one move.
   assert (pv.count > 0);
   

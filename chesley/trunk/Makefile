@@ -35,7 +35,7 @@ vsn.o: *.cpp *.hpp
 
 # Run an xboard game with chesley.
 play: chesley
-	xboard -debug -fcp ./chesley -coords -size Huge
+	xboard -debug -fcp ./chesley -coords -size Huge -xponder -thinking
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley 
