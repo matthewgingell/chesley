@@ -123,7 +123,7 @@ eval (const Board &b) {
   /************************************************/
   /* Return appropriately signed score to caller. */
   /************************************************/
-  return sign (b.flags.to_move) * score;
+  return sign (b.to_move ()) * score;
 }
 
 // Compute the net material value for this position.

@@ -127,7 +127,7 @@ Session::xbd_execute (char *line) {
 
       if (token == "go")
 	{
-	  our_color = board.flags.to_move;
+	  our_color = board.to_move ();
 	  running = true;
 	}
 

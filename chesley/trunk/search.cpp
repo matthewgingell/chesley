@@ -266,7 +266,6 @@ Search_Engine :: search
  bool do_null_move)
 {
   bool found_move = false;
-  Color player = b.flags.to_move;
 
   assert (pv.count == 0);
 
@@ -318,11 +317,11 @@ Search_Engine :: search
     // there are fewer than 15 pieces on the board.
     if (do_null_move && 
 	pop_count (b.occupied) > 15 &&
-	!b.in_check ((player)))
+	!b.in_check ((b.to_move ())))
       {
 	Move_Vector dummy;
 	Board c = b;
-	c.set_color (invert_color (player));
+	c.set_color (invert_color (b.to_move ()));
 
 	const int R = 3;
 	
@@ -378,7 +377,7 @@ Search_Engine :: search
     // If none of the moves we tried applied, then the game is over.
     if (!found_move)
       {
-	if (b.in_check (player))
+	if (b.in_check (b.to_move ()))
 	  {
 	    /*********************************************************/
 	    /* We need to provide a bonus to shallower wins over     */
@@ -401,7 +400,7 @@ Search_Engine :: search
 	/* Update the history table with this result. */
 	/**********************************************/
 	if (pv.count > 0)
-	  hh_table[player][depth][pv[0].from][pv[0].to] += 1;
+	  hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;
       }
   }
 
@@ -427,7 +426,7 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
 	{
 	  // Award a bonus for rate and depth of recent cutoffs.
 	  moves[i].score += 
-	    hh_table[b.flags.to_move][depth][moves[i].from][moves[i].to];
+	    hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
 	}
     }
   
@@ -449,7 +448,7 @@ Search_Engine::qsearch
   calls_to_qsearch++;
 
 #if 1
-  if (b.in_check (b.flags.to_move) && b.child_count () == 0)
+  if (b.in_check (b.to_move ()) && b.child_count () == 0)
     {
       return -(MATE_VAL - ply);
     }
