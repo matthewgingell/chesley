@@ -395,7 +395,7 @@ Board::apply (const Move &m) {
   /* Update to_move state. */
   /*************************/
 
-  set_color (invert_color (flags.to_move));
+  set_color (invert_color (to_move ()));
 
   /****************************/
   /* Handle taking En Passant */
@@ -757,7 +757,7 @@ Board::to_ascii () const {
   ostringstream s;
 
   // Precede board diagram with status, formated as in FEN strings.
-  s << (flags.to_move == WHITE ? 'w' : 'b') << " ";
+  s << (to_move () == WHITE ? 'w' : 'b') << " ";
 
   if (flags.w_can_k_castle | flags.w_can_q_castle |
       flags.b_can_k_castle | flags.b_can_q_castle)
@@ -866,7 +866,7 @@ Board ::to_fen () const {
 
   // 2. Active color. "w" means white moves next, "b" means black.
 
-  s << " " << (flags.to_move == WHITE ? 'w' : 'b');
+  s << " " << (to_move () == WHITE ? 'w' : 'b');
 
   // 3. Castling availability.
 
@@ -956,10 +956,9 @@ Board::print_tree (int depth)
 uint64
 Board::gen_hash () const {
   uint64 h = 0x0;
-  Color to_move = flags.to_move;
 
   // Set color to move.
-  if (to_move == WHITE) h ^= zobrist_key_white_to_move;
+  if (to_move () == WHITE) h ^= zobrist_key_white_to_move;
 
   // Set castling rights.
   if (flags.w_can_q_castle) h ^= zobrist_w_castle_q_key;

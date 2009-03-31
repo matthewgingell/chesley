@@ -34,7 +34,7 @@ Board::gen_all_moves (Move_Vector &out) const
 void
 Board::gen_captures (Move_Vector &out) const
 {
-  Color c = flags.to_move;
+  Color c = to_move ();
 
   /***************************/
   /* Generate pawn captures. */
@@ -263,7 +263,7 @@ Board :: divide (int d) const {
 inline void
 Board::gen_pawn_moves (Move_Vector &out) const
 {
-  Color c = flags.to_move;
+  Color c = to_move ();
   bitboard our_pawns = pawns & our_pieces ();
 
   // For each pawn:
@@ -480,7 +480,7 @@ Board::gen_queen_moves (Move_Vector &out) const
 inline void
 Board::gen_king_moves (Move_Vector &out) const
 {
-  Color c = flags.to_move;
+  Color c = to_move ();
   bitboard our_king = kings & our_pieces ();
 
   /*************************/

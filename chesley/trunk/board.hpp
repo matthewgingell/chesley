@@ -356,6 +356,10 @@ struct Board {
 
   // Return whether color c is in check.
   bool in_check (Color c) const;
+
+  Color to_move () const {
+    return flags.to_move;
+  }
   
   // Return the color of a piece on a square.
   Color get_color (uint32 idx) const {
@@ -582,13 +586,13 @@ struct Board {
   // Return a bitboard of to_moves pieces.
   bitboard
   our_pieces () const {
-    return flags.to_move == WHITE ? white : black;
+    return to_move () == WHITE ? white : black;
   }
 
   // Return a bitboard of the other colors pieces.
   bitboard
   other_pieces () const {
-    return flags.to_move == WHITE ? black : white;
+    return to_move () == WHITE ? black : white;
   }
 
   // Return a bitboard of unoccupied squares.
@@ -742,9 +746,9 @@ inline bool
 Move::is_castle_qs (const Board &b) const {
   if (b.get_kind (from) == KING)
     {
-      if (b.flags.to_move == WHITE && from == 4 && to == 2) 
+      if (b.to_move () == WHITE && from == 4 && to == 2) 
 	return true;
-      if (b.flags.to_move == BLACK && from == 60 && to == 58) 
+      if (b.to_move () == BLACK && from == 60 && to == 58) 
 	return true;
     }
 
@@ -756,9 +760,9 @@ inline bool
 Move::is_castle_ks (const Board &b) const {
   if (b.get_kind (from) == KING)
     {
-      if (b.flags.to_move == WHITE && from == 4 && to == 6) 
+      if (b.to_move () == WHITE && from == 4 && to == 6) 
 	return true;
-      if (b.flags.to_move == BLACK && from == 60 && to == 62) 
+      if (b.to_move () == BLACK && from == 60 && to == 62) 
 	return true;
     }
 

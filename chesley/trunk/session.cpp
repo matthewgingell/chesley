@@ -115,7 +115,7 @@ Session::collect_new_game () {
 // Called after each move application.
 void 
 Session::collect_statistics () {
-  if (board.flags.to_move == WHITE)
+  if (board.to_move () == WHITE)
     {
       for (int k = PAWN; k <= KING; k++)
 	{
@@ -282,7 +282,7 @@ Session::work ()
     return;
 
   // If it isn't our turn, return and block for input.
-  if (board.flags.to_move != our_color) 
+  if (board.to_move () != our_color) 
     return;
 
   // Otherwise the game is still running and it's our turn, so compute
@@ -319,7 +319,7 @@ Session::work ()
 // Determine the current status of this game.
 Status 
 Session :: get_status () {
-  Color player = board.flags.to_move;
+  Color player = board.to_move ();
 
   // Check 50 move rule.
   if (board.half_move_clock == 50) 
@@ -516,7 +516,7 @@ Session::execute (char *line) {
 
       if (token == "attacks")
 	{
-	  print_board (board.attack_set (invert_color (board.flags.to_move)));
+	  print_board (board.attack_set (invert_color (board.to_move ())));
 	  return true;
 	}
 
