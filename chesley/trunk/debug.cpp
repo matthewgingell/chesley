@@ -81,26 +81,11 @@ Session::bench (const string_vector &tokens) {
   int depth = 6;
 
   if (tokens.size () > 1 && is_number (tokens[1]))
-    {
-      depth = to_int (tokens[1]);
-    }
+    depth = to_int (tokens[1]);
 
   timeout = 0;
   se.interrupt_search = false;
-  uint64 start = cpu_time();
   Move m = se.choose_move (board, depth);
-  uint64 elapsed = cpu_time() - start;
-  fprintf (out, "Best move at depth %i: %s.\n",
-	   depth, board.to_calg (m).c_str ());
-
-  cerr << "Best move to depth " << depth << ":" << endl;
-  cerr << m << endl;
-
-  fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
-
-  fprintf (out, "%lli calls_to_search.\n", se.calls_to_search);
-  fprintf (out, "%lli calls_to_qsearch.\n", se.calls_to_qsearch);
-
   return true;
 }
 

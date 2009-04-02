@@ -313,7 +313,7 @@ Search_Engine :: search
     /* Null move heuristic. */
     /************************/
 
-    // Since we have not Zugzwang detection, just disable null move if
+    // Since we don't have Zugzwang detection, we disable null move if
     // there are fewer than 15 pieces on the board.
     if (do_null_move && 
 	pop_count (b.occupied) > 15 &&
@@ -323,8 +323,7 @@ Search_Engine :: search
 	Board c = b;
 	c.set_color (invert_color (b.to_move ()));
 
-	const int R = 3;
-	
+	const int R = 2;
 	int val = -search_with_memory 
 	  (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
 
@@ -356,7 +355,7 @@ Search_Engine :: search
 
 	    // Recursively score the child.
 	    int cs = -search_with_memory 
-	      (c, depth - 1, ply + 1, cpv, -beta, -alpha, !do_null_move);
+	      (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
 	    
 	    if (cs > alpha)
 	      {
@@ -419,15 +418,11 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
       // If we previously computed that moves[i] was the best move
       // from this position, make sure it is searched first.
       if (have_entry && moves[i] == e.move)
-	{
-	  moves[i].score = +INF;
-	}
-      else
-	{
-	  // Award a bonus for rate and depth of recent cutoffs.
-	  moves[i].score += 
-	    hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
-	}
+	moves[i].score = +INF;
+
+      // Award a bonus for rate and depth of recent cutoffs.
+      moves[i].score += 
+	hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }
   
   insertion_sort <Move_Vector, Move, less_than> (moves);
@@ -478,13 +473,9 @@ Search_Engine::qsearch
       for (int i = 0; i < moves.count; i++) 
 	{
 	  assert (moves[i].capture (b) != NULL_KIND);
-	  moves[i].score = 
-	    25 * eval_piece (moves[i].capture (b)) -
-	    eval_piece (moves[i].get_kind (b));
+	  moves[i].score = eval_piece (moves[i].capture (b));
 	}
       insertion_sort <Move_Vector, Move, less_than> (moves);
-
-      //      cerr << moves << endl;
       
       /**************************/
       /* Minimax over captures. */
