@@ -1,8 +1,9 @@
 Issues:
-
-  * How do I know if a move returned by the search is correct? How do
-    I know it's any good?
-
+  
+  * Get Zippy working.
+  * See how well our end game detection is working.
+  * Implement PVS.
+  * Implement SEE.
   * Detect insufficient material to mate.
 
 Next items:
@@ -25,7 +26,7 @@ Next items:
 
 Interface:
 
-  * Finish and clean up implementation of Xboard protocol.
+  * Get zippy working.
   * Do validity checking.
 
 Clean up:
@@ -46,7 +47,6 @@ Search
 
   * Time management 
   * Static Exchange Evaluation (SEE) for capture ordering.
-  * Try MTDf again...
 
 Eval
 
