@@ -274,7 +274,7 @@ Search_Engine :: search
   /**********************************************/
 
   if (b.half_move_clock == 50 || is_triple_rep (b))
-    return 0; // -(CONTEMPT_VAL - ply);
+    return 0;
 
   /**************************************/
   /* Abort if we have been interrupted. */
@@ -390,7 +390,7 @@ Search_Engine :: search
 	  }
 	else
 	  {
-	    alpha = 0; // -(CONTEMPT_VAL - ply);
+	    alpha = 0;
 	  }
       }
     else
@@ -419,12 +419,15 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
       // from this position, make sure it is searched first.
       if (have_entry && moves[i] == e.move)
 	moves[i].score = +INF;
-
+      
       // Award a bonus for rate and depth of recent cutoffs.
       moves[i].score += 
-	hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+	1000 * hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+      
+      // Award a bonus for captures.
+      moves[i].score += eval_piece (moves[i].capture (b));
     }
-  
+
   insertion_sort <Move_Vector, Move, less_than> (moves);
 }
 
