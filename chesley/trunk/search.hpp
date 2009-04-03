@@ -95,6 +95,9 @@ struct Search_Engine {
   int rep_count (const Board &b);
   
   // Test whether this board is a third repetition.
+  bool is_rep (const Board &b);
+  
+  // Test whether this board is a repetition.
   bool is_triple_rep (const Board &b);
 
 private:
@@ -107,9 +110,6 @@ private:
 
   // Search repeatedly from depth 1 to 'depth.;
   Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
-
-  // Search driver.
-  Score MTDf (const Board &b, Score guess, int depth, Move_Vector pv);
   
   // Memoized minimax search.
   Score search_with_memory 

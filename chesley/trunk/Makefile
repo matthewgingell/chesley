@@ -15,7 +15,7 @@ SRCS = $(wildcard *.cpp)
 # ENABLE_NULL_MOVE, ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
--DENABLE_QSEARCH -DENABLE_ASPIRATION_WINDOW # -DENABLE_NULL_MOVE
+-DENABLE_QSEARCH -DENABLE_NULL_MOVE -DENABLE_ASPIRATION_WINDOW
 
 LIBS =
 CXX = g++-mp-4.4
@@ -57,4 +57,4 @@ check: chesley
 clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
 	      Saturn* game.00* log.00* book.lrn position.bin		\
-	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\#
+	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log
