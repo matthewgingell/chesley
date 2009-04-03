@@ -6,8 +6,8 @@
 */
 
 #include <cassert>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include "chesley.hpp"
 
 using namespace std;
@@ -146,36 +146,6 @@ Search_Engine::iterative_deepening
   return pv[0].score;
 }
 
-// Search driver.
-Score 
-Search_Engine::MTDf (const Board &b, Score guess, int depth, Move_Vector pv) {
-  Score g = guess;
-  Score upperbound = +INF, lowerbound = -INF;
-  
-  do
-    {
-      cerr << g << endl;
-
-      int beta;
-      Move_Vector dummy;
-      if (g == lowerbound) beta = g + 1; else beta = g;
-      g = search_with_memory 
-	(b, depth, 0, dummy, beta - 1, beta + 1, true);
-      if (g < beta) upperbound = g; else lowerbound = g;
-    }
-  while (lowerbound < upperbound);
-
-  search_with_memory 
-    (b, depth, 0, pv, g - 1, g + 1, false);
-
-  cerr << "pv: " << pv << endl;
-
-  cerr << tt[b.hash].move << endl;
-
-
-  return g;
-}
-
 /***********************************************************************/
 /* Search_Engine :: search_with_memory ()                              */
 /*                                                                     */
@@ -273,7 +243,7 @@ Search_Engine :: search
   /* Check 50 move and triple repitition rules. */
   /**********************************************/
 
-  if (b.half_move_clock == 50 || is_triple_rep (b))
+  if (b.half_move_clock == 50 || is_rep (b))
     return 0;
 
   /**************************************/
@@ -313,8 +283,8 @@ Search_Engine :: search
     /* Null move heuristic. */
     /************************/
 
-    // Since we don't have Zugzwang detection, we disable null move if
-    // there are fewer than 15 pieces on the board.
+    // Since we don't have Zugzwang detection we just disable null
+    // move if there are fewer than 15 pieces on the board.
     if (do_null_move && 
 	pop_count (b.occupied) > 15 &&
 	!b.in_check ((b.to_move ())))
@@ -583,6 +553,12 @@ Search_Engine::rep_count (const Board &b) {
     {
       return i -> second;
     }
+}
+
+// Test whether this board is a repetition.
+bool
+Search_Engine::is_rep (const Board &b) {
+  return rep_count (b) > 1;
 }
 
 // Test whether this board is a third repetition.
