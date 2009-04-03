@@ -527,3 +527,143 @@ Board::gen_king_moves (Move_Vector &out) const
 	out.push (Move (60, 62));
     }
 }
+
+// Compute a bitboard of every square color is attacking.
+bitboard
+Board::attack_set (Color c) const {
+  bitboard color = c == WHITE ? white : black;
+  bitboard attacks = 0llu;
+  bitboard pieces;
+  int from;
+
+  // Pawns
+  pieces = pawns & color;
+  if (c == WHITE)
+    {
+      attacks |= ((pieces & ~file(0)) << 7);
+      attacks |= ((pieces & ~file(7)) << 9);
+    }
+  else
+    {
+      attacks |= ((pieces & ~file(0)) >> 9);
+      attacks |= ((pieces & ~file(7)) >> 7);
+    }
+
+  // Rooks
+  pieces = rooks & color;
+  while (pieces)
+    {
+      from = bit_idx (pieces);
+      attacks |=
+        (RANK_ATTACKS_TBL[from * 256 + occ_0 (from)] |
+         FILE_ATTACKS_TBL[from * 256 + occ_90 (from)])
+        & ~color;
+      pieces = clear_lsb (pieces);
+    }
+
+  // Knights
+  pieces = knights & color;
+  while (pieces)
+    {
+      from = bit_idx (pieces);
+      attacks |= KNIGHT_ATTACKS_TBL[from] & ~color;
+      pieces = clear_lsb (pieces);
+    }
+
+  // Bishops
+  pieces = bishops & color;
+  while (pieces)
+    {
+      from = bit_idx (pieces);
+      attacks |=
+        (DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
+         DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
+        & ~color;
+      pieces = clear_lsb (pieces);
+    }
+
+  // Queens
+  pieces = queens & color;
+  while (pieces)
+    {
+      from = bit_idx (pieces);
+      attacks |=
+        (RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
+         | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
+         | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
+         | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
+        & ~color;
+      pieces = clear_lsb (pieces);
+    }
+
+  // Kings
+  pieces = kings & color;
+  while (pieces)
+    {
+      from = bit_idx (pieces);
+      attacks |= KING_ATTACKS_TBL[from] & ~color;
+      pieces = clear_lsb (pieces);
+    }
+
+  return attacks;
+}
+
+// Return whether the square at idx is attacked by a piece of color c.
+bool
+Board::is_attacked (int idx, Color c) const
+{
+  // Take advantage of the symmetry that if the piece at index could
+  // move like an X and capture an X, then that X is able to attack it
+
+  bitboard them = color_to_board (c);
+  bitboard attacks;
+  
+  // Are we attacked along a rank?
+  attacks = RANK_ATTACKS_TBL[idx * 256 + occ_0 (idx)];
+  if (attacks & (them & (queens | rooks))) return true;
+
+  // Are we attack along a file?
+  attacks = FILE_ATTACKS_TBL[idx * 256 + occ_90 (idx)];
+  if (attacks & (them & (queens | rooks))) return true;
+
+  // Are we attacked along a 45 degree diagonal.
+  attacks = DIAG_45_ATTACKS_TBL[256 * idx + occ_45 (idx)];
+  if (attacks & (them & (queens | bishops))) return true;
+
+  // Are we attacked along a 135 degree diagonal.
+  attacks = DIAG_135_ATTACKS_TBL[256 * idx + occ_135 (idx)];
+    if (attacks & (them & (queens | bishops))) return true;
+
+  // Are we attacked by a knight?
+  attacks = KNIGHT_ATTACKS_TBL[idx];
+  if (attacks & (them & knights)) return true;
+
+  // Are we attacked by a king?
+  attacks = KING_ATTACKS_TBL[idx];
+  if (attacks & (them & kings)) return true;
+
+  // Are we attacked by a pawn?
+  bitboard their_pawns = pawns & them;
+  if (c != WHITE)
+    {
+      attacks = (((their_pawns & ~file (7)) >> 7)
+                 | ((their_pawns & ~file (0)) >> 9));
+    }
+  else
+    {
+      attacks = (((their_pawns & ~file (0)) << 7)
+                 | ((their_pawns & ~file (7)) << 9));
+    }
+  if (attacks & masks_0[idx]) return true;
+
+  return false;
+}
+
+// Return whether color c is in check.
+bool
+Board::in_check (Color c) const
+{
+  int idx = bit_idx (kings & color_to_board (c));
+  assert (idx >= 0 && idx < 64);
+  return is_attacked (idx, invert_color (c));
+}

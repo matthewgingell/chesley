@@ -694,6 +694,12 @@ inline int count (const Board_Vector &bv) {
 
 std::ostream & operator<< (std::ostream &os, Board_Vector bv);
 
+// Get the number of legal moves available from this position.
+inline int
+Board::child_count () const {
+  return (Board_Vector (*this)).count;
+}
+
 /*********/
 /* Moves */
 /*********/
