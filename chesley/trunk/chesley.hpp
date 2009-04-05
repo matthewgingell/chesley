@@ -18,7 +18,7 @@
 #include "types.hpp"
 #include "util.hpp"
 
-extern char *SVN_REVISION;
+extern const char *SVN_REVISION;
 
 #define ENGINE_ID_STR     "Chesley!"
 #define ENGINE_AUTHOR_STR "Matthew Gingell"
