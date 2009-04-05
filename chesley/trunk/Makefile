@@ -25,7 +25,7 @@ all: chesley
 
 # Build the chesley binary.
 chesley: $(OBJS) vsn.o
-	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
+	$(CXX) $(CXXFLAGS) $(OBJS) vsn.o $(LIBS) -o $@
 
 # Create the version number file from svn info.
 vsn.o: *.cpp *.hpp
@@ -57,4 +57,5 @@ check: chesley
 clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
 	      Saturn* game.00* log.00* book.lrn position.bin		\
-	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log
+	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log	\
+	      vsn.cpp
