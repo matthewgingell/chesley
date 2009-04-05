@@ -629,15 +629,8 @@ struct Board {
   /* Move and child position generation. */
   /***************************************/
 
-  void gen_all_moves (Move_Vector &moves) const;
+  void gen_moves (Move_Vector &moves) const;
   void gen_captures (Move_Vector &moves) const;
-
-  inline void gen_pawn_moves   (Move_Vector &moves) const;
-  inline void gen_rook_moves   (Move_Vector &moves) const;
-  inline void gen_knight_moves (Move_Vector &moves) const;
-  inline void gen_bishop_moves (Move_Vector &moves) const;
-  inline void gen_queen_moves  (Move_Vector &moves) const;
-  inline void gen_king_moves   (Move_Vector &moves) const;
 
   /***********/
   /* Testing */
