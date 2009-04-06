@@ -8,8 +8,10 @@
 SHELL = /bin/sh
 
 CXX = g++-mp-4.4
-CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+OPT = -O3 -march=native
+INC = -Ideps
 LIBS =
+CXXFLAGS = -g -Wall -m64 $(OPT) $(ALG) $(INC) $(LIBS)
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 
