@@ -386,16 +386,17 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
   for (int i = 0; i < moves.count; i++)
     {
       // If we previously computed that moves[i] was the best move
-      // from this position, make sure it is searched first.
+      // from this position make sure it is searched first.
       if (have_entry && moves[i] == e.move)
 	moves[i].score = +INF;
       
+      // Award a bonus for captures.
+      moves[i].score += 
+	10 * eval_piece (moves[i].capture (b));
+
       // Award a bonus for rate and depth of recent cutoffs.
       moves[i].score += 
-	1000 * hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
-      
-      // Award a bonus for captures.
-      moves[i].score += eval_piece (moves[i].capture (b));
+	hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }
 
   insertion_sort <Move_Vector, Move, less_than> (moves);
@@ -415,12 +416,10 @@ Search_Engine::qsearch
 
   calls_to_qsearch++;
 
-#if 1
   if (b.in_check (b.to_move ()) && b.child_count () == 0)
     {
       return -(MATE_VAL - ply);
     }
-#endif
 
   /**************************************/
   /* Do static evaluation at this node. */
@@ -443,12 +442,12 @@ Search_Engine::qsearch
       /* Sort captures. */
       /******************/
 
+      order_moves (b, 5, moves);
+#if 0
       for (int i = 0; i < moves.count; i++) 
-	{
-	  assert (moves[i].capture (b) != NULL_KIND);
-	  moves[i].score = eval_piece (moves[i].capture (b));
-	}
+	moves[i].score = eval_piece (moves[i].capture (b));
       insertion_sort <Move_Vector, Move, less_than> (moves);
+#endif
       
       /**************************/
       /* Minimax over captures. */
@@ -456,9 +455,6 @@ Search_Engine::qsearch
 
       for (int i = 0; i < moves.count; i++)
 	{
-	  if (moves[i].capture (b) == NULL_KIND) 
-	    continue;
-
 	  c = b;
 	  if (c.apply (moves[i]))
 	    {
