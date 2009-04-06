@@ -1,62 +1,81 @@
-# Makefile for the Chesley chess engine.
-#
-# Matthew Gingell
-# gingell@adacore.com
+##############################################
+# Makefile for the Chesley the Chess Engine. #
+# 	                                     #
+# Matthew Gingell			     #
+# gingell@adacore.com			     #
+##############################################
 
 SHELL = /bin/sh
 
+CXX = g++-mp-4.4
+CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
 LIBS =
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 
-# Turn on and off various parts of the search algorithm. Options are:
-#
-# ENABLE_ASPIRATION, ENABLE_TRANS_TABLE, ENABLE_QSEARCH,
-# ENABLE_NULL_MOVE, ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA, ENABLE_SEE
+########################################################################
+# Search configuration.						       #
+# 								       #
+# The following macros are used to enable and disable various parts of #
+# the tree search. Valid options are: ENABLE_ASPIRATION,	       #
+# ENABLE_TRANS_TABLE, ENABLE_QSEARCH, ENABLE_NULL_MOVE,		       #
+# ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA, ENABLE_SEE		       #
+########################################################################
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
 -DENABLE_QSEARCH -DENABLE_NULL_MOVE -DENABLE_ASPIRATION_WINDOW		\
 -DENABLE_SEE
 
-LIBS =
-CXX = g++-mp-4.4
-CXXFLAGS = -g -Wall -m64 -O3 $(ALG)
+################
+# Main binary. #
+################
 
 all: chesley
 
-# Build the chesley binary.
 chesley: $(OBJS) vsn.o
 	$(CXX) $(CXXFLAGS) $(OBJS) vsn.o $(LIBS) -o $@
 
-# Create the version number file from svn info.
+# Create an object containing the version number from svn info.
 vsn.o: *.cpp *.hpp
 	svn info -r HEAD | sed -n 's/Revision: \([0-9]*\)/const char	\
 	*SVN_REVISION = \"\1\";/p' > vsn.xxx
 	$(CXX) -x c++ -c $(CXXFLAGS) vsn.xxx -o $@
 
-# Run an xboard game with chesley.
+%.o : %.cpp *.hpp
+	$(CXX) $(CXXFLAGS) -c $<
+
+###############################
+# Running games under xboard  #
+###############################
+
+XBOARD_OPTS = -debug -coords -size Large -xponder -thinking
+
+# Launch an xboard session with Chesley.
 play: chesley
-	xboard -debug -fcp ./chesley -coords -size Huge -xponder -thinking
+	xboard -fcp ./chesley $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley 
-	xboard -debug -fcp ./chesley -scp ./chesley -coords -size Huge	\
-	-mode TwoMachines
+	xboard -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
 
-# Run an xboard game of Chesley against chesley.old.
+# Run an xboard game of Chesley against the binary chesley.old.
 playold: chesley
-	xboard -debug -fcp ./chesley -scp ./chesley.old -coords -size	\
-	Huge -mode TwoMachines
+	xboard -fcp ./chesley -scp ./chesley.old -mode TwoMachines
+
+#######################
+# Regression testing. #
+#######################
 
 # Run the test suites.
 check: chesley
 	./run_tests.rb
 
-%.o : %.cpp *.hpp
-	$(CXX) $(CXXFLAGS) -c $<
+#############
+# Clean up. #
+#############
 
 clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
 	      Saturn* game.00* log.00* book.lrn position.bin		\
 	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log	\
-	      vsn.cpp
+	      vsn.xxx
