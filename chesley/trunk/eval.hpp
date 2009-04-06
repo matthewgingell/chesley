@@ -4,12 +4,12 @@
   Here we define a function for evaluating the strength of a position
   heuristically. Internally, the convention is that scores favoring
   white are positive and those for black are negative. However, scores
-  returned to the player are multiplied correct sign and are
+  returned to the player are multiplied by the correct sign and are
   appropriate for maximization.
 
-  The starting point for the approach taken here is Tomasz Michniewski's
-  proposal for "Unified Evaluation" tournements. The full discussion
-  of that very simple scoring strategy is avaiable at:
+  The starting point for the approach taken here is Tomasz
+  Michniewski's proposal for "Unified Evaluation" tournements. The
+  full discussion of that very simple scoring strategy is avaiable at:
   
   http://chessprogramming.wikispaces.com/simplified+evaluation+function
 
