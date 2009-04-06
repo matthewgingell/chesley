@@ -30,8 +30,8 @@ chesley: $(OBJS) vsn.o
 # Create the version number file from svn info.
 vsn.o: *.cpp *.hpp
 	svn info -r HEAD | sed -n 's/Revision: \([0-9]*\)/const char	\
-	*SVN_REVISION = \"\1\";/p' > vsn.cpp
-	$(CXX) -c $(CXXFLAGS) vsn.cpp -o $@
+	*SVN_REVISION = \"\1\";/p' > vsn.xxx
+	$(CXX) -x c++ -c $(CXXFLAGS) vsn.xxx -o $@
 
 # Run an xboard game with chesley.
 play: chesley

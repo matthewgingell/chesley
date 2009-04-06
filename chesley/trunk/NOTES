@@ -1,3 +1,21 @@
-No Null Move:
+with hh_depth:
+
+Chesley! r103
+> bench 20
+Move 1:0
+Ply     Nodes    Qnodes    Time    Eval   Principal Variation
+  1        22        21    0.00      81   e2e4 
+  2       149       132    0.00      -2   e2e4 e7e5 
+  3       334       329    0.00      73   d2d4 g8f6 b1c3 
+  4      2227      2323    0.00       1   g1f3 d7d5 b1c3 b8c6 
+  5      4023      4781    0.01      65   d2d4 g8f6 b1c3 b8c6 e2e4 
+  6     20276     31016    0.05      -6   g1f3 b8c6 d2d4 d7d5 b1c3 g8f6 
+  7     60029     75973    0.10      47   g1f3 b8c6 d2d4 d7d5 b1c3 g8f6 d1d3 
+  8    169359    315705    0.50      -8   g1f3 d7d5 b1c3 b8c6 d2d4 g8f6 f3e5 
+  9    751928   1062828    1.67      36   g1f3 g8f6 d2d4 d7d5 b1c3 b8c6 e2e3 f6e4 
+ 10   1829873   3654256    6.25       8   g1f3 e7e6 b1c3 b8c6 d2d4 g8f6 e2e4 
+ 11   3924693   7171951   13.83      51   g1f3 g8f6 b1c3 b8c6 e2e4 d7d5 e4d5 f6d5 d2d4 d5c3 b2c3 
+ 12  15449152  42272661  100.09       8   g1f3 g8f6 b1c3 b8c6 d2d4 d7d5 e2e3 e7e6 f1d3 f8b4 e1g1 e8g8 
 
 
+no hh_depth:
