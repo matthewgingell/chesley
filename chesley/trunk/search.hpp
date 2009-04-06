@@ -127,6 +127,9 @@ private:
    Score alpha = -INF, Score beta = INF,
    bool do_null_move = true);
 
+  // Static exchange evaluation.
+  Score see (const Board &b, const Move &capture);
+
   // Quiescence search. 
   Score qsearch 
   (const Board &b, int depth, int ply,

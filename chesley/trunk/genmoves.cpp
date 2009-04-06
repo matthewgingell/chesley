@@ -596,6 +596,69 @@ Board::is_attacked (int idx, Color c) const
   return false;
 }
 
+// For the currently moving side, find the least valuable piece
+// attacking a square. The strategy here is to compute the set of
+// locations an attack could be coming from, and then taking the union
+// of that set and pieces actually at those locations. En Passant is
+// ignored for now.
+Move
+Board::least_valuable_attacker (int sqr) const {
+  Color c = to_move ();
+  bitboard us = color_to_board (c);
+  bitboard from;
+
+  // Pawns.
+  bitboard our_pawns = pawns & us;
+  if (c == WHITE)
+    {
+      from = ((masks_0 [sqr] & ~file (7)) >> 7) & our_pawns;
+      if (from) return Move (bit_idx (from), sqr);
+      from = ((masks_0 [sqr] & ~file (0)) >> 9) & our_pawns;
+      if (from) return Move (bit_idx (from), sqr);
+    }
+  else
+    {
+      from = ((masks_0 [sqr] & ~file (0)) << 7) & our_pawns;
+      if (from) return Move (bit_idx (from), sqr);
+      from = ((masks_0 [sqr] & ~file (7)) << 9) & our_pawns;
+      if (from) return Move (bit_idx (from), sqr);
+    }
+  
+  // Knights.
+  from = KNIGHT_ATTACKS_TBL[sqr] & (knights & us);
+  if (from) return Move (bit_idx (from), sqr);
+
+  // Bishops.
+  from = 
+    DIAG_45_ATTACKS_TBL[sqr * 256 + occ_45 (sqr)] | 
+    DIAG_135_ATTACKS_TBL[sqr * 256 + occ_135 (sqr)];
+  from &= (bishops & us);
+  if (from) return Move (bit_idx (from), sqr);
+
+  // Rooks.
+  from = 
+    RANK_ATTACKS_TBL[sqr * 256 + occ_0 (sqr)] | 
+    FILE_ATTACKS_TBL[sqr * 256 + occ_90 (sqr)];
+  from &= (rooks & us);
+  if (from) return Move (bit_idx (from), sqr);
+
+  // Queens
+  from = 
+    RANK_ATTACKS_TBL[sqr * 256 + occ_0 (sqr)] | 
+    FILE_ATTACKS_TBL[sqr * 256 + occ_90 (sqr)] | 
+    DIAG_45_ATTACKS_TBL[sqr * 256 + occ_45 (sqr)] | 
+    DIAG_135_ATTACKS_TBL[sqr * 256 + occ_135 (sqr)];
+  from &= (queens & us);
+  if (from) return Move (bit_idx (from), sqr);
+
+  // Kings
+  from = KING_ATTACKS_TBL[sqr] & (kings & us);
+  if (from) return Move (bit_idx (from), sqr);
+
+  // Return a null move if no piece is attacking this square.
+  return Move (-1, -1);
+}
+
 // Return whether color c is in check.
 bool
 Board::in_check (Color c) const

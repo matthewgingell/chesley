@@ -390,9 +390,9 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
       if (have_entry && moves[i] == e.move)
 	moves[i].score = +INF;
       
-      // Award a bonus for captures.
+      // Award a bonus for winning captures.
       moves[i].score += 
-	10 * eval_piece (moves[i].capture (b));
+	20 * eval_piece (moves[i].capture (b));
 
       // Award a bonus for rate and depth of recent cutoffs.
       moves[i].score += 
@@ -400,6 +400,34 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
     }
 
   insertion_sort <Move_Vector, Move, less_than> (moves);
+}
+
+/********************************************************************/
+/* Search_Engine :: see ()                                          */
+/*                                                                  */
+/* Static exchange evaluation. This routine plays out a series of   */
+/* captures in least-valuable attacker order, stopping when all     */
+/* captures are resolved or a capture is disadvantageous for the    */
+/* moving side. The goal here is to generate a good estimate of the */
+/* value of a capture in linear time.                               */
+/********************************************************************/
+
+Score
+Search_Engine::see (const Board &b, const Move &m) {
+  Score s = eval_piece (m.capture (b));
+  Board c = b;
+
+  c.clear_piece (m.from);
+  c.clear_piece (m.to);
+  c.set_piece (m.get_kind (b), b.to_move (), m.to);
+  c.set_color (invert_color (b.to_move ()));
+  Move lvc = c.least_valuable_attacker (m.to);
+  if (!lvc.is_null ())
+    {
+      assert (lvc.to == m.to);
+      s += -max (see (c, lvc), 0);
+    }
+  return s;
 }
 
 // Quiescence search. 
@@ -442,10 +470,17 @@ Search_Engine::qsearch
       /* Sort captures. */
       /******************/
 
-      order_moves (b, 5, moves);
-#if 0
-      for (int i = 0; i < moves.count; i++) 
-	moves[i].score = eval_piece (moves[i].capture (b));
+#ifdef ENABLE_SEE
+      for (int i = 0; i < moves.count; i++)  
+	{
+	  moves[i].score = see (b, moves[i]);
+	}
+      insertion_sort <Move_Vector, Move, less_than> (moves);
+#else
+      for (int i = 0; i < moves.count; i++)  
+	{
+	  moves[i].score = eval_piece (moves[i].capture (b));
+	}
       insertion_sort <Move_Vector, Move, less_than> (moves);
 #endif
       
@@ -455,6 +490,9 @@ Search_Engine::qsearch
 
       for (int i = 0; i < moves.count; i++)
 	{
+	  // Prune losing captures.
+	  if (moves[i].score < 0) continue;
+
 	  c = b;
 	  if (c.apply (moves[i]))
 	    {

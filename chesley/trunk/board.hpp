@@ -354,9 +354,14 @@ struct Board {
   // Return whether the square idx is attacked by a piece of color c.
   bool is_attacked (int idx, Color c) const;
 
+  // For the currently moving side, find the least valuable piece
+  // attacking a square.
+  Move least_valuable_attacker (int sqr) const;
+
   // Return whether color c is in check.
   bool in_check (Color c) const;
 
+  // Return the color to move.
   Color to_move () const {
     return flags.to_move;
   }
