@@ -16,6 +16,28 @@
 
 #include "chesley.hpp"
 
+/*******************************/
+/* Attack table lookup macros. */
+/*******************************/
+
+#define RANK_ATTACKS(idx) \
+  (RANK_ATTACKS_TBL     [idx * 256 + occ_0 (idx)])
+
+#define FILE_ATTACKS(idx) \
+  (FILE_ATTACKS_TBL     [idx * 256 + occ_90 (idx)])
+
+#define DIAG_45_ATTACKS(idx) \
+  (DIAG_45_ATTACKS_TBL  [idx * 256 + occ_45 (idx)])
+
+#define DIAG_135_ATTACKS(idx) \
+  (DIAG_135_ATTACKS_TBL [idx * 256 + occ_135 (idx)])
+
+#define KNIGHT_ATTACKS(idx) (KNIGHT_ATTACKS_TBL[idx])
+#define BISHOP_ATTACKS(idx) (DIAG_45_ATTACKS(idx) | DIAG_135_ATTACKS(idx))
+#define ROOK_ATTACKS(idx)   (RANK_ATTACKS(idx) | FILE_ATTACKS(idx))
+#define QUEEN_ATTACKS(idx)  (BISHOP_ATTACKS(idx) | ROOK_ATTACKS(idx))
+#define KING_ATTACKS(idx)   (KING_ATTACKS_TBL[idx])
+
 // Collect all possible moves.
 void
 Board::gen_moves (Move_Vector &out) const
@@ -122,12 +144,8 @@ Board::gen_moves (Move_Vector &out) const
     {
       int from = bit_idx (our_rooks);
 
-      bitboard to =
-	(RANK_ATTACKS_TBL[from * 256 + occ_0 (from)] |
-	 FILE_ATTACKS_TBL[from * 256 + occ_90 (from)])
-	& ~our_pieces ();
-
       // Collect each destination in the moves list.
+      bitboard to = ROOK_ATTACKS(from) & ~our_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -148,9 +166,9 @@ Board::gen_moves (Move_Vector &out) const
   while (our_knights)
     {
       int from = bit_idx (our_knights);
-      bitboard to = KNIGHT_ATTACKS_TBL[from] & ~our_pieces ();
 
       // Collect each destination in the moves list.
+      bitboard to = KNIGHT_ATTACKS(from) & ~our_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -170,15 +188,10 @@ Board::gen_moves (Move_Vector &out) const
   // For each bishop;
   while (our_bishops)
     {
-      // Collect each destination in the moves list.
       int from = bit_idx (our_bishops);
-      bitboard to;
-
-      to = (DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
-	    DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
-	& ~our_pieces ();
 
       // Collect each destination in the moves list.
+      bitboard to = BISHOP_ATTACKS (from) & ~our_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -197,17 +210,10 @@ Board::gen_moves (Move_Vector &out) const
   // For each queen.
   while (our_queens)
     {
-      // Collect each destination in the moves list.
       int from = bit_idx (our_queens);
 
-      bitboard to =
-	(RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
-	 | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
-	 | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
-	 | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
-	& ~our_pieces ();
-
       // Collect each destination in the moves list.
+      bitboard to = QUEEN_ATTACKS (from) & ~our_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -230,9 +236,9 @@ Board::gen_moves (Move_Vector &out) const
   if (our_king)
     {
       int from = bit_idx (our_king);
-      bitboard to = KING_ATTACKS_TBL[from] & ~our_pieces ();
 
       // Collect each destination in the moves list.
+      bitboard to = KING_ATTACKS (from) & ~our_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -342,14 +348,9 @@ Board::gen_captures (Move_Vector &out) const
     {
       int from = bit_idx (our_rooks);
 
-      bitboard to =
-	(RANK_ATTACKS_TBL[from * 256 + occ_0 (from)] |
-	 FILE_ATTACKS_TBL[from * 256 + occ_90 (from)])
-	& ~our_pieces ();
-
-      to &= other_pieces ();
-
       // Collect each destination in the moves list.
+      bitboard to = ROOK_ATTACKS (from) & ~our_pieces ();
+      to &= other_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -370,10 +371,10 @@ Board::gen_captures (Move_Vector &out) const
   while (our_knights)
     {
       int from = bit_idx (our_knights);
-      bitboard to = KNIGHT_ATTACKS_TBL[from] & ~our_pieces ();
-      to &= other_pieces ();
 
       // Collect each destination in the moves list.
+      bitboard to = KNIGHT_ATTACKS (from) & ~our_pieces ();
+      to &= other_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -394,15 +395,10 @@ Board::gen_captures (Move_Vector &out) const
     {
       // Look up destinations in moves table and collect each in 'out'.
       int from = bit_idx (our_bishops);
-      bitboard to;
-
-      to = (DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
-	    DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
-	& ~our_pieces ();
-
-      to &= other_pieces ();
 
       // Collect each destination in the moves list.
+      bitboard to = BISHOP_ATTACKS (from) & ~our_pieces ();
+      to &= other_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -424,16 +420,9 @@ Board::gen_captures (Move_Vector &out) const
       // Look up destinations in moves table and collect each in 'out'.
       int from = bit_idx (our_queens);
 
-      bitboard to =
-	(RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
-	 | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
-	 | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
-	 | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
-	& ~our_pieces ();
-
-      to &= other_pieces ();
-
       // Collect each destination in the moves list.
+      bitboard to = QUEEN_ATTACKS (from);
+      to &= other_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -452,10 +441,10 @@ Board::gen_captures (Move_Vector &out) const
   if (our_king)
     {
       int from = bit_idx (our_king);
-      bitboard to = KING_ATTACKS_TBL[from] & ~our_pieces ();
-      to &= other_pieces ();
 
       // Collect each destination in the moves list.
+      bitboard to = KING_ATTACKS (from) & ~our_pieces ();
+      to &= other_pieces ();
       while (to)
 	{
 	  int to_idx = bit_idx (to);
@@ -491,10 +480,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |=
-        (RANK_ATTACKS_TBL[from * 256 + occ_0 (from)] |
-         FILE_ATTACKS_TBL[from * 256 + occ_90 (from)])
-        & ~color;
+      attacks |= ROOK_ATTACKS (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -503,7 +489,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= KNIGHT_ATTACKS_TBL[from] & ~color;
+      attacks |= KNIGHT_ATTACKS (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -512,10 +498,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |=
-        (DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)] |
-         DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
-        & ~color;
+      attacks |= BISHOP_ATTACKS (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -524,12 +507,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |=
-        (RANK_ATTACKS_TBL[256 * from + occ_0 (from)]
-         | FILE_ATTACKS_TBL[256 * from + occ_90 (from)]
-         | DIAG_45_ATTACKS_TBL[256 * from + occ_45 (from)]
-         | DIAG_135_ATTACKS_TBL[256 * from + occ_135 (from)])
-        & ~color;
+      attacks |= QUEEN_ATTACKS (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -538,11 +516,11 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= KING_ATTACKS_TBL[from] & ~color;
+      attacks |= KING_ATTACKS (from);
       pieces = clear_lsb (pieces);
     }
 
-  return attacks;
+  return attacks & ~color;
 }
 
 // Return whether the square at idx is attacked by a piece of color c.
@@ -555,24 +533,16 @@ Board::is_attacked (int idx, Color c) const
   bitboard them = color_to_board (c);
   bitboard attacks;
   
-  // Are we attacked along a rank?
-  attacks = RANK_ATTACKS_TBL[idx * 256 + occ_0 (idx)];
+  // Are we attacked along a rank or file?
+  attacks = ROOK_ATTACKS (idx);
   if (attacks & (them & (queens | rooks))) return true;
 
-  // Are we attack along a file?
-  attacks = FILE_ATTACKS_TBL[idx * 256 + occ_90 (idx)];
-  if (attacks & (them & (queens | rooks))) return true;
-
-  // Are we attacked along the 45 degree diagonal.
-  attacks = DIAG_45_ATTACKS_TBL[256 * idx + occ_45 (idx)];
+  // Are we attacked along a diagonal?
+  attacks = BISHOP_ATTACKS (idx);
   if (attacks & (them & (queens | bishops))) return true;
 
-  // Are we attacked along the 135 degree diagonal.
-  attacks = DIAG_135_ATTACKS_TBL[256 * idx + occ_135 (idx)];
-    if (attacks & (them & (queens | bishops))) return true;
-
   // Are we attacked by a knight?
-  attacks = KNIGHT_ATTACKS_TBL[idx];
+  attacks = KNIGHT_ATTACKS (idx);
   if (attacks & (them & knights)) return true;
 
   // Are we attacked by a king?
@@ -625,30 +595,19 @@ Board::least_valuable_attacker (int sqr) const {
     }
   
   // Knights.
-  from = KNIGHT_ATTACKS_TBL[sqr] & (knights & us);
+  from = KNIGHT_ATTACKS (sqr) & (knights & us);
   if (from) return Move (bit_idx (from), sqr);
 
   // Bishops.
-  from = 
-    DIAG_45_ATTACKS_TBL[sqr * 256 + occ_45 (sqr)] | 
-    DIAG_135_ATTACKS_TBL[sqr * 256 + occ_135 (sqr)];
-  from &= (bishops & us);
+  from = BISHOP_ATTACKS (sqr) & (bishops & us);
   if (from) return Move (bit_idx (from), sqr);
 
   // Rooks.
-  from = 
-    RANK_ATTACKS_TBL[sqr * 256 + occ_0 (sqr)] | 
-    FILE_ATTACKS_TBL[sqr * 256 + occ_90 (sqr)];
-  from &= (rooks & us);
+  from = ROOK_ATTACKS (sqr) & (rooks & us);
   if (from) return Move (bit_idx (from), sqr);
 
   // Queens
-  from = 
-    RANK_ATTACKS_TBL[sqr * 256 + occ_0 (sqr)] | 
-    FILE_ATTACKS_TBL[sqr * 256 + occ_90 (sqr)] | 
-    DIAG_45_ATTACKS_TBL[sqr * 256 + occ_45 (sqr)] | 
-    DIAG_135_ATTACKS_TBL[sqr * 256 + occ_135 (sqr)];
-  from &= (queens & us);
+  from = QUEEN_ATTACKS (sqr) & (queens & us);
   if (from) return Move (bit_idx (from), sqr);
 
   // Kings
