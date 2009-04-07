@@ -16,7 +16,7 @@
 puts "Running move generation correctness tests."
 
 c = IO.popen("./chesley", "r+")
-for test in File.open("testsuite/perftsuite.epd")
+for test in File.open("tests/perftsuite.epd")
   c.puts("epd #{test}")
 end
 
