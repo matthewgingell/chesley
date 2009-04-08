@@ -14,7 +14,11 @@
   gingell@adacore.com
 */
 
+#include <iostream> 
+
 #include "chesley.hpp"
+
+using namespace std;
 
 /*******************************/
 /* Attack table lookup macros. */
@@ -288,7 +292,7 @@ Board::gen_captures (Move_Vector &out) const
   while (our_pawns)
     {
       bitboard from = clear_msbs (our_pawns);
-      bitboard to;
+      bitboard to = 0;
 
       if (c == WHITE)
 	{
@@ -327,11 +331,8 @@ Board::gen_captures (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
 	  Move m (bit_idx (from), to_idx);
-	  // Handle non-promotion case;
 	  out.push (m);
-
 	  to = clear_lsb (to);
 	}
       our_pawns = clear_lsb (our_pawns);
