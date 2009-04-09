@@ -1,20 +1,25 @@
-/*
-   Representation and operations on a board state in a game of chess.
-
-   Matthew Gingell
-   gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// board.cpp							     	      //
+// 								     	      //
+// Representation and operations on a board state in a game of chess.         //
+// 								              //
+// Matthew Gingell						              //
+// gingell@adacore.com					        	      //
+// 								              //
+////////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
 #include <cctype>
 #include <sstream>
+
 #include "chesley.hpp"
 
 using namespace std;
 
-/**************/
-/* Kind type. */
-/**************/
+////////////////
+// Kind type. //
+////////////////
 
 // Convert a kind to a character code.
 char
@@ -70,9 +75,9 @@ operator<< (std::ostream &os, Kind k) {
     return os;
 }
 
-/*****************/
-/*  Color type.  */
-/*****************/
+/////////////////
+// Color type. //
+/////////////////
 
 std::ostream &
 operator<< (std::ostream &os, Color c) {
@@ -84,9 +89,9 @@ operator<< (std::ostream &os, Color c) {
     }
 }
 
-/*************/
-/* Constants */
-/*************/
+////////////////
+// Constants. //
+////////////////
 
 const string Board::
 INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -104,9 +109,9 @@ INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
     "R N B Q K B N R"; // 0
 #endif
 
-/*****************/
-/* Constructors. */
-/****************/
+///////////////////
+// Constructors. //
+///////////////////
 
 void
 Board::common_init (Board &b) {
@@ -159,13 +164,9 @@ Board::startpos () {
     ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-/*********/
-/* Tests */
-/*********/
-
-/***************************/
-/* Seting castling rights  */
-/***************************/
+/////////////////////////////
+// Seting castling rights. //
+/////////////////////////////
 
 void
 Board::set_castling_right (Castling_Right cr, bool v) {
@@ -205,9 +206,9 @@ Board::set_castling_right (Castling_Right cr, bool v) {
     }
 }
 
-/********************/
-/* Move application */
-/********************/
+///////////////////////
+// Move application. //
+///////////////////////
 
 // Apply a move to the board. Return false if this move is illegal
 // because it places or leaves the color to move in check.
@@ -221,9 +222,9 @@ Board::apply (const Move &m) {
   bool is_castle_ks = m.is_castle_ks (*this);
   bool is_en_passant = m.is_en_passant (*this);
 
-  /******************/
-  /* Update clocks. */
-  /******************/
+  ////////////////////
+  // Update clocks. //
+  ////////////////////
 
   // Reset the 50 move rule clock when a pawn is moved or a capture is
   // made.
@@ -245,15 +246,15 @@ Board::apply (const Move &m) {
       return false;
     }
 
-  /*************************/
-  /* Update to_move state. */
-  /*************************/
+  ///////////////////////////
+  // Update to_move state. //
+  ///////////////////////////
 
   set_color (invert_color (to_move ()));
 
-  /****************************/
-  /* Handle taking En Passant */
-  /****************************/
+  ///////////////////////////////
+  // Handle taking En Passant. //
+  ///////////////////////////////
 
   if (is_en_passant)
     {
@@ -264,11 +265,11 @@ Board::apply (const Move &m) {
 	clear_piece (flags.en_passant + 8);
     }
 
-  /*****************************************************************/
-  /* Update En Passant target square. This needs to be done before */
-  /* checking castling, since otherwise we may return without      */
-  /* clearing the En Passant target square.                        */
-  /*****************************************************************/
+ ///////////////////////////////////////////////////////////////////
+ // Update En Passant target square. This needs to be done before //
+ // checking castling, since otherwise we may return without      //
+ // clearing the En Passant target square.                        //
+ ///////////////////////////////////////////////////////////////////
 
   set_en_passant (0);
   if (kind == PAWN)
@@ -282,9 +283,9 @@ Board::apply (const Move &m) {
       }
     }
     
-  /****************************/
-  /* Handling castling moves. */
-  /****************************/
+  //////////////////////////////
+  // Handling castling moves. //
+  //////////////////////////////
 
   if (is_castle_qs || is_castle_ks)
     {
@@ -348,25 +349,26 @@ Board::apply (const Move &m) {
     }
   else
     {
-      /*********************************/
-      /* Handle the non-castling case. */
-      /*********************************/
+
+      ///////////////////////////////////
+      // Handle the non-castling case. //
+      ///////////////////////////////////
 
       clear_piece (m.from);
       clear_piece (m.to);
 
-      /**********************/
-      /* Handle promotions. */
-      /**********************/
+      ////////////////////////
+      // Handle promotions. //
+      ////////////////////////
 
       if (m.promote != NULL_KIND)
 	set_piece (m.promote, color, m.to);
       else
 	set_piece (kind, color, m.to);
 
-      /**************************/
-      /* Update castling status */
-      /**************************/
+      /////////////////////////////
+      // Update castling status. //
+      /////////////////////////////
 
       // King moves.
       if (m.from == 4)
@@ -381,24 +383,23 @@ Board::apply (const Move &m) {
 	}
 
       // Rook moves and attacks.
-
       if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
       if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
       if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
       if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
 
-      /*****************/
-      /* Test legality. */
-      /*****************/
+      ////////////////////
+      // Test legality. //
+      ////////////////////
       
       // Return whether this position puts or leaves us in check.
       return !in_check (color);
     }
 }
 
-/******************/
-/* Board vectors. */
-/******************/
+////////////////////
+// Board vectors. //
+////////////////////
 
 Board_Vector::Board_Vector (const Board &b)
 {
@@ -412,9 +413,10 @@ Board_Vector::Board_Vector (const Board &b)
     }
 }
 
-/***********/
-/*   I/O   */
-/***********/
+
+/////////////
+//   I/O   //
+/////////////
 
 // Print a board.
 ostream &
@@ -440,55 +442,9 @@ operator<< (std::ostream &os, const Move &m)
 	    << " " << m.score << "]";
 }
 
-// Construct a Move from coordinate algebraic notation.
-Move
-Board::from_calg (const string &s) const {
-  assert (s.length () >= 4);
-
-  // Decode string
-  uint32 from = (s[0] - 'a') + 8 * (s[1] - '1');
-  uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
-
-  // Build move.
-  Move m = Move (from, to, (s.length () >= 5) ? to_kind (s[4]) : NULL_KIND);
-
-  return m;
-}
-
-// Return a description of a Move in coordinate algebraic notation.
-string
-Board::to_calg (const Move &m) const {
-  ostringstream s;
-
-  // The simple case of an ordinary move.
-  s << (char) ('a' + idx_to_file (m.from));
-  s << (int)  (      idx_to_rank (m.from) + 1);
-  s << (char) ('a' + idx_to_file (m.to));
-  s << (int)  (      idx_to_rank (m.to) + 1);
-
-  // Promotion case.
-  if (m.promote != NULL_KIND)
-    {
-      s << to_char (m.promote);
-    }
-
-  return s.str();
-}
-
-// Initialize a board from an ascii art representation of a board
-// string.
-Board
-Board::from_ascii (const string &str) {
-  Board b;
-
-  Board::common_init (b);
-  assert (0);
-  return b;
-}
-
-/************/
-/* Testing. */
-/************/
+//////////////
+// Testing. //
+//////////////
 
 // Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
 void

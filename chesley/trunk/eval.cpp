@@ -1,26 +1,28 @@
-/*
-  eval.cpp
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// eval.cpp                                                                   //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #include "chesley.hpp"
 
-/**************************************************************************/
-/*  piece_square_table:                                                   */
-/*                                                                        */
-/*  This is a table of bonuses for each piece-location pair. The table    */
-/*  is written in 'reverse' for readablility and a transformation is      */
-/*  required for fetching values for black and white.                     */
-/*                                                                        */
-/*  The values in the following table are taken from Tomasz               */
-/*  Michniewski's proposal for "Unified Evaluation" tournaments. The      */
-/*  full discussion of that very simple scoring strategy is available     */
-/*  at:                                                                   */
-/*                                                                        */
-/*  http://chessprogramming.wikispaces.com/simplified+evaluation+function */
-/**************************************************************************/
+////////////////////////////////////////////////////////////////////////////
+//  piece_square_table:                                                   //
+//                                                                        //
+//  This is a table of bonuses for each piece-location pair. The table    //
+//  is written in 'reverse' for readablility and a transformation is      //
+//  required for fetching values for black and white.                     //
+//                                                                        //
+//  The values in the following table are taken from Tomasz               //
+//  Michniewski's proposal for "Unified Evaluation" tournaments. The      //
+//  full discussion of that very simple scoring strategy is available     //
+//  at:                                                                   //
+//                                                                        //
+//  http://chessprogramming.wikispaces.com/simplified+evaluation+function //
+////////////////////////////////////////////////////////////////////////////
 
 // Bonuses for white indexed by [piece][64 - square].
 //

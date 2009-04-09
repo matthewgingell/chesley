@@ -1,9 +1,13 @@
-/*
-   Chesley the chess engine! 
-
-   Matthew Gingell
-   gingell@gnat.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// chesley.hpp							     	      //
+// 								     	      //
+// Chesley the Chess Engine!                                       	      //
+// 								     	      //
+// Matthew Gingell						     	      //
+// gingell@adacore.com					     		      //
+// 								     	      //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __CHESLEY__
 #define __CHESLEY__

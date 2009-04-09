@@ -1,45 +1,48 @@
-/*
-  Representation and operations on a board state in a game of chess.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// board.cpp							     	      //
+// 								     	      //
+// Representation and operations on a board state in a game of chess.         //
+// 								              //
+// Matthew Gingell						              //
+// gingell@adacore.com					        	      //
+// 								              //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _BOARD_
 #define _BOARD_
 
+#include <boost/unordered_map.hpp>
 #include <cassert>
 #include <cstring>
 #include <iostream>
 #include <string>
-
-#include <boost/unordered_map.hpp>
 #include <vector>
 
 #include "bits64.hpp"
 #include "types.hpp"
 #include "util.hpp"
 
-/*********/
-/* Types */
-/*********/
+////////////
+// Types. //
+////////////
 
 struct Move;
 struct Move_Vector;
 struct Board;
 struct Board_Vector;
 
-/*******************/
-/*  Bitboard type. */
-/*******************/
+////////////////////
+// Bitboard type. //
+////////////////////
 
 typedef uint64 bitboard;
 
 void print_board (bitboard b);
 
-/*****************/
-/*  Color type.  */
-/*****************/
+/////////////////
+// Color type. //
+/////////////////
 
 enum Color { NULL_COLOR = -1, WHITE = 0, BLACK = 1 };
 
@@ -53,9 +56,9 @@ inline int sign (Color c) {
   return (c == WHITE) ? +1 :  -1;
 }
 
-/**************/
-/* Move type. */
-/**************/
+////////////////
+// Move type. //
+////////////////
 
 struct Move {
 
@@ -116,9 +119,9 @@ more_than (const Move &lhs, const Move &rhs) {
   return lhs.score > rhs.score;
 }
 
-/****************/
-/* Move vectors */
-/****************/
+///////////////////
+// Move vectors. //
+///////////////////
 
 // Vector of moves.
 struct Move_Vector {
@@ -174,30 +177,30 @@ count (const Move_Vector &moves) {
 std::ostream &
 operator<< (std::ostream &os, const Move_Vector &moves);
 
-/*******************/
-/* Castling rights */
-/*******************/
+//////////////////////
+// Castling rights. //
+//////////////////////
 
 enum Castling_Right
   {W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE};
 
-/****************************/
-/* Chess board state type. */
-/***************************/
+/////////////////////////////
+// Chess board state type. //
+/////////////////////////////
 
 std::ostream & operator<< (std::ostream &os, const Board &b);
 
 struct Board {
 
-  /*************/
-  /* Constants */
-  /*************/
+  ///////////////
+  // Constants //
+  ///////////////
 
   static const std::string INITIAL_POSITIONS;
 
-  /************************************/
-  /* Precomputed tables and constants */
-  /************************************/
+  //////////////////////////////////////
+  // Precomputed tables and constants //
+  //////////////////////////////////////
 
   static bool have_precomputed_tables;
 
@@ -232,9 +235,9 @@ struct Board {
   static uint64  zobrist_b_castle_q_key;
   static uint64  zobrist_b_castle_k_key;
 
-  /***************************************************/
-  /* Bitboards representing the state of the board.  */
-  /***************************************************/
+  /////////////////////////////////////////////////////
+  // Bitboards representing the state of the board.  //
+  /////////////////////////////////////////////////////
 
   // Color
   bitboard white;
@@ -272,9 +275,9 @@ struct Board {
   uint32 half_move_clock; // Used for 50-move rule.
   uint32 full_move_clock; // Clock after each black move.
 
-  /************************************/
-  /* Constructors and initialization. */
-  /************************************/
+  //////////////////////////////////////
+  // Constructors and initialization. //
+  //////////////////////////////////////
 
   // Must be called to initialize static members in correct order.
   static const void precompute_tables ();
@@ -294,9 +297,9 @@ struct Board {
   // Construct a board from the standard starting position.
   static Board startpos ();
 
-  /*************/
-  /* Operators */
-  /*************/
+  ///////////////
+  // Operators //
+  ///////////////
 
   bool operator== (const Board &rhs) {
     return hash == rhs.hash;
@@ -306,9 +309,9 @@ struct Board {
     return hash != rhs.hash;
   }
 
-  /***********/
-  /* Hashing */
-  /***********/
+  /////////////
+  // Hashing //
+  /////////////
 
   // Incrementally updated hash key for this position.
   uint64 hash;
@@ -324,9 +327,9 @@ struct Board {
     return zobrist_piece_keys[i * (64 * 6) + j * (64) + idx];
   }
 
-  /**********/
-  /* Output */
-  /**********/
+  ////////////
+  // Output //
+  ////////////
 
   // Return an ASCII representation of this position.
   std::string to_ascii () const;
@@ -334,9 +337,9 @@ struct Board {
   // Return a FEN string for this position.
   std::string to_fen () const;
 
-  /*************************************************/
-  /* Reading and writing Moves against this board. */
-  /*************************************************/
+  ///////////////////////////////////////////////////
+  // Reading and writing Moves against this board. //
+  ///////////////////////////////////////////////////
 
   // Produce an algebraic letter-number pair for an integer square
   // number.
@@ -362,9 +365,9 @@ struct Board {
   // Produce a move from a SAN string.
   Move from_san (const std::string &s) const;
 
-  /*********/
-  /* Tests */
-  /*********/
+  ///////////
+  // Tests //
+  ///////////
 
   // Compute a bitboard of every square color is attacking.
   bitboard attack_set (Color) const;
@@ -426,9 +429,9 @@ struct Board {
     return x >= 0 && x <= 7 && y >= 0 && y <= 7;
   }
 
-  /*****************/
-  /* Flags setters */
-  /*****************/
+  ///////////////////
+  // Flags setters //
+  ///////////////////
 
   // It is crucial to use the following routines to set board flags,
   // rather than accessing those fields directly. Otherwise the
@@ -454,9 +457,9 @@ struct Board {
   // Set castling rights.
   void set_castling_right (Castling_Right cr, bool v);
 
-  /*************/
-  /* Accessors */
-  /*************/
+  ///////////////
+  // Accessors //
+  ///////////////
 
   // Return a board reference from a Kind.
   bitboard &
@@ -581,9 +584,9 @@ struct Board {
   // Apply a move to this board.
   bool apply (const Move &m);
 
-  /**********/
-  /* Boards */
-  /**********/
+  ////////////
+  // Boards //
+  ////////////
 
   // Return a bitboard with every bit of the Nth rank set.
   static bitboard
@@ -627,9 +630,9 @@ struct Board {
     return ~occupied;
   }
 
-  /***********************/
-  /* Occupancy patterns. */
-  /***********************/
+  /////////////////////////
+  // Occupancy patterns. //
+  /////////////////////////
 
   byte
   occ_0 (int from) const {
@@ -651,16 +654,16 @@ struct Board {
     return occupied_135 >> diag_shifts_135[from];
   }
 
-  /***************************************/
-  /* Move and child position generation. */
-  /***************************************/
+  /////////////////////////////////////////
+  // Move and child position generation. //
+  /////////////////////////////////////////
 
   void gen_moves (Move_Vector &moves) const;
   void gen_captures (Move_Vector &moves) const;
 
-  /***********/
-  /* Testing */
-  /***********/
+  //////////////
+  // Testing. //
+  //////////////
 
   // Generate the number of moves available at ply 'd'. Used for
   // debugging the move generator.
@@ -681,9 +684,9 @@ struct Board {
 // Output human readable board.
 std::ostream & operator<< (std::ostream &os, const Board &b);
 
-/*****************/
-/* Board vectors */
-/*****************/
+///////////////////
+// Board vectors //
+///////////////////
 
 // Vector of boards.
 struct Board_Vector {
@@ -719,9 +722,9 @@ Board::child_count () const {
   return (Board_Vector (*this)).count;
 }
 
-/*********/
-/* Moves */
-/*********/
+///////////
+// Moves //
+///////////
 
 // Is this a null move?
 inline bool

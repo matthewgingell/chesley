@@ -1,18 +1,22 @@
-/*
-   Operations on a list of moves.
-
-   Matthew Gingell
-   gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// movevec.cpp							     	      //
+// 								     	      //
+// Operations on a list of moves.					      //
+// 								     	      //
+// Matthew Gingell							      //
+// gingell@adacore.com							      //
+// 								     	      //
+////////////////////////////////////////////////////////////////////////////////
 
 #include <cstring>
 #include <iostream>
+
 #include "board.hpp"
 
 using namespace std;
 
-/* Constructor for move vectors. */
-
+// Constructor for move vectors.
 Move_Vector::Move_Vector () {
   count = 0;
 }
@@ -29,8 +33,8 @@ Move_Vector::Move_Vector (const Move_Vector &mv) {
 
 Move_Vector::Move_Vector (const Move &m, const Move_Vector &mv) {
   move[0] = m;
-  
-  if (mv.count > 0) 
+
+  if (mv.count > 0)
     {
       memcpy (move + 1, mv.move, sizeof (Move) * mv.count);
       count = mv.count + 1;

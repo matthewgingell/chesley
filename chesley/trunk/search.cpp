@@ -1,9 +1,15 @@
-/*
-  Implementation of the engine's search strategy.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// search.cpp                                                                 //
+//                                                                            //
+// Interface to the search engine. Clients are expected to create and         //
+// configure search engine objects then call its methods to do various        //
+// types of searches.                                                         //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
 #include <iomanip>
@@ -12,9 +18,9 @@
 
 using namespace std;
 
-/********************/
-/* Public interface */
-/********************/
+//////////////////////
+// Public interface //
+//////////////////////
 
 // Compute the principal variation and return its first move.
 Move
@@ -25,17 +31,17 @@ Search_Engine :: choose_move (Board &b, int depth) {
   return pv[0];
 }
 
-/**************************/
-/* Private implementation */
-/**************************/
+////////////////////////////
+// Private implementation //
+////////////////////////////
 
-/**********************************************************************/
-/* Search_Engine :: new_search ()                                     */
-/*                                                                    */
-/* This is the top level entry point to the tree search. It take care */
-/* of initializing search state, then calls lower level routines to   */
-/* generate a score and populate the principal variation.             */
-/**********************************************************************/
+////////////////////////////////////////////////////////////////////////
+// Search_Engine :: new_search ()                                     //
+//                                                                    //
+// This is the top level entry point to the tree search. It take care //
+// of initializing search state, then calls lower level routines to   //
+// generate a score and populate the principal variation.             //
+////////////////////////////////////////////////////////////////////////
 
 Score
 Search_Engine :: new_search 
@@ -54,13 +60,13 @@ Search_Engine :: new_search
   return iterative_deepening (b, depth, pv);
 }
 
-/**********************************************************************/
-/* Search_Engine::iterative_deepening                                 */
-/*                                                                    */
-/* Do a depth first search repeatedly, each time increasing the depth */
-/* by one. This allows us to return a reasonable move if we are       */
-/* interrupted.                                                       */
-/**********************************************************************/
+////////////////////////////////////////////////////////////////////////
+// Search_Engine::iterative_deepening                                 //
+//                                                                    //
+// Do a depth first search repeatedly, each time increasing the depth //
+// by one. This allows us to return a reasonable move if we are       //
+// interrupted.                                                       //
+////////////////////////////////////////////////////////////////////////
 
 Score 
 Search_Engine::iterative_deepening 
@@ -73,7 +79,7 @@ Search_Engine::iterative_deepening
     {
       cerr << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl;
       cerr << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation" 
-	   << endl;
+           << endl;
     }
 
   // Search progressively deeper play until we are interrupted.
@@ -91,55 +97,55 @@ Search_Engine::iterative_deepening
 
       // Do an aspiration search.
       if (i > 1) 
-	{
-	  s = search_with_memory  (b, i, 0, tmp, lower, upper);
-	  
-	  // Search again with a full window if we fail to find the
-	  // best move in the aspiration window or if this search
-	  // failed to return at least one move.
-	  if (s <= lower || s >= upper || tmp.count == 0)
-	    {
-	      tmp.clear ();
-	      s = search_with_memory (b, i, 0, tmp);
-	    }
-	}
+        {
+          s = search_with_memory  (b, i, 0, tmp, lower, upper);
+          
+          // Search again with a full window if we fail to find the
+          // best move in the aspiration window or if this search
+          // failed to return at least one move.
+          if (s <= lower || s >= upper || tmp.count == 0)
+            {
+              tmp.clear ();
+              s = search_with_memory (b, i, 0, tmp);
+            }
+        }
       else
-	{
-	  s = search_with_memory (b, i, 0, tmp);
-	}
+        {
+          s = search_with_memory (b, i, 0, tmp);
+        }
 #else
       s = search_with_memory (b, i, 0, tmp);
 #endif /* ENABLE_ASPIRATION_WINDOW */
 
       if (interrupt_search)
-	  break;
+          break;
 
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0)
-	{
-	  pv = tmp;
+        {
+          pv = tmp;
 
-	  // Show thinking.
-	  if (post)
-	    {
-	      double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
-	      cerr 
-		<< setw (3)  << i
-		<< setw (10) << calls_to_search
-		<< setw (10) << calls_to_qsearch
-		<< setw (8)  << setiosflags (ios::fixed) << setprecision (2) 
-		<< elapsed
-		<< setw (8)  << pv[0].score 
-		<< "   ";
-	      Board c = b;
-	      for (int j = 0; j < pv.count; j++)
-		{
-		  cerr << c.to_san (pv[j]) << " ";
-		  c.apply (pv[j]);
-		}
-	      cerr << endl;
-	    }
-	}
+          // Show thinking.
+          if (post)
+            {
+              double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
+              cerr 
+                << setw (3)  << i
+                << setw (10) << calls_to_search
+                << setw (10) << calls_to_qsearch
+                << setw (8)  << setiosflags (ios::fixed) << setprecision (2) 
+                << elapsed
+                << setw (8)  << pv[0].score 
+                << "   ";
+              Board c = b;
+              for (int j = 0; j < pv.count; j++)
+                {
+                  cerr << c.to_san (pv[j]) << " ";
+                  c.apply (pv[j]);
+                }
+              cerr << endl;
+            }
+        }
     }
 
   // Check that we got at least one move.
@@ -148,13 +154,13 @@ Search_Engine::iterative_deepening
   return pv[0].score;
 }
 
-/***********************************************************************/
-/* Search_Engine :: search_with_memory ()                              */
-/*                                                                     */
-/* This routine wraps search and memoizes lookups in the transposition */
-/* table.                                                              */
-/*                                                                     */
-/***********************************************************************/
+/////////////////////////////////////////////////////////////////////////
+// Search_Engine :: search_with_memory ()                              //
+//                                                                     //
+// This routine wraps search and memoizes lookups in the transposition //
+// table.                                                              //
+//                                                                     //
+/////////////////////////////////////////////////////////////////////////
 
 Score
 Search_Engine :: search_with_memory 
@@ -169,9 +175,9 @@ Search_Engine :: search_with_memory
   assert (pv.count == 0);
 
 #ifdef ENABLE_TRANS_TABLE
-  /*****************************************************/
-  /* Try to find this node in the transposition table. */
-  /*****************************************************/
+  ///////////////////////////////////////////////////////
+  // Try to find this node in the transposition table. //
+  ///////////////////////////////////////////////////////
 
   TT_Entry entry;
   bool have_exact = false;
@@ -183,13 +189,13 @@ Search_Engine :: search_with_memory
       b.half_move_clock < 50 && rep_count (b) < 3) 
     {
       if (entry.type == TT_Entry::LOWERBOUND)
-	alpha = max (entry.move.score, alpha);
+        alpha = max (entry.move.score, alpha);
       
       else if (entry.type == TT_Entry::UPPERBOUND)
-	beta = min (entry.move.score, beta);
+        beta = min (entry.move.score, beta);
 
       else if (entry.type == TT_Entry::EXACT_VALUE)
-	have_exact = true;
+        have_exact = true;
     }
 
   if (have_exact)
@@ -205,22 +211,23 @@ Search_Engine :: search_with_memory
   rt_pop (b);
 
 #ifdef ENABLE_TRANS_TABLE
-  /****************************************************/
-  /* Update the transposition table with this result. */
-  /****************************************************/
+  //////////////////////////////////////////////////////
+  // Update the transposition table with this result. //
+  //////////////////////////////////////////////////////
+
   if (pv.count > 0 && (!found_tt_entry || depth > entry.depth))
     {
       entry.move = pv[0];
       entry.depth = depth;
 
       if (s >= beta) 
-	entry.type = TT_Entry :: LOWERBOUND;
+        entry.type = TT_Entry :: LOWERBOUND;
 
       else if (s <= alpha)
-	entry.type = TT_Entry :: UPPERBOUND;
+        entry.type = TT_Entry :: UPPERBOUND;
 
       else
-	entry.type = TT_Entry :: EXACT_VALUE;
+        entry.type = TT_Entry :: EXACT_VALUE;
 
       tt_store (b.hash, entry);
     }
@@ -241,29 +248,29 @@ Search_Engine :: search
 
   assert (pv.count == 0);
 
-  /**********************************************/
-  /* Check 50 move and triple repitition rules. */
-  /**********************************************/
+  ////////////////////////////////////////////////
+  // Check 50 move and triple repitition rules. //
+  ////////////////////////////////////////////////
 
   if (b.half_move_clock == 50 || is_rep (b))
     return 0;
 
-  /**************************************/
-  /* Abort if we have been interrupted. */
-  /**************************************/
+  ////////////////////////////////////////
+  // Abort if we have been interrupted. //
+  ////////////////////////////////////////
   
   if (interrupt_search)
     return 0;
 
-  /**********************/
-  /* Update statistics. */
-  /**********************/
+  ////////////////////////
+  // Update statistics. //
+  ////////////////////////
 
   calls_to_search++;
 
-  /********************************************************/
-  /* Return the result of a quiescence search at depth 0. */
-  /********************************************************/
+  //////////////////////////////////////////////////////////
+  // Return the result of a quiescence search at depth 0. //
+  //////////////////////////////////////////////////////////
   
   if (depth <= 0) 
     {
@@ -274,104 +281,104 @@ Search_Engine :: search
 #endif /* ENABLE_QSEARCH */
     }
 
-  /*****************************************************/
-  /* Otherwise recurse over the children of this node. */
-  /*****************************************************/
+  ///////////////////////////////////////////////////////
+  // Otherwise recurse over the children of this node. //
+  ///////////////////////////////////////////////////////
   
   else {
 
 #ifdef ENABLE_NULL_MOVE
-    /************************/
-    /* Null move heuristic. */
-    /************************/
+    //////////////////////////
+    // Null move heuristic. //
+    //////////////////////////
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
     if (do_null_move && 
-	pop_count (b.occupied) > 15 &&
-	!b.in_check ((b.to_move ())))
+        pop_count (b.occupied) > 15 &&
+        !b.in_check ((b.to_move ())))
       {
-	Move_Vector dummy;
-	Board c = b;
-	c.set_color (invert_color (b.to_move ()));
+        Move_Vector dummy;
+        Board c = b;
+        c.set_color (invert_color (b.to_move ()));
 
-	const int R = 2;
-	int val = -search_with_memory 
-	  (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
+        const int R = 2;
+        int val = -search_with_memory 
+          (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
 
-	if (val >= beta) 
-	  {
-	    return val;
-	  }
+        if (val >= beta) 
+          {
+            return val;
+          }
       }
 #endif /* ENABLE_NULL_MOVE */
-	
+        
     Move_Vector moves (b);
 
 #ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves);
 #endif
 
-    /**************************/
-    /* Minimax over children. */
-    /**************************/
+    ////////////////////////////
+    // Minimax over children. //
+    ////////////////////////////
 
     for (int i = 0; i < moves.count; i++)
       {
-	Board c = b;
-	Move_Vector cpv;
+        Board c = b;
+        Move_Vector cpv;
 
-	if (c.apply (moves[i]))
-	  {
-	    found_move = true;
+        if (c.apply (moves[i]))
+          {
+            found_move = true;
 
-	    // Recursively score the child.
-	    int cs = -search_with_memory 
-	      (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
-	    
-	    if (cs > alpha)
-	      {
-		alpha = cs;
-		moves[i].score = alpha;
-		pv = Move_Vector (moves[i], cpv);
-	      }
+            // Recursively score the child.
+            int cs = -search_with_memory 
+              (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
+            
+            if (cs > alpha)
+              {
+                alpha = cs;
+                moves[i].score = alpha;
+                pv = Move_Vector (moves[i], cpv);
+              }
 
 #ifdef ENABLE_ALPHA_BETA
-	    if (alpha >= beta)
-	      {
-		break;
-	      }
+            if (alpha >= beta)
+              {
+                break;
+              }
 #endif /* ENABLE_ALPHA_BETA */
-	  }
+          }
       }
 
     // If none of the moves we tried applied, then the game is over.
     if (!found_move)
       {
-	if (b.in_check (b.to_move ()))
-	  {
-	    /*********************************************************/
-	    /* We need to provide a bonus to shallower wins over     */
-	    /* deeper ones, since if we're ambivalent between near   */
-	    /* and far wins at every ply the search will happily     */
-	    /* prove it can mate in N forever and never actually get */
-	    /* there.                                                */
-	    /*********************************************************/
+        if (b.in_check (b.to_move ()))
+          {
+            ///////////////////////////////////////////////////////////
+            // We need to provide a bonus to shallower wins over     //
+            // deeper ones, since if we're ambivalent between near   //
+            // and far wins at every ply the search will happily     //
+            // prove it can mate in N forever and never actually get //
+            // there.                                                //
+            ///////////////////////////////////////////////////////////
 
-	    alpha = -(MATE_VAL - ply);
-	  }
-	else
-	  {
-	    alpha = 0;
-	  }
+            alpha = -(MATE_VAL - ply);
+          }
+        else
+          {
+            alpha = 0;
+          }
       }
     else
       {
-	/**********************************************/
-	/* Update the history table with this result. */
-	/**********************************************/
-	if (pv.count > 0)
-	  hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;
+        ////////////////////////////////////////////////
+        // Update the history table with this result. //
+        ////////////////////////////////////////////////
+        if (pv.count > 0)
+          hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;
       }
   }
 
@@ -390,29 +397,29 @@ Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
       // If we previously computed that moves[i] was the best move
       // from this position make sure it is searched first.
       if (have_entry && moves[i] == e.move)
-	moves[i].score = +INF;
+        moves[i].score = +INF;
       
       // Award a bonus for winning captures.
       moves[i].score += 
-	20 * eval_piece (moves[i].capture (b));
+        20 * eval_piece (moves[i].capture (b));
 
       // Award a bonus for rate and depth of recent cutoffs.
       moves[i].score += 
-	hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }
 
   insertion_sort <Move_Vector, Move, less_than> (moves);
 }
 
-/********************************************************************/
-/* Search_Engine :: see ()                                          */
-/*                                                                  */
-/* Static exchange evaluation. This routine plays out a series of   */
-/* captures in least-valuable attacker order, stopping when all     */
-/* captures are resolved or a capture is disadvantageous for the    */
-/* moving side. The goal here is to generate a good estimate of the */
-/* value of a capture in linear time.                               */
-/********************************************************************/
+//////////////////////////////////////////////////////////////////////
+// Search_Engine :: see ()                                          //
+//                                                                  //
+// Static exchange evaluation. This routine plays out a series of   //
+// captures in least-valuable attacker order, stopping when all     //
+// captures are resolved or a capture is disadvantageous for the    //
+// moving side. The goal here is to generate a good estimate of the //
+// value of a capture in linear time.                               //
+//////////////////////////////////////////////////////////////////////
 
 Score
 Search_Engine::see (const Board &b, const Move &m) {
@@ -440,9 +447,9 @@ Search_Engine::qsearch
 {
   Move_Vector dummy;
 
-  /**********************/
-  /* Update statistics. */
-  /**********************/
+  ////////////////////////
+  // Update statistics. //
+  ////////////////////////
 
   calls_to_qsearch++;
 
@@ -451,15 +458,15 @@ Search_Engine::qsearch
       return -(MATE_VAL - ply);
     }
 
-  /**************************************/
-  /* Do static evaluation at this node. */
-  /**************************************/
+  ////////////////////////////////////////
+  // Do static evaluation at this node. //
+  ////////////////////////////////////////
 
   alpha = max (alpha, eval (b) - ply);
 
-  /**************************************/
-  /* Recurse and minimax over children. */ 
-  /**************************************/
+  ////////////////////////////////////////
+  // Recurse and minimax over children. // 
+  ////////////////////////////////////////
 
   if (alpha < beta) 
     {
@@ -468,52 +475,52 @@ Search_Engine::qsearch
       
       b.gen_captures (moves);
 
-      /******************/
-      /* Sort captures. */
-      /******************/
+      ////////////////////
+      // Sort captures. //
+      ////////////////////
 
 #ifdef ENABLE_SEE
       for (int i = 0; i < moves.count; i++)  
-	{
-	  moves[i].score = see (b, moves[i]);
-	}
+        {
+          moves[i].score = see (b, moves[i]);
+        }
       insertion_sort <Move_Vector, Move, less_than> (moves);
 #else
       for (int i = 0; i < moves.count; i++)  
-	{
-	  moves[i].score = eval_piece (moves[i].capture (b));
-	}
+        {
+          moves[i].score = eval_piece (moves[i].capture (b));
+        }
       insertion_sort <Move_Vector, Move, less_than> (moves);
 #endif
       
-      /**************************/
-      /* Minimax over captures. */
-      /**************************/
+      ////////////////////////////
+      // Minimax over captures. //
+      ////////////////////////////
 
       for (int i = 0; i < moves.count; i++)
-	{
-	  // Prune losing captures.
-	  if (moves[i].score < 0) continue;
+        {
+          // Prune losing captures.
+          if (moves[i].score < 0) continue;
 
-	  c = b;
-	  if (c.apply (moves[i]))
-	    {
-	      alpha = max 
-		(alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
-	      if (alpha >= beta) 
-		break;
-	    }
-	}
+          c = b;
+          if (c.apply (moves[i]))
+            {
+              alpha = max 
+                (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
+              if (alpha >= beta) 
+                break;
+            }
+        }
     }
 
   return alpha;
 }
 
-/**********************************************************************/
-/* Transposition tables                                               */
-/*                                                                    */
-/* Operations on the transposition table.                             */
-/**********************************************************************/
+////////////////////////////////////////////////////////////////////////
+// Transposition tables                                               //
+//                                                                    //
+// Operations on the transposition table.                             //
+////////////////////////////////////////////////////////////////////////
 
 // Fetch an entry from the transposition table. Returns false if no
 // entry is found.
@@ -544,12 +551,12 @@ Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
   tt.insert (pair <uint64, TT_Entry> (hash, in));
 }
 
-/**********************************************************************/
-/* Repetition tables.                                                 */
-/*                                                                    */
-/* Operations on repetition tables. These are used to enforce the     */
-/* triple Repetition rule.                                            */
-/**********************************************************************/
+////////////////////////////////////////////////////////////////////////
+// Repetition tables.                                                 //
+//                                                                    //
+// Operations on repetition tables. These are used to enforce the     //
+// triple repetition rule.                                            //
+////////////////////////////////////////////////////////////////////////
 
 // Add an entry to the repetition table. 
 void
@@ -613,4 +620,3 @@ Search_Engine::is_triple_rep (const Board &b) {
       return (count == 3);
     }
 }
-

@@ -1,32 +1,34 @@
-/*
-  eval.hpp
-
-  Here we define a function for evaluating the strength of a position
-  heuristically. Internally, the convention is that scores favoring
-  white are positive and those for black are negative. However, scores
-  returned to the player are multiplied by the correct sign and are
-  appropriate for maximization.
-
-  The starting point for the approach taken here is Tomasz
-  Michniewski's proposal for "Unified Evaluation" tournements. The
-  full discussion of that very simple scoring strategy is avaiable at:
-  
-  http://chessprogramming.wikispaces.com/simplified+evaluation+function
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// eval.hpp                                                                   //
+//                                                                            //
+// Here we define a function for evaluating the strength of a position        //
+// heuristically. Internally, the convention is that scores favoring          //
+// white are positive and those for black are negative. However, scores       //
+// returned to the player are multiplied by the correct sign and are          //
+// appropriate for maximization.                                              //
+//                                                                            //
+// The starting point for the approach taken here is Tomasz                   //
+// Michniewski's proposal for "Unified Evaluation" tournements. The           //
+// full discussion of that very simple scoring strategy is avaiable at:       //
+//                                                                            //
+// http://chessprogramming.wikispaces.com/simplified+evaluation+function      //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _EVAL_
 #define _EVAL_
 
-#include "chesley.hpp"
-
 #include <iostream>
 
-/********************/
-/* Material values. */
-/********************/
+#include "chesley.hpp"
+
+//////////////////////
+// Material values. //
+//////////////////////
 
 static const Score QUEEN_VAL  = 900;
 static const Score ROOK_VAL   = 500;
@@ -48,17 +50,17 @@ inline Score eval_piece (Kind k) {
     }
 }
 
-/*********************/
-/* Castling bonuses. */
-/*********************/
+///////////////////////
+// Castling bonuses. //
+///////////////////////
 
 static const Score KS_CASTLE_VAL  = 75;
 static const Score QS_CASTLE_VAL  = 50;
 static const Score CAN_CASTLE_VAL = 10;
 
-/*************************/
-/* Evaluation functions. */
-/*************************/
+///////////////////////////
+// Evaluation functions. //
+///////////////////////////
 
 // Compute the net material value for this position.
 inline Score eval_material (const Board &b);
@@ -71,15 +73,15 @@ inline Score
 eval (const Board &b) {
   Score score = 0;
 
-  /*********************/
-  /* Evaluate material */
-  /*********************/
+  ///////////////////////
+  // Evaluate material //
+  ///////////////////////
 
   score += eval_material (b);
 
-  /*********************/
-  /* Evaluate mobility */
-  /*********************/
+  ///////////////////////
+  // Evaluate mobility //
+  ///////////////////////
 
 #if 1
   Score as_white = pop_count (b.attack_set (WHITE));
@@ -87,21 +89,21 @@ eval (const Board &b) {
   score += 5 * (as_white - as_black);
 #endif
 
-  /***************************/
-  /* Evaluate pawn structure */
-  /***************************/
+  /////////////////////////////
+  // Evaluate pawn structure //
+  /////////////////////////////
 
   // ??????????
 
-  /*********************************/
-  /* Evaluate positional strength. */
-  /*********************************/
+  ///////////////////////////////////
+  // Evaluate positional strength. //
+  ///////////////////////////////////
   
   score += sum_piece_squares (b);
 
-  /**********************/
-  /* Evaluate castling. */
-  /**********************/
+  ////////////////////////
+  // Evaluate castling. //
+  ////////////////////////
 
   // Encourage preserving the right to castle.
   score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
@@ -112,16 +114,16 @@ eval (const Board &b) {
   score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
 
 #if 0
-  /***********************************************/
-  /* Add some random noise for variety of games. */ 
-  /***********************************************/
+  /////////////////////////////////////////////////
+  // Add some random noise for variety of games. // 
+  /////////////////////////////////////////////////
 
   score += random () % 10;
 #endif
 
-  /************************************************/
-  /* Return appropriately signed score to caller. */
-  /************************************************/
+  //////////////////////////////////////////////////
+  // Return appropriately signed score to caller. //
+  //////////////////////////////////////////////////
   return sign (b.to_move ()) * score;
 }
 

@@ -1,11 +1,15 @@
-/*
-   This file provides Chesley's implementation of the xboard
-   interface. The specification for this protocol is available at
-   http://tim-mann.org/xboard/engine-intf.html.
-
-   Matthew Gingell
-   gingell@adacore.com
-*/
+///////////////////////////////////////////////////////////////////////////////
+// 								             //
+// xboard.cpp						                     //
+// 								             //
+// This file provides Chesley's implementation of the xboard	             //
+// interface. The specification for this protocol is available at            //
+// http://tim-mann.org/xboard/engine-intf.html.		                     //
+// 								             //
+// Matthew Gingell						             //
+// gingell@adacore.com             					     //
+// 								             //
+///////////////////////////////////////////////////////////////////////////////
 
 #include <string>
 #include "chesley.hpp"
@@ -19,8 +23,10 @@ Session::set_xboard_mode (const string_vector &tokens) {
   ui_mode = BATCH;
 
   // Set chatting for ICS.
-  fprintf (out, "tellicsnoalias set 1 %s v%s\n", ENGINE_ID_STR, SVN_REVISION);
-  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n", SVN_REVISION);
+  fprintf (out, "tellicsnoalias set 1 %s v%s\n", 
+	   ENGINE_ID_STR, SVN_REVISION);
+  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n", 
+	   SVN_REVISION);
 
   return true;
 }
@@ -35,9 +41,9 @@ Session::xbd_execute (char *line) {
     {
       string token = downcase (tokens[0]);
 
-      /**********************/
-      /* protover N command */
-      /**********************/
+      ////////////////////////
+      // protover N command //
+      ////////////////////////
 
       if (token == "protover")
 	{
@@ -61,19 +67,19 @@ Session::xbd_execute (char *line) {
 	  fprintf (out, "feature done=1\n");
 	}
 
-      /**************************************************************/
-      /* Assume we are using an up to date version of xboard and do */
-      /* not pay attention to replies to the feature command.       */
-      /**************************************************************/
+      ////////////////////////////////////////////////////////////////
+      // Assume we are using an up to date version of xboard and do //
+      // not pay attention to replies to the feature command.       //
+      ////////////////////////////////////////////////////////////////
 
       if (token == "accepted" || token == "rejected")
 	{
 	  // ignored.
 	}
 
-      /***************/
-      /* new command */
-      /***************/
+      /////////////////
+      // new command //
+      /////////////////
 
       if (token == "new")
 	{
@@ -85,45 +91,45 @@ Session::xbd_execute (char *line) {
 	  running = true;
 	}
 
-      /******************************************************/
-      /* We do not support any non-standard chess variants. */
-      /******************************************************/
+      ////////////////////////////////////////////////////////
+      // We do not support any non-standard chess variants. //
+      ////////////////////////////////////////////////////////
 
       if (token == "variant")
 	{
 	  // ignored.
 	}
 
-      /****************/
-      /* quit command */
-      /****************/
+      //////////////////
+      // quit command //
+      //////////////////
 
       if (token == "quit")
 	{
 	  return false;
 	}
 
-      /******************/
-      /* random command */
-      /******************/
+      ////////////////////
+      // random command //
+      ////////////////////
 
       if (token == "random")
 	{
 	  // ignored.
 	}
 
-      /*****************/
-      /* force command */
-      /*****************/
+      ///////////////////
+      // force command //
+      ///////////////////
 
       if (token == "force")
 	{
 	  running = false;
 	}
 
-      /**************/
-      /* go command */
-      /**************/
+      ////////////////
+      // go command //
+      ////////////////
 
       if (token == "go")
 	{
@@ -131,18 +137,18 @@ Session::xbd_execute (char *line) {
 	  running = true;
 	}
 
-      /*********************/
-      /* playother command */
-      /*********************/
+      ///////////////////////
+      // playother command //
+      ///////////////////////
 
       if (token == "playother")
 	{
 	  our_color = invert_color (our_color);
 	}
 
-      /*****************/
-      /* white command */
-      /*****************/
+      ///////////////////
+      // white command //
+      ///////////////////
 
       if (token == "white")
 	{
@@ -150,9 +156,9 @@ Session::xbd_execute (char *line) {
 	  our_color = BLACK;
 	}
 
-      /*****************/
-      /* black command */
-      /*****************/
+      ///////////////////
+      // black command //
+      ///////////////////
 
       if (token == "black")
 	{
@@ -160,45 +166,45 @@ Session::xbd_execute (char *line) {
 	  our_color = WHITE;
 	}
 
-      /******************************/
-      /* level MPS BASE INC command */
-      /******************************/
+      ////////////////////////////////
+      // level MPS BASE INC command //
+      ////////////////////////////////
 
       if (token == "level")
 	{
 	  // ignored.
 	}
 
-      /*******************/
-      /* st TIME command */
-      /*******************/
+      /////////////////////
+      // st TIME command //
+      /////////////////////
 
       if (token == "st")
 	{
 	  // ignored.
 	}
 
-      /******************/
-      /* time N command */
-      /******************/
+      ////////////////////
+      // time N command //
+      ////////////////////
 
       if (token == "time")
 	{
 	  // ignored.
 	}
 
-      /*******************/
-      /* otime N command */
-      /*******************/
+      /////////////////////
+      // otime N command //
+      /////////////////////
 
       if (token == "otime")
 	{
 	  // ignored.
 	}
 
-      /********************/
-      /* usermove command */
-      /********************/
+      //////////////////////
+      // usermove command //
+      //////////////////////
 
       if (token == "usermove" && count > 1)
 	{
@@ -219,18 +225,18 @@ Session::xbd_execute (char *line) {
 	    }
 	}
 
-      /**************/
-      /* ? command. */
-      /**************/
+      ////////////////
+      // ? command. //
+      ////////////////
 
       if (token == "?")
 	{
 	  // ignored.
 	}
 
-      /*******************/
-      /* ping N command. */
-      /*******************/
+      /////////////////////
+      // ping N command. //
+      /////////////////////
 
       if (token == "ping") {
 	fprintf (out, "pong");
@@ -241,171 +247,171 @@ Session::xbd_execute (char *line) {
 	fprintf (out, "\n");
       }
 
-      /****************/
-      /* draw command */
-      /****************/
+      //////////////////
+      // draw command //
+      //////////////////
 
       if (token == "draw")
 	{
 	  // ignored.
 	}
 
-      /***********************************/
-      /* result RESULT {COMMENT} command */
-      /***********************************/
+      /////////////////////////////////////
+      // result RESULT {COMMENT} command //
+      /////////////////////////////////////
 
       if (token == "result")
 	{
 	  // ignored.
 	}
 
-      /************************/
-      /* setboard FEN command */
-      /************************/
+      //////////////////////////
+      // setboard FEN command //
+      //////////////////////////
 
       if (token == "setboard")
 	{
 	  // Handled in generic loop.
 	}
 
-      /****************/
-      /* edit command */
-      /****************/
+      //////////////////
+      // edit command //
+      //////////////////
 
       if (token == "edit")
 	{
 	  // ignored.
 	}
 
-      /****************/
-      /* hint command */
-      /****************/
+      //////////////////
+      // hint command //
+      //////////////////
 
       if (token == "hint")
 	{
 	  // ignored.
 	}
 
-      /**************/
-      /* bk command */
-      /**************/
+      ////////////////
+      // bk command //
+      ////////////////
 
       if (token == "bk")
 	{
 	  // ignored.
 	}
 
-      /****************/
-      /* undo command */
-      /****************/
+      //////////////////
+      // undo command //
+      //////////////////
 
       if (token == "undo")
 	{
 	  // ignored.
 	}
 
-      /******************/
-      /* remove command */
-      /******************/
+      ////////////////////
+      // remove command //
+      ////////////////////
 
       if (token == "remove")
 	{
 	  // ignored.
 	}
 
-      /****************/
-      /* hard command */
-      /****************/
+      //////////////////
+      // hard command //
+      //////////////////
 
       if (token == "hard")
 	{
 	  // ignored.
 	}
 
-      /****************/
-      /* easy command */
-      /****************/
+      //////////////////
+      // easy command //
+      //////////////////
 
       if (token == "easy")
 	{
 	  // ignored.
 	}
 
-      /****************/
-      /* post command */
-      /****************/
+      //////////////////
+      // post command //
+      //////////////////
 
       if (token == "post")
 	{
 	  // ignored.
 	}
 
-      /******************/
-      /* nopost command */
-      /******************/
+      ////////////////////
+      // nopost command //
+      ////////////////////
 
       if (token == "nopost")
 	{
 	  // ignored.
 	}
 
-      /*******************/
-      /* analyze command */
-      /*******************/
+      /////////////////////
+      // analyze command //
+      /////////////////////
 
       if (token == "analyse")
 	{
 	  // ignored.
 	}
 
-      /******************/
-      /* name X command */
-      /******************/
+      ////////////////////
+      // name X command //
+      ////////////////////
 
       if (token == "name")
 	{
 	  // ignored.
 	}
 
-      /******************/
-      /* rating command */
-      /******************/
+      ////////////////////
+      // rating command //
+      ////////////////////
 
       if (token == "rating")
 	{
 	  // ignored.
 	}
 
-      /************************/
-      /* ics HOSTNAME command */
-      /************************/
+      //////////////////////////
+      // ics HOSTNAME command //
+      //////////////////////////
 
       if (token == "ics")
 	{
 	  // ignored.
 	}
 
-      /********************/
-      /* computer command */
-      /********************/
+      //////////////////////
+      // computer command //
+      //////////////////////
 
       if (token == "computer")
 	{
 	  op_is_computer = true;
 	}
 
-      /*****************/
-      /* pause command */
-      /*****************/
+      ///////////////////
+      // pause command //
+      ///////////////////
 
       if (token == "pause")
 	{
 	  // ignored.
 	}
 
-      /******************/
-      /* resume command */
-      /******************/
+      ////////////////////
+      // resume command //
+      ////////////////////
 
       if (token == "resume")
 	{

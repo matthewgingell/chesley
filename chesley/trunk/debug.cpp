@@ -1,21 +1,26 @@
-/*
-   This file implements various tests and commands for debugging and
-   testing Chesley.
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// debug.cpp							     	      //
+// 								     	      //
+// This file implements various tests and commands for debugging and          //
+// testing Chesley.						              //
+// 								              //
+// Matthew Gingell						              //
+// gingell@adacore.com					        	      //
+// 								              //
+////////////////////////////////////////////////////////////////////////////////
 
-   Matthew Gingell
-   gingell@adacore.com
-*/
+#include <iostream>
+#include <string>
 
 #include "chesley.hpp"
 
-#include <string>
-#include <iostream>
-
 using namespace std;
 
-/**************************************/
-/* Parse and execute a debug command. */
-/**************************************/
+////////////////////////////////////////
+// Parse and execute a debug command. //
+////////////////////////////////////////
+
 bool
 Session::debug_execute (char *line) {
   string_vector tokens = tokenize (line);
@@ -31,84 +36,45 @@ Session::debug_execute (char *line) {
 	  // For all positions to depth N, compute the hash
 	  // incrementally and from scratch and make sure each method
 	  // generates the same value.
-
 	  int depth = 5;
-
 	  if (tokens.size () > 1 && is_number (tokens[1]))
-	    {
-	      depth = to_int (tokens[1]);
-	    }
-
+	    depth = to_int (tokens[1]);
 	  test_hashing (depth);
 	}
-
-      if (token == "san")
-	{
-	  cerr << board.from_san ("e4");
-	}
-
-      if (token == "ab")
-	{
-	  // Call alpha on this position with the specified window and
-	  // depth.
-
-	  timeout = mclock () + 1000.0 * 1000.0 * 1000.0;
-	  se.interrupt_search = false;
-
-	  if (tokens.size () == 4)
-	    {
-	      int depth = to_int (tokens[1]);
-	      int alpha = to_int (tokens[2]);
-	      int beta =  to_int (tokens[3]);
-	      
-	      cerr << "Calling alphabeta with ("
-		   << "depth:" << depth << " "
-		   << "alpha:" << alpha << " "
-		   << "beta:" << beta 
-		   << ")" << endl;
-
-	      se.calls_to_search = 0;
-	      se.calls_to_qsearch = 0;
-
-	      fprintf (out, "%lli calls_to_search.\n", se.calls_to_search);
-	      fprintf (out, "%lli calls_to_qsearch.\n", se.calls_to_qsearch);
-	    }
-	}
     }
-
+      
   return true;
 }
 
+///////////////////////////////////////////////////////////////
+// Generate a benchmark. Calculate the best move to depth N. //
+///////////////////////////////////////////////////////////////
 
-// Generate a benchmark. Calculate the best move to depth N.
 bool
 Session::bench (const string_vector &tokens) {
   int depth = 6;
 
   if (tokens.size () > 1 && is_number (tokens[1]))
     depth = to_int (tokens[1]);
-
   timeout = 0;
   se.interrupt_search = false;
   Move m = se.choose_move (board, depth);
   return true;
 }
 
-// Compute possible moves from a position.
+/////////////////////////////////////////////
+// Compute possible moves from a position. //
+/////////////////////////////////////////////
+
 bool
 Session::perft (const string_vector &tokens)
 {
   int depth = 1;
 
-  //  board = Board::startpos ();
-
   if (tokens.size () > 1 && is_number (tokens[1]))
-    {
-      depth = to_int (tokens[1]);
-    }
+    depth = to_int (tokens[1]);
 
   fprintf (out, "Computing perft to depth %i...\n", depth);
-
   uint64 start = cpu_time();
   uint64 count = board.perft (depth);
   uint64 elapsed = cpu_time() - start;
@@ -117,7 +83,10 @@ Session::perft (const string_vector &tokens)
   return true;
 }
 
-// Instruct Chesley to play a game against itself.
+/////////////////////////////////////////////////////
+// Instruct Chesley to play a game against itself. //
+/////////////////////////////////////////////////////
+
 bool
 Session::play_self (const string_vector &tokens)
 {
@@ -137,55 +106,24 @@ Session::play_self (const string_vector &tokens)
   return true;
 }
 
-bool
-Session::gen_stats (const string_vector &tokens)
-{
-  Status s;
+////////////////////////////////////////////////////////////////
+// Check that hash keys are correctly generated to depth 'd'. //
+////////////////////////////////////////////////////////////////
 
-  while (1)
-    {
-      board = Board::startpos ();
-      collect_new_game ();
-      se.rt.clear ();
-      se.tt.clear ();
-      do
-	{
-	  Move m = find_a_move ();
-	  assert (board.apply (m));
-	  collect_statistics ();
-	  se.rt_push (board);
-	  s = get_status ();
-	} while  (s == GAME_IN_PROGRESS);
-      handle_end_of_game (s);
-    }
-
-  return true;
-}
-
-// Check that hash keys are correctly generated to depth 'd'.
 int
 test_hashing_rec (const Board &b, int depth) {
   Board_Vector children (b);
   int pass = 0;
 
   if (b.hash == b.gen_hash ())
-    {
-      pass++;
-    }
+    pass++;
   else
-    {
-      cerr << "FAIL at depth: " << depth << endl;
-    }
-
-  if (depth == 0)
-    {
-      return 1;
-    }
+    cerr << "FAIL at depth: " << depth << endl;
+  
+  if (depth == 0) return 1;
 
   for (int i = 0; i < children.count; i++)
-    {
-      pass += test_hashing_rec (children [i], depth - 1);
-    }
+    pass += test_hashing_rec (children [i], depth - 1);
 
   return pass;
 }
@@ -196,8 +134,11 @@ Session::test_hashing (int d) {
   cerr << pass << endl;
 }
 
-// Process a string in Extended Position Notation. This can include
-// tests, etc.
+//////////////////////////////////////////////////////////////////////
+// Process a string in Extended Position Notation. This can include //
+// tests, etc.							    //
+//////////////////////////////////////////////////////////////////////
+
 bool
 Session::epd (const string_vector &args)
 {
@@ -219,9 +160,9 @@ Session::epd (const string_vector &args)
       string opcode = first (tokens);
       tokens = rest (tokens);
 
-      /*********************************************/
-      /* Opcode "D<digit> indicating a perft test. */
-      /*********************************************/
+      ///////////////////////////////////////////////
+      // Opcode "D<digit> indicating a perft test. //
+      ///////////////////////////////////////////////
 
       if (opcode[0] == 'D')
 	{
@@ -239,25 +180,21 @@ Session::epd (const string_vector &args)
 		}
 	      else
 		{
+		  ///////////////////////////////////////
+		  // Format: <PASS|FAIL> <DEPTH> <GOT> //
+		  ///////////////////////////////////////
+		  
 		  int depth = to_int (opcode [1]);
 		  uint64 expecting = to_int (operand);
-
-		  /*
-		    Format: <PASS|FAIL> <DEPTH> <EXPECTED> <GOT> <ELAPSED> <NPS>
-		  */
-
 		  Board b = Board::from_fen (fen, true);
 		  uint64 p = b.perft (depth);
 		  bool pass = (p == expecting);
+		  fprintf (out, "%s %lli\n", pass ? "PASS" : "FAIL", p);
 
-		  fprintf (out, "%s %i %llu %i %i\n",
-			   pass ? "PASS" : "FAIL",
-			   depth, expecting, 0, 0);
-
-		  if (!pass)
-		    {
-		      fprintf (out, "Position %s fails at depth %i.\n", fen.c_str (), depth);
-		    }
+		  if (!pass) 
+		    fprintf  (out, 
+			      "Position %s fails at depth %i.\n", 
+			      fen.c_str (), depth);
 		}
 	    }
 	}

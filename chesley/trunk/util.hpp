@@ -1,9 +1,13 @@
-/*
-  Various small utility functions.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// util.hpp							     	      //
+// 								     	      //
+// Various small utility functions.					      //
+// 								     	      //
+// Matthew Gingell							      //
+// gingell@adacore.com							      //
+// 								     	      //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __UTIL__
 #define __UTIL__
@@ -18,9 +22,9 @@
 
 #include "types.hpp"
 
-/********************/
-/* String functions */
-/********************/
+//////////////////////
+// String functions //
+//////////////////////
 
 // Return a string of spaces.
 static std::string spaces (int n) IS_UNUSED;
@@ -38,9 +42,9 @@ static int to_int (const char &c) IS_UNUSED;
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
 
-/**************************/
-/* String vector functions */
-/**************************/
+////////////////////////////
+// String vector functions //
+////////////////////////////
 
 typedef std::vector <std::string> string_vector;
 
@@ -70,16 +74,16 @@ join (const string_vector &in, const std::string &delim) IS_UNUSED;
 static std::ostream &
 operator<< (std::ostream &os, const string_vector &in) IS_UNUSED;
 
-/***********************/
-/* Character functions */
-/***********************/
+/////////////////////////
+// Character functions //
+/////////////////////////
 
-// As atoi (char *).
+// As atoi (char /).
 static long atoi (char) IS_UNUSED;
 
-/****************/
-/* IO functions */
-/****************/
+//////////////////
+// IO functions //
+//////////////////
 
 // Test whether a file descriptor has IO waiting.
 static bool fdready (int fd) IS_UNUSED;
@@ -88,9 +92,9 @@ static bool fdready (int fd) IS_UNUSED;
 // malloced string.
 static char *get_line (FILE *in) IS_UNUSED;
 
-/********************/
-/* Time and timers. */
-/********************/
+//////////////////////
+// Time and timers. //
+//////////////////////
 
 // Return the time in milliseconds since the epoch. 
 static uint64 mclock () IS_UNUSED;
@@ -98,9 +102,9 @@ static uint64 mclock () IS_UNUSED;
 // Return the amount of cpu time used in milliseconds.
 static uint64 cpu_time () IS_UNUSED;
 
-/**************************/
-/* Generic sorting inline */
-/**************************/
+////////////////////////////
+// Generic sorting inline //
+////////////////////////////
 
 // Quick sort implementation.
 template <typename T> inline void 
@@ -114,9 +118,9 @@ bubble_sort (T &items) IS_UNUSED;
 template <typename T> inline void 
 insertion_sort (T &items) IS_UNUSED;
 
-/******************/
-/* Random numbers */
-/*****************/
+////////////////////
+// Random numbers //
+///////////////////
 
 // Seed the random number generator
 static void seed_random () IS_UNUSED;
@@ -124,9 +128,9 @@ static void seed_random () IS_UNUSED;
 // Return a 64-bit random number.
 static uint64 random64 () IS_UNUSED;
 
-/********************/
-/* String functions */
-/********************/
+//////////////////////
+// String functions //
+//////////////////////
 
 // Return a string of N spaces.
 static std::string 
@@ -185,9 +189,9 @@ static long atoi (char c) {
   return (long) c - (long) '0';
 }
 
-/**************************/
-/* String vector functions */
-/**************************/
+////////////////////////////
+// String vector functions //
+////////////////////////////
 
 // Collect space or ';' seperated tokens in a vector. Quoted fields
 // are not broken.
@@ -281,9 +285,9 @@ operator<< (std::ostream &os, const string_vector &in) {
   return os << join (in, ", ");
 }
 
-/****************/
-/* IO functions */
-/****************/
+////////////////////
+// I/O functions. //
+////////////////////
 
 // Check a file descriptor and return true is there is data available
 // to read from it.
@@ -326,9 +330,9 @@ static char *get_line (FILE *in) {
   return newstr (buf);
 }
 
-/********************/
-/* Time and timers. */
-/********************/
+//////////////////////
+// Time and timers. //
+//////////////////////
 
 // Return the time in milliseconds since the epoch. 
 static uint64 
@@ -350,9 +354,9 @@ cpu_time () {
     + ((uint64) ru.ru_utime.tv_usec) / 1000;
 }
 
-/**************************/
-/* Generic sorting inline */
-/**************************/
+////////////////////////////
+// Generic sorting inline //
+////////////////////////////
 
 // Inline quicksort. Client type must 1) define a function count, 2)
 // define a function value and 3) be accessible with operator[].
@@ -440,9 +444,9 @@ insertion_sort (V &items) {
     }
 }
 
-/******************/
-/* Random numbers */
-/*****************/
+/////////////////////
+// Random numbers. //
+/////////////////////
 
 // Seed the random number generator
 static void 

@@ -1,28 +1,30 @@
-/*
-  genmoves.cpp
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// genmoves.cpp                                                               //
+//                                                                            //
+// Code to generate a vector of moves, given a state of play.		      //
+//                                                                            //
+// There is a good discusion of generating moves from bitmaps in:	      //
+// _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at	      //
+// http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.		      //
+//                                                                            //
+// The code here is very sensitive and changes should be checked	      //
+// against the perft suite to ensure they do not cause regressions.	      //
+//                                                                            //
+// Matthew Gingell							      //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
-  Code to generate a vector of moves, given a state of play.
-
-  There is a good discusion of generating moves from bitmaps in:
-  _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at
-  http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.
-
-  The code here is very sensitive and changes should be checked
-  against the perft suite to ensure they do not cause regressions.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
-
-#include <iostream> 
+#include <iostream>
 
 #include "chesley.hpp"
 
 using namespace std;
 
-/*******************************/
-/* Attack table lookup macros. */
-/*******************************/
+/////////////////////////////////
+// Attack table lookup macros. //
+/////////////////////////////////
 
 #define RANK_ATTACKS(idx) \
   (RANK_ATTACKS_TBL     [idx * 256 + occ_0 (idx)])
@@ -48,9 +50,9 @@ Board::gen_moves (Move_Vector &out) const
 {
   Color c = to_move ();
 
-  /*********/
-  /* Pawns */
-  /*********/
+  ////////////
+  // Pawns. //
+  ////////////
 
   bitboard our_pawns = pawns & our_pieces ();
 
@@ -137,10 +139,10 @@ Board::gen_moves (Move_Vector &out) const
       our_pawns = clear_lsb (our_pawns);
     }
 
-  /*********/
-  /* Rooks */
-  /*********/
-  
+  ////////////
+  // Rooks. //
+  ////////////
+
   bitboard our_rooks = rooks & our_pieces ();
 
   // For each rook
@@ -160,9 +162,9 @@ Board::gen_moves (Move_Vector &out) const
       our_rooks = clear_lsb (our_rooks);
     }
 
-  /***********/
-  /* Knights */
-  /***********/
+  //////////////
+  // Knights. //
+  //////////////
 
   bitboard our_knights = knights & our_pieces ();
 
@@ -182,10 +184,9 @@ Board::gen_moves (Move_Vector &out) const
       our_knights = clear_lsb (our_knights);
     }
 
-  /***********/
-  /* Bishops */
-  /***********/
-
+  //////////////
+  // Bishops. //
+  //////////////
 
   bitboard our_bishops = bishops & our_pieces ();
 
@@ -205,9 +206,9 @@ Board::gen_moves (Move_Vector &out) const
       our_bishops = clear_lsb (our_bishops);
     }
 
-  /**********/
-  /* Queens */
-  /**********/
+  /////////////
+  // Queens. //
+  /////////////
 
   bitboard our_queens = queens & our_pieces ();
 
@@ -227,15 +228,15 @@ Board::gen_moves (Move_Vector &out) const
       our_queens = clear_lsb (our_queens);
     }
 
-  /*********/
-  /* Kings */
-  /*********/
+  ////////////
+  // Kings. //
+  ////////////
 
   bitboard our_king = kings & our_pieces ();
 
-  /*************************/
-  /* Compute simple moves. */
-  /*************************/
+  ///////////////////////////
+  // Compute simple moves. //
+  ///////////////////////////
 
   if (our_king)
     {
@@ -251,9 +252,9 @@ Board::gen_moves (Move_Vector &out) const
 	}
     }
 
-  /**************************/
-  /* Compute castling moves */
-  /**************************/
+  /////////////////////////////
+  // Compute castling moves. //
+  /////////////////////////////
 
   if (c == WHITE)
     {
@@ -269,10 +270,10 @@ Board::gen_moves (Move_Vector &out) const
   else
     {
       byte row = occ_0 (60);
-      
+
       if (flags.b_can_q_castle && (row & 0xE) == 0)
 	out.push (Move (60, 58));
-      
+
       if (flags.b_can_k_castle && (row & 0x60) == 0)
 	out.push (Move (60, 62));
     }
@@ -284,9 +285,9 @@ Board::gen_captures (Move_Vector &out) const
 {
   Color c = to_move ();
 
-  /***************************/
-  /* Generate pawn captures. */
-  /***************************/
+  /////////////////////////////
+  // Generate pawn captures. //
+  /////////////////////////////
 
   bitboard our_pawns = pawns & our_pieces ();
   while (our_pawns)
@@ -338,9 +339,9 @@ Board::gen_captures (Move_Vector &out) const
       our_pawns = clear_lsb (our_pawns);
     }
 
-  /***************************/
-  /* Generate rook captures. */
-  /***************************/
+  /////////////////////////////
+  // Generate rook captures. //
+  /////////////////////////////
 
   bitboard our_rooks = rooks & our_pieces ();
 
@@ -361,10 +362,10 @@ Board::gen_captures (Move_Vector &out) const
 
       our_rooks = clear_lsb (our_rooks);
     }
-  
-  /*****************************/
-  /* Generate knight captures. */
-  /*****************************/
+
+  ///////////////////////////////
+  // Generate knight captures. //
+  ///////////////////////////////
 
   bitboard our_knights = knights & our_pieces ();
 
@@ -385,12 +386,12 @@ Board::gen_captures (Move_Vector &out) const
       our_knights = clear_lsb (our_knights);
     }
 
-  /*****************************/
-  /* Generate bishop captures. */
-  /*****************************/
+  ///////////////////////////////
+  // Generate bishop captures. //
+  ///////////////////////////////
 
   bitboard our_bishops = bishops & our_pieces ();
-  
+
   // For each bishop;
   while (our_bishops)
     {
@@ -409,9 +410,9 @@ Board::gen_captures (Move_Vector &out) const
       our_bishops = clear_lsb (our_bishops);
     }
 
-  /****************************/
-  /* Generate queen captures. */
-  /****************************/
+  //////////////////////////////
+  // Generate queen captures. //
+  //////////////////////////////
 
   bitboard our_queens = queens & our_pieces ();
 
@@ -432,51 +433,51 @@ Board::gen_captures (Move_Vector &out) const
 	}
       our_queens = clear_lsb (our_queens);
     }
-  
-  /***************************/
-  /* Generate king captures. */
-  /***************************/
 
+  /////////////////////////////
+  // Generate king captures. //
+  /////////////////////////////
+			      
   bitboard our_king = kings & our_pieces ();
-
-  if (our_king)
-    {
+			      
+  if (our_king)		      
+    {			      
       int from = bit_idx (our_king);
-
+			      
       // Collect each destination in the moves list.
       bitboard to = KING_ATTACKS (from) & ~our_pieces ();
-      to &= other_pieces ();
-      while (to)
-	{
+      to &= other_pieces ();  
+      while (to)	      
+	{		      
 	  int to_idx = bit_idx (to);
 	  out.push (Move (from,  to_idx));
 	  to = clear_lsb (to);
-	}
-    }
-}
-
+	}		      
+    }			      
+}			      
+			      
 // Compute a bitboard of every square color is attacking.
-bitboard
+bitboard		      
 Board::attack_set (Color c) const {
   bitboard color = c == WHITE ? white : black;
-  bitboard attacks = 0llu;
-  bitboard pieces;
-  int from;
-
-  // Pawns
-  pieces = pawns & color;
-  if (c == WHITE)
-    {
+  bitboard attacks = 0llu;    
+  bitboard pieces;	      
+  int from;		      
+			      
+  // Pawns		      
+  pieces = pawns & color;     
+  if (c == WHITE)	      
+    {			      
       attacks |= ((pieces & ~file(0)) << 7);
       attacks |= ((pieces & ~file(7)) << 9);
-    }
-  else
-    {
+    }			      
+  else			      
+    {			      
       attacks |= ((pieces & ~file(0)) >> 9);
       attacks |= ((pieces & ~file(7)) >> 7);
-    }
-
-  // Rooks
+    }			      
+			      
+  // Rooks		      
   pieces = rooks & color;
   while (pieces)
     {
@@ -533,7 +534,7 @@ Board::is_attacked (int idx, Color c) const
 
   bitboard them = color_to_board (c);
   bitboard attacks;
-  
+
   // Are we attacked along a rank or file?
   attacks = ROOK_ATTACKS (idx);
   if (attacks & (them & (queens | rooks))) return true;
@@ -594,7 +595,7 @@ Board::least_valuable_attacker (int sqr) const {
       from = ((masks_0 [sqr] & ~file (7)) << 9) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
     }
-  
+
   // Knights.
   from = KNIGHT_ATTACKS (sqr) & (knights & us);
   if (from) return Move (bit_idx (from), sqr);
