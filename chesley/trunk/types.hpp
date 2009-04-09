@@ -1,9 +1,13 @@
-/*
-  Various simple types.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// types.hpp							     	      //
+// 								     	      //
+// Various simple types.          					      //
+// 								     	      //
+// Matthew Gingell							      //
+// gingell@adacore.com							      //
+// 								     	      //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __TYPES__
 #define __TYPES__

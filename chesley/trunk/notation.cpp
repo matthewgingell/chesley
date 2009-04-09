@@ -1,17 +1,17 @@
-/////////////////////////////////////////////////////////////////////////////
-//                                                                         //
-// notation.cpp                                                            //
-//                                                                         //
-// This file implements operations on different kinds of string            //
-// representation for Chess moves and positions. Included here are         //
-// routines for parsing and generating Standard Algebraic Notation         //
-// moves, Coordinate Algebraic Notation moves, and Forsyth-Edwards         //
-// position notation.                                                      //
-//                                                                         //
-// Matthew Gingell                                                         //
-// gingell@adacore.com                                                     //
-//                                                                         //
-/////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// 								     	      //
+// notation.cpp                                                               //
+//                                                                            //
+// This file implements operations on different kinds of string               //
+// representation for Chess moves and positions. Included here are            //
+// routines for parsing and generating Standard Algebraic Notation            //
+// moves, Coordinate Algebraic Notation moves, and Forsyth-Edwards            //
+// position notation.                                                         //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #include <cassert>
 #include <sstream>
@@ -20,6 +20,43 @@
 #include "board.hpp"
 
 using namespace std;
+
+//////////////////////////////////////////////////////////
+// Construct a Move from Coordinate Algebraic Notation. //
+//////////////////////////////////////////////////////////
+
+Move
+Board::from_calg (const string &s) const {
+  assert (s.length () >= 4);
+
+  // Decode string
+  uint32 from = (s[0] - 'a') + 8 * (s[1] - '1');
+  uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
+
+  // Build move.
+  return Move (from, to, (s.length () >= 5) ? to_kind (s[4]) : NULL_KIND);
+}
+
+//////////////////////////////////////////////////////////////////////
+// Return a description of a Move in Coordinate Algebraic Notation. //
+//////////////////////////////////////////////////////////////////////
+
+string
+Board::to_calg (const Move &m) const {
+  ostringstream s;
+
+  // The simple case of an ordinary move.
+  s << (char) ('a' + idx_to_file (m.from));
+  s << (int)  (      idx_to_rank (m.from) + 1);
+  s << (char) ('a' + idx_to_file (m.to));
+  s << (int)  (      idx_to_rank (m.to) + 1);
+
+  // Promotion case.
+  if (m.promote != NULL_KIND)
+    s << to_char (m.promote);
+
+  return s.str();
+}
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
@@ -106,6 +143,7 @@ using namespace std;
 string
 Board::to_alg_coord (int idx) const {
   ostringstream s;
+
   s << (char) ('a' + idx_to_file (idx));
   s << (int)  (      idx_to_rank (idx) + 1);
   return s.str ();
@@ -619,3 +657,16 @@ Board::to_ascii () const {
 
     return s.str ();
 }
+
+// Initialize a board from an ascii art representation of a board
+// string.
+Board
+Board::from_ascii (const string &str) {
+  Board b;
+
+  Board::common_init (b);
+  assert (0);
+  return b;
+}
+
+

@@ -1,32 +1,36 @@
-/*
-   This file provides the Session object, representing a Chesley's
-   session. This file provides the protocol independent part of the
-   implementation.
-
-   Matthew Gingell
-   gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+// 									      //
+// session.cpp								      //
+// 									      //
+// This file provides the Session object, representing a Chesley              //
+// session. This file provides the protocol independent part of the           //
+// implementation.                                                            //
+// 									      //
+// Matthew Gingell							      //
+// gingell@adacore.com							      //
+// 									      //
+////////////////////////////////////////////////////////////////////////////////
 
 #include <cctype>
 #include <cstdio>
 #include <cstring>
 #include <fstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <signal.h>
 #include <string>
 #include <sys/time.h>
 
 #include "chesley.hpp"
 
-// For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 1 * 1000; 
-
 using namespace std;
 
-/****************************/
-/* Static session variables */
-/****************************/
+// For now we use a hardcoded timeout in milliseconds.
+const int TIME_OUT = 10 * 1000; 
+
+///////////////////////////////
+// Static session variables. //
+///////////////////////////////
 
 // I/O State.
 FILE *Session::in;
@@ -55,9 +59,9 @@ int Session::counts_this_game [6][64];
 int Session::counts_all_games [6][64];
 int Session::num_games;
 
-/******************************/
-/* Initialize the environment */
-/******************************/
+////////////////////////////////
+// Initialize the environment //
+////////////////////////////////
 
 void
 Session::init_session () {
@@ -124,9 +128,8 @@ Session::collect_game_over () {
 
 void
 Session::handle_alarm (int sig) {
-  // We should return from the work loop as quickly as possible is the
-  // timeout we have set has elapsed or if there is input waiting from
-  // the user.
+  // We should return from the work loop as quickly as possible if the
+  // timeout has elapsed or if there is input waiting from the user.
   if ((timeout > 0 && mclock () > timeout) || fdready (fileno (in)))
     se.interrupt_search = true;
 }
@@ -138,9 +141,9 @@ void Session::write_prompt ()
     fprintf (out, "%s", prompt);
 }
 
-/***************************/
-/* Top level command loop. */
-/***************************/
+/////////////////////////////
+// Top level command loop. //
+/////////////////////////////
 
 void
 Session::cmd_loop ()
@@ -177,9 +180,9 @@ Session::cmd_loop ()
     }
 }
 
-/****************/
-/* Flow control */
-/****************/
+///////////////////
+// Flow control. //
+///////////////////
 
 // Control is turned over to the engine to do as it wishes until
 // either the timeout expires, there is input pending from the user,
@@ -310,9 +313,9 @@ Session::find_a_move () {
   return se.choose_move (board, 99);
 }
 
-/*************************************/
-/* Parse and execute a command line. */
-/*************************************/
+///////////////////////////////////////
+// Parse and execute a command line. //
+///////////////////////////////////////
 
 bool
 Session::execute (char *line) {
@@ -353,18 +356,18 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /**********************/
-      /* Benchmark command. */
-      /**********************/
-
+      ////////////////////////
+      // Benchmark command. //
+      ////////////////////////
+      
       if (token == "bench")
 	{
 	  return bench (tokens);
 	}
 
-      /****************/
-      /* Disp command */
-      /****************/
+      ///////////////////
+      // Disp command. //
+      ///////////////////
 
       if (token == "disp")
 	{
@@ -372,9 +375,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /******************/
-      /* Div command */
-      /*****************/
+      //////////////////
+      // Div command. //
+      //////////////////
 
       if (token == "div")
 	{
@@ -385,9 +388,9 @@ Session::execute (char *line) {
 	    }
 	}
 
-      /**************************************/
-      /* FEN command to output board state. */
-      /**************************************/
+      ////////////////////////////////////////
+      // FEN command to output board state. //
+      ////////////////////////////////////////
 
       if (token == "fen")
 	{
@@ -395,9 +398,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /**************************************/
-      /* EPD command execute an EPD string. */
-      /**************************************/
+      /////////////////////////////////////////
+      // EPD command execute an EPD string.  //
+      /////////////////////////////////////////
 
       if (token == "epd")
 	{
@@ -405,9 +408,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /*******************************************************/
-      /* Force command to prevent computer generating moves. */
-      /*******************************************************/
+      /////////////////////////////////////////////////////////
+      // Force command to prevent computer generating moves. //
+      /////////////////////////////////////////////////////////
 
       if (token == "force")
 	{
@@ -415,9 +418,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /******************/
-      /* Moves command. */
-      /******************/
+      ////////////////////
+      // Moves command. //
+      ////////////////////
 
       if (token == "moves")
 	{
@@ -426,9 +429,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /********************/
-      /* Attacks command. */
-      /********************/
+      //////////////////////
+      // Attacks command. //
+      //////////////////////
 
       if (token == "attacks")
 	{
@@ -436,9 +439,9 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /**************************************/
-      /* Perft position generation command. */
-      /**************************************/
+      ////////////////////////////////////////
+      // Perft position generation command. //
+      ////////////////////////////////////////
 
       if (token == "perft")
 	{
@@ -449,28 +452,18 @@ Session::execute (char *line) {
 	    }
 	}
 
-      /**********************************/
-      /* The play against self command. */
-      /**********************************/
+      ////////////////////////////////////
+      // The play against self command. //
+      ////////////////////////////////////
 
       if (token == "playself")
 	{
 	  return play_self (tokens);
 	}
 
-
-      /**********************************/
-      /* The play against self command. */
-      /**********************************/
-
-      if (token == "genstats")
-	{
-	  return gen_stats (tokens);
-	}
-
-      /************************/
-      /* setboard FEN command */
-      /************************/
+      ///////////////////////////
+      // setboard FEN command. //
+      ///////////////////////////
 
       if (token == "setboard")
 	{
@@ -478,18 +471,18 @@ Session::execute (char *line) {
 	  return true;
 	}
 
-      /****************/
-      /* Quit command */
-      /***************/
+      ///////////////////
+      // Quit command. //
+      ///////////////////
 
       if (token == "quit")
 	{
 	  return false;
 	}
 
-      /********************/
-      /* Enter xboard ui. */
-      /********************/
+      ///////////////////////
+      // Enter xboard ui.  //
+      ///////////////////////
 
       if (token == "xboard")
 	{
@@ -506,9 +499,9 @@ Session::execute (char *line) {
   return true;
 }
 
-/*****************/
-/*  Status type  */
-/*****************/
+//////////////////
+// Status type. //
+//////////////////
 
 std::ostream &
 operator<< (std::ostream &os, Status s) {

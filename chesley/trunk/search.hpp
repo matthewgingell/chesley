@@ -1,11 +1,15 @@
-/*
-  Interface to the search engine. Clients are expected to create and
-  configure search engine objects then call its methods to do various
-  types of searches.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// search.hpp                                                                 //
+//                                                                            //
+// Interface to the search engine. Clients are expected to create and         //
+// configure search engine objects then call its methods to do various        //
+// types of searches.                                                         //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _SEARCH_
 #define _SEARCH_
@@ -19,9 +23,9 @@ struct Search_Engine {
 
   static const uint32 TT_SIZE = 2.5 * 1000 * 1000;
 
-  /************************************/
-  /* Constructors and initialization. */
-  /************************************/
+  //////////////////////////////////////
+  // Constructors and initialization. //
+  //////////////////////////////////////
 
   Search_Engine () {
     interrupt_search = false;
@@ -32,9 +36,9 @@ struct Search_Engine {
     tt.rehash (TT_SIZE);
   }
 
-  /*************************/
-  /* Transposition tables. */
-  /*************************/
+  ///////////////////////////
+  // Transposition tables. //
+  ///////////////////////////
 
   struct TT_Entry {
     Move move;
@@ -47,18 +51,18 @@ struct Search_Engine {
 
   Trans_Table tt;
 
-  /*********************/
-  /* Repetition table. */
-  /*********************/
+  ///////////////////////
+  // Repetition table. //
+  ///////////////////////
   
   // A table type mapping from a 64-bit key to a repetition count.
   typedef boost::unordered_map <hash_t, int> Rep_Table;
 
   Rep_Table rt;
 
-  /*****************/
-  /* Search state. */
-  /*****************/
+  ///////////////////
+  // Search state. //
+  ///////////////////
 
   // If set true, the search should conclude as quickly as possible.
   bool interrupt_search;
@@ -66,24 +70,24 @@ struct Search_Engine {
   // If true, thinking output will be written.
   bool post;
 
-  /***************/
-  /* Statistics. */
-  /***************/
+  /////////////////
+  // Statistics. //
+  /////////////////
 
   // Count the number of times search and qsearch have been called.
   uint64 calls_to_search; 
   uint64 calls_to_qsearch; 
   
-  /************/
-  /* Queries. */
-  /************/
+  //////////////
+  // Queries. //
+  //////////////
 
   // Choose a move, score it, and return it.
   Move choose_move (Board &b, int32 depth = -1);
 
-  /*********************************/
-  /* Triple repetition management. */
-  /*********************************/
+  ///////////////////////////////////
+  // Triple repetition management. //
+  ///////////////////////////////////
 
   // Add an entry to the repetition table. 
   void rt_push (const Board &b);

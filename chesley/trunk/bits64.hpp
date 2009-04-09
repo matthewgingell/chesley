@@ -1,14 +1,19 @@
-/* 
-   Operations on a u_int64_t bitmap represention.
-
-   Matthew Gingell     		 
-   gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// bits64.hpp                                                                 //
+//                                                                            //
+// Operations on a u_int64_t bitmap represention.                             //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _BITS64_
 #define _BITS64_
 
 #include <iostream>
+
 #include "types.hpp"
 
 typedef uint64 bits64;
@@ -16,9 +21,9 @@ typedef uint64 bits64;
 #define IS_CONST __attribute__ ((const))
 #define IS_UNUSED  __attribute__ ((unused))
 
-/***********************************************/
-/* Bitwise operations on 64 bit unsigned ints. */
-/***********************************************/
+/////////////////////////////////////////////////
+// Bitwise operations on 64 bit unsigned ints. //
+/////////////////////////////////////////////////
 
 inline bool   test_bit   (bits64, int) IS_CONST;
 inline bits64 set_bit    (bits64, int) IS_CONST;
@@ -82,9 +87,9 @@ get_byte (bits64 b, int n) {
   return ((byte *) &b)[n]; 
 }
 
-/*********/
-/* Debug */
-/*********/
+///////////
+// Debug //
+///////////
 
 // Debug routine. 
 static void 

@@ -1,11 +1,15 @@
-/*
-   This file provides the Session object, representing a Chesley
-   session, either over the xboard protocal, UCI (Universal Chess
-   Interface), or interactive mode.
-
-   Matthew Gingell
-   gingell@adacore.com
-*/
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+//  session.hpp                                                               //
+//                                                                            //
+//  This file provides the Session object, representing a Chesley             //
+//  session, either over the xboard protocal, UCI (Universal Chess            //
+//  Interface), or interactive mode.                                          //
+//                                                                            //
+//  Matthew Gingell                                                           //
+//  gingell@adacore.com                                                       //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _Session_
 #define _Session_
@@ -21,10 +25,10 @@ enum Protocol { NATIVE, UCI, XBOARD };
 std::ostream & operator<< (std::ostream &os, Status s);
 
 struct Session {
-  
-  /****************************/
-  /* Static session variables */
-  /****************************/
+
+  ///////////////////////////////
+  // Static session variables. //
+  ///////////////////////////////
 
   // State of the chess board.
   static Board board;
@@ -35,9 +39,9 @@ struct Session {
   // Is the opponent a computer?
   static bool op_is_computer;
 
-  /*****************/
-  /* Engine state. */
-  /*****************/
+  ///////////////////
+  // Engine state. //
+  ///////////////////
 
   // Is session running or paused?
   static bool running;
@@ -49,44 +53,42 @@ struct Session {
   // Command prompt;
   static const char *prompt;
 
-  /****************/
-  /* Constructors */
-  /****************/
+  ///////////////////
+  // Constructors. //
+  ///////////////////
 
   // This class is intended to be used as a singleton.
   Session () { assert (0); }
 
   static void init_session ();
 
-  /************/
-  /* Methods. */
-  /************/
+  //////////////
+  // Methods. //
+  //////////////
 
   // Enter the command loop, which will not return until the session
   // is over.
   static void cmd_loop ();
 
-  //private:
+  /////////////////////
+  // Interface mode. //
+  /////////////////////
 
-  /*******************/
-  /* Interface mode. */
-  /*******************/
-  
   // User interface mode.
   static UI_Mode ui_mode;
 
   // Protocol mode.
   static Protocol protocol;
 
-  /*****************/
-  /* Search state. */
-  /*****************/
+  ///////////////////
+  // Search state. //
+  ///////////////////
 
   static Search_Engine se;
 
-  /**************/
-  /* Statistics */
-  /**************/
+  /////////////////
+  // Statistics. //
+  /////////////////
 
   static void collect_new_game ();
   static void collect_statistics ();
@@ -96,9 +98,9 @@ struct Session {
   static int counts_all_games [6][64];
   static int num_games;
 
-  /**************************************/
-  /* I/O handling and command dispatch. */
-  /**************************************/
+  ////////////////////////////////////////
+  // I/O handling and command dispatch. //
+  ////////////////////////////////////////
 
   static FILE *in, *out;
   static bool tty;
@@ -121,9 +123,9 @@ struct Session {
   // Set xboard protocol mode.
   static bool set_xboard_mode (const string_vector &tokens);
 
-  /****************/
-  /* Flow control */
-  /****************/
+  ///////////////////
+  // Flow control. //
+  ///////////////////
 
   // Control is turned over to the engine to do as it wishes until
   // either the timeout expires, there is input pending from the user,
@@ -139,16 +141,16 @@ struct Session {
   // Find a move to play.
   static Move find_a_move ();
 
-  /************/
-  /* Commands */
-  /************/
+  ///////////////
+  // Commands. //
+  ///////////////
 
   // Process a string in Extended Position Notation.
   static bool epd (const string_vector &tokens);
 
-  /**********************/
-  /* Debugging commands */
-  /**********************/
+  /////////////////////////
+  // Debugging commands. //
+  /////////////////////////
 
   // Generate a benchmark.
   static bool bench (const string_vector &tokens);
@@ -158,8 +160,6 @@ struct Session {
 
   // Play a game with engine taking both sides.
   static bool play_self (const string_vector &tokens);
-
-  static bool  gen_stats (const string_vector &tokens);
 
   // Check that hash keys are correctly generated to depth 'd'.
   static void test_hashing (int d);

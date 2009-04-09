@@ -1,31 +1,31 @@
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// gentables.cpp                                                              //
+//                                                                            //
+// Code to generate and initialize masks used in addressing bitboards         //
+// and computing piece moves. Each set of masks is an 64 entry array of       //
+// single bit masks where the Nth entry corresponds to the Nth bit.           //
+//                                                                            //
+// Each 45 degree increment rotates the board one half step                   //
+// counterclockwise. There is a detailed and very readable description        //
+// of this approch in:                                                        //
+//                                                                            //
+// _Rotated bitboards in FUSc#_ by Johannes Buchner:                          //
+// page.mi.fu-berlin.de/~fusch/publications/Joe-Paper_rotated_bitboards.pdf   //
+//                                                                            //
+// Additional, attack matrices for each type of move are precomputed          //
+// here.                                                                      //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
 #include "chesley.hpp"
 
-/*
-  gentables.cpp
-
-  Code to generate and initialize masks used in addressing bitboards
-  and computing piece moves. Each set of masks is an 64 entry array
-  of single bit masks where the Nth entry corresponds to the Nth bit.
-
-  Each 45 degree increment rotates the board one half step
-  counterclockwise. There is a detailed and very readable description
-  of this approch in:
-
-  _Rotated bitboards in FUSc#_ by Johannes Buchner:
-  http://page.mi.fu-berlin.de/~fusch/publications/Joe-Paper_rotated_bitboards.pdf
-
-  Additional, attack matrices for each type of move are precomputed
-  here.
-
-  Matthew Gingell
-  gingell@adacore.com
-*/
-
-#include "chesley.hpp"
-
-/***************************************/
-/* Construction of precomputed tables. */
-/***************************************/
+/////////////////////////////////////////
+// Construction of precomputed tables. //
+/////////////////////////////////////////
 
 bool Board::have_precomputed_tables = false;
 
@@ -123,9 +123,9 @@ Board::precompute_tables () {
   have_precomputed_tables = true;
 }
 
-/*****************************************************************/
-/* Generate tables and masks for maintaining rotated bit boards. */
-/*****************************************************************/
+///////////////////////////////////////////////////////////////////
+// Generate tables and masks for maintaining rotated bit boards. //
+///////////////////////////////////////////////////////////////////
 
 /*
   Masks for unrotated bitboards. This is trivial but provided for the
@@ -512,9 +512,9 @@ init_rot_135 () {
   return rot;
 }
 
-/**********************************************/
-/* Generate tables for generating piece moves */
-/**********************************************/
+////////////////////////////////////////////////
+// Generate tables for generating piece moves //
+////////////////////////////////////////////////
 
 // Precompute bitboards for rank attack.
 bitboard *
@@ -765,9 +765,9 @@ init_135d_attacks_tbl () {
   return rv;
 }
 
-/*********************************************************************/
-/* Generate tables of random bit-vectors for use as Zobrist hashing. */
-/*********************************************************************/
+///////////////////////////////////////////////////////////////////////
+// Generate tables of random bit-vectors for use as Zobrist hashing. //
+///////////////////////////////////////////////////////////////////////
 
 // Initialize all the above keys to random bit strings.
 void
