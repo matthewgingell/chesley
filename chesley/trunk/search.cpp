@@ -112,9 +112,7 @@ Search_Engine::iterative_deepening
 #endif /* ENABLE_ASPIRATION_WINDOW */
 
       if (interrupt_search)
-	{
 	  break;
-	}
 
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0)
@@ -133,8 +131,12 @@ Search_Engine::iterative_deepening
 		<< elapsed
 		<< setw (8)  << pv[0].score 
 		<< "   ";
+	      Board c = b;
 	      for (int j = 0; j < pv.count; j++)
-		cerr << b.to_calg (pv[j]) << " ";
+		{
+		  cerr << c.to_san (pv[j]) << " ";
+		  c.apply (pv[j]);
+		}
 	      cerr << endl;
 	    }
 	}

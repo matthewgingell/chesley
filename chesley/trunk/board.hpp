@@ -91,10 +91,13 @@ struct Move {
   // Is this move an en passant capture.
   inline bool is_en_passant (const Board &b) const;
 
-  // Is this a Queen side castle.
+  // Is this a castling move?
+  inline bool is_castle (const Board &b) const;
+
+  // Is this a queen-side castle.
   inline bool is_castle_qs (const Board &b) const;
 
-  // Is this a King side castle.
+  // Is this a king-side castle.
   inline bool is_castle_ks (const Board &b) const;
 
   // State
@@ -299,6 +302,10 @@ struct Board {
     return hash == rhs.hash;
   }
 
+  bool operator!= (const Board &rhs) {
+    return hash != rhs.hash;
+  }
+
   /***********/
   /* Hashing */
   /***********/
@@ -331,6 +338,14 @@ struct Board {
   /* Reading and writing Moves against this board. */
   /*************************************************/
 
+  // Produce an algebraic letter-number pair for an integer square
+  // number.
+  std::string to_alg_coord (int idx) const;
+
+  // Produce an an integer square number from an algebraic letter-number
+  // pair.
+  int from_alg_coord (const std::string &s) const;
+
   // Does this string look like a move written in coordinate algebraic
   // notation?
   bool is_calg (const std::string &s) const;
@@ -340,6 +355,12 @@ struct Board {
 
   // Return a description of a Move in coordinate algebraic notation.
   std::string to_calg (const Move &m) const;
+
+  // Produce a SAN string from a move.
+  std::string to_san (const Move &m) const;
+
+  // Produce a move from a SAN string.
+  Move from_san (const std::string &s) const;
 
   /*********/
   /* Tests */
@@ -738,14 +759,20 @@ Move::capture (const Board &b) const {
 inline bool 
 Move::is_en_passant (const Board &b) const {
   // If the piece being moved is a pawn, the square being moved to is
-  // empty, and the to square and and the from sqare are on different
+  // empty, and the to square and the from sqare are on different
   // files, then this is an enpassant capture.
   return get_kind (b) == PAWN
     && ((test_bit (b.occupied, to) == 0))
     && (Board::idx_to_file (to) != Board::idx_to_file (from));
 }
 
-// Is this a Queen side castle.
+// Is this a castling move?
+inline bool
+Move::is_castle (const Board &b) const {
+  return is_castle_qs (b) || is_castle_ks (b);
+}
+
+// Is this a queen-side castle.
 inline bool 
 Move::is_castle_qs (const Board &b) const {
   if (b.get_kind (from) == KING)
@@ -759,7 +786,7 @@ Move::is_castle_qs (const Board &b) const {
   return false;
 }
 
-// Is this a King side castle.
+// Is this a king-side castle.
 inline bool 
 Move::is_castle_ks (const Board &b) const {
   if (b.get_kind (from) == KING)
@@ -774,8 +801,18 @@ Move::is_castle_ks (const Board &b) const {
 }
 
 // Equality on moves.
-inline bool operator== (const Move &lhs, Move &rhs) {
-  return (lhs.from == rhs.from) && (lhs.to == rhs.to);
+inline bool operator== (const Move &lhs, const Move &rhs) {
+  return 
+    (lhs.from == rhs.from) && 
+    (lhs.to == rhs.to) && 
+    (lhs.promote == rhs.promote);
+}
+
+inline bool operator!= (const Move &lhs, const Move &rhs) {
+  return 
+    (lhs.from != rhs.from) || 
+    (lhs.to != rhs.to) ||
+    (lhs.promote != rhs.promote);
 }
 
 // Output for moves.

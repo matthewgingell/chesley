@@ -42,6 +42,11 @@ Session::debug_execute (char *line) {
 	  test_hashing (depth);
 	}
 
+      if (token == "san")
+	{
+	  cerr << board.from_san ("e4");
+	}
+
       if (token == "ab")
 	{
 	  // Call alpha on this position with the specified window and
@@ -170,7 +175,6 @@ test_hashing_rec (const Board &b, int depth) {
   else
     {
       cerr << "FAIL at depth: " << depth << endl;
-      //      cerr << b << endl;
     }
 
   if (depth == 0)
@@ -191,7 +195,6 @@ Session::test_hashing (int d) {
   int pass = test_hashing_rec (board, d);
   cerr << pass << endl;
 }
-
 
 // Process a string in Extended Position Notation. This can include
 // tests, etc.

@@ -1,11 +1,18 @@
-/*
-   Chesley the chess engine!
+//////////////////////////////////////////////////////////////////////////////////
+// main.cpp							     	        //
+// 								     	        //
+// Chesley the chess engine!                                       	        //
+// 								     	        //
+// Matthew Gingell						     	        //
+// gingell@adacore.com					     		        //
+//////////////////////////////////////////////////////////////////////////////////
 
-   Matthew Gingell
-   gingell@gnat.com
-*/
+#include <iostream>
+#include <string>
 
 #include "chesley.hpp"
+
+using namespace std;
 
 // Initializion
 void initialize_all ()
@@ -18,8 +25,15 @@ void initialize_all ()
 // Initialize and pass control to main loop.
 int main()
 {
-  initialize_all ();
-  Session::cmd_loop ();
+  try
+    {
+      initialize_all ();
+      Session::cmd_loop ();
+    } 
+  catch (string s)
+    {
+      cerr << "Caught exception at top level: " << s << endl;
+    }
 
   return 0;
 }
