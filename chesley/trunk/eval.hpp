@@ -118,7 +118,7 @@ eval (const Board &b) {
   // Add some random noise for variety of games. // 
   /////////////////////////////////////////////////
 
-  score += random () % 10;
+  score += random () % 5;
 #endif
 
   //////////////////////////////////////////////////

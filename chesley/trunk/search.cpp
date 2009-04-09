@@ -292,17 +292,18 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
+    const int R = 2;
+
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
-    if (do_null_move && 
+    if (do_null_move &&
         pop_count (b.occupied) > 15 &&
         !b.in_check ((b.to_move ())))
       {
-        Move_Vector dummy;
         Board c = b;
+	Move_Vector dummy;
         c.set_color (invert_color (b.to_move ()));
 
-        const int R = 2;
         int val = -search_with_memory 
           (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
 
@@ -352,7 +353,7 @@ Search_Engine :: search
           }
       }
 
-    // If none of the moves we tried applied, then the game is over.
+    // If we couldn't find a move that applied, then the game is over.
     if (!found_move)
       {
         if (b.in_check (b.to_move ()))
@@ -484,14 +485,13 @@ Search_Engine::qsearch
         {
           moves[i].score = see (b, moves[i]);
         }
-      insertion_sort <Move_Vector, Move, less_than> (moves);
 #else
       for (int i = 0; i < moves.count; i++)  
         {
           moves[i].score = eval_piece (moves[i].capture (b));
         }
-      insertion_sort <Move_Vector, Move, less_than> (moves);
 #endif
+      insertion_sort <Move_Vector, Move, less_than> (moves);
       
       ////////////////////////////
       // Minimax over captures. //

@@ -147,6 +147,7 @@ Session::epd (const string_vector &args)
   // The first 4 fields should be a truncated FEN string.
   string fen = join (slice (tokens, 0, 3), " ");
   tokens = slice (tokens, 4);
+  Board b = Board::from_fen (fen, true);
 
   // Process EPD opcodes.
   while (1)
@@ -186,7 +187,6 @@ Session::epd (const string_vector &args)
 		  
 		  int depth = to_int (opcode [1]);
 		  uint64 expecting = to_int (operand);
-		  Board b = Board::from_fen (fen, true);
 		  uint64 p = b.perft (depth);
 		  bool pass = (p == expecting);
 		  fprintf (out, "%s %lli\n", pass ? "PASS" : "FAIL", p);
@@ -198,6 +198,19 @@ Session::epd (const string_vector &args)
 		}
 	    }
 	}
+
+      else if (opcode == "bm")
+	{
+	  Move best = b.from_san (first (tokens));
+	  timeout = mclock () + .25 * 1000;
+	  se.interrupt_search = false;
+	  cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
+	  Move m = se.choose_move (b, 100);
+	  (m == best) ? cerr << "PASS: " : cerr << "FAIL: ";
+	  cerr << fen << " bm " << b.to_san (best) << endl << endl;;
+	  tokens == rest (tokens);
+	}
+
       else
 	{
 	  // Exit if we encounter and opcode we don't recognize.
