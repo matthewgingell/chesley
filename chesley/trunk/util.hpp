@@ -18,17 +18,6 @@
 
 #include "types.hpp"
 
-/* Utility macros. */
-
-#if 0
-#define UASSERT(e)  \
-    ((void) ((e) ? 0 : __assert (#e, __FILE__, __LINE__)))
-#define __ASSERT(e, file, line) \
-  ((void)printf ("%s:%u: failed assertion `%s'\n", file, line, e), abort())
-#endif
-
-#define IS_UNUSED __attribute__ ((unused))
-
 /********************/
 /* String functions */
 /********************/

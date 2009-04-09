@@ -39,6 +39,7 @@ char to_char (Kind k);
 
 // Convert a character code to a piece code, ignoring color.
 Kind to_kind (char k);
+
 std::ostream & operator<< (std::ostream &os, Kind k);
 
 #endif // __TYPES__
