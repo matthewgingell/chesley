@@ -9,14 +9,15 @@ tests/WAC.EPD with .25 second moves:
 
   pass 175, fail 125
 
-turn off see:
-  
-  pass 165, fail 135
+Move ordering statistics:
 
-turn off qsearch:
+ * We order our best move first around 85% to 90% of the time, and
+   second about 5% of the time, then the rest pretty uniformly across
+   the tail.
 
-  pass 159, fail 141
+With PVS:
 
-disable aspiration window:
+gingell$ sudo nice -20 ./chesley
 
-  pass 181, fail 119
+with PVS:
+
