@@ -56,6 +56,7 @@ Search_Engine :: new_search
   // Clear statistics.
   calls_to_search = 0;
   calls_to_qsearch = 0;
+  memset (move_offsets, 0, sizeof (move_offsets));
   
   return iterative_deepening (b, depth, pv);
 }
@@ -147,6 +148,16 @@ Search_Engine::iterative_deepening
             }
         }
     }
+
+  // Display statistics on the quality of our move ordering.
+  cerr << endl;
+  double sum = 0;
+  for (int i = 0; i < move_offsets_count; i++)
+    sum += move_offsets[i];
+  cerr << "move_offsets: ";
+  for (int i = 0; i < move_offsets_count; i++)
+    cerr << (move_offsets[i] / sum) * 100 << "% ";
+  cerr << endl;
 
   // Check that we got at least one move.
   assert (pv.count > 0);
@@ -301,7 +312,7 @@ Search_Engine :: search
         !b.in_check ((b.to_move ())))
       {
         Board c = b;
-	Move_Vector dummy;
+        Move_Vector dummy;
         c.set_color (invert_color (b.to_move ()));
 
         int val = -search_with_memory 
@@ -317,41 +328,68 @@ Search_Engine :: search
     Move_Vector moves (b);
 
 #ifdef ENABLE_ORDER_MOVES
-    order_moves (b, depth, moves);
+    order_moves (b, depth, moves, alpha, beta);
 #endif
 
     ////////////////////////////
     // Minimax over children. //
     ////////////////////////////
 
-    for (int i = 0; i < moves.count; i++)
+    int mi = 0;
+    bool have_pv_move = false;
+    for (mi = 0; mi < moves.count; mi++)
       {
+	int cs;
         Board c = b;
         Move_Vector cpv;
-
-        if (c.apply (moves[i]))
+        if (c.apply (moves[mi]))
           {
             found_move = true;
 
-            // Recursively score the child.
-            int cs = -search_with_memory 
-              (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
-            
+#if ENABLE_PVS
+            // Perform a principal variation search. Note we always do
+            // a full width search on the first and second entries in
+            // the move list, since experimentally that's were find
+            // about 95% of our moves.
+	    if (have_pv_move && mi > 1) 
+	      {
+		cs = -search_with_memory 
+		  (c, depth - 1, ply + 1, cpv, -alpha - 1, -alpha, true);
+		if (cs > alpha && cs < beta) 
+		  {
+		    cpv.clear ();
+		    cs = -search_with_memory 
+		      (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
+		  }
+	      }
+	    else
+#endif // ENABLE_PVS
+	      {
+		cs = -search_with_memory 
+		  (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
+	      }
+
+	    // Test whether this move is better than the moves we have
+	    // previously analyzed.
             if (cs > alpha)
               {
+		if (cs < beta) have_pv_move = true;
                 alpha = cs;
-                moves[i].score = alpha;
-                pv = Move_Vector (moves[i], cpv);
+                moves[mi].score = alpha;
+                pv = Move_Vector (moves[mi], cpv);
               }
-
+            
 #ifdef ENABLE_ALPHA_BETA
-            if (alpha >= beta)
+            if (cs >= beta)
               {
                 break;
               }
-#endif /* ENABLE_ALPHA_BETA */
+#endif // ENABLE_ALPHA_BETA
+
           }
       }
+
+    move_offsets[min (mi,  move_offsets_count)]++;
 
     // If we couldn't find a move that applied, then the game is over.
     if (!found_move)
@@ -389,22 +427,38 @@ Search_Engine :: search
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void 
-Search_Engine::order_moves (const Board &b, int depth, Move_Vector &moves) {
+Search_Engine::order_moves 
+(const Board &b, int depth, Move_Vector &moves, int alpha, int beta) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
+  Move best_guess;
+
+  // If we have an entry in the transposition table, use that as our
+  // best guess.
+  if (have_entry)
+    {
+      best_guess = e.move;
+    }
+
+  // Otherwise find a best guess using a reduced depth search.
+  else
+    {
+      Move_Vector pv;
+      search_with_memory (b, depth - 3, 0, pv, alpha, beta);
+      if (pv.count > 0) best_guess = pv [0];
+    }
 
   for (int i = 0; i < moves.count; i++)
     {
-      // If we previously computed that moves[i] was the best move
-      // from this position make sure it is searched first.
-      if (have_entry && moves[i] == e.move)
+      // Sort our best guess first.
+      if (moves[i] == best_guess)
         moves[i].score = +INF;
       
-      // Award a bonus for winning captures.
+      // Followed by captures.
       moves[i].score += 
-        20 * eval_piece (moves[i].capture (b));
+        100 * (eval_piece (moves[i].capture (b)) - PAWN_VAL);
 
-      // Award a bonus for rate and depth of recent cutoffs.
+      // And finally, recent PV and fail-high moves.
       moves[i].score += 
         hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }

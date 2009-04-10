@@ -33,6 +33,7 @@ struct Search_Engine {
     calls_to_qsearch = 0;
     post = true;
     memset (hh_table, 0, sizeof (hh_table));
+    memset (move_offsets, 0, sizeof (move_offsets));
     tt.rehash (TT_SIZE);
   }
 
@@ -77,6 +78,13 @@ struct Search_Engine {
   // Count the number of times search and qsearch have been called.
   uint64 calls_to_search; 
   uint64 calls_to_qsearch; 
+
+  // A count of the number of times we found a PV node at an index
+  // into the moves list. This is a measure of the performance of our
+  // move ordering strategy.
+
+  static const int move_offsets_count = 10;
+  uint32 move_offsets [move_offsets_count];
   
   //////////////
   // Queries. //
@@ -140,7 +148,8 @@ private:
    Score alpha = -INF, Score beta = INF);
 
   // Heuristically order a list of moves by value.
-  inline void order_moves (const Board &b, int depth, Move_Vector &moves);
+  inline void order_moves 
+  (const Board &b, int depth, Move_Vector &moves, int alpha, int beta);
 
   // Fetch a transposition table entry. 
   inline bool tt_fetch (uint64 hash, TT_Entry &out);

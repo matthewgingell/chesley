@@ -3,7 +3,6 @@ Issues:
   * Get Zippy working.
   * See how well our end game detection is working.
   * Implement PVS.
-  * Implement SEE.
   * Detect insufficient material to mate.
 
 Next items:
@@ -15,8 +14,6 @@ Next items:
   * Convert ostring functions to to_string functions.
 
   * Hunt for things that can be made const.
-
-  * Use 16 bit types for indexes, scores, and depths.
 
   * Collect and analyize search statistics.
 
@@ -41,12 +38,10 @@ Clean up:
 Testing:
 
   * Add log and debugging infrastructure.
-  * Setup automated regression testing.
 
 Search
 
   * Time management 
-  * Static Exchange Evaluation (SEE) for capture ordering.
 
 Eval
 
