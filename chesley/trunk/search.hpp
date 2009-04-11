@@ -34,6 +34,7 @@ struct Search_Engine {
     post = true;
     memset (hh_table, 0, sizeof (hh_table));
     memset (move_offsets, 0, sizeof (move_offsets));
+    memset (beta_offsets, 0, sizeof (beta_offsets));
     tt.rehash (TT_SIZE);
   }
 
@@ -83,8 +84,9 @@ struct Search_Engine {
   // into the moves list. This is a measure of the performance of our
   // move ordering strategy.
 
-  static const int move_offsets_count = 10;
-  uint32 move_offsets [move_offsets_count];
+  static const int ordering_stats_count = 10;
+  uint32 move_offsets [ordering_stats_count];
+  uint32 beta_offsets [ordering_stats_count];
   
   //////////////
   // Queries. //
