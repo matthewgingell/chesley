@@ -57,6 +57,7 @@ Search_Engine :: new_search
   calls_to_search = 0;
   calls_to_qsearch = 0;
   memset (move_offsets, 0, sizeof (move_offsets));
+  memset (beta_offsets, 0, sizeof (beta_offsets));
   
   return iterative_deepening (b, depth, pv);
 }
@@ -152,11 +153,19 @@ Search_Engine::iterative_deepening
   // Display statistics on the quality of our move ordering.
   cerr << endl;
   double sum = 0;
-  for (int i = 0; i < move_offsets_count; i++)
+  for (int i = 0; i < ordering_stats_count; i++)
     sum += move_offsets[i];
   cerr << "move_offsets: ";
-  for (int i = 0; i < move_offsets_count; i++)
+  for (int i = 0; i < ordering_stats_count; i++)
     cerr << (move_offsets[i] / sum) * 100 << "% ";
+  cerr << endl;
+
+  sum = 0;
+  for (int i = 0; i < ordering_stats_count; i++)
+    sum += beta_offsets[i];
+  cerr << "beta_offsets: ";
+  for (int i = 0; i < ordering_stats_count; i++)
+    cerr << (beta_offsets[i] / sum) * 100 << "% ";
   cerr << endl;
 
   // Check that we got at least one move.
@@ -327,6 +336,7 @@ Search_Engine :: search
         
     Move_Vector moves (b);
 
+
 #ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves, alpha, beta);
 #endif
@@ -334,6 +344,14 @@ Search_Engine :: search
     ////////////////////////////
     // Minimax over children. //
     ////////////////////////////
+
+    int ext = 0;
+
+    // Extend the search by one ply if we are in check.
+    if (b.in_check (b.to_move ()))
+      {
+	ext += 1;
+      }
 
     int mi = 0;
     bool have_pv_move = false;
@@ -366,7 +384,7 @@ Search_Engine :: search
 #endif // ENABLE_PVS
 	      {
 		cs = -search_with_memory 
-		  (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
+		  (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
 	      }
 
 	    // Test whether this move is better than the moves we have
@@ -382,6 +400,7 @@ Search_Engine :: search
 #ifdef ENABLE_ALPHA_BETA
             if (cs >= beta)
               {
+		beta_offsets[min (mi,  ordering_stats_count)]++;
                 break;
               }
 #endif // ENABLE_ALPHA_BETA
@@ -389,7 +408,7 @@ Search_Engine :: search
           }
       }
 
-    move_offsets[min (mi,  move_offsets_count)]++;
+    move_offsets[min (mi,  ordering_stats_count)]++;
 
     // If we couldn't find a move that applied, then the game is over.
     if (!found_move)
@@ -461,6 +480,11 @@ Search_Engine::order_moves
       // And finally, recent PV and fail-high moves.
       moves[i].score += 
         hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+      
+      if (depth > 0)
+	moves[i].score += 
+	  hh_table[b.to_move ()][depth][moves[i].from][moves[i].to] / 10;
+
     }
 
   insertion_sort <Move_Vector, Move, less_than> (moves);
@@ -480,7 +504,6 @@ Score
 Search_Engine::see (const Board &b, const Move &m) {
   Score s = eval_piece (m.capture (b));
   Board c = b;
-
   c.clear_piece (m.from);
   c.clear_piece (m.to);
   c.set_piece (m.get_kind (b), b.to_move (), m.to);
