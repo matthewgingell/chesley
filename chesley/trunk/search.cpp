@@ -75,6 +75,7 @@ Search_Engine::iterative_deepening
 (const Board &b, int depth, Move_Vector &pv) 
 {
   Score s = 0;
+  Score scores[100];
 
   // Print header for posting thinking.
   if (post) 
@@ -92,35 +93,13 @@ Search_Engine::iterative_deepening
       calls_to_qsearch = 0;
       uint64 start_time = cpu_time ();
 
-#ifdef ENABLE_ASPIRATION_WINDOW
-      const int WINDOW = 25;
-      const int lower = s - WINDOW;
-      const int upper = s + WINDOW;
-
-      // Do an aspiration search.
-      if (i > 1) 
-        {
-          s = search_with_memory  (b, i, 0, tmp, lower, upper);
-          
-          // Search again with a full window if we fail to find the
-          // best move in the aspiration window or if this search
-          // failed to return at least one move.
-          if (s <= lower || s >= upper || tmp.count == 0)
-            {
-              tmp.clear ();
-              s = search_with_memory (b, i, 0, tmp);
-            }
-        }
-      else
-        {
-          s = search_with_memory (b, i, 0, tmp);
-        }
-#else
-      s = search_with_memory (b, i, 0, tmp);
-#endif /* ENABLE_ASPIRATION_WINDOW */
-
+      // Break out of this loop when we are interrupted.
       if (interrupt_search)
           break;
+
+      // Search this position to depth i.
+      int delta = (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
+      scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // If we got back a principle variation, return it to the caller.
       if (tmp.count > 0)
@@ -172,6 +151,48 @@ Search_Engine::iterative_deepening
   assert (pv.count > 0);
   
   return pv[0].score;
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// 									   //
+// Search_Engine::aspiration_search ()					   //
+// 									   //
+// Try a search with a small window around 'best_guess' and only do a full //
+// width search if that fails.						   //
+// 									   //
+/////////////////////////////////////////////////////////////////////////////
+
+Score 
+Search_Engine::aspiration_search 
+(const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw) {
+  Score s;
+
+#ifdef ENABLE_ASPIRATION_WINDOW
+  const int lower = best_guess - hw;
+  const int upper = best_guess + hw;
+
+  // Do an aspiration search.
+
+  //  cerr << "guessing [" << lower << " .. " << upper << "]: ";
+
+  s = search_with_memory  (b, depth, 0, pv, lower, upper);
+
+  // Re-search if we failed.
+  if (s <= lower || s >= upper)
+    {
+      //      cerr << "Missed window" << endl;
+      pv.clear ();
+      s = search_with_memory (b, depth, 0, pv);
+    }
+  else
+    {
+      //      cerr << "Hit window" << endl;
+    }
+#else
+  s = search_with_memory (b, depth, 0, pv);
+#endif /* ENABLE_ASPIRATION_WINDOW */
+
+  return s;
 }
 
 /////////////////////////////////////////////////////////////////////////

@@ -1,13 +1,4 @@
-tests/WAC.EPD with 20 second moves:
-  pass 262, fail 38
-
-tests/WAC.EPD with 5 second moves:
-
-  pass 248, fail 52
-
-tests/WAC.EPD with .25 second moves:
-
-  pass 175, fail 125
+Latest: At 20 secs/move we get 275 pass, 25 fail.
 
 Move ordering statistics:
 
