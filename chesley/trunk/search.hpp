@@ -124,6 +124,11 @@ private:
 
   // Search repeatedly from depth 1 to 'depth.;
   Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
+
+  // Try a search with a with a plus or minus hw window around
+  // 'best_guess' and only do a full width search if that fails.
+  Score aspiration_search 
+  (const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw);
   
   // Memoized minimax search.
   Score search_with_memory 

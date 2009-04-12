@@ -19,14 +19,14 @@ SRCS = $(wildcard *.cpp)
 # Search configuration.						       		 #
 # 										 #
 # The following macros are used to enable and disable various parts of 		 #
-# the tree search. Valid options are: ENABLE_ASPIRATION,	       		 #
+# the tree search. Valid options are: ENABLE_ASPIRATION_WINDOW,	       		 #
 # ENABLE_TRANS_TABLE, ENABLE_QSEARCH, ENABLE_NULL_MOVE,		       		 #
 # ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA, ENABLE_SEE, -DENABLE_PVS     		 #
 ##################################################################################
 
-ALG = -DENABLE_ASPIRATION_WINDOW -DENABLE_ALPHA_BETA		\
--DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE -DENABLE_NULL_MOVE	\
--DENABLE_SEE -DENABLE_QSEARCH # -DENABLE_PVS
+ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
+-DENABLE_NULL_MOVE -DENABLE_SEE -DENABLE_QSEARCH			\
+-DENABLE_ASPIRATION_WINDOW # -DENABLE_PVS
 
 ################
 # Main binary. #

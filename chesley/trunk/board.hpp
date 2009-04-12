@@ -152,7 +152,9 @@ struct Move_Vector {
     move[count++] = m;
   }
 
-  Move &operator[] (int i) {
+  Move &operator[] (byte i) {
+
+    if (i < 0) abort();
 
     if (!(i < count))
       {
