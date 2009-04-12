@@ -76,6 +76,9 @@ struct Search_Engine {
   // Statistics. //
   /////////////////
 
+  // The start time of some operation being timed.
+  uint64 start_time;
+
   // Count the number of times search and qsearch have been called.
   uint64 calls_to_search; 
   uint64 calls_to_qsearch; 
@@ -83,7 +86,6 @@ struct Search_Engine {
   // A count of the number of times we found a PV node at an index
   // into the moves list. This is a measure of the performance of our
   // move ordering strategy.
-
   static const int ordering_stats_count = 10;
   uint32 move_offsets [ordering_stats_count];
   uint32 beta_offsets [ordering_stats_count];
@@ -114,10 +116,9 @@ struct Search_Engine {
   // Test whether this board is a repetition.
   bool is_triple_rep (const Board &b);
 
-private:
-
-  // History tables. 
-  uint64 hh_table[2][100][64][64];
+  ///////////////////////////////////
+  // Hierarchy of search routines. //
+  //////////////////////////////////
 
   // Initialize a new search and return its value.
   Score new_search (const Board &b, int depth, Move_Vector &pv);
@@ -146,23 +147,45 @@ private:
    Score alpha = -INF, Score beta = INF,
    bool do_null_move = true);
 
-  // Static exchange evaluation.
-  Score see (const Board &b, const Move &capture);
-
   // Quiescence search. 
   Score qsearch 
-  (const Board &b, int depth, int ply,
-   Score alpha = -INF, Score beta = INF);
+  (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF);
+
+  // Static exchange evaluation.
+  inline Score see (const Board &b, const Move &capture);
 
   // Heuristically order a list of moves by value.
   inline void order_moves 
   (const Board &b, int depth, Move_Vector &moves, int alpha, int beta);
+
+  /////////////////////////////////////
+  // Transposition table management. //
+  /////////////////////////////////////
 
   // Fetch a transposition table entry. 
   inline bool tt_fetch (uint64 hash, TT_Entry &out);
 
   // Store a transposition table entry. 
   inline void tt_store (uint64 hash, const TT_Entry &in);
+
+  //////////////////////////////////////
+  // Thinking and statistical output. //
+  //////////////////////////////////////
+
+  // Write thinking output before iterative deeping starts.
+  void post_before (const Board &b);
+
+  // Write thinking for each depth during iterative deeping.
+  void post_each (const Board &b, int depth, const Move_Vector &pv);
+
+  // Write thinking output after iterative deeping ends.
+  void post_after ();
+  
+  ///////////////////////////////////////
+  // History heuristic implementation. //
+  ///////////////////////////////////////
+
+  uint64 hh_table[2][100][64][64];
 };
 
 #endif // _SEARCH_

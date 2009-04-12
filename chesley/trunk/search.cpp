@@ -35,13 +35,15 @@ Search_Engine :: choose_move (Board &b, int depth) {
 // Private implementation //
 ////////////////////////////
 
-////////////////////////////////////////////////////////////////////////
-// Search_Engine :: new_search ()                                     //
-//                                                                    //
-// This is the top level entry point to the tree search. It take care //
-// of initializing search state, then calls lower level routines to   //
-// generate a score and populate the principal variation.             //
-////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//                                                                     //
+// Search_Engine :: new_search ()                                      //
+//                                                                     //
+// This is the top level entry point to the tree search. It take care  //
+// of initializing search state, then calls lower level routines to    //
+// generate a score and populate the principal variation.              //
+//                                                                     //
+/////////////////////////////////////////////////////////////////////////
 
 Score
 Search_Engine :: new_search 
@@ -78,74 +80,34 @@ Search_Engine::iterative_deepening
   Score scores[100];
 
   // Print header for posting thinking.
-  if (post) 
-    {
-      cerr << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl;
-      cerr << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation" 
-           << endl;
-    }
+  if (post) post_before (b);
 
   // Search progressively deeper play until we are interrupted.
   for (int i = 1; i <= depth; i++) 
     {
       Move_Vector tmp;
-      calls_to_search = 0;
-      calls_to_qsearch = 0;
-      uint64 start_time = cpu_time ();
+
+      // Initialize statistics for this iteration.
+      calls_to_search = calls_to_qsearch = 0;
+      start_time = cpu_time ();
 
       // Break out of this loop when we are interrupted.
-      if (interrupt_search)
-          break;
+      if (interrupt_search) break;
 
       // Search this position to depth i.
       int delta = (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
-      // If we got back a principle variation, return it to the caller.
+      // If we got back a principle variation, copy it back to the caller.
       if (tmp.count > 0)
         {
           pv = tmp;
-
-          // Show thinking.
-          if (post)
-            {
-              double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
-              cerr 
-                << setw (3)  << i
-                << setw (10) << calls_to_search
-                << setw (10) << calls_to_qsearch
-                << setw (8)  << setiosflags (ios::fixed) << setprecision (2) 
-                << elapsed
-                << setw (8)  << pv[0].score 
-                << "   ";
-              Board c = b;
-              for (int j = 0; j < pv.count; j++)
-                {
-                  cerr << c.to_san (pv[j]) << " ";
-                  c.apply (pv[j]);
-                }
-              cerr << endl;
-            }
+          if (post) post_each (b, i, pv);
         }
     }
 
-  // Display statistics on the quality of our move ordering.
-  cerr << endl;
-  double sum = 0;
-  for (int i = 0; i < ordering_stats_count; i++)
-    sum += move_offsets[i];
-  cerr << "move_offsets: ";
-  for (int i = 0; i < ordering_stats_count; i++)
-    cerr << (move_offsets[i] / sum) * 100 << "% ";
-  cerr << endl;
-
-  sum = 0;
-  for (int i = 0; i < ordering_stats_count; i++)
-    sum += beta_offsets[i];
-  cerr << "beta_offsets: ";
-  for (int i = 0; i < ordering_stats_count; i++)
-    cerr << (beta_offsets[i] / sum) * 100 << "% ";
-  cerr << endl;
+  // Write out statistics about this search.
+  if (post) post_after ();
 
   // Check that we got at least one move.
   assert (pv.count > 0);
@@ -157,8 +119,8 @@ Search_Engine::iterative_deepening
 // 									   //
 // Search_Engine::aspiration_search ()					   //
 // 									   //
-// Try a search with a small window around 'best_guess' and only do a full //
-// width search if that fails.						   //
+// Try a search with a window around 'best_guess' and only do a full width //
+// search if that fails.						   //
 // 									   //
 /////////////////////////////////////////////////////////////////////////////
 
@@ -168,25 +130,16 @@ Search_Engine::aspiration_search
   Score s;
 
 #ifdef ENABLE_ASPIRATION_WINDOW
-  const int lower = best_guess - hw;
-  const int upper = best_guess + hw;
-
-  // Do an aspiration search.
-
-  //  cerr << "guessing [" << lower << " .. " << upper << "]: ";
+  const Score lower = best_guess - hw;
+  const Score upper = best_guess + hw;
 
   s = search_with_memory  (b, depth, 0, pv, lower, upper);
 
   // Re-search if we failed.
   if (s <= lower || s >= upper)
     {
-      //      cerr << "Missed window" << endl;
       pv.clear ();
       s = search_with_memory (b, depth, 0, pv);
-    }
-  else
-    {
-      //      cerr << "Hit window" << endl;
     }
 #else
   s = search_with_memory (b, depth, 0, pv);
@@ -196,6 +149,7 @@ Search_Engine::aspiration_search
 }
 
 /////////////////////////////////////////////////////////////////////////
+//                                                                     //
 // Search_Engine :: search_with_memory ()                              //
 //                                                                     //
 // This routine wraps search and memoizes lookups in the transposition //
@@ -286,6 +240,7 @@ Search_Engine :: search
  bool do_null_move)
 {
   bool found_move = false;
+  bool in_check = b.in_check ((b.to_move ()));
 
   assert (pv.count == 0);
 
@@ -337,9 +292,7 @@ Search_Engine :: search
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
-    if (do_null_move &&
-        pop_count (b.occupied) > 15 &&
-        !b.in_check ((b.to_move ())))
+    if (do_null_move && pop_count (b.occupied) > 15 && !in_check)
       {
         Board c = b;
         Move_Vector dummy;
@@ -366,13 +319,10 @@ Search_Engine :: search
     // Minimax over children. //
     ////////////////////////////
 
-    int ext = 0;
 
     // Extend the search by one ply if we are in check.
-    if (b.in_check (b.to_move ()))
-      {
-	ext += 1;
-      }
+    int ext = 0;
+    if (in_check) ext += 1;
 
     int mi = 0;
     bool have_pv_move = false;
@@ -386,14 +336,10 @@ Search_Engine :: search
             found_move = true;
 
 #if ENABLE_PVS
-            // Perform a principal variation search. Note we always do
-            // a full width search on the first and second entries in
-            // the move list, since experimentally that's were find
-            // about 95% of our moves.
-	    if (have_pv_move && mi > 1) 
+	    if (have_pv_move) 
 	      {
 		cs = -search_with_memory 
-		  (c, depth - 1, ply + 1, cpv, -alpha - 1, -alpha, true);
+		  (c, depth - 1, ply + 1, cpv, -(alpha + 1), -alpha, true);
 		if (cs > alpha && cs < beta) 
 		  {
 		    cpv.clear ();
@@ -434,7 +380,7 @@ Search_Engine :: search
     // If we couldn't find a move that applied, then the game is over.
     if (!found_move)
       {
-        if (b.in_check (b.to_move ()))
+        if (in_check)
           {
             ///////////////////////////////////////////////////////////
             // We need to provide a bonus to shallower wins over     //
@@ -717,4 +663,63 @@ Search_Engine::is_triple_rep (const Board &b) {
       assert (count >= 0 && count < 4);
       return (count == 3);
     }
+}
+
+////////////////////////////////////////////////////////////////////////
+// Thinking output                                                    //
+//                                                                    //
+// Output the principal variation for each individual search depth    // 
+// and write out some performance statistics.                         //
+////////////////////////////////////////////////////////////////////////
+
+// Write thinking output before iterative deeping starts.
+void 
+Search_Engine::post_before (const Board &b) {
+  cerr << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
+       << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation" 
+       << endl;
+}
+
+// Write thinking for each depth during iterative deeping.
+void 
+Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
+  double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
+  Board c = b;
+
+  // Write out ply, node count, qnode count, time, score, and pv;
+  cerr << setw (3)  << depth;
+  cerr << setw (10) << calls_to_search;
+  cerr << setw (10) << calls_to_qsearch;
+  cerr << setw (8)  << setiosflags (ios::fixed) << setprecision (2) << elapsed;
+  cerr << setw (8)  << pv[0].score  << "   ";
+  
+  for (int i = 0; i < pv.count; i++)
+    {
+      cerr << c.to_san (pv[i]) << " ";
+      c.apply (pv[i]);
+    }
+  cerr << endl;
+}
+
+// Write thinking output after iterative deeping ends.
+void 
+Search_Engine::post_after () {
+  // Display statistics on the quality of our move ordering.
+  cerr << endl;
+  double sum = 0;
+  for (int i = 0; i < ordering_stats_count; i++)
+    sum += move_offsets[i];
+  cerr << "move_offsets: ";
+  for (int i = 0; i < ordering_stats_count; i++)
+    cerr << (move_offsets[i] / sum) * 100 << "% ";
+  cerr << endl;
+
+  // Display statistics on the rate at which we generate beta cutoffs.
+  sum = 0;
+  for (int i = 0; i < ordering_stats_count; i++)
+    sum += beta_offsets[i];
+  cerr << "beta_offsets: ";
+  for (int i = 0; i < ordering_stats_count; i++)
+    cerr << (beta_offsets[i] / sum) * 100 << "% ";
+  cerr << endl;
 }

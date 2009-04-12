@@ -167,6 +167,21 @@ struct Move_Vector {
     return move[i];
   }
 
+  Move operator[] (byte i) const {
+
+    if (i < 0) abort();
+
+    if (!(i < count))
+      {
+	std::cerr << i << std::endl;
+	std::cerr << (int) count << std::endl;
+	abort();
+      }
+
+    assert (i < count);
+    return move[i];
+  }
+
   Move move[SIZE];
   byte count;
 };
