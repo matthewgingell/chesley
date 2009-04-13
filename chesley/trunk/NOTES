@@ -1,9 +1,9 @@
-Latest: At 20 secs/move we get 275 pass, 25 fail.
+Latest: At 20 secs/move we get 277 pass, 23 fail.
 
 Move ordering statistics:
 
  * We order our best move first around 85% to 90% of the time, and
-   second about 5% of the time, then the rest pretty uniformly across
+   second about 5% of the time, then with diminishing frequency across
    the tail.
 
 gingell$ ./chesley
@@ -23,3 +23,4 @@ Ply     Nodes    Qnodes    Time    Eval   Principal Variation
  10   1894868   2013382    3.84      14   e4 
  11   3761033   3971287    7.94      46   e4 d5 exd5 Qxd5 Nc3 Qe6+ Nge2 Nc6 d4 Nf6 Qd3 
  12  11946455  13642275   36.30      18   e4 e5 Nc3 Nf6 Nf3 Nc6 d4 exd4 Nxd4 d5 Nxc6 bxc6 
+

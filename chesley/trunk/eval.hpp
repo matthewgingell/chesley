@@ -98,6 +98,12 @@ eval (const Board &b) {
   ///////////////////////////////////
   // Evaluate positional strength. //
   ///////////////////////////////////
+
+#if 0
+  Board c = b;
+  c.set_color (invert_color (c.to_move ()));
+  assert (sum_piece_squares (b) == sum_piece_squares (c));
+#endif
   
   score += sum_piece_squares (b);
 
@@ -113,7 +119,7 @@ eval (const Board &b) {
   score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
   score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
 
-#if 0
+#if 1
   /////////////////////////////////////////////////
   // Add some random noise for variety of games. // 
   /////////////////////////////////////////////////
