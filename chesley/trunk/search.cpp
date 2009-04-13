@@ -14,6 +14,7 @@
 #include <cassert>
 #include <iomanip>
 #include <iostream>
+
 #include "chesley.hpp"
 
 using namespace std;
@@ -65,11 +66,13 @@ Search_Engine :: new_search
 }
 
 ////////////////////////////////////////////////////////////////////////
+//                                                                    //
 // Search_Engine::iterative_deepening                                 //
 //                                                                    //
 // Do a depth first search repeatedly, each time increasing the depth //
 // by one. This allows us to return a reasonable move if we are       //
 // interrupted.                                                       //
+//                                                                    //
 ////////////////////////////////////////////////////////////////////////
 
 Score 
@@ -82,7 +85,7 @@ Search_Engine::iterative_deepening
   // Print header for posting thinking.
   if (post) post_before (b);
 
-  // Search progressively deeper play until we are interrupted.
+  // Search progressively deeper ply until we are interrupted.
   for (int i = 1; i <= depth; i++) 
     {
       Move_Vector tmp;
@@ -91,14 +94,15 @@ Search_Engine::iterative_deepening
       calls_to_search = calls_to_qsearch = 0;
       start_time = cpu_time ();
 
-      // Break out of this loop when we are interrupted.
-      if (interrupt_search) break;
-
-      // Search this position to depth i.
+      // Search this position to using a dynamically sized aspiration window.
       int delta = (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
-      // If we got back a principle variation, copy it back to the caller.
+      // Break out of the loop if the search was interrupted.
+      if (interrupt_search) break;
+
+      // Otherwise, if the search completed and we got back a
+      // principle variation, copy it back to the caller.
       if (tmp.count > 0)
         {
           pv = tmp;
@@ -181,7 +185,7 @@ Search_Engine :: search_with_memory
   if (found_tt_entry && 
       entry.depth == depth && 
       // Try to deal with the graph history problem:
-      b.half_move_clock < 50 && rep_count (b) < 3) 
+      b.half_move_clock < 45 && rep_count (b) < 2) 
     {
       if (entry.type == TT_Entry::LOWERBOUND)
         alpha = max (entry.move.score, alpha);
@@ -256,7 +260,7 @@ Search_Engine :: search
   ////////////////////////////////////////
   
   if (interrupt_search)
-    return 0;
+    return 12345;
 
   ////////////////////////
   // Update statistics. //
@@ -309,8 +313,6 @@ Search_Engine :: search
 #endif /* ENABLE_NULL_MOVE */
         
     Move_Vector moves (b);
-
-
 #ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves, alpha, beta);
 #endif
@@ -318,7 +320,6 @@ Search_Engine :: search
     ////////////////////////////
     // Minimax over children. //
     ////////////////////////////
-
 
     // Extend the search by one ply if we are in check.
     int ext = 0;
@@ -371,7 +372,6 @@ Search_Engine :: search
                 break;
               }
 #endif // ENABLE_ALPHA_BETA
-
           }
       }
 
@@ -447,17 +447,13 @@ Search_Engine::order_moves
       // And finally, recent PV and fail-high moves.
       moves[i].score += 
         hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
-      
-      if (depth > 0)
-	moves[i].score += 
-	  hh_table[b.to_move ()][depth][moves[i].from][moves[i].to] / 10;
-
     }
 
   insertion_sort <Move_Vector, Move, less_than> (moves);
 }
 
 //////////////////////////////////////////////////////////////////////
+//                                                                  //
 // Search_Engine :: see ()                                          //
 //                                                                  //
 // Static exchange evaluation. This routine plays out a series of   //
@@ -465,6 +461,7 @@ Search_Engine::order_moves
 // captures are resolved or a capture is disadvantageous for the    //
 // moving side. The goal here is to generate a good estimate of the //
 // value of a capture in linear time.                               //
+//                                                                  //
 //////////////////////////////////////////////////////////////////////
 
 Score
@@ -561,7 +558,7 @@ Search_Engine::qsearch
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Transposition tables                                               //
+// Transposition tables.                                              //
 //                                                                    //
 // Operations on the transposition table.                             //
 ////////////////////////////////////////////////////////////////////////
@@ -666,7 +663,7 @@ Search_Engine::is_triple_rep (const Board &b) {
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Thinking output                                                    //
+// Thinking output.                                                   //
 //                                                                    //
 // Output the principal variation for each individual search depth    // 
 // and write out some performance statistics.                         //

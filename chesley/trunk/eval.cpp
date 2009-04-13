@@ -7,9 +7,12 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+using namespace std;
+
 #include "chesley.hpp"
 
 ////////////////////////////////////////////////////////////////////////////
+//                                                                        //
 //  piece_square_table:                                                   //
 //                                                                        //
 //  This is a table of bonuses for each piece-location pair. The table    //
@@ -22,12 +25,8 @@
 //  at:                                                                   //
 //                                                                        //
 //  http://chessprogramming.wikispaces.com/simplified+evaluation+function //
+//                                                                        //
 ////////////////////////////////////////////////////////////////////////////
-
-// Bonuses for white indexed by [piece][64 - square].
-//
-// Transformation for white is idx => (56 - 8 * (x / 8) + x % 8)
-// Transformation for black is idx => 63 - (56 - 8 * (x / 8) + x % 8)
 
 static int piece_square_table[6][64] =
 {
@@ -105,7 +104,6 @@ static int piece_square_table[6][64] =
 };
 
 #if 0
-
 // king end game
 -50,-40,-30,-20,-20,-30,-40,-50,
 -30,-20,-10,  0,  0,-10,-20,-30,
@@ -115,28 +113,26 @@ static int piece_square_table[6][64] =
 -30,-10, 20, 30, 30, 20,-10,-30,
 -30,-30,  0,  0,  0,  0,-30,-30,
 -50,-30,-30,-30,-30,-30,-30,-50
-
 #endif
 
 // Evaluate a positional strength based on the preceding table.
 Score
 sum_piece_squares (const Board &b) {
-  // Sum over all colors and kinds.
   Score bonus = 0;
   for (int c = WHITE; c <= BLACK; c++)
     for (int k = PAWN; k <= KING; k++)
       {
 	bitboard pieces =  
 	  b.color_to_board ((Color) c) & b.kind_to_board ((Kind) k);
-
+	
 	while (pieces)
 	  {
 	    int idx = bit_idx (pieces);
-	    int xfrm = 56 - 8 * (idx / 8) + idx % 8;
-	    if (c == BLACK) xfrm = 63 - xfrm;
+	    int xfrm = (c == WHITE) ? 63 - idx : idx;
 	    bonus += sign ((Color) c) * piece_square_table[k][xfrm];
 	    pieces = clear_lsb (pieces);
 	  }
-    }
+      }
+
   return bonus;
 }
