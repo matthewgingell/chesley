@@ -162,11 +162,19 @@ struct Search_Engine {
   // Transposition table management. //
   /////////////////////////////////////
 
+  // Try to get a move or tighten the window from the transposition
+  // table, returning true if we found a move we can return at this
+  // position.
+  bool tt_try 
+  (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta);
+
+  // Update the transposition table with the results of a call to
+  // search.
+  void tt_update
+  (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta);
+  
   // Fetch a transposition table entry. 
   inline bool tt_fetch (uint64 hash, TT_Entry &out);
-
-  // Store a transposition table entry. 
-  inline void tt_store (uint64 hash, const TT_Entry &in);
 
   //////////////////////////////////////
   // Thinking and statistical output. //
