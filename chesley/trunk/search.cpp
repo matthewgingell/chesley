@@ -36,6 +36,8 @@ Search_Engine :: choose_move (Board &b, int depth) {
 // Private implementation //
 ////////////////////////////
 
+const int Search_Engine::ordering_stats_count;
+
 /////////////////////////////////////////////////////////////////////////
 //                                                                     //
 // Search_Engine :: new_search ()                                      //
@@ -169,69 +171,25 @@ Search_Engine :: search_with_memory
  Score alpha, Score beta,
  bool do_null_move)
 {
-  Score s;
-
   assert (pv.count == 0);
 
-#ifdef ENABLE_TRANS_TABLE
-  ///////////////////////////////////////////////////////
-  // Try to find this node in the transposition table. //
-  ///////////////////////////////////////////////////////
-
-  TT_Entry entry;
-  bool have_exact = false;
-  bool found_tt_entry = false;
-  found_tt_entry = tt_fetch (b.hash, entry);
-  if (found_tt_entry && 
-      entry.depth == depth && 
-      // Try to deal with the graph history problem:
-      b.half_move_clock < 45 && rep_count (b) < 2) 
+  // Try to find this node in the transposition table.
+  Move m;  
+  if (tt_try (b, depth, m, alpha, beta))
     {
-      if (entry.type == TT_Entry::LOWERBOUND)
-        alpha = max (entry.move.score, alpha);
-      
-      else if (entry.type == TT_Entry::UPPERBOUND)
-        beta = min (entry.move.score, beta);
-
-      else if (entry.type == TT_Entry::EXACT_VALUE)
-        have_exact = true;
+      pv.push (m);
+      return m.score;
     }
 
-  if (have_exact)
-    {
-      pv.push (entry.move);
-      return entry.move.score;
-    }
-  else
-#endif /* ENABLE_TRANS_TABLE */
-
+  // Push this position on the repetition stack and recurse.
   rt_push (b);
-  s = search (b, depth, ply, pv, alpha, beta, do_null_move);
+  Score s = search (b, depth, ply, pv, alpha, beta, do_null_move);
   rt_pop (b);
 
-#ifdef ENABLE_TRANS_TABLE
-  //////////////////////////////////////////////////////
-  // Update the transposition table with this result. //
-  //////////////////////////////////////////////////////
-
-  if (pv.count > 0 && (!found_tt_entry || depth > entry.depth))
-    {
-      entry.move = pv[0];
-      entry.depth = depth;
-
-      if (s >= beta) 
-        entry.type = TT_Entry :: LOWERBOUND;
-
-      else if (s <= alpha)
-        entry.type = TT_Entry :: UPPERBOUND;
-
-      else
-        entry.type = TT_Entry :: EXACT_VALUE;
-
-      tt_store (b.hash, entry);
-    }
-#endif/* ENABLE_TRANS_TABLE */
-
+  // Update the transposition table with this result.
+  if (pv.count > 0)
+    tt_update (b, depth, pv[0], alpha, beta);
+  
   return s;  
 }
 
@@ -563,33 +521,89 @@ Search_Engine::qsearch
 // Operations on the transposition table.                             //
 ////////////////////////////////////////////////////////////////////////
 
+
+// Try to get a move or tighten the window from the transposition
+// table, returning true if we found a move we can return at this
+// position.
+bool Search_Engine::tt_try 
+(const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta)
+{
+  Trans_Table :: iterator i = tt.find (b.hash);
+
+  if (i == tt.end ())
+    {
+      return false;
+    }
+  else 
+    {
+      if (i -> second.depth == depth && 
+	  b.half_move_clock < 45 && rep_count (b) < 2)
+	{
+	  TT_Entry entry = i -> second;
+
+	  if (entry.type == TT_Entry::LOWERBOUND)
+	    alpha = max (entry.move.score, alpha);
+
+	  else if (entry.type == TT_Entry::UPPERBOUND)
+	    beta = min (entry.move.score, beta);
+	  
+	  else if (entry.type == TT_Entry::EXACT_VALUE)
+	    {
+	      m = entry.move;
+	      return true;
+	    } 
+	}
+    }
+  
+  return false;
+}
+
 // Fetch an entry from the transposition table. Returns false if no
 // entry is found.
 inline bool
 Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
   Trans_Table::iterator i = tt.find (hash);
   if (i != tt.end ()) 
-    {
+     {
       out = i -> second;
       return true;
-    }
+     }
   else
     {
-      out = TT_Entry ();
       return false;
     }
 }
 
-// Store an entry in the transposition table.
-inline void
-Search_Engine::tt_store (uint64 hash, const TT_Entry &in) {
-  if ((tt.size () > TT_SIZE)) 
+// Update the transposition table with the results of a call to
+// search.
+void Search_Engine::tt_update
+(const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta) 
+{
+  Trans_Table :: iterator i; i = tt.find (b.hash);
+  bool found_entry = (i != tt.end ());
+
+  // Find or insert an entry for this position.
+  if (!found_entry)
     {
-      cerr << "Garbage collecting..." << endl;
-      tt.clear ();
+      Trans_Table::value_type val (b.hash, TT_Entry ());
+      i = tt.insert (val).first;
     }
-  tt.erase (hash);
-  tt.insert (pair <uint64, TT_Entry> (hash, in));
+
+  // Update this entry.
+  if (!found_entry || depth > i -> second.depth)
+    {
+      i -> second.move = m;
+      i -> second.depth = depth;
+
+      if (m.score >= beta) 
+	i -> second.type = TT_Entry :: LOWERBOUND;
+
+      else if (m.score <= alpha)
+        i -> second.type = TT_Entry :: UPPERBOUND;
+
+      else
+        i -> second.type = TT_Entry :: EXACT_VALUE;
+    }
 }
 
 ////////////////////////////////////////////////////////////////////////

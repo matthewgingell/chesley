@@ -50,7 +50,7 @@ vsn.o: *.cpp *.hpp
 # Running games under xboard  #
 ###############################
 
-XBOARD_OPTS = -debug -coords -size Giant -xponder -thinking
+XBOARD_OPTS = -debug -coords -size Small -xponder -thinking
 
 # Launch an xboard session with Chesley.
 play: chesley
