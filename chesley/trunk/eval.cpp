@@ -7,6 +7,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <iostream>
+
 using namespace std;
 
 #include "chesley.hpp"
@@ -120,19 +122,21 @@ Score
 sum_piece_squares (const Board &b) {
   Score bonus = 0;
   for (int c = WHITE; c <= BLACK; c++)
-    for (int k = PAWN; k <= KING; k++)
-      {
-	bitboard pieces =  
-	  b.color_to_board ((Color) c) & b.kind_to_board ((Kind) k);
-	
-	while (pieces)
-	  {
-	    int idx = bit_idx (pieces);
-	    int xfrm = (c == WHITE) ? 63 - idx : idx;
-	    bonus += sign ((Color) c) * piece_square_table[k][xfrm];
-	    pieces = clear_lsb (pieces);
-	  }
-      }
+    {
+      for (int k = PAWN; k <= KING; k++)
+	{
+	  bitboard pieces =  
+	    b.color_to_board ((Color) c) & b.kind_to_board ((Kind) k);
+	  
+	  while (pieces)
+	    {
+	      int idx = bit_idx (pieces);
+	      int xfrm = (c == WHITE) ? 63 - idx : idx;
+	      bonus += sign ((Color) c) * piece_square_table[k][xfrm];
+	      pieces = clear_lsb (pieces);
+	    }
+	}
+    }
 
   return bonus;
 }

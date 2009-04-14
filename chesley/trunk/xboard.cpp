@@ -77,20 +77,6 @@ Session::xbd_execute (char *line) {
 	  // ignored.
 	}
 
-      /////////////////
-      // new command //
-      /////////////////
-
-      if (token == "new")
-	{
-	  collect_new_game ();
-	  board = Board :: startpos ();
-	  collect_statistics ();
-	  se.rt.clear ();
-	  our_color = BLACK;
-	  running = true;
-	}
-
       ////////////////////////////////////////////////////////
       // We do not support any non-standard chess variants. //
       ////////////////////////////////////////////////////////
