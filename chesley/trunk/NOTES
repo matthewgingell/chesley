@@ -1,26 +1,14 @@
-Latest: At 20 secs/move we get 277 pass, 23 fail.
+Revision: 118:
 
-Move ordering statistics:
+At 20    secs/move, get 277 pass, 23  fail.
+At 10    secs/move, get 274 pass, 26  fail.
+At  5    secs/move, get 266 pass, 34  fail.
+At  2    secs/move, get 259 pass, 41  fail.
+At  1    secs/move, get 250 pass, 50  fail.
+At   .5  secs/move, get 243 pass, 57  fail.
+At   .25 secs/move, get 221 pass, 79  fail.
+At   .1  secs/move, get 203 pass, 97  fail.
+At   .05 secs/move, get 185 pass, 115 fail.
 
- * We order our best move first around 85% to 90% of the time, and
-   second about 5% of the time, then with diminishing frequency across
-   the tail.
-
-gingell$ ./chesley
-Chesley! r113
-> bench 12
-Move 1:0
-Ply     Nodes    Qnodes    Time    Eval   Principal Variation
-  1        22        21    0.00      81   e4 
-  2       130       107    0.00      -2   e4 e5 
-  3       277       250    0.00      73   d4 d5 Nc3 
-  4      2053      1841    0.01      -4   d4 d5 Nc3 Nc6 
-  5      3229      3119    0.01      60   d4 d5 Nc3 Nc6 Nf3 
-  6     16212     15392    0.03      -6   d4 d5 Nc3 Nc6 Nf3 Nf6 
-  7     59642     59060    0.09      42   d4 d5 Nc3 Nc6 Nf3 Nf6 Qd3 
-  8    133842    128277    0.24       0   d4 d5 Nc3 Nc6 Nf3 Nf6 Ne5 Ne4 
-  9    573029    566145    0.92      39   d4 d5 Nc3 Nf6 Nf3 Nc6 Qd3 Qd6 
- 10   1894868   2013382    3.84      14   e4 
- 11   3761033   3971287    7.94      46   e4 d5 exd5 Qxd5 Nc3 Qe6+ Nge2 Nc6 d4 Nf6 Qd3 
- 12  11946455  13642275   36.30      18   e4 e5 Nc3 Nf6 Nf3 Nc6 d4 exd4 Nxd4 d5 Nxc6 bxc6 
-
+Revision: 119:     
+At  1   secs/move,  get 249 pass, 51 fail.

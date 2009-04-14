@@ -83,11 +83,7 @@ eval (const Board &b) {
   // Evaluate mobility //
   ///////////////////////
 
-#if 1
-  Score as_white = pop_count (b.attack_set (WHITE));
-  Score as_black = pop_count (b.attack_set (BLACK));
-  score += 5 * (as_white - as_black);
-#endif
+  // ??????????
 
   /////////////////////////////
   // Evaluate pawn structure //
@@ -99,11 +95,11 @@ eval (const Board &b) {
   // Evaluate positional strength. //
   ///////////////////////////////////
 
-#if 0
+#ifndef NDEBUG
   Board c = b;
   c.set_color (invert_color (c.to_move ()));
   assert (sum_piece_squares (b) == sum_piece_squares (c));
-#endif
+#endif // NDEBUG
   
   score += sum_piece_squares (b);
 
@@ -111,13 +107,7 @@ eval (const Board &b) {
   // Evaluate castling. //
   ////////////////////////
 
-  // Encourage preserving the right to castle.
-  score += CAN_CASTLE_VAL * (b.flags.w_can_q_castle - b.flags.b_can_q_castle);
-  score += CAN_CASTLE_VAL * (b.flags.w_can_k_castle - b.flags.b_can_k_castle);
-
-  // Encourage castling.
-  score += KS_CASTLE_VAL * (b.flags.w_has_k_castled - b.flags.b_has_k_castled);
-  score += QS_CASTLE_VAL * (b.flags.w_has_q_castled - b.flags.b_has_q_castled);
+  // ????????????
 
 #if 0
   /////////////////////////////////////////////////
@@ -130,6 +120,7 @@ eval (const Board &b) {
   //////////////////////////////////////////////////
   // Return appropriately signed score to caller. //
   //////////////////////////////////////////////////
+
   return sign (b.to_move ()) * score;
 }
 
