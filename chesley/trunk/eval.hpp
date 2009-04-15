@@ -30,11 +30,12 @@
 // Material values. //
 //////////////////////
 
-static const Score QUEEN_VAL  = 900;
-static const Score ROOK_VAL   = 500;
-static const Score BISHOP_VAL = 330;
-static const Score KNIGHT_VAL = 320;
 static const Score PAWN_VAL   = 100;
+static const Score ROOK_VAL   = 500;
+static const Score KNIGHT_VAL = 300;
+static const Score BISHOP_VAL = 325;
+static const Score QUEEN_VAL  = 975;
+
 static const Score MATE_VAL   = 500  * 1000;
 static const Score INF        = 1000 * 1000;
 
@@ -79,6 +80,13 @@ eval (const Board &b) {
 
   score += eval_material (b);
 
+  // A bishop pair is worth an extra 1/2 pawn.
+  // A pawn and the A or H file is only worth 3/4 of a pawn
+  // Trading material is good when you are ahead.
+
+  // The fewer pieces on the board, the fewer pawns a minor piece is
+  // worth.
+
   ///////////////////////
   // Evaluate mobility //
   ///////////////////////
@@ -95,7 +103,7 @@ eval (const Board &b) {
   // Evaluate positional strength. //
   ///////////////////////////////////
 
-#ifndef NDEBUG
+#if 0
   Board c = b;
   c.set_color (invert_color (c.to_move ()));
   assert (sum_piece_squares (b) == sum_piece_squares (c));
@@ -132,14 +140,22 @@ eval_material (const Board &b) {
   score += PAWN_VAL * (pop_count (b.pawns & b.white) -
 		       pop_count (b.pawns & b.black));
 
+  // Pawns on the A and H files are penalized a quarter pawn.
+  score -= pop_count (b.pawns & b.white & (b.file (0) || b.file (7))) * 25;
+  score += pop_count (b.pawns & b.black & (b.file (0) || b.file (7))) * 25;
+
   score += ROOK_VAL * (pop_count (b.rooks & b.white) -
 		       pop_count (b.rooks & b.black));
 
   score += KNIGHT_VAL * (pop_count (b.knights & b.white) -
 			 pop_count (b.knights & b.black));
 
-  score += BISHOP_VAL * (pop_count (b.bishops & b.white) -
-			 pop_count (b.bishops & b.black));
+  // A bishop pair is awarded a 1/2 pawn bonus.
+  int nbishops_white = pop_count (b.bishops & b.white);
+  int nbishops_black = pop_count (b.bishops & b.black);
+  if (nbishops_white == 2) score += 50;
+  if (nbishops_black == 2) score -= 50;
+  score += BISHOP_VAL * (nbishops_white - nbishops_black);
 
   score += QUEEN_VAL * (pop_count (b.queens & b.white) -
 			pop_count (b.queens & b.black));
