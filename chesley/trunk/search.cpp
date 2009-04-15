@@ -25,7 +25,8 @@ using namespace std;
 
 // Compute the principal variation and return its first move.
 Move
-Search_Engine :: choose_move (Board &b, int depth) {
+Search_Engine :: choose_move (Board &b, int depth) 
+{
   Move_Vector pv;
   new_search (b, depth, pv);
   assert (pv.count > 0);
@@ -42,9 +43,9 @@ const int Search_Engine::ordering_stats_count;
 //                                                                     //
 // Search_Engine :: new_search ()                                      //
 //                                                                     //
-// This is the top level entry point to the tree search. It take care  //
-// of initializing search state, then calls lower level routines to    //
-// generate a score and populate the principal variation.              //
+// This is the top level entry point to the tree search. It takes care //
+// of initializing the search state and then calls lower level         //
+// routines to generate a score and populate the principal variation.  //
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
@@ -96,12 +97,13 @@ Search_Engine::iterative_deepening
       calls_to_search = calls_to_qsearch = 0;
       start_time = cpu_time ();
 
-      // Search this position to using a dynamically sized aspiration window.
+      // Search this position using a dynamically sized aspiration window.
       int delta = (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // Break out of the loop if the search was interrupted.
-      if (interrupt_search) break;
+      if (interrupt_search) 
+	break;
 
       // Otherwise, if the search completed and we got back a
       // principle variation, copy it back to the caller.
@@ -132,7 +134,8 @@ Search_Engine::iterative_deepening
 
 Score 
 Search_Engine::aspiration_search 
-(const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw) {
+(const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw) 
+{
   Score s;
 
 #ifdef ENABLE_ASPIRATION_WINDOW
@@ -298,12 +301,12 @@ Search_Engine :: search
 	    if (have_pv_move) 
 	      {
 		cs = -search_with_memory 
-		  (c, depth - 1, ply + 1, cpv, -(alpha + 1), -alpha, true);
+		  (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
 		if (cs > alpha && cs < beta) 
 		  {
 		    cpv.clear ();
 		    cs = -search_with_memory 
-		      (c, depth - 1, ply + 1, cpv, -beta, -alpha, true);
+		      (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
 		  }
 	      }
 	    else
@@ -312,7 +315,7 @@ Search_Engine :: search
 		cs = -search_with_memory 
 		  (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
 	      }
-
+	    
 	    // Test whether this move is better than the moves we have
 	    // previously analyzed.
             if (cs > alpha)
@@ -528,6 +531,7 @@ Search_Engine::qsearch
 bool Search_Engine::tt_try 
 (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta)
 {
+#if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
 
   if (i == tt.end ())
@@ -554,6 +558,7 @@ bool Search_Engine::tt_try
 	    } 
 	}
     }
+#endif
   
   return false;
 }
@@ -562,6 +567,7 @@ bool Search_Engine::tt_try
 // entry is found.
 inline bool
 Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
+#if ENABLE_TRANS_TABLE
   Trans_Table::iterator i = tt.find (hash);
   if (i != tt.end ()) 
      {
@@ -569,9 +575,11 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
       return true;
      }
   else
+#endif // ENABLE_TRANS_TABLE
     {
       return false;
     }
+
 }
 
 // Update the transposition table with the results of a call to
@@ -579,6 +587,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 void Search_Engine::tt_update
 (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta) 
 {
+#if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i; i = tt.find (b.hash);
   bool found_entry = (i != tt.end ());
 
@@ -604,10 +613,11 @@ void Search_Engine::tt_update
       else
         i -> second.type = TT_Entry :: EXACT_VALUE;
     }
+#endif // ENABLE_TRANS_TABLE
 }
 
 ////////////////////////////////////////////////////////////////////////
-// Repetition tables.                                                 //
+// Repetition tables.                    1                             //
 //                                                                    //
 // Operations on repetition tables. These are used to enforce the     //
 // triple repetition rule.                                            //

@@ -10,5 +10,6 @@ At   .25 secs/move, get 221 pass, 79  fail.
 At   .1  secs/move, get 203 pass, 97  fail.
 At   .05 secs/move, get 185 pass, 115 fail.
 
-Revision: 119:     
-At  1   secs/move,  get 249 pass, 51 fail.
+We do just as well if we turn off piece squares completely:
+
+At  20   secs/move,  get 278 pass, 22 fail.

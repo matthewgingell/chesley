@@ -29,7 +29,7 @@
 puts "Running best move tests"
 puts
 
-c = IO.popen("sudo nice -20 ./chesley", "r+")
+c = IO.popen("./chesley", "r+")
 for test in File.open("tests/WAC.EPD")
   c.puts("epd #{test}")
 end
