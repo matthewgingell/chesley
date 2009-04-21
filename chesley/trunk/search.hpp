@@ -35,7 +35,6 @@ struct Search_Engine {
     memset (hh_table, 0, sizeof (hh_table));
     memset (move_offsets, 0, sizeof (move_offsets));
     memset (beta_offsets, 0, sizeof (beta_offsets));
-    tt.rehash (TT_SIZE);
   }
 
   ///////////////////////////
@@ -165,12 +164,12 @@ struct Search_Engine {
   // Try to get a move or tighten the window from the transposition
   // table, returning true if we found a move we can return at this
   // position.
-  bool tt_try 
+  inline bool tt_try 
   (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta);
 
   // Update the transposition table with the results of a call to
   // search.
-  void tt_update
+  inline void tt_update
   (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta);
   
   // Fetch a transposition table entry. 
