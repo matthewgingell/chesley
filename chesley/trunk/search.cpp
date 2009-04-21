@@ -456,11 +456,6 @@ Search_Engine::qsearch
 
   calls_to_qsearch++;
 
-  if (b.in_check (b.to_move ()) && b.child_count () == 0)
-    {
-      return -(MATE_VAL - ply);
-    }
-
   ////////////////////////////////////////
   // Do static evaluation at this node. //
   ////////////////////////////////////////
@@ -482,17 +477,15 @@ Search_Engine::qsearch
       // Sort captures. //
       ////////////////////
 
+
+      for (int i = 0; i < moves.count; i++)  
+        {
 #ifdef ENABLE_SEE
-      for (int i = 0; i < moves.count; i++)  
-        {
           moves[i].score = see (b, moves[i]);
-        }
 #else
-      for (int i = 0; i < moves.count; i++)  
-        {
           moves[i].score = eval_piece (moves[i].capture (b));
-        }
 #endif
+        }
       insertion_sort <Move_Vector, Move, less_than> (moves);
       
       ////////////////////////////
@@ -528,7 +521,8 @@ Search_Engine::qsearch
 // Try to get a move or tighten the window from the transposition
 // table, returning true if we found a move we can return at this
 // position.
-bool Search_Engine::tt_try 
+inline bool 
+Search_Engine::tt_try 
 (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta)
 {
 #if ENABLE_TRANS_TABLE
@@ -584,7 +578,8 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 
 // Update the transposition table with the results of a call to
 // search.
-void Search_Engine::tt_update
+inline void 
+Search_Engine::tt_update
 (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta) 
 {
 #if ENABLE_TRANS_TABLE

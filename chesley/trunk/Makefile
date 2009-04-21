@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = g++-mp-4.4
-OPT = -O3 -march=native
+OPT = -O3 -march=native 
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -Wall -m64 $(OPT) $(ALG) $(INC) $(LIBS)
@@ -25,8 +25,8 @@ SRCS = $(wildcard *.cpp)
 ##################################################################################
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
--DENABLE_NULL_MOVE -DENABLE_SEE -DENABLE_QSEARCH			\
--DENABLE_ASPIRATION_WINDOW -DENABLE_PVS
+-DENABLE_NULL_MOVE -DENABLE_QSEARCH -DENABLE_ASPIRATION_WINDOW		\
+-DENABLE_PVS # -DENABLE_SEE
 
 ################
 # Main binary. #
