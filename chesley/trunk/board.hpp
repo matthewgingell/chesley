@@ -56,6 +56,11 @@ inline int sign (Color c) {
   return (c == WHITE) ? +1 :  -1;
 }
 
+inline void operator++ (Color &c, int) { c = (Color) (c + 1); }
+inline void operator-- (Color &c, int) { c = (Color) (c - 1); }
+inline void operator++ (Color &c) { c = (Color) (c + 1); }
+inline void operator-- (Color &c) { c = (Color) (c - 1); }
+
 ////////////////
 // Move type. //
 ////////////////

@@ -30,7 +30,7 @@ using namespace std;
 //                                                                        //
 ////////////////////////////////////////////////////////////////////////////
 
-static int piece_square_table[6][64] =
+static int8 __attribute__ ((aligned (128))) piece_square_table[6][64] =
 {
   // Pawns
   {   
@@ -121,22 +121,20 @@ static int piece_square_table[6][64] =
 Score
 sum_piece_squares (const Board &b) {
   Score bonus = 0;
-  for (int c = WHITE; c <= BLACK; c++)
+  for (Color c = WHITE; c <= BLACK; c++)
     {
-      for (int k = PAWN; k <= KING; k++)
+      bitboard all_color_pieces = b.color_to_board (c);
+      for (Kind k = PAWN; k <= KING; k++)
 	{
-	  bitboard pieces =  
-	    b.color_to_board ((Color) c) & b.kind_to_board ((Kind) k);
-	  
+	  bitboard pieces = all_color_pieces & b.kind_to_board (k);
 	  while (pieces)
 	    {
 	      int idx = bit_idx (pieces);
 	      int xfrm = (c == WHITE) ? 63 - idx : idx;
-	      bonus += sign ((Color) c) * piece_square_table[k][xfrm];
+	      bonus += sign (c) * piece_square_table[k][xfrm];
 	      pieces = clear_lsb (pieces);
 	    }
 	}
     }
-
   return bonus;
 }

@@ -19,10 +19,6 @@
 
 using namespace std;
 
-//////////////////////
-// Public interface //
-//////////////////////
-
 // Compute the principal variation and return its first move.
 Move
 Search_Engine :: choose_move (Board &b, int depth) 
@@ -32,10 +28,6 @@ Search_Engine :: choose_move (Board &b, int depth)
   assert (pv.count > 0);
   return pv[0];
 }
-
-////////////////////////////
-// Private implementation //
-////////////////////////////
 
 const int Search_Engine::ordering_stats_count;
 
@@ -494,9 +486,6 @@ Search_Engine::qsearch
 
       for (int i = 0; i < moves.count; i++)
         {
-          // Prune losing captures.
-          if (moves[i].score < 0) continue;
-
           c = b;
           if (c.apply (moves[i]))
             {
