@@ -2,7 +2,7 @@
 //                                                                            //
 // bits64.hpp                                                                 //
 //                                                                            //
-// Operations on a u_int64_t bitmap represention.                             //
+// Operations on 64-bit bitmaps.                                              //
 //                                                                            //
 // Matthew Gingell                                                            //
 // gingell@adacore.com                                                        //
@@ -13,7 +13,6 @@
 #define _BITS64_
 
 #include <iostream>
-
 #include "types.hpp"
 
 typedef uint64 bits64;
@@ -60,7 +59,7 @@ clear_msbs (bits64 b) { return b & -b; }
 inline uint32
 bit_idx (bits64 b) {
 #ifdef __GNUC__
-  // Using __builtin_ffsll is a surprisingly big win here.
+  // Using __builtin_ffsll is a big win here.
   return __builtin_ffsll (b) - 1; 
 #else
   int c;
@@ -87,11 +86,11 @@ get_byte (bits64 b, int n) {
   return ((byte *) &b)[n]; 
 }
 
-///////////
-// Debug //
-///////////
+////////////////////////
+// Debugging Routines //
+////////////////////////
 
-// Debug routine. 
+// Print a bit vector.
 static void 
 print_bits (bits64 b) {
   for (int i = 0; i < 64; i++)

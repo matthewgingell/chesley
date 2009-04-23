@@ -8,12 +8,6 @@
 // returned to the player are multiplied by the correct sign and are          //
 // appropriate for maximization.                                              //
 //                                                                            //
-// The starting point for the approach taken here is Tomasz                   //
-// Michniewski's proposal for "Unified Evaluation" tournements. The           //
-// full discussion of that very simple scoring strategy is avaiable at:       //
-//                                                                            //
-// http://chessprogramming.wikispaces.com/simplified+evaluation+function      //
-//                                                                            //
 // Matthew Gingell                                                            //
 // gingell@adacore.com                                                        //
 //                                                                            //
@@ -103,7 +97,7 @@ eval (const Board &b) {
   // Evaluate positional strength. //
   ///////////////////////////////////
 
-#if 0
+#ifndef NDEBUG
   Board c = b;
   c.set_color (invert_color (c.to_move ()));
   assert (sum_piece_squares (b) == sum_piece_squares (c));
@@ -135,32 +129,23 @@ eval (const Board &b) {
 // Compute the net material value for this position.
 inline Score
 eval_material (const Board &b) {
-  Score score = 0;
+  Score score[2] = { 0, 0 };
 
-  score += PAWN_VAL * (pop_count (b.pawns & b.white) -
-		       pop_count (b.pawns & b.black));
+  for (Color c = WHITE; c <= BLACK; c++)
+    {
+      bitboard all = b.color_to_board (c);
 
-  // Pawns on the A and H files are penalized a quarter pawn.
-  score -= pop_count (b.pawns & b.white & (b.file (0) || b.file (7))) * 25;
-  score += pop_count (b.pawns & b.black & (b.file (0) || b.file (7))) * 25;
+      score[c] += PAWN_VAL   * pop_count (b.pawns & all);
+      score[c] += ROOK_VAL   * pop_count (b.rooks & all);
+      score[c] += KNIGHT_VAL * pop_count (b.knights & all);
+      score[c] += BISHOP_VAL * pop_count (b.bishops & all);
+      score[c] += QUEEN_VAL  * pop_count (b.queens & all);
 
-  score += ROOK_VAL * (pop_count (b.rooks & b.white) -
-		       pop_count (b.rooks & b.black));
+      // Provide a half-pawn bonus for having both bishops.
+      if (pop_count (b.bishops & all) >= 2) score[c] += 50;
+    }
 
-  score += KNIGHT_VAL * (pop_count (b.knights & b.white) -
-			 pop_count (b.knights & b.black));
-
-  // A bishop pair is awarded a 1/2 pawn bonus.
-  int nbishops_white = pop_count (b.bishops & b.white);
-  int nbishops_black = pop_count (b.bishops & b.black);
-  if (nbishops_white == 2) score += 50;
-  if (nbishops_black == 2) score -= 50;
-  score += BISHOP_VAL * (nbishops_white - nbishops_black);
-
-  score += QUEEN_VAL * (pop_count (b.queens & b.white) -
-			pop_count (b.queens & b.black));
-
-  return score;
+  return score[WHITE] - score[BLACK];
 }
 
 #endif // _EVAL_
