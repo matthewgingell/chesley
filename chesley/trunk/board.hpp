@@ -40,27 +40,6 @@ typedef uint64 bitboard;
 
 void print_board (bitboard b);
 
-/////////////////
-// Color type. //
-/////////////////
-
-enum Color { NULL_COLOR = -1, WHITE = 0, BLACK = 1 };
-
-std::ostream & operator<< (std::ostream &os, Color c);
-
-inline Color invert_color (Color c) { 
-  return (c == WHITE) ? BLACK : WHITE;
-}
-
-inline int sign (Color c) {
-  return (c == WHITE) ? +1 :  -1;
-}
-
-inline void operator++ (Color &c, int) { c = (Color) (c + 1); }
-inline void operator-- (Color &c, int) { c = (Color) (c - 1); }
-inline void operator++ (Color &c) { c = (Color) (c + 1); }
-inline void operator-- (Color &c) { c = (Color) (c - 1); }
-
 ////////////////
 // Move type. //
 ////////////////
@@ -158,31 +137,11 @@ struct Move_Vector {
   }
 
   Move &operator[] (byte i) {
-
-    if (i < 0) abort();
-
-    if (!(i < count))
-      {
-	std::cerr << i << std::endl;
-	std::cerr << (int) count << std::endl;
-	abort();
-      }
-
     assert (i < count);
     return move[i];
   }
 
   Move operator[] (byte i) const {
-
-    if (i < 0) abort();
-
-    if (!(i < count))
-      {
-	std::cerr << i << std::endl;
-	std::cerr << (int) count << std::endl;
-	abort();
-      }
-
     assert (i < count);
     return move[i];
   }
@@ -203,8 +162,9 @@ operator<< (std::ostream &os, const Move_Vector &moves);
 // Castling rights. //
 //////////////////////
 
-enum Castling_Right
-  {W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE};
+enum Castling_Right {
+  W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE
+};
 
 /////////////////////////////
 // Chess board state type. //
@@ -451,6 +411,14 @@ struct Board {
     return x >= 0 && x <= 7 && y >= 0 && y <= 7;
   }
 
+  // Get a bitboard of pieces of some color.
+  bitboard get_pawns   (Color c) { return color_to_board (c) & pawns; }
+  bitboard get_rooks   (Color c) { return color_to_board (c) & rooks; }
+  bitboard get_knights (Color c) { return color_to_board (c) & knights; }
+  bitboard get_bishops (Color c) { return color_to_board (c) & bishops; }
+  bitboard get_queens  (Color c) { return color_to_board (c) & queens; }
+  bitboard get_kings   (Color c) { return color_to_board (c) & kings; }
+
   ///////////////////
   // Flags setters //
   ///////////////////
@@ -612,13 +580,13 @@ struct Board {
 
   // Return a bitboard with every bit of the Nth rank set.
   static bitboard
-  rank (int rank) {
+  rank_mask (int rank) {
     return 0x00000000000000FFllu << rank * 8;
   }
 
   // Return a bitboard with every bit of the Nth file set.
   static bitboard
-  file (int file) {
+  file_mask (int file) {
     return 0x0101010101010101llu << file;
   }
 

@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = g++-mp-4.4
-OPT = -O3 -march=native 
+OPT = -O3 -march=native
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -Wall -m64 $(OPT) $(ALG) $(INC) $(LIBS)

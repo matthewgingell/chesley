@@ -129,7 +129,7 @@ Session::xbd_execute (char *line) {
 
       if (token == "playother")
 	{
-	  our_color = invert_color (our_color);
+	  our_color = invert (our_color);
 	}
 
       ///////////////////

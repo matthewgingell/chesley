@@ -16,6 +16,7 @@
 
 #include <cstdio>
 #include <unistd.h>
+
 #include "chesley.hpp"
 
 enum Status { GAME_IN_PROGRESS, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
