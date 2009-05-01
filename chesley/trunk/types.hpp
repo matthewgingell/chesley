@@ -12,21 +12,17 @@
 #ifndef __TYPES__
 #define __TYPES__
 
-// Standard integer types.
-
 #include <stdint.h>
 
-typedef int8_t  int8;
-typedef int16_t int16;
-typedef int32_t int32;
-typedef int64_t int64;
-
+typedef int8_t   int8;
+typedef int16_t  int16;
+typedef int32_t  int32;
+typedef int64_t  int64;
 typedef uint8_t  uint8;
 typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
-
-typedef uint8 byte;
+typedef uint8_t  byte;
 
 // Score type for a chess position.
 typedef int32 Score;
@@ -34,19 +30,42 @@ typedef int32 Score;
 // Hash type for a chess position.
 typedef uint64 hash_t;
 
-// This type is used to index tables, so PAWN must always be set to
-// zero, etc.
-enum Kind { NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING };
+////////////////////
+// Piece colors.  //
+////////////////////
 
-inline void operator++ (Kind &c, int) { c = (Kind) (c + 1); }
-inline void operator-- (Kind &c, int) { c = (Kind) (c - 1); }
-inline void operator++ (Kind &c) { c = (Kind) (c + 1); }
-inline void operator-- (Kind &c) { c = (Kind) (c - 1); }
+// This type is used to index tables and the ordering here should not
+// be changed.
+enum Color { 
+  NULL_COLOR = -1, WHITE = 0, BLACK = 1 
+};
 
-// Convert a kind to a character code.
+inline Color invert (Color c) { return (c == WHITE) ? BLACK : WHITE; }
+inline int sign (Color c) { return (c == WHITE) ? +1 : -1; }
+
+inline void operator++ (Color &c, int) { c = (Color) (c + 1); }
+inline void operator-- (Color &c, int) { c = (Color) (c - 1); }
+inline void operator++ (Color &c) { c = (Color) (c + 1); }
+inline void operator-- (Color &c) { c = (Color) (c - 1); }
+
+std::ostream & operator<< (std::ostream &os, Color c);
+
+//////////////////
+// Piece kinds. //
+////////////////// 
+
+// This type is used to index tables and the ordering here should not
+// be changed.
+enum Kind { 
+  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING 
+};
+
+inline void operator++ (Kind &k, int) { k = (Kind) (k + 1); }
+inline void operator-- (Kind &k, int) { k = (Kind) (k - 1); }
+inline void operator++ (Kind &k) { k = (Kind) (k + 1); }
+inline void operator-- (Kind &k) { k = (Kind) (k - 1); }
+
 char to_char (Kind k);
-
-// Convert a character code to a piece code, ignoring color.
 Kind to_kind (char k);
 
 std::ostream & operator<< (std::ostream &os, Kind k);

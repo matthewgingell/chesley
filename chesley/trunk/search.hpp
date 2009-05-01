@@ -44,7 +44,9 @@ struct Search_Engine {
   struct TT_Entry {
     Move move;
     int32 depth;
-    enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type;
+    enum { 
+      LOWERBOUND, UPPERBOUND, EXACT_VALUE 
+    } type;
   };
   
   // A table type mapping from a 64-bit key to a TT_Entry.
@@ -58,7 +60,6 @@ struct Search_Engine {
   
   // A table type mapping from a 64-bit key to a repetition count.
   typedef boost::unordered_map <hash_t, int> Rep_Table;
-
   Rep_Table rt;
 
   ///////////////////

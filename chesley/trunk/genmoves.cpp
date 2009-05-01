@@ -69,18 +69,18 @@ Board::gen_moves (Move_Vector &out) const
 
 	  // Pawns coming from rank 1 with empty square one and two steps
 	  // forwards.
-	  to |= ((to & rank (2)) << 8) & unoccupied ();
+	  to |= ((to & rank_mask (2)) << 8) & unoccupied ();
 
 	  // Capture forward right.
-	  to |= ((from & ~file(0)) << 7) & black;
+	  to |= ((from & ~file_mask (0)) << 7) & black;
 
 	  // Capture forward left.
-	  to |= ((from & ~file(7)) << 9) & black;
+	  to |= ((from & ~file_mask (7)) << 9) & black;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file(0)) << 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file(7)) << 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (0)) << 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (7)) << 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
@@ -92,18 +92,18 @@ Board::gen_moves (Move_Vector &out) const
 
 	  // Pawns coming from rank 6 with empty square one and two steps
 	  // forwards.
-	  to |= ((to & rank (5)) >> 8) & unoccupied ();
+	  to |= ((to & rank_mask (5)) >> 8) & unoccupied ();
 
 	  // Capture forward left.
-	  to |= ((from & ~file(7)) >> 7) & white;
+	  to |= ((from & ~file_mask (7)) >> 7) & white;
 
 	  // Capture forward right.
-	  to |= ((from & ~file(0)) >> 9) & white;
+	  to |= ((from & ~file_mask (0)) >> 9) & white;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file(0)) >> 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (7)) >> 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (0)) >> 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
@@ -298,15 +298,15 @@ Board::gen_captures (Move_Vector &out) const
       if (c == WHITE)
 	{
 	  // Capture forward right.
-	  to |= ((from & ~file(0)) << 7) & black;
+	  to |= ((from & ~file_mask (0)) << 7) & black;
 
 	  // Capture forward left.
-	  to |= ((from & ~file(7)) << 9) & black;
+	  to |= ((from & ~file_mask (7)) << 9) & black;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file(0)) << 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file(7)) << 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (0)) << 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (7)) << 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
@@ -314,15 +314,15 @@ Board::gen_captures (Move_Vector &out) const
       else
 	{
 	  // Capture forward left.
-	  to |= ((from & ~file(7)) >> 7) & white;
+	  to |= ((from & ~file_mask (7)) >> 7) & white;
 
 	  // Capture forward right.
-	  to |= ((from & ~file(0)) >> 9) & white;
+	  to |= ((from & ~file_mask (0)) >> 9) & white;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file(7)) >> 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file(0)) >> 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (7)) >> 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (0)) >> 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
@@ -468,13 +468,13 @@ Board::attack_set (Color c) const {
   pieces = pawns & color;     
   if (c == WHITE)	      
     {			      
-      attacks |= ((pieces & ~file(0)) << 7);
-      attacks |= ((pieces & ~file(7)) << 9);
+      attacks |= ((pieces & ~file_mask (0)) << 7);
+      attacks |= ((pieces & ~file_mask (7)) << 9);
     }			      
   else			      
     {			      
-      attacks |= ((pieces & ~file(0)) >> 9);
-      attacks |= ((pieces & ~file(7)) >> 7);
+      attacks |= ((pieces & ~file_mask (0)) >> 9);
+      attacks |= ((pieces & ~file_mask (7)) >> 7);
     }			      
 			      
   // Rooks		      
@@ -555,13 +555,13 @@ Board::is_attacked (int idx, Color c) const
   bitboard their_pawns = pawns & them;
   if (c != WHITE)
     {
-      attacks = (((their_pawns & ~file (7)) >> 7)
-                 | ((their_pawns & ~file (0)) >> 9));
+      attacks = (((their_pawns & ~file_mask (7)) >> 7)
+                 | ((their_pawns & ~file_mask (0)) >> 9));
     }
   else
     {
-      attacks = (((their_pawns & ~file (0)) << 7)
-                 | ((their_pawns & ~file (7)) << 9));
+      attacks = (((their_pawns & ~file_mask (0)) << 7)
+                 | ((their_pawns & ~file_mask (7)) << 9));
     }
   if (attacks & masks_0[idx]) return true;
 
@@ -583,16 +583,16 @@ Board::least_valuable_attacker (int sqr) const {
   bitboard our_pawns = pawns & us;
   if (c == WHITE)
     {
-      from = ((masks_0 [sqr] & ~file (7)) >> 7) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (7)) >> 7) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
-      from = ((masks_0 [sqr] & ~file (0)) >> 9) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (0)) >> 9) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
     }
   else
     {
-      from = ((masks_0 [sqr] & ~file (0)) << 7) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (0)) << 7) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
-      from = ((masks_0 [sqr] & ~file (7)) << 9) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (7)) << 9) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
     }
 
@@ -626,7 +626,7 @@ Board::in_check (Color c) const
 {
   int idx = bit_idx (kings & color_to_board (c));
   assert (idx >= 0 && idx < 64);
-  return is_attacked (idx, invert_color (c));
+  return is_attacked (idx, invert (c));
 }
 
 // Generate the number of moves available at ply d. Used for debugging

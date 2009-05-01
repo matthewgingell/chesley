@@ -448,7 +448,7 @@ Session::execute (char *line) {
 
       if (token == "attacks")
 	{
-	  print_board (board.attack_set (invert_color (board.to_move ())));
+	  print_board (board.attack_set (invert (board.to_move ())));
 	  return true;
 	}
 

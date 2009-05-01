@@ -250,7 +250,7 @@ Board::apply (const Move &m) {
   // Update to_move state. //
   ///////////////////////////
 
-  set_color (invert_color (to_move ()));
+  set_color (invert (to_move ()));
 
   ///////////////////////////////
   // Handle taking En Passant. //
@@ -290,7 +290,7 @@ Board::apply (const Move &m) {
   if (is_castle_qs || is_castle_ks)
     {
       // Calculate attacked set for testing check.
-      const bitboard attacked = attack_set (invert_color (color));
+      const bitboard attacked = attack_set (invert (color));
 
       // Test castle out of, across, or in to check.
       if (color == WHITE)

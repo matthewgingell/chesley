@@ -13,8 +13,7 @@
 // _Rotated bitboards in FUSc#_ by Johannes Buchner:                          //
 // page.mi.fu-berlin.de/~fusch/publications/Joe-Paper_rotated_bitboards.pdf   //
 //                                                                            //
-// Additional, attack matrices for each type of move are precomputed          //
-// here.                                                                      //
+// Additional, attack tables for each type of piece are precomputed here.     //
 //                                                                            //
 // Matthew Gingell                                                            //
 // gingell@adacore.com                                                        //
