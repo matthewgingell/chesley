@@ -11,6 +11,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
+#include <fstream>
 #include <string>
 
 #include "chesley.hpp"
@@ -91,7 +92,6 @@ bool
 Session::play_self (const string_vector &tokens)
 {
   Status s;
-
   board = Board::startpos ();
   while ((s = get_status ()) == GAME_IN_PROGRESS)
     {
@@ -100,9 +100,51 @@ Session::play_self (const string_vector &tokens)
       board.apply (m);
     }
   cerr << board << endl << endl;
-
   handle_end_of_game (s);
+  return true;
+}
 
+
+bool
+Session::dump_pawns (const string_vector &tokens)
+{
+  ofstream out;
+  out.open ("pawn_struct");
+
+  while (1)
+    {
+      Status s;
+      board = Board::startpos ();
+      while ((s = get_status ()) == GAME_IN_PROGRESS)
+	{
+	  // dump white pawns vector.
+	  bitboard white_pawns = board.pawns & board.white;
+	  for (int i = 0; i < 64; i++)
+	    {
+	      if (test_bit (white_pawns, i))
+		out << "1 ";
+	      else
+		out << "0 ";
+	    }
+	  
+	  // dump black pawns vector.
+	  bitboard black_pawns = board.pawns & board.black;
+	  for (int i = 0; i < 64; i++)
+	    {
+	      if (test_bit (black_pawns, i))
+		out << "1 ";
+	      else
+		out << "0 ";
+	    }
+	  out << endl;
+	  
+	  cerr << board << endl << endl;
+	  Move m = find_a_move ();
+	  board.apply (m);
+	}
+      cerr << board << endl << endl;
+      handle_end_of_game (s);
+    }
   return true;
 }
 
@@ -202,7 +244,7 @@ Session::epd (const string_vector &args)
       else if (opcode == "bm")
 	{
 	  Move best = b.from_san (first (tokens));
-	  timeout = mclock () + 20 * 1000;
+	  timeout = mclock () + 60 * 1000;
 	  se.interrupt_search = false;
 	  cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
 	  Move m = se.choose_move (b, 100);

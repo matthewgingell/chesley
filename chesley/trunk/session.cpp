@@ -474,6 +474,15 @@ Session::execute (char *line) {
 	  return play_self (tokens);
 	}
 
+      ////////////////////////////////////
+      // Dump pawn structure to a file  //
+      ////////////////////////////////////
+
+      if (token == "dumppawns")
+	{
+	  return dump_pawns (tokens);
+	}
+
       ///////////////////////////
       // setboard FEN command. //
       ///////////////////////////
