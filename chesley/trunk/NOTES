@@ -1,15 +1,4 @@
-Revision: 118:
+Revision 124:
 
-At 20    secs/move, get 277 pass, 23  fail.
-At 10    secs/move, get 274 pass, 26  fail.
-At  5    secs/move, get 266 pass, 34  fail.
-At  2    secs/move, get 259 pass, 41  fail.
-At  1    secs/move, get 250 pass, 50  fail.
-At   .5  secs/move, get 243 pass, 57  fail.
-At   .25 secs/move, get 221 pass, 79  fail.
-At   .1  secs/move, get 203 pass, 97  fail.
-At   .05 secs/move, get 185 pass, 115 fail.
-
-We do just as well if we turn off piece squares completely:
-
-At  20   secs/move,  get 278 pass, 22 fail.
+ * Testing 75 games at 1/2 seconds per move:
+   

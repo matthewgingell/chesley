@@ -228,7 +228,7 @@ Search_Engine :: search
   if (depth <= 0) 
     {
 #ifdef ENABLE_QSEARCH
-      alpha = qsearch (b, -1, ply, alpha, beta);
+      alpha = qsearch (b, -1, ply, alpha, beta) - ply;
 #else
       alpha = eval (b) - ply;
 #endif /* ENABLE_QSEARCH */
@@ -245,7 +245,7 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
-    const int R = 3;
+    const int R = 2;
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
@@ -463,7 +463,7 @@ Search_Engine::qsearch
   assert (eval (b) == -eval (c));
 #endif
 
-  alpha = max (alpha, eval (b) - ply);
+  alpha = max (alpha, eval (b));
 
   ////////////////////////////////////////
   // Recurse and minimax over children. // 

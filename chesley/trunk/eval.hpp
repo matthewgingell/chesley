@@ -112,7 +112,7 @@ eval (const Board &b) {
   // Evaluate castling. //
   ////////////////////////
 
-#if 1
+#if 0
   if (b.flags.w_can_k_castle)  score += 15;
   if (b.flags.w_can_q_castle)  score += 10;
   if (b.flags.w_has_k_castled) score += 50;
@@ -127,7 +127,7 @@ eval (const Board &b) {
   // Add some random noise for variety of games. // 
   /////////////////////////////////////////////////
 
-#if 1
+#if 0
   score += random () % 5;
 #endif
 
@@ -157,9 +157,11 @@ eval_material (const Board &b) {
     for (Kind k = PAWN; k < KING; k++)   
       score[c] += eval_piece (k) * count [c][k];
   
+#if 0
   // Provide a half-pawn bonus for having both bishops.
   for (Color c = WHITE; c <= BLACK; c++)
     if (count[c][BISHOP] >= 2) score [c] += 50;
+#endif
 
   // Return net score.
   return score[WHITE] - score[BLACK];

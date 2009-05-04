@@ -162,6 +162,9 @@ struct Session {
   // Play a game with engine taking both sides.
   static bool play_self (const string_vector &tokens);
 
+  // Dump pawn struct vectors to a file.
+  static bool dump_pawns (const string_vector &tokens);
+
   // Check that hash keys are correctly generated to depth 'd'.
   static void test_hashing (int d);
 };
