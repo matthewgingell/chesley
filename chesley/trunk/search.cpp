@@ -228,9 +228,9 @@ Search_Engine :: search
   if (depth <= 0) 
     {
 #ifdef ENABLE_QSEARCH
-      alpha = qsearch (b, -1, ply, alpha, beta) - ply;
+      alpha = qsearch (b, -1, ply, alpha, beta);
 #else
-      alpha = eval (b) - ply;
+      alpha = eval (b);
 #endif /* ENABLE_QSEARCH */
     }
 
@@ -579,6 +579,10 @@ inline void
 Search_Engine::tt_update
 (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta) 
 {
+  if (tt.size () > 10 * 1000 * 1000)
+    tt.clear ();
+
+
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i; i = tt.find (b.hash);
   bool found_entry = (i != tt.end ());
