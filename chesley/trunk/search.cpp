@@ -289,10 +289,22 @@ Search_Engine :: search
           {
             found_move = true;
 
+#if ENABLE_LMR
+	    const int Full_Depth_Count = 4;
+	    const int Reduction_Limit = 3;
+	    if (mi > Full_Depth_Count && depth > Reduction_Limit
+		&& ext == 0 && have_pv_move && eval (c) < alpha)
+	      {
+		cs = -search_with_memory 
+		  (c, depth - 2, ply + 1, cpv, -(alpha + 1) , -alpha, true);
+	      }
+	    else
+#endif // ENABLE_LMR
+	    
 #if ENABLE_PVS
             if (have_pv_move) 
               {
-                cs = -search_with_memory 
+                cs = -search_with_memory
                   (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
                 if (cs > alpha && cs < beta) 
                   {
@@ -303,6 +315,7 @@ Search_Engine :: search
               }
             else
 #endif // ENABLE_PVS
+
               {
                 cs = -search_with_memory 
                   (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
@@ -582,7 +595,6 @@ Search_Engine::tt_update
   if (tt.size () > 10 * 1000 * 1000)
     tt.clear ();
 
-
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i; i = tt.find (b.hash);
   bool found_entry = (i != tt.end ());
@@ -595,7 +607,7 @@ Search_Engine::tt_update
     }
 
   // Update this entry.
-  if (!found_entry || depth > i -> second.depth)
+  if (!found_entry || depth >= i -> second.depth)
     {
       i -> second.move = m;
       i -> second.depth = depth;
