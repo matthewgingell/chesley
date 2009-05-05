@@ -25,8 +25,8 @@ SRCS = $(wildcard *.cpp)
 ##################################################################################
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
--DENABLE_NULL_MOVE -DENABLE_QSEARCH -DENABLE_ASPIRATION_WINDOW		\
-# -DENABLE_PVS -DENABLE_SEE
+-DENABLE_ASPIRATION_WINDOW -DENABLE_NULL_MOVE -DENABLE_QSEARCH		\
+-DENABLE_PVS -DENABLE_LMR # -DENABLE_SEE
 
 ################
 # Main binary. #
@@ -80,4 +80,4 @@ clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
 	      Saturn* game.00* log.00* book.lrn position.bin		\
 	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log	\
-	      vsn.xxx
+	      log.0* game.0* vsn.xxx

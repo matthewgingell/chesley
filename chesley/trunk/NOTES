@@ -1,4 +1,26 @@
-Revision 124:
+Tough test is:
 
- * Testing 75 games at 1/2 seconds per move:
-   
+ 8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - - bm Rxb2
+
+crafty solves at depth 15.
+
+Chesley! r126
+> setboard 8/7p/5k2/5p2/p1p2P2/Pr1pPK2/1P1R3P/8 b - -
+> bench 12
+Move 0:0
+Ply     Nodes    Qnodes    Time    Eval   Principal Variation
+  1        19        39    0.00      37   h5 
+  2        56       101    0.00      34   h5 h4 
+  3       311       338    0.00      34   h5 h4 Rb5 
+  4       812       980    0.00      34   h5 h4 Rb5 Rf2 
+  5      3748      3680    0.00      34   h5 h4 Rb5 Rf2 Rb3 
+  6     13802     11236    0.01      64   c3 bxc3 Rxc3 Ra2 Rc2 Rxc2 
+  7     39592     32898    0.03      64   c3 bxc3 Rxc3 Ra2 Rc2 Rxc2 dxc2 
+  8    173451    139040    0.25      34   h5 h4 Rb5 Rf2 Rb3 Rd2 Kg6 Rf2 
+  9   1021317    851829    1.53      37   h6 e4 fxe4+ Kxe4 Rb7 h4 Re7+ Kd4 Rc7 h5 Kf5 
+ 10   1962790   1652404    3.67      34   h6 h3 h5 h4 Kg6 Rf2 Rb5 Rd2 Kf7 Rf2 
+ 11   9952365   8380046   18.18      41   Rb6 h4 Rc6 e4 fxe4+ Kxe4 Re6+ Kd4 Re2 Kc3 Rxd2 Kxd2 h5 
+ 12  35048115  30078844   74.60      34   Rb6 Rf2 Rc6 Rd2 Kg6 h4 Kh5 Rg2 Rd6 Rg7 Kxh4 Rxh7+ 
+
+move_offsets: 87.55% 4.40% 1.75% 0.96% 0.82% 0.60% 0.55% 0.66% 1.09% 1.62% 
+beta_offsets: 92.29% 3.83% 1.53% 0.83% 0.68% 0.38% 0.19% 0.11% 0.08% 0.07% 
