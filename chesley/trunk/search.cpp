@@ -49,7 +49,7 @@ Search_Engine :: new_search
   memset (hh_table, 0, sizeof (hh_table));
   
   // Clear the transposition table.
-  tt.clear ();
+  //  tt.clear ();
   
   // Clear statistics.
   calls_to_search = 0;
@@ -90,7 +90,8 @@ Search_Engine::iterative_deepening
       start_time = cpu_time ();
 
       // Search this position using a dynamically sized aspiration window.
-      int delta = (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
+      int delta = 
+	(i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // Break out of the loop if the search was interrupted.
@@ -196,7 +197,7 @@ Search_Engine :: search
  Score alpha, Score beta,
  bool do_null_move)
 {
-  bool found_move = false;
+  bool legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
 
   assert (pv.count == 0);
@@ -245,11 +246,11 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
-    const int R = 2;
+    const int R = 3;
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
-    if (do_null_move && pop_count (b.occupied) > 15 && !in_check)
+    if (do_null_move /* && pop_count (b.occupied) > 15 */ && !in_check)
       {
         Board c = b;
         Move_Vector dummy;
@@ -258,25 +259,23 @@ Search_Engine :: search
         int val = -search_with_memory 
           (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
 
-        if (val >= beta) 
-          {
-            return val;
-          }
+        if (val >= beta)
+	  return val;
       }
 #endif /* ENABLE_NULL_MOVE */
         
     Move_Vector moves (b);
+    //    cerr << moves << endl;
+
 #ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves, alpha, beta);
 #endif
 
+    assert (moves.count > 1);
+
     ////////////////////////////
     // Minimax over children. //
     ////////////////////////////
-
-    // Extend the search by one ply if we are in check.
-    int ext = 0;
-    if (in_check) ext += 1;
 
     int mi = 0;
     bool have_pv_move = false;
@@ -287,39 +286,61 @@ Search_Engine :: search
         Move_Vector cpv;
         if (c.apply (moves[mi]))
           {
-            found_move = true;
+            legal_move_count++;
 
-#if ENABLE_LMR
+	    ////////////////////////
+            // Search extensions. //
+            ////////////////////////
+	    
+	    int ext = 0;
+	    if (in_check) ext += 1;
+	    if (moves[mi].promote == QUEEN) ext += 1;
+
+#ifdef ENABLE_LMR
+	    ///////////////////////////
+            // Late move reductions. //
+            ///////////////////////////
+
 	    const int Full_Depth_Count = 4;
 	    const int Reduction_Limit = 3;
-	    if (mi > Full_Depth_Count && depth > Reduction_Limit
-		&& ext == 0 && have_pv_move && eval (c) < alpha)
+	    if (mi >= Full_Depth_Count && 
+		depth >= Reduction_Limit && 
+		ext == 0 && 
+		have_pv_move)
 	      {
-		cs = -search_with_memory 
-		  (c, depth - 2, ply + 1, cpv, -(alpha + 1) , -alpha, true);
+		int ds;
+		Move_Vector dummy;
+		ds = -search_with_memory 
+		  (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
+		
+		// If we fail low, we are done with this node.
+		if (ds <= alpha)
+		  continue;
 	      }
-	    else
 #endif // ENABLE_LMR
 	    
 #if ENABLE_PVS
-            if (have_pv_move) 
-              {
-                cs = -search_with_memory
-                  (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
-                if (cs > alpha && cs < beta) 
-                  {
-                    cpv.clear ();
-                    cs = -search_with_memory 
-                      (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
-                  }
-              }
-            else
+	    /////////////////////////////////
+            // Principle variation search. //
+            /////////////////////////////////
+	    
+	    if (have_pv_move) 
+	      {
+		cs = -search_with_memory
+		  (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
+		if (cs > alpha && cs < beta) 
+		  {
+		    cpv.clear ();
+		    cs = -search_with_memory 
+		      (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
+		  }
+	      }
+	    else
 #endif // ENABLE_PVS
-
-              {
-                cs = -search_with_memory 
-                  (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
-              }
+	      {
+		cs = -search_with_memory 
+		  (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
+	      }
             
             // Test whether this move is better than the moves we have
             // previously analyzed.
@@ -329,9 +350,13 @@ Search_Engine :: search
                 alpha = cs;
                 moves[mi].score = alpha;
                 pv = Move_Vector (moves[mi], cpv);
-              }
-            
+              }   
+
 #ifdef ENABLE_ALPHA_BETA
+	    /////////////////////////
+            // Test for fail high. //
+            /////////////////////////
+	    
             if (cs >= beta)
               {
                 beta_offsets[min (mi,  ordering_stats_count)]++;
@@ -344,7 +369,7 @@ Search_Engine :: search
     move_offsets[min (mi,  ordering_stats_count)]++;
 
     // If we couldn't find a move that applied, then the game is over.
-    if (!found_move)
+    if (legal_move_count == 0)
       {
         if (in_check)
           {
@@ -402,6 +427,8 @@ Search_Engine::order_moves
 
   for (int i = 0; i < moves.count; i++)
     {
+      assert (moves[i].score == 0);
+
       // Sort our best guess first.
       if (moves[i] == best_guess)
 	{
@@ -409,15 +436,18 @@ Search_Engine::order_moves
 	  continue;
 	}
       
-      // Followed by captures.
-      moves[i].score += 
-	100 * eval_piece (moves[i].capture (b));
+      // Followed by promotions to queen.
+      if (moves[i].promote == QUEEN)
+	moves[i].score += 1000;
 
+      // Followed by captures.
+      moves[i].score += 100 * eval_piece (moves[i].capture (b));
+      
       // And finally, recent PV and fail-high moves.
       moves[i].score += 
         hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }
-
+  
   insertion_sort <Move_Vector, Move, less_than> (moves);
 }
 
@@ -523,9 +553,11 @@ Search_Engine::qsearch
 }
 
 ////////////////////////////////////////////////////////////////////////
+//                                                                    //
 // Transposition tables.                                              //
 //                                                                    //
 // Operations on the transposition table.                             //
+//                                                                    //
 ////////////////////////////////////////////////////////////////////////
 
 // Try to get a move or tighten the window from the transposition

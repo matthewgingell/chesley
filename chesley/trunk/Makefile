@@ -25,8 +25,8 @@ SRCS = $(wildcard *.cpp)
 ##################################################################################
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
--DENABLE_ASPIRATION_WINDOW -DENABLE_NULL_MOVE -DENABLE_QSEARCH		\
--DENABLE_PVS -DENABLE_LMR # -DENABLE_SEE
+-DENABLE_NULL_MOVE -DENABLE_QSEARCH -DENABLE_PVS			\
+-DENABLE_ASPIRATION_WINDOW # -DENABLE_LMR # -DENABLE_SEE
 
 ################
 # Main binary. #
