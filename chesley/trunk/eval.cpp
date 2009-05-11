@@ -18,7 +18,7 @@ using namespace std;
 //  piece_square_table:                                                   //
 //                                                                        //
 //  This is a table of bonuses for each piece-location pair. The table    //
-//  is written in 'reverse' for readablility and a transformation is      //
+//  is written in 'reverse' for readability and a transformation is       //
 //  required for fetching values for black and white.                     //
 //                                                                        //
 ////////////////////////////////////////////////////////////////////////////

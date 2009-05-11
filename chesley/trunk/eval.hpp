@@ -66,6 +66,7 @@ Score sum_piece_squares (const Board &b);
 // Evaluate different kinds of piece.
 inline Score eval_pawns (const Board &b, const Color c);
 inline Score eval_files (const Board &b, const Color c);
+inline Score eval_diagonal (const Board &b, const Color c);
 
 // Compute a score for this position.
 inline Score
@@ -95,9 +96,16 @@ eval (const Board &b) {
   // Evaluate pawn structure //
   /////////////////////////////
 
-#if 0
+#if 1
   score += eval_pawns (b, WHITE) - eval_pawns (b, BLACK);
+#endif
+
+#if 1
   score += eval_files (b, WHITE) - eval_files (b, BLACK);
+#endif
+
+#if 1
+  score += eval_diagonal (b, WHITE) -  eval_diagonal (b, BLACK);
 #endif
 
   ///////////////////////////////////
@@ -112,11 +120,12 @@ eval (const Board &b) {
   // Evaluate castling. //
   ////////////////////////
 
-#if 0
+#if 1
   if (b.flags.w_can_k_castle)  score += 15;
   if (b.flags.w_can_q_castle)  score += 10;
   if (b.flags.w_has_k_castled) score += 50;
   if (b.flags.w_has_q_castled) score += 30;
+
   if (b.flags.b_can_k_castle)  score -= 15;
   if (b.flags.b_can_q_castle)  score -= 10;
   if (b.flags.b_has_k_castled) score -= 50;
@@ -128,7 +137,7 @@ eval (const Board &b) {
   /////////////////////////////////////////////////
 
 #if 0
-  score += random () % 5;
+  score += random () % 2;
 #endif
 
   //////////////////////////////////////////////////
@@ -157,7 +166,7 @@ eval_material (const Board &b) {
     for (Kind k = PAWN; k < KING; k++)   
       score[c] += eval_piece (k) * count [c][k];
   
-#if 0
+#if 1
   // Provide a half-pawn bonus for having both bishops.
   for (Color c = WHITE; c <= BLACK; c++)
     if (count[c][BISHOP] >= 2) score [c] += 50;
@@ -191,14 +200,13 @@ eval_pawns (const Board &b, const Color c) {
 	  bonus -= 15;
 	}
 
-#if 1
       // Penalize isolated pawns. An isolated pawn is a pawn for which
       // there is no friendly pawn of an adjacent file.
       if (file_no == 0)
 	{
 	  if (pop_count (b.file_mask (1) & pawns) == 0)
 	    {
-	      bonus -= 25;
+	      bonus -= 15;
 	      // cerr << "penalizing isolated pawn on file " << file_no << endl;
 	    }
 	}
@@ -206,7 +214,7 @@ eval_pawns (const Board &b, const Color c) {
 	{
 	  if (pop_count (b.file_mask (6) & pawns) == 0)
 	    {
-	      bonus -= 25;
+	      bonus -= 15;
 	      // cerr << "penalizing isolated pawn on file " << file_no << endl;
 	    }
 	}
@@ -215,11 +223,10 @@ eval_pawns (const Board &b, const Color c) {
 	  if (pop_count (b.file_mask (file_no - 1) & pawns) == 0 &&
 	      pop_count (b.file_mask (file_no + 1) & pawns) == 0)
 	    {
-	      bonus -= 25;
+	      bonus -= 15;
 	      // cerr << "penalizing isolated pawn on file " << file_no << endl;
 	    }
 	}
-#endif
   
       // Penalize doubled pawns. Doubled pawns are two pawns of the same
       // color residing on the same file.
@@ -247,7 +254,7 @@ inline Score
 eval_files (const Board &b, const Color c) {
   Score bonus = 0;
   bitboard col = b.color_to_board (c);
-  bitboard pieces = b.rooks & b.queens & col;
+  bitboard pieces = (b.rooks | b.queens) & col;
   bitboard pi = pieces;
 
   while (pi)
@@ -258,6 +265,27 @@ eval_files (const Board &b, const Color c) {
 	{
 	  bonus += 50;
 	}
+      pi = clear_lsb (pi);
+    }
+
+  return bonus;
+}
+
+inline Score 
+eval_diagonal (const Board &b, const Color c)
+ {
+  Score bonus = 0;
+  bitboard col = b.color_to_board (c);
+  bitboard pieces = (b.bishops | b.queens) & col;
+  bitboard pi = pieces;
+
+  while (pi)
+    {
+      int square = bit_idx (pi);
+      int mobility = pop_count 
+	(b.DIAG_45_ATTACKS_TBL[square * 256 + b.occ_45 (square)] |
+	 b.DIAG_135_ATTACKS_TBL[square * 256 + b.occ_135 (square)]);
+      bonus += 2 * mobility;
       pi = clear_lsb (pi);
     }
 
