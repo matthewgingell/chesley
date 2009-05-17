@@ -26,7 +26,7 @@
 using namespace std;
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 1 * 1000; 
+const int TIME_OUT = 20 * 1000; 
 
 ///////////////////////////////
 // Static session variables. //
@@ -94,9 +94,9 @@ Session::init_session () {
   // Setup periodic alarm.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
-  timer.it_value.tv_usec = 10000;
+  timer.it_value.tv_usec = 50000;
   timer.it_interval.tv_sec = 0;
-  timer.it_interval.tv_usec = 10000;
+  timer.it_interval.tv_usec = 50000;
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
 
@@ -131,7 +131,10 @@ Session::handle_alarm (int sig) {
   // We should return from the work loop as quickly as possible if the
   // timeout has elapsed or if there is input waiting from the user.
   if ((timeout > 0 && mclock () > timeout) /* || fdready (fileno (in)) */  )
-    se.interrupt_search = true;
+    {
+      se.interrupt_search = true;
+      timeout = 0;
+    }
 }
 
 // Write the command prompt.
@@ -310,6 +313,11 @@ Move
 Session::find_a_move () {
   se.interrupt_search = false;
   timeout = mclock () + TIME_OUT;
+  
+  // Add a random time bonus to ensure a variety of games are played
+  // during testing.
+  //  timeout += (random () % 2) * TIME_OUT;
+
   return se.choose_move (board, 99);
 }
 
@@ -352,7 +360,7 @@ Session::execute (char *line) {
 
       if (token == "eval")
 	{
-	  cerr << eval (board) << endl;
+	  cerr << Eval (board).score () << endl;
 	  return true;
 	}
 

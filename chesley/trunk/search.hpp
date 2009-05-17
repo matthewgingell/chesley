@@ -149,7 +149,8 @@ struct Search_Engine {
 
   // Quiescence search. 
   Score qsearch 
-  (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF);
+  (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF
+);
 
   // Static exchange evaluation.
   inline Score see (const Board &b, const Move &capture);

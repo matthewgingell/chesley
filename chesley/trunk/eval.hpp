@@ -17,13 +17,13 @@
 #define _EVAL_
 
 #include <iostream>
-
 #include "chesley.hpp"
+#include "util.h"
 
 //////////////////////
 // Material values. //
 //////////////////////
-
+  
 static const Score PAWN_VAL   = 100;
 static const Score ROOK_VAL   = 500;
 static const Score KNIGHT_VAL = 300;
@@ -33,6 +33,9 @@ static const Score QUEEN_VAL  = 975;
 static const Score MATE_VAL   = 500  * 1000;
 static const Score INF        = 1000 * 1000;
 
+static const Score BISHOP_PAIR_BONUS = 50;
+
+inline Score eval_piece (Kind k) IS_CONST;
 inline Score eval_piece (Kind k) {
   switch (k)
     {
@@ -41,255 +44,236 @@ inline Score eval_piece (Kind k) {
     case KNIGHT: return KNIGHT_VAL;
     case BISHOP: return BISHOP_VAL;
     case QUEEN:  return QUEEN_VAL;
+
     default:     return 0;
     }
 }
 
-///////////////////////
-// Castling bonuses. //
-///////////////////////
+inline bool is_minor (Kind k) IS_CONST;
+inline bool is_minor (Kind k) {
+  switch (k)
+    {
+    case PAWN:   return false;
+    case ROOK:   return false;
+    case KNIGHT: return true;
+    case BISHOP: return true;
+    case QUEEN:  return false;
+    default:     return false;
+    }
+}
 
-static const Score KS_CASTLE_VAL  = 75;
-static const Score QS_CASTLE_VAL  = 50;
-static const Score CAN_CASTLE_VAL = 30;
-
-///////////////////////////
-// Evaluation functions. //
-///////////////////////////
-
-// Compute the net material value for this position.
-inline Score eval_material (const Board &b);
+inline bool is_minor (Kind k) IS_CONST;
+inline bool is_major (Kind k) {
+  switch (k)
+    {
+    case PAWN:   return false;
+    case ROOK:   return true;
+    case KNIGHT: return false;
+    case BISHOP: return false;
+    case QUEEN:  return true;
+    default:     return false;
+    }
+}
 
 // Compute a simple net positional value from the piece square table.
-Score sum_piece_squares (const Board &b);
+Score sum_piece_squares (const Board &b) IS_CONST;
 
-// Evaluate different kinds of piece.
-inline Score eval_pawns (const Board &b, const Color c);
-inline Score eval_files (const Board &b, const Color c);
-inline Score eval_diagonal (const Board &b, const Color c);
+struct Eval {
+  Eval (const Board &board) {
+    // Initialization.
+    b = board;
+    memset (piece_counts, sizeof (piece_counts), 0);
+    memset (minor_counts, sizeof (minor_counts), 0);
+    memset (major_counts, sizeof (major_counts), 0);
+    memset (pawn_counts, sizeof (pawn_counts), 0);
+    count_material ();    
+  }
 
-// Compute a score for this position.
-inline Score
-eval (const Board &b) {
-  Score score = 0;
+  Score score () {
+    int score = 0;
 
-  ///////////////////////
-  // Evaluate material //
-  ///////////////////////
+    // If there are no pawns and no majors on the board.
+    if ((piece_counts[WHITE][PAWN] == 0 && piece_counts[BLACK][PAWN] == 0)
+	&& (major_counts[WHITE] == 0 && major_counts[BLACK] == 0))
+      {
+	// If both sides have one of fewer minor pieces.
+	if (minor_counts[WHITE] <= 1 && minor_counts[BLACK] <= 1)
+	  return 0;
+      }
 
-#if 1
-  score += eval_material (b);
-#endif
-
-  // Trading material is good when you are ahead.
-
-  // The fewer pieces on the board, the fewer pawns a minor piece is
-  // worth.
-
-  ///////////////////////
-  // Evaluate mobility //
-  ///////////////////////
-
-  // ??????????
-
-  /////////////////////////////
-  // Evaluate pawn structure //
-  /////////////////////////////
-
-#if 1
-  score += eval_pawns (b, WHITE) - eval_pawns (b, BLACK);
-#endif
-
-#if 1
-  score += eval_files (b, WHITE) - eval_files (b, BLACK);
-#endif
-
-#if 1
-  score += eval_diagonal (b, WHITE) -  eval_diagonal (b, BLACK);
-#endif
-
-  ///////////////////////////////////
-  // Evaluate positional strength. //
-  ///////////////////////////////////
-
-#if 1
-  score += sum_piece_squares (b);
-#endif
-
-  ////////////////////////
-  // Evaluate castling. //
-  ////////////////////////
-
-#if 1
-  if (b.flags.w_can_k_castle)  score += 15;
-  if (b.flags.w_can_q_castle)  score += 10;
-  if (b.flags.w_has_k_castled) score += 50;
-  if (b.flags.w_has_q_castled) score += 30;
-
-  if (b.flags.b_can_k_castle)  score -= 15;
-  if (b.flags.b_can_q_castle)  score -= 10;
-  if (b.flags.b_has_k_castled) score -= 50;
-  if (b.flags.b_has_q_castled) score -= 30;
-#endif
+    // Generate a simple material score.
+    score += score_material (WHITE) - score_material (BLACK);
     
-  /////////////////////////////////////////////////
-  // Add some random noise for variety of games. // 
-  /////////////////////////////////////////////////
+    // Add net piece square values.
+    score += sum_piece_squares (b);
+
+    // Provide a bonus for holding both bishops.
+    if (piece_counts[WHITE][BISHOP] >= 2) 
+      {
+	score += BISHOP_PAIR_BONUS;
+      }
+
+    if (piece_counts[BLACK][BISHOP] >= 2) 
+      {
+	score -= BISHOP_PAIR_BONUS;
+      }
+
+    // Reward rooks and queens on open files.
+    score += eval_files (WHITE) - eval_files (BLACK);
+
+
+    /* So far this doesn't appear to make much difference */
+#if 0
+    // Evaluate pawn structure.
+    score += eval_pawns (WHITE) - eval_pawns (BLACK);
+#endif
 
 #if 0
-  score += random () % 2;
+    score += eval_control ();
 #endif
 
-  //////////////////////////////////////////////////
-  // Return appropriately signed score to caller. //
-  //////////////////////////////////////////////////
+    // Set the appropriate sign and return the score.
+    return sign (b.to_move ()) * score;    
+  }
 
-  return sign (b.to_move ()) * score;
-}
+  // Count the pieces on the board and populate pcounts.
+  void count_material () {
+    for (Color c = WHITE; c <= BLACK; c++)
+      {
+	// Count pieces.
+	bitboard all_pieces = b.color_to_board (c);
+	for (Kind k = PAWN; k < KING; k++) 
+	  {
+	    int count = pop_count (all_pieces & b.kind_to_board (k));
+	    piece_counts[c][k] = count;
+	  }
 
-// Compute the net material value for this position.
-inline Score
-eval_material (const Board &b) {
-  Score score[2];
-  memset (score, 0, sizeof (score));
-  int count[2][5];
-  memset (count, 0, sizeof (count));
+	// Count pawns by file.
+	for (int file = 0; file < 8; file++)
+	  {
+	    bitboard this_file = all_pieces & b.file_mask (file) & b.pawns;
+	    pawn_counts[c][file] = pop_count (this_file);
+	  }
+      }
 
-  // Count all pieces.
-  for (Color c = WHITE; c <= BLACK; c++)
+    // Count majors and minors.
+    for (Color c = WHITE; c <= BLACK; c++)
+      {
+	major_counts[c] = piece_counts[c][ROOK] + piece_counts[c][QUEEN];
+	minor_counts[c] = piece_counts[c][KNIGHT] + piece_counts[c][BISHOP];
+      }
+  }
+    
+  // Return a raw material for Color c.
+  Score score_material (Color c) {
+    Score score = 0;
     for (Kind k = PAWN; k < KING; k++)   
-      count [c][k] = 
-	pop_count (b.color_to_board (c) & b.kind_to_board (k));
-
-  // Sum their values.
-  for (Color c = WHITE; c <= BLACK; c++)
-    for (Kind k = PAWN; k < KING; k++)   
-      score[c] += eval_piece (k) * count [c][k];
+      score += eval_piece (k) * piece_counts[c][k];
+    return score;
+  }
   
-#if 1
-  // Provide a half-pawn bonus for having both bishops.
-  for (Color c = WHITE; c <= BLACK; c++)
-    if (count[c][BISHOP] >= 2) score [c] += 50;
+  // Reward rooks and queens on open and semi-open files.
+  Score eval_files (const Color c) {
+    Score score = 0;
+    bitboard pieces = b.color_to_board (c) & (b.queens | b.rooks);
+
+    while (pieces) 
+      {
+	int idx = bit_idx (pieces);
+	int file = b.idx_to_file (idx);
+	int pawn_count = pawn_counts[c][file];
+	if (pawn_count == 1) score += 25;
+	else if (pawn_count == 0) score += 50;
+	pieces = clear_lsb (pieces);
+      }
+
+    return score;
+  }
+
+  Score eval_pawns (const Color c) {
+    Score score = 0;
+    bitboard pawns = b.color_to_board (c) & b.pawns;
+    
+    while (pawns) 
+      {
+	int idx = bit_idx (pawns);
+	int file = b.idx_to_file (idx);
+
+	// Penalize rook pawns.
+	if (file == 0 || file == 7) 
+	  {
+	    // std::cerr << "penalizing rook pawn on file " << file << std::endl;
+	    score -= 15;
+	  }
+
+	// Penalize doubled pawns.
+	if (pawn_counts[c][file] > 1) 
+	  {
+	    // std::cerr << "penalizing doubled pawn on file " << file << std::endl;
+	    score -= 25;
+	  }
+
+#if 0
+	// Penalize isolated pawns.
+	if ((file == 0 && pawn_counts[c][1] == 0) ||
+	    (file == 7 && pawn_counts[c][6] == 0) ||
+	    (pawn_counts[c][file - 1] == 0 && 
+	     pawn_counts[c][file + 1] == 0))
+	  {
+	    // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
+	    score -= 0;
+	  }
 #endif
 
-  // Return net score.
-  return score[WHITE] - score[BLACK];
-}
+	pawns = clear_lsb (pawns);
+      }
 
-using namespace std;
+    // std::cerr << "pawn eval score is " << score << std::endl;
 
-// Compute the value of the pawn structure at this position.
-inline Score
-eval_pawns (const Board &b, const Color c) {
-  Score bonus = 0;
-  bitboard pawns = b.pawns & b.color_to_board (c);
-  bitboard pi = pawns;
+    return score;
+  }
 
-  while (pi)
-    {
-      int square = bit_idx (pi);
-      int file_no = b.idx_to_file (square);
-      bitboard this_file = b.file_mask (file_no) & pawns;
-      int file_count = pop_count (this_file);
+  Score
+  eval_control () {
+    int control[64];
+    Move_Vector white_moves;
+    Move_Vector black_moves;
+    Score score = 0;
+    Color c = b.to_move ();
+    
+    memset (control, 0, sizeof (control));
 
-      // Pawns on rank 0 and rank 7 can only attack one square. They
-      // receive a 15% penalty.
-      if (file_no == 0 || file_no == 7)
-	{
-	  // cerr << "penalizing rooks pawn on file " << file_no << endl;
-	  bonus -= 15;
-	}
+    b.flags.to_move = WHITE;
+    b.gen_moves (white_moves);
+    for (int i = 0; i < white_moves.count; i++)
+      control[white_moves[i].to]++;
 
-      // Penalize isolated pawns. An isolated pawn is a pawn for which
-      // there is no friendly pawn of an adjacent file.
-      if (file_no == 0)
-	{
-	  if (pop_count (b.file_mask (1) & pawns) == 0)
-	    {
-	      bonus -= 15;
-	      // cerr << "penalizing isolated pawn on file " << file_no << endl;
-	    }
-	}
-      else if  (file_no == 7)
-	{
-	  if (pop_count (b.file_mask (6) & pawns) == 0)
-	    {
-	      bonus -= 15;
-	      // cerr << "penalizing isolated pawn on file " << file_no << endl;
-	    }
-	}
-      else
-	{
-	  if (pop_count (b.file_mask (file_no - 1) & pawns) == 0 &&
-	      pop_count (b.file_mask (file_no + 1) & pawns) == 0)
-	    {
-	      bonus -= 15;
-	      // cerr << "penalizing isolated pawn on file " << file_no << endl;
-	    }
-	}
+    b.flags.to_move = BLACK;
+    b.gen_moves (black_moves);
+    for (int i = 0; i < black_moves.count; i++)
+      control[black_moves[i].to]--;
+
+    for (int i = 0; i < 64; i++)
+      control[i] *= centrality_table[i];
+
+    for (int i = 0; i < 64; i++)
+      score += control [i];
+    
+    b.flags.to_move = c;
+    
+    //    std::cerr << score << std::endl;
+
+    return score;
+  }
   
-      // Penalize doubled pawns. Doubled pawns are two pawns of the same
-      // color residing on the same file.
-      if (file_count > 1) 
-	{
-	  bonus -= 25;
-	  // cerr << "penalizing doubled pawn on file " << file_no << endl;
-	}
-      
-      // Penalize backwards pawns. A backwards pawn is one that is behind
-      // pawns of the same color on adjacent files which can not be
-      // advanced without loss of material.
+  Board b;
+  int piece_counts[2][5];
+  int major_counts[2];
+  int minor_counts[2];
+  int pawn_counts[2][8];
 
-      // Reward passed pawns in the end game.
+  static int8 centrality_table[64];
 
-      pi = clear_lsb (pi);
-    }
-
-  // cerr << "net pawn eval = " << bonus << endl;
-
-  return bonus;
-}
-
-inline Score 
-eval_files (const Board &b, const Color c) {
-  Score bonus = 0;
-  bitboard col = b.color_to_board (c);
-  bitboard pieces = (b.rooks | b.queens) & col;
-  bitboard pi = pieces;
-
-  while (pi)
-    {
-      int square = bit_idx (pi);
-      int file_no = b.idx_to_file (square);
-      if ((b.file_mask (file_no) & b.pawns & col) == 0)
-	{
-	  bonus += 50;
-	}
-      pi = clear_lsb (pi);
-    }
-
-  return bonus;
-}
-
-inline Score 
-eval_diagonal (const Board &b, const Color c)
- {
-  Score bonus = 0;
-  bitboard col = b.color_to_board (c);
-  bitboard pieces = (b.bishops | b.queens) & col;
-  bitboard pi = pieces;
-
-  while (pi)
-    {
-      int square = bit_idx (pi);
-      int mobility = pop_count 
-	(b.DIAG_45_ATTACKS_TBL[square * 256 + b.occ_45 (square)] |
-	 b.DIAG_135_ATTACKS_TBL[square * 256 + b.occ_135 (square)]);
-      bonus += 2 * mobility;
-      pi = clear_lsb (pi);
-    }
-
-  return bonus;
-}
+};
 
 #endif // _EVAL_

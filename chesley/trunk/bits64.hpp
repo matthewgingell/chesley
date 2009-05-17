@@ -14,11 +14,9 @@
 
 #include <iostream>
 #include "types.hpp"
+#include "util.hpp"
 
 typedef uint64 bits64;
-
-#define IS_CONST __attribute__ ((const))
-#define IS_UNUSED  __attribute__ ((unused))
 
 /////////////////////////////////////////////////
 // Bitwise operations on 64 bit unsigned ints. //

@@ -12,6 +12,7 @@
 #ifndef __UTIL__
 #define __UTIL__
 
+#include <assert.h>
 #include <cstdlib>
 #include <cstring>
 #include <string>
@@ -21,6 +22,13 @@
 #include <vector>
 
 #include "types.hpp"
+
+////////////////////////
+// Macro definitions. //
+////////////////////////
+
+#define IS_CONST __attribute__ ((const))
+#define IS_UNUSED  __attribute__ ((unused))
 
 //////////////////////
 // String functions //
