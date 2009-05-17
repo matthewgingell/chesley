@@ -1,8 +1,6 @@
 Issues:
   
   * Get Zippy working.
-  * See how well our end game detection is working.
-  * Implement PVS.
   * Detect insufficient material to mate.
 
 Next items:

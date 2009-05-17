@@ -91,7 +91,7 @@ Search_Engine::iterative_deepening
 
       // Search this position using a dynamically sized aspiration window.
       int delta = 
-	(i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 5 : INF;
+	(i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 10 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // Break out of the loop if the search was interrupted.
@@ -109,6 +109,13 @@ Search_Engine::iterative_deepening
 
   // Write out statistics about this search.
   if (post) post_after ();
+
+  // If we got back no principal variation, return a depth 1 search.
+  if (pv.count == 0) {
+    interrupt_search = false;
+    search_with_memory  (b, 1, 0, pv, -INF, INF);    
+    interrupt_search = true;
+  }
 
   // Check that we got at least one move.
   assert (pv.count > 0);
@@ -176,13 +183,13 @@ Search_Engine :: search_with_memory
       pv.push (m);
       return m.score;
     }
-
+  
   // Push this position on the repetition stack and recurse.
   rt_push (b);
   Score s = search (b, depth, ply, pv, alpha, beta, do_null_move);
   rt_pop (b);
-
-  // Update the transposition table with this result.
+  
+  // Update the transposition table if this search returned a PV.
   if (pv.count > 0)
     tt_update (b, depth, pv[0], alpha, beta);
   
@@ -231,7 +238,7 @@ Search_Engine :: search
 #ifdef ENABLE_QSEARCH
       alpha = qsearch (b, -1, ply, alpha, beta);
 #else
-      alpha = eval (b);
+      alpha = Eval (b).score ()
 #endif /* ENABLE_QSEARCH */
     }
 
@@ -246,32 +253,31 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
-    const int R = 3;
+    const int R = 2;
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
-    if (do_null_move /* && pop_count (b.occupied) > 15 */ && !in_check)
+    if (ply > 1 && 
+	do_null_move && 
+	pop_count (b.occupied) >= 15 && 
+	!in_check)
       {
         Board c = b;
         Move_Vector dummy;
         c.set_color (invert (b.to_move ()));
-
         int val = -search_with_memory 
           (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
-
         if (val >= beta)
 	  return val;
       }
 #endif /* ENABLE_NULL_MOVE */
-        
+    
+    // Generate moves.
     Move_Vector moves (b);
-    //    cerr << moves << endl;
 
 #ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves, alpha, beta);
 #endif
-
-    assert (moves.count > 1);
 
     ////////////////////////////
     // Minimax over children. //
@@ -293,8 +299,15 @@ Search_Engine :: search
             ////////////////////////
 	    
 	    int ext = 0;
-	    if (in_check) ext += 1;
-	    if (moves[mi].promote == QUEEN) ext += 1;
+	    if (in_check) 
+	      ext += 1;
+	    
+	    if (moves[mi].get_kind (b) == PAWN && 
+		(moves[mi].to == 1 || moves[mi].to == 6)) 
+	      ext += 1;
+
+	    if (moves[mi].promote == QUEEN) 
+	      ext += 1;
 
 #ifdef ENABLE_LMR
 	    ///////////////////////////
@@ -472,7 +485,7 @@ Search_Engine::see (const Board &b, const Move &m) {
   c.set_piece (m.get_kind (b), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
   Move lvc = c.least_valuable_attacker (m.to);
-  if (!lvc.is_null ())
+  if (!lvc.is_null () && b.get_kind (m.from) != KING)
     {
       assert (lvc.to == m.to);
       s += -max (see (c, lvc), 0);
@@ -498,15 +511,7 @@ Search_Engine::qsearch
   // Do static evaluation at this node. //
   ////////////////////////////////////////
 
-#if 0
-  Board c = b;
-  c.set_color (invert (b.to_move ()));
-  cerr << eval (b) << endl;
-  cerr << eval (c) << endl;
-  assert (eval (b) == -eval (c));
-#endif
-
-  alpha = max (alpha, eval (b));
+  alpha = max (alpha, Eval (b).score ());
 
   ////////////////////////////////////////
   // Recurse and minimax over children. // 

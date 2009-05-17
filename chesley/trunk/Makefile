@@ -22,11 +22,12 @@ SRCS = $(wildcard *.cpp)
 # the tree search. Valid options are: ENABLE_ASPIRATION_WINDOW,	       		 #
 # ENABLE_TRANS_TABLE, ENABLE_QSEARCH, ENABLE_NULL_MOVE,		       		 #
 # ENABLE_ORDER_MOVES, ENABLE_ALPHA_BETA, ENABLE_SEE, -DENABLE_PVS     		 #
+# 										 #
 ##################################################################################
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
 -DENABLE_NULL_MOVE -DENABLE_QSEARCH -DENABLE_PVS			\
--DENABLE_ASPIRATION_WINDOW # -DENABLE_LMR # -DENABLE_SEE
+-DENABLE_ASPIRATION_WINDOW #  -DENABLE_SEE # -DENABLE_LMR
 
 ################
 # Main binary. #
@@ -80,4 +81,4 @@ clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
 	      Saturn* game.00* log.00* book.lrn position.bin		\
 	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log	\
-	      log.0* game.0* vsn.xxx
+	      log.0* game.0* vsn.xxx *mshark
