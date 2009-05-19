@@ -29,8 +29,6 @@ Search_Engine :: choose_move (Board &b, int depth)
   return pv[0];
 }
 
-const int Search_Engine::ordering_stats_count;
-
 /////////////////////////////////////////////////////////////////////////
 //                                                                     //
 // Search_Engine :: new_search ()                                      //
@@ -45,18 +43,29 @@ Score
 Search_Engine :: new_search 
 (const Board &b, int depth, Move_Vector &pv) 
 {
-  // Clear the history table.
-  memset (hh_table, 0, sizeof (hh_table));
+  // Age the history table.
+  for (uint32 i = 0; i < sizeof (hh_table) / sizeof (uint64); i++)
+    ((uint64 *) hh_table)[i] /= 2;
   
-  // Clear the transposition table.
-  //  tt.clear ();
+  // Age the transposition table.
+  cerr << "ageing..." << endl;
+  Trans_Table :: iterator i;
+  for (i = tt.begin (); i != tt.end(); i++)
+    {
+      if (i -> second.age >= 5)
+	tt.erase (i);
+      else 
+	i -> second.age++;
+    }
+  cerr << "done..." << endl;
   
   // Clear statistics.
   calls_to_search = 0;
   calls_to_qsearch = 0;
-  memset (move_offsets, 0, sizeof (move_offsets));
-  memset (beta_offsets, 0, sizeof (beta_offsets));
-  
+  memset (hist_pv, 0, sizeof (hist_pv));
+  tt_hits = 0;
+  tt_misses = 0;
+
   return iterative_deepening (b, depth, pv);
 }
 
@@ -372,14 +381,14 @@ Search_Engine :: search
 	    
             if (cs >= beta)
               {
-                beta_offsets[min (mi,  ordering_stats_count)]++;
                 break;
               }
 #endif // ENABLE_ALPHA_BETA
           }
       }
 
-    move_offsets[min (mi,  ordering_stats_count)]++;
+    // Collect statistics.
+    hist_pv[min (mi, hist_nbuckets)]++;
 
     // If we couldn't find a move that applied, then the game is over.
     if (legal_move_count == 0)
@@ -458,7 +467,7 @@ Search_Engine::order_moves
       
       // And finally, recent PV and fail-high moves.
       moves[i].score += 
-        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];    
     }
   
   insertion_sort <Move_Vector, Move, less_than> (moves);
@@ -479,11 +488,14 @@ Search_Engine::order_moves
 Score
 Search_Engine::see (const Board &b, const Move &m) {
   Score s = eval_piece (m.capture (b));
+
+  // Construct child position.
   Board c = b;
   c.clear_piece (m.from);
   c.clear_piece (m.to);
   c.set_piece (m.get_kind (b), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
+  
   Move lvc = c.least_valuable_attacker (m.to);
   if (!lvc.is_null () && b.get_kind (m.from) != KING)
     {
@@ -577,12 +589,14 @@ Search_Engine::tt_try
 
   if (i == tt.end ())
     {
+      tt_misses++;
       return false;
     }
   else 
     {
+      tt_hits++;
       if (i -> second.depth == depth && 
-          b.half_move_clock < 45 && rep_count (b) < 2)
+          b.half_move_clock < 45 && rep_count (b) == 0)
         {
           TT_Entry entry = i -> second;
 
@@ -612,8 +626,9 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
   Trans_Table::iterator i = tt.find (hash);
   if (i != tt.end ()) 
      {
-      out = i -> second;
-      return true;
+       i -> second.age = 0;
+       out = i -> second;
+       return true;
      }
   else
 #endif // ENABLE_TRANS_TABLE
@@ -629,35 +644,33 @@ inline void
 Search_Engine::tt_update
 (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta) 
 {
-  if (tt.size () > 10 * 1000 * 1000)
-    tt.clear ();
-
 #if ENABLE_TRANS_TABLE
-  Trans_Table :: iterator i; i = tt.find (b.hash);
-  bool found_entry = (i != tt.end ());
+  Trans_Table :: iterator i = tt.find (b.hash);
+  bool entry_is_new = (i == tt.end ());
 
-  // Find or insert an entry for this position.
-  if (!found_entry)
+  // Insert an element if it's new.
+  if (entry_is_new)
     {
       Trans_Table::value_type val (b.hash, TT_Entry ());
       i = tt.insert (val).first;
     }
+  
+  // Populate it if it's new or deeper than the existing entry.
+  //  if (entry_is_new || depth >= i -> second.depth) */
 
-  // Update this entry.
-  if (!found_entry || depth >= i -> second.depth)
-    {
-      i -> second.move = m;
-      i -> second.depth = depth;
+  // Always replace
+  {
+    i -> second.move = m;
+    i -> second.depth = depth;
+    i -> second.age = 0;
+    if (m.score >= beta) 
+      i -> second.type = TT_Entry :: LOWERBOUND;
+    else if (m.score <= alpha)
+      i -> second.type = TT_Entry :: UPPERBOUND;
+    else
+      i -> second.type = TT_Entry :: EXACT_VALUE;
+  }
 
-      if (m.score >= beta) 
-        i -> second.type = TT_Entry :: LOWERBOUND;
-
-      else if (m.score <= alpha)
-        i -> second.type = TT_Entry :: UPPERBOUND;
-
-      else
-        i -> second.type = TT_Entry :: EXACT_VALUE;
-    }
 #endif // ENABLE_TRANS_TABLE
 }
 
@@ -773,20 +786,15 @@ Search_Engine::post_after () {
   // Display statistics on the quality of our move ordering.
   cerr << endl;
   double sum = 0;
-  for (int i = 0; i < ordering_stats_count; i++)
-    sum += move_offsets[i];
-  cerr << "move_offsets: ";
-  for (int i = 0; i < ordering_stats_count; i++)
-    cerr << (move_offsets[i] / sum) * 100 << "% ";
+  for (int i = 0; i < hist_nbuckets; i++)
+    sum += hist_pv[i];
+  cerr << "pv hist: ";
+  for (int i = 0; i < hist_nbuckets; i++)
+    cerr << (hist_pv[i] / sum) * 100 << "% ";
   cerr << endl;
 
-  // Display statistics on the rate at which we generate beta cutoffs.
-  sum = 0;
-  for (int i = 0; i < ordering_stats_count; i++)
-    sum += beta_offsets[i];
-  cerr << "beta_offsets: ";
-  for (int i = 0; i < ordering_stats_count; i++)
-    cerr << (beta_offsets[i] / sum) * 100 << "% ";
-  cerr << endl;
+  // Display statistics on transposition table hit rate.
+  double hit_rate = (double) tt_hits / (tt_hits + tt_misses);
+  cerr << "tt hit rate: " << hit_rate * 100 << "%" << endl;
 }
  

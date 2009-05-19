@@ -26,7 +26,7 @@
 using namespace std;
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = 20 * 1000; 
+const int TIME_OUT = 30 * 1000; 
 
 ///////////////////////////////
 // Static session variables. //
@@ -53,11 +53,6 @@ Search_Engine Session::se;
 bool        Session::running;
 uint64      Session::timeout;
 const char *Session::prompt;
-
-// Statistics.
-int Session::counts_this_game [6][64];
-int Session::counts_all_games [6][64];
-int Session::num_games;
 
 ////////////////////////////////
 // Initialize the environment //
@@ -100,30 +95,7 @@ Session::init_session () {
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
 
-  // Initialize statistics.
-  memset (counts_this_game, 0, sizeof (counts_this_game));
-  memset (counts_all_games, 0, sizeof (counts_all_games));
-  num_games = 0;
-
   return;
-}
-
-// Called each time a game begins.
-void
-Session::collect_new_game () {
-  cerr << "collecting new game" << endl;
-  num_games++;
-}
-
-// Called after each move application.
-void 
-Session::collect_statistics () {
-}
-
-// Called when the a game ends.
-void 
-Session::collect_game_over () {
-  cerr << "collecting game over." << endl;
 }
 
 void
@@ -218,7 +190,6 @@ Session::work ()
 
       // Apply the move.
       bool applied = board.apply (m);
-      collect_statistics ();
 
       // We should never get back a move that doesn't apply.
       assert (applied);
@@ -302,9 +273,6 @@ Session::handle_end_of_game (Status s) {
 
   // We should halt and block for user input.
   running = false;
-
-  collect_game_over ();
-
   timeout = 0;
 }
 
@@ -443,9 +411,7 @@ Session::execute (char *line) {
 
       if (token == "new")
 	{
-	  collect_new_game ();
 	  board = Board :: startpos ();
-	  collect_statistics ();
 	  se.rt.clear ();
 	  our_color = BLACK;
 	  running = true;
