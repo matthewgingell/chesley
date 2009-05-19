@@ -195,9 +195,7 @@ Session::xbd_execute (char *line) {
       if (token == "usermove" && count > 1)
 	{
 	  Move m = board.from_calg (tokens[1]);
-
 	  bool applied = board.apply (m);
-	  collect_statistics ();
 
 	  // The client should never pass us a move that doesn't
 	  // apply.

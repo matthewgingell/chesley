@@ -32,9 +32,10 @@ struct Search_Engine {
     calls_to_search = 0;
     calls_to_qsearch = 0;
     post = true;
+    tt_hits = 0;
+    tt_misses = 0;
     memset (hh_table, 0, sizeof (hh_table));
-    memset (move_offsets, 0, sizeof (move_offsets));
-    memset (beta_offsets, 0, sizeof (beta_offsets));
+    memset (hist_pv, 0, sizeof (hist_pv));
   }
 
   ///////////////////////////
@@ -47,6 +48,7 @@ struct Search_Engine {
     enum { 
       LOWERBOUND, UPPERBOUND, EXACT_VALUE 
     } type;
+    int32 age;
   };
   
   // A table type mapping from a 64-bit key to a TT_Entry.
@@ -86,10 +88,14 @@ struct Search_Engine {
   // A count of the number of times we found a PV node at an index
   // into the moves list. This is a measure of the performance of our
   // move ordering strategy.
-  static const int ordering_stats_count = 10;
-  uint32 move_offsets [ordering_stats_count];
-  uint32 beta_offsets [ordering_stats_count];
+  static const int hist_nbuckets = 10;
+  uint32 hist_pv [hist_nbuckets];
   
+  // Count the number of times we hit and miss entries in the
+  // transposition table.
+  uint64 tt_hits; 
+  uint64 tt_misses; 
+
   //////////////
   // Queries. //
   //////////////
@@ -149,8 +155,7 @@ struct Search_Engine {
 
   // Quiescence search. 
   Score qsearch 
-  (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF
-);
+  (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF);
 
   // Static exchange evaluation.
   inline Score see (const Board &b, const Move &capture);
