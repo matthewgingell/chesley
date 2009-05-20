@@ -164,10 +164,15 @@ Board::to_san (const Move &m) const {
   Kind cap = m.capture (*this);
   Kind promote = m.promote;
 
+  if (m.is_null ())
+    {
+      return "<null>";
+    }
+
+
   if (k == NULL_KIND)
     {
-      cerr << m << endl;
-      abort ();
+      return "<san?>";
     }
 
   //////////////////////////////////////////
