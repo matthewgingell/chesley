@@ -29,6 +29,8 @@ Search_Engine :: choose_move (Board &b, int depth)
   return pv[0];
 }
 
+const int Search_Engine::hist_nbuckets;
+
 /////////////////////////////////////////////////////////////////////////
 //                                                                     //
 // Search_Engine :: new_search ()                                      //

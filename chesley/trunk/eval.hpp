@@ -18,7 +18,7 @@
 
 #include <iostream>
 #include "chesley.hpp"
-#include "util.h"
+#include "util.hpp"
 
 //////////////////////
 // Material values. //
