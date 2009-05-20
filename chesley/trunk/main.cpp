@@ -16,7 +16,10 @@
 
 using namespace std;
 
-// Initializion
+// Globals.
+char *arg0;
+
+// Initializion.
 void initialize_all ()
 {
   seed_random ();
@@ -25,8 +28,10 @@ void initialize_all ()
 }
 
 // Initialize and pass control to main loop.
-int main()
+int main(int argc, char **argv)
 {
+  arg0 = argv[0];
+
   try
     {
       initialize_all ();

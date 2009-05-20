@@ -1,37 +1,3 @@
 Tough test is:
 
 setboard 4r1k1/p1qr1p2/2pb1Bp1/1p5p/3P1n1R/1B3P2/PP3PK1/2Q4R w - - bm Qxf4
-
-Chesley! r127
-> setboard 4r1k1/p1qr1p2/2pb1Bp1/1p5p/3P1n1R/1B3P2/PP3PK1/2Q4R w - - bm Qxf4
-> bench 12
-Move 0:0
-Ply     Nodes    Qnodes    Time    Eval   Principal Variation
-  1       134       316    0.00     -94   Kf1 Nd5 
-  2       320      1103    0.00     -89   Kf1 Nd5 Qg5 
-  3      1250      3295    0.00     -89   Kf1 Nd5 Qg5 Nxf6 
-  4      7213     15960    0.01     -94   Kf1 
-  5     16206     36055    0.03     -90   Kf1 Nd5 Bg5 a5 Qc2 f5 
-  6    117329    283949    0.20     -89   Kf1 Re2 
-  7    247752    673875    0.62     -90   Kf1 a5 Bg5 Nd5 Re4 Ra8 Qc2 f5 
-  8    573170   1346670    1.55     -89   Kf1 a5 Rg1 Kf8 
- 10  18413795  35813661   51.53      -3   Rxf4 Bxf4 Re1 Kf8 
- 11  68265871  97514263  160.88     773   Qxf4 Bxf4 Rxh5 gxh5 Rxh5 Bh6 Rxh6 Qg3+ fxg3 Re2+ Kf1 Rh2 Rxh2 a5 
-
-with LMR:
-
-> setboard 4r1k1/p1qr1p2/2pb1Bp1/1p5p/3P1n1R/1B3P2/PP3PK1/2Q4R w - - bm Qxf4
-> bench 12
-Move 0:0
-Ply     Nodes    Qnodes    Time    Eval   Principal Variation
-  1       134       316    0.00     -94   Kf1 Nd5 
-  2       320      1103    0.00     -89   Kf1 Nd5 Qg5 
-  3       748      2599    0.00     -89   Kf1 Nd5 Qg5 Nxf6 
-  4      6102     14976    0.01     -94   Kf1 
-  5     11736     27931    0.02     -90   Kf1 Nd5 Bg5 a5 Qc2 f5 
-  6    127269    336988    0.23     -87   Kf1 a5 Bg5 Nd5 Re4 Re6 
-  7    118563    282313    0.20     -92   Kf1 a5 Bg5 Ne6 Qe3 a4 Bc2 f5 
-  8    575822   1273030    0.94     -95   Kf1 a5 Bg5 Nd5 Re4 Ra8 Qe1 f5 Re8+ 
-  9   8132900  15322338   12.32     -68   Kf1 a5 Rxh5 gxh5 Rxh5 Re1+ Kxe1 Nxh5 Qg5+ Kf8 Qh6+ Ke8 Qxh5 
- 10   7194065  14273972   11.54     -65   Kf1 Kf8 Rxh5 gxh5 Rxh5 Re1+ Kxe1 Nxh5 Qh6+ Ke8 Qh8+ Bf8 Qxh5 Bd6 
- 11  46764209  70164271   79.94     773   Qxf4 Bxf4 Rxh5 gxh5 Rxh5 Bh6 Rxh6 Qg3+ fxg3 Re2+ Kf1 Rh2 Rxh2 a5 

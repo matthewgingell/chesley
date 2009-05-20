@@ -23,6 +23,8 @@
 
 #include "types.hpp"
 
+extern char *arg0;
+
 ////////////////////////
 // Macro definitions. //
 ////////////////////////
