@@ -198,8 +198,9 @@ Session::work ()
       se.rt_push (board);
 
       // Send the move to the client.
+      fflush (stdout);
+      fflush (stderr);
       fprintf (out, "move %s\n", board.to_calg (m).c_str ());
-      fflush (out);
     }
 
   // This move may have ended the game.
