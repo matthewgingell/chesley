@@ -120,6 +120,7 @@ Search_Engine::iterative_deepening
 
   // Write out statistics about this search.
   if (post) post_after ();
+  cerr.flush();
 
   // If we got back no principal variation, return a depth 1 search.
   if (pv.count == 0) {
@@ -330,7 +331,8 @@ Search_Engine :: search
 	    if (mi >= Full_Depth_Count && 
 		depth >= Reduction_Limit && 
 		ext == 0 && 
-		have_pv_move)
+		have_pv_move &&
+		Eval (c).score () < alpha)
 	      {
 		int ds;
 		Move_Vector dummy;
@@ -347,7 +349,6 @@ Search_Engine :: search
 	    /////////////////////////////////
             // Principle variation search. //
             /////////////////////////////////
-	    
 	    if (have_pv_move) 
 	      {
 		cs = -search_with_memory

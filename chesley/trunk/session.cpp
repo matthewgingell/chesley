@@ -26,7 +26,7 @@
 using namespace std;
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = .25 * 1000; 
+const int TIME_OUT = .5 * 1000; 
 
 ///////////////////////////////
 // Static session variables. //
@@ -199,6 +199,7 @@ Session::work ()
 
       // Send the move to the client.
       fprintf (out, "move %s\n", board.to_calg (m).c_str ());
+      fflush (out);
     }
 
   // This move may have ended the game.
@@ -284,7 +285,7 @@ Session::find_a_move () {
   
   // Add a random time bonus to ensure a variety of games are played
   // during testing.
-  timeout += (random () % 2) * TIME_OUT;
+  //  timeout += (random () % 2) * TIME_OUT;
 
   return se.choose_move (board, 99);
 }
