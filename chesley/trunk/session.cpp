@@ -26,7 +26,7 @@
 using namespace std;
 
 // For now we use a hardcoded timeout in milliseconds.
-const int TIME_OUT = .5 * 1000; 
+const int TIME_OUT = 2.5 * 1000; 
 
 ///////////////////////////////
 // Static session variables. //
@@ -72,6 +72,7 @@ Session::init_session () {
 
   // Set initial search state.
   se = Search_Engine ();
+  se.post = true;
 
   // Setup I/O.
   in = stdin;
@@ -198,8 +199,6 @@ Session::work ()
       se.rt_push (board);
 
       // Send the move to the client.
-      fflush (stdout);
-      fflush (stderr);
       fprintf (out, "move %s\n", board.to_calg (m).c_str ());
     }
 

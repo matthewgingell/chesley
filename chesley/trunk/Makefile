@@ -7,11 +7,11 @@
 
 SHELL = /bin/sh
 
-CXX = g++-mp-4.4
-OPT = -O3 -march=native
+CXX = i686-pc-linux-gnu-g++
+OPT = -O3
 INC = -Ideps
 LIBS =
-CXXFLAGS = -g -Wall -m64 $(OPT) $(ALG) $(INC) $(LIBS)
+CXXFLAGS = -g -static -m64 -Wall $(OPT) $(ALG) $(INC) $(LIBS)
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 

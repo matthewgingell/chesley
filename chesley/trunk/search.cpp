@@ -50,7 +50,7 @@ Search_Engine :: new_search
     ((uint64 *) hh_table)[i] /= 2;
   
   // Age the transposition table.
-  cerr << "ageing..." << endl;
+  cout << "ageing..." << endl;
   Trans_Table :: iterator i;
   for (i = tt.begin (); i != tt.end(); i++)
     {
@@ -59,7 +59,7 @@ Search_Engine :: new_search
       else 
 	i -> second.age++;
     }
-  cerr << "done..." << endl;
+  cout << "done..." << endl;
   
   // Clear statistics.
   calls_to_search = 0;
@@ -68,7 +68,8 @@ Search_Engine :: new_search
   tt_hits = 0;
   tt_misses = 0;
 
-  return iterative_deepening (b, depth, pv);
+  Score score = iterative_deepening (b, depth, pv);
+  return score;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -120,7 +121,6 @@ Search_Engine::iterative_deepening
 
   // Write out statistics about this search.
   if (post) post_after ();
-  cerr.flush();
 
   // If we got back no principal variation, return a depth 1 search.
   if (pv.count == 0) {
@@ -757,7 +757,7 @@ Search_Engine::is_triple_rep (const Board &b) {
 // Write thinking output before iterative deeping starts.
 void 
 Search_Engine::post_before (const Board &b) {
-  cerr << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
+  cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
        << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation" 
        << endl;
 }
@@ -769,35 +769,35 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
   Board c = b;
 
   // Write out ply, node count, qnode count, time, score, and pv;
-  cerr << setw (3)  << depth;
-  cerr << setw (10) << calls_to_search;
-  cerr << setw (10) << calls_to_qsearch;
-  cerr << setw (8)  << setiosflags (ios::fixed) << setprecision (2) << elapsed;
-  cerr << setw (8)  << pv[0].score  << "   ";
+  cout << setw (3)  << depth;
+  cout << setw (10) << calls_to_search;
+  cout << setw (10) << calls_to_qsearch;
+  cout << setw (8)  << setiosflags (ios::fixed) << setprecision (2) << elapsed;
+  cout << setw (8)  << pv[0].score  << "   ";
   
   for (int i = 0; i < pv.count; i++)
     {
-      cerr << c.to_san (pv[i]) << " ";
+      cout << c.to_san (pv[i]) << " ";
       c.apply (pv[i]);
     }
-  cerr << endl;
+  cout << endl;
 }
 
 // Write thinking output after iterative deeping ends.
 void 
 Search_Engine::post_after () {
   // Display statistics on the quality of our move ordering.
-  cerr << endl;
+  cout << endl;
   double sum = 0;
   for (int i = 0; i < hist_nbuckets; i++)
     sum += hist_pv[i];
-  cerr << "pv hist: ";
+  cout << "pv hist: ";
   for (int i = 0; i < hist_nbuckets; i++)
-    cerr << (hist_pv[i] / sum) * 100 << "% ";
-  cerr << endl;
+    cout << (hist_pv[i] / sum) * 100 << "% ";
+  cout << endl;
 
   // Display statistics on transposition table hit rate.
   double hit_rate = (double) tt_hits / (tt_hits + tt_misses);
-  cerr << "tt hit rate: " << hit_rate * 100 << "%" << endl;
+  cout << "tt hit rate: " << hit_rate * 100 << "%" << endl;
 }
  
