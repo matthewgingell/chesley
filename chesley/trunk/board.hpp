@@ -48,8 +48,8 @@ struct Move {
 
   // Constructors.
 
-  // It's important we have a null constructor here, as we build large
-  // arrays of moves we never access. 
+  // It's important we have a null constructor here, as we create
+  // large arrays of moves which we never access.
   Move () {}
 
   // Construct a move;
@@ -180,6 +180,9 @@ struct Board {
 
   static const std::string INITIAL_POSITIONS;
 
+  static const bitboard light_squares = 0x55AA55AA55AA55AAllu;
+  static const bitboard dark_squares = 0xAA55AA55AA55AA55llu;
+
   //////////////////////////////////////
   // Precomputed tables and constants //
   //////////////////////////////////////
@@ -261,10 +264,10 @@ struct Board {
   // Constructors and initialization. //
   //////////////////////////////////////
 
+  Board () {}
+
   // Must be called to initialize static members in correct order.
   static const void precompute_tables ();
-
-  Board () {}
 
   // Common initialization.
   static void common_init (Board &);
