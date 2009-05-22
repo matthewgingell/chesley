@@ -7,11 +7,11 @@
 
 SHELL = /bin/sh
 
-CXX = i686-pc-linux-gnu-g++
+CXX = g++-mp-4.4
 OPT = -O3
 INC = -Ideps
 LIBS =
-CXXFLAGS = -g -static -m64 -Wall $(OPT) $(ALG) $(INC) $(LIBS)
+CXXFLAGS = -g -m64 -Wall $(OPT) $(ALG) $(INC) $(LIBS)
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 
@@ -27,8 +27,8 @@ SRCS = $(wildcard *.cpp)
 #########################################################################
 
 ALG = -DENABLE_ALPHA_BETA -DENABLE_ORDER_MOVES -DENABLE_TRANS_TABLE	\
--DENABLE_NULL_MOVE -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_KILLER	\
--DENABLE_ASPIRATION_WINDOW # -DENABLE_SEE -DENABLE_LMR
+-DENABLE_NULL_MOVE -DENABLE_QSEARCH -DENABLE_KILLER -DENABLE_PVS	\
+-DENABLE_ASPIRATION_WINDOW # -DENABLE_LMR # -DENABLE_SEE
 
 ################
 # Main binary. #

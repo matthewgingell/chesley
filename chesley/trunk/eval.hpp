@@ -35,6 +35,12 @@ static const Score INF        = 1000 * 1000;
 
 static const Score BISHOP_PAIR_BONUS = 50;
 
+/////////////////
+// Game phase. //
+/////////////////
+
+enum Phase { OPENING, MIDGAME, ENDGAME };
+
 inline Score eval_piece (Kind k) IS_CONST;
 inline Score eval_piece (Kind k) {
   switch (k)
@@ -91,6 +97,14 @@ struct Eval {
 
   Score score () {
     int score = 0;
+    Phase phase = OPENING;
+
+    // Determine game phase.
+    if (major_counts [WHITE] + minor_counts [WHITE] <= 3 &&
+	major_counts [BLACK] + minor_counts [BLACK] <= 3)
+      {
+	phase = ENDGAME;
+      }
 
     // If there are no pawns and no majors on the board.
     if ((piece_counts[WHITE][PAWN] == 0 && piece_counts[BLACK][PAWN] == 0)
@@ -121,13 +135,20 @@ struct Eval {
     // Reward rooks and queens on open files.
     score += eval_files (WHITE) - eval_files (BLACK);
 
+    // Evaluate bishops.
+    score += eval_bishops (WHITE) - eval_bishops (BLACK);
 
-    /* So far this doesn't appear to make much difference */
+    // Evaluate pawn structure. At the moment this degrades our
+    // performance significantly.
 #if 0
-    // Evaluate pawn structure.
-    score += eval_pawns (WHITE) - eval_pawns (BLACK);
+    if (phase != ENDGAME) 
+      {
+	score += eval_pawns (WHITE) - eval_pawns (BLACK);
+      }
 #endif
 
+    // Evaluate board control. At the momment this seems to make no
+    // difference.
 #if 0
     score += eval_control ();
 #endif
@@ -190,6 +211,30 @@ struct Eval {
     return score;
   }
 
+  // Reward bishops not blocked by their own pawns.
+  Score eval_bishops (const Color c) {
+    Score score = 0;
+    bitboard all = b.color_to_board (c);
+    bitboard pieces = all & b.bishops;
+    while (pieces) 
+      {
+	// Provide a bonus when a bishop is not obstructed by pawns of
+	// its own color.
+	int idx = bit_idx (pieces);
+	if (test_bit (Board::dark_squares, idx))
+	  {
+	    score += 8 - pop_count (all & b.pawns & Board::dark_squares);
+	  }
+	else
+	  {
+	    score += 8 - pop_count (all & b.pawns & Board::light_squares);
+	  }
+	pieces = clear_lsb (pieces);
+      }
+
+    return score * 3;
+  }
+
   Score eval_pawns (const Color c) {
     Score score = 0;
     bitboard pawns = b.color_to_board (c) & b.pawns;
@@ -213,7 +258,6 @@ struct Eval {
 	    score -= 25;
 	  }
 
-#if 0
 	// Penalize isolated pawns.
 	if ((file == 0 && pawn_counts[c][1] == 0) ||
 	    (file == 7 && pawn_counts[c][6] == 0) ||
@@ -221,9 +265,8 @@ struct Eval {
 	     pawn_counts[c][file + 1] == 0))
 	  {
 	    // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
-	    score -= 0;
+	    score -= 10;
 	  }
-#endif
 
 	pawns = clear_lsb (pawns);
       }
@@ -233,6 +276,8 @@ struct Eval {
     return score;
   }
 
+  // Compute the set of squares controlled by each side and adjust by
+  // centrality.
   Score
   eval_control () {
     int control[64];
@@ -260,10 +305,11 @@ struct Eval {
       score += control [i];
     
     b.flags.to_move = c;
-    
-    //    std::cerr << score << std::endl;
 
-    return score;
+    // 18-34-48
+    // return score * 1: 
+
+    return score / 2;
   }
   
   Board b;
@@ -273,7 +319,6 @@ struct Eval {
   int pawn_counts[2][8];
 
   static int8 centrality_table[64];
-
 };
 
 #endif // _EVAL_
