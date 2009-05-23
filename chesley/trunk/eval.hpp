@@ -232,8 +232,10 @@ struct Eval {
   Score eval_pawns (const Color c) {
     Score score = 0;
     bitboard pawns = b.color_to_board (c) & b.pawns;
-    
-    // Reward pawns defended by pawns. 
+
+
+    // This appears to have no effect.
+#if 0
     bitboard attacks = 0;
     if (c == WHITE)
       {
@@ -250,7 +252,8 @@ struct Eval {
 	attacks |= ((pawns & ~b.file_mask (0)) >> 9) & b.white;
       }
     
-    score += 10 * pop_count (attacks & pawns);
+    score += 20 * pop_count (attacks & pawns);
+#endif
 
     while (pawns) 
       {
