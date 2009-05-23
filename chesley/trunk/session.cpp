@@ -90,9 +90,9 @@ Session::init_session () {
   // Setup periodic alarm.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
-  timer.it_value.tv_usec = 50000;
+  timer.it_value.tv_usec = 50 * 1000;
   timer.it_interval.tv_sec = 0;
-  timer.it_interval.tv_usec = 50000;
+  timer.it_interval.tv_usec = 50 * 1000;
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
 
