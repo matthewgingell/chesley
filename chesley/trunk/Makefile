@@ -7,7 +7,7 @@
 
 SHELL = /bin/sh
 
-CXX = ~/CodeSourcery/sourceryg++-4.3/bin/i686-pc-linux-gnu-g++
+CXX = /opt/local/bin/g++-mp-4.4
 OPT = -O3
 INC = -Ideps
 LIBS =
@@ -52,7 +52,7 @@ vsn.o: *.cpp *.hpp
 # Running games under xboard  #
 ###############################
 
-XBOARD_OPTS = -debug -coords -size Small -xponder -thinking
+XBOARD_OPTS = -debug -coords -size Medium -xponder -thinking
 
 # Launch an xboard session with Chesley.
 play: chesley
