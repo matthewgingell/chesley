@@ -322,6 +322,10 @@ Search_Engine :: search
 	      ext += 1;
 
 #ifdef ENABLE_LMR
+	    
+	    // Shows no effect in ~200 games.
+	    
+
 	    ///////////////////////////
             // Late move reductions. //
             ///////////////////////////
