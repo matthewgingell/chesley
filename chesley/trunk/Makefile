@@ -7,7 +7,7 @@
 
 SHELL = /bin/sh
 
-CXX = g++-mp-4.4
+CXX = ~/CodeSourcery/sourceryg++-4.3/bin/i686-pc-linux-gnu-g++
 OPT = -O3
 INC = -Ideps
 LIBS =

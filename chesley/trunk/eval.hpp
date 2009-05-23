@@ -126,7 +126,7 @@ struct Eval {
       {
 	score += BISHOP_PAIR_BONUS;
       }
-
+    
     if (piece_counts[BLACK][BISHOP] >= 2) 
       {
 	score -= BISHOP_PAIR_BONUS;
@@ -135,7 +135,7 @@ struct Eval {
     // Reward rooks and queens on open files.
     score += eval_files (WHITE) - eval_files (BLACK);
 
-    // Evaluate bishops.
+    // Evaluate bishops. This is a very significant win.
     score += eval_bishops (WHITE) - eval_bishops (BLACK);
 
     // Evaluate pawn structure. At the moment this degrades our
@@ -216,6 +216,7 @@ struct Eval {
     Score score = 0;
     bitboard all = b.color_to_board (c);
     bitboard pieces = all & b.bishops;
+    bitboard pawns = all & b.pawns;
     while (pieces) 
       {
 	// Provide a bonus when a bishop is not obstructed by pawns of
@@ -223,16 +224,16 @@ struct Eval {
 	int idx = bit_idx (pieces);
 	if (test_bit (Board::dark_squares, idx))
 	  {
-	    score += 8 - pop_count (all & b.pawns & Board::dark_squares);
+	    score -= pop_count (pawns & Board::dark_squares);
 	  }
 	else
 	  {
-	    score += 8 - pop_count (all & b.pawns & Board::light_squares);
+	    score -= pop_count (pawns & Board::light_squares);
 	  }
 	pieces = clear_lsb (pieces);
       }
 
-    return score * 3;
+    return score * 5;
   }
 
   Score eval_pawns (const Color c) {
@@ -255,7 +256,7 @@ struct Eval {
 	if (pawn_counts[c][file] > 1) 
 	  {
 	    // std::cerr << "penalizing doubled pawn on file " << file << std::endl;
-	    score -= 25;
+	    score -= 20;
 	  }
 
 	// Penalize isolated pawns.
@@ -265,7 +266,7 @@ struct Eval {
 	     pawn_counts[c][file + 1] == 0))
 	  {
 	    // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
-	    score -= 10;
+	    score -= 5;
 	  }
 
 	pawns = clear_lsb (pawns);
