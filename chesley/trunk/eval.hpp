@@ -233,6 +233,25 @@ struct Eval {
     Score score = 0;
     bitboard pawns = b.color_to_board (c) & b.pawns;
     
+    // Reward pawns defended by pawns. 
+    bitboard attacks = 0;
+    if (c == WHITE)
+      {
+	// Capture forward right.
+	attacks |= ((pawns & ~b.file_mask (0)) << 7) & b.black;
+	// Capture forward left.
+	attacks |= ((pawns & ~b.file_mask (7)) << 9) & b.black;
+      }
+    else
+      {
+	// Capture forward left.
+	attacks |= ((pawns & ~b.file_mask (7)) >> 7) & b.white;
+	// Capture forward right.
+	attacks |= ((pawns & ~b.file_mask (0)) >> 9) & b.white;
+      }
+    
+    score += 10 * pop_count (attacks & pawns);
+
     while (pawns) 
       {
 	int idx = bit_idx (pawns);
