@@ -140,8 +140,8 @@ struct Eval {
     // Evaluate pawn structure. This is a very significant win.
     score += eval_pawns (WHITE) - eval_pawns (BLACK);
 
-    // Evaluate board control. At the momment this seems to make no
-    // difference.
+    // Evaluate board control. At the moment this seems to degrade
+    // performance.
 #if 0
     score += eval_control ();
 #endif
@@ -298,7 +298,7 @@ struct Eval {
     
     b.flags.to_move = c;
 
-    return score / 2;
+    return score / 5;
   }
   
   Board b;
