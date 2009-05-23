@@ -137,14 +137,8 @@ struct Eval {
     // Evaluate bishops. This is a very significant win.
     score += eval_bishops (WHITE) - eval_bishops (BLACK);
 
-    // Evaluate pawn structure. At the moment this degrades our
-    // performance significantly.
-#if 0
-    if (phase != ENDGAME) 
-      {
-	score += eval_pawns (WHITE) - eval_pawns (BLACK);
-      }
-#endif
+    // Evaluate pawn structure. This is a very significant win.
+    score += eval_pawns (WHITE) - eval_pawns (BLACK);
 
     // Evaluate board control. At the momment this seems to make no
     // difference.
@@ -303,9 +297,6 @@ struct Eval {
       score += control [i];
     
     b.flags.to_move = c;
-
-    // 18-34-48
-    // return score * 1: 
 
     return score / 2;
   }
