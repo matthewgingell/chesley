@@ -50,7 +50,6 @@ inline Score eval_piece (Kind k) {
     case KNIGHT: return KNIGHT_VAL;
     case BISHOP: return BISHOP_VAL;
     case QUEEN:  return QUEEN_VAL;
-
     default:     return 0;
     }
 }
@@ -282,13 +281,11 @@ struct Eval {
   Score
   eval_control () {
     int control[64];
-    Move_Vector white_moves;
-    Move_Vector black_moves;
+    memset (control, 0, sizeof (control));
+    Move_Vector white_moves, black_moves;
     Score score = 0;
     Color c = b.to_move ();
     
-    memset (control, 0, sizeof (control));
-
     b.flags.to_move = WHITE;
     b.gen_moves (white_moves);
     for (int i = 0; i < white_moves.count; i++)
@@ -319,7 +316,7 @@ struct Eval {
   int minor_counts[2];
   int pawn_counts[2][8];
 
-  static int8 centrality_table[64];
+  static int8 const centrality_table[64];
 };
 
 #endif // _EVAL_

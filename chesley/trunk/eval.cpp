@@ -23,7 +23,7 @@ using namespace std;
 // 								     //
 ///////////////////////////////////////////////////////////////////////
 
-int8 Eval::centrality_table[64] =
+int8 const Eval::centrality_table[64] =
   {
      1,   1,   1,   1,   1,   1,   1,   1,
      1,   1,   1,   1,   1,   1,   1,   1,
@@ -45,7 +45,7 @@ int8 Eval::centrality_table[64] =
 //                                                                        //
 ////////////////////////////////////////////////////////////////////////////
 
-static int8 piece_square_table[6][64] =
+static const int8 piece_square_table[6][64] = 
 {
   // Pawns
   {
