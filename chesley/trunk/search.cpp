@@ -50,17 +50,13 @@ Search_Engine :: new_search
     ((uint64 *) hh_table)[i] /= 2;
   
   // Age the transposition table.
-  cout << "ageing..." << endl;
   Trans_Table :: iterator i;
   for (i = tt.begin (); i != tt.end(); i++)
     {
-      if (i -> second.age >= 5)
-	tt.erase (i);
-      else 
-	i -> second.age++;
+      if (i -> second.age >= 5) tt.erase (i);
+      else i -> second.age++;
     }
-  cout << "done..." << endl;
-  
+   
   // Clear statistics.
   calls_to_search = 0;
   calls_to_qsearch = 0;
@@ -205,7 +201,7 @@ Search_Engine :: search_with_memory
   if (pv.count > 0)
     tt_update (b, depth, pv[0], alpha, beta);
   
-  return s;  
+  return s;
 }
 
 Score
