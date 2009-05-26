@@ -29,7 +29,10 @@
 puts "Running best move tests"
 puts
 
-c = IO.popen("./chesley", "r+")
+#c = IO.popen("./chesley", "r+")
+
+c = IO.popen("ssh ter.gnat.com /homes/gingell/chesley/trunk/chesley", "r+");
+
 for test in File.open("tests/WAC.EPD")
   c.puts("epd #{test}")
 end
