@@ -525,6 +525,22 @@ Board::attack_set (Color c) const {
   return attacks & ~color;
 }
 
+// Get the number of legal moves available from this position.
+int 
+Board::child_count () const 
+{
+  int count = 0;
+  Move_Vector moves (*this);
+
+  for (int i = 0; i < moves.count; i++)
+    {
+      Board c = *this;
+      if (c.apply (moves[i])) count++;
+    }
+  
+  return count;
+}
+
 // Return whether the square at idx is attacked by a piece of color c.
 bool
 Board::is_attacked (int idx, Color c) const
@@ -636,9 +652,12 @@ Board::perft (int d) const {
   uint64 sum = 0;
 
   if (d == 0) return 1;
-  Board_Vector children (*this);
-  for (int i = 0; i < children.count; i++)
-    sum += children[i].perft (d - 1);
+  Move_Vector moves (*this);
+  for (int i = 0; i < moves.count; i++)
+    {
+      Board c = *this;
+      if (c.apply (moves[i])) sum += c.perft (d - 1);
+    }
   return sum;
 }
 

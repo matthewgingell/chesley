@@ -154,7 +154,7 @@ Session::dump_pawns (const string_vector &tokens)
 
 int
 test_hashing_rec (const Board &b, int depth) {
-  Board_Vector children (b);
+  Move_Vector moves (b);
   int pass = 0;
 
   if (b.hash == b.gen_hash ())
@@ -164,9 +164,12 @@ test_hashing_rec (const Board &b, int depth) {
   
   if (depth == 0) return 1;
 
-  for (int i = 0; i < children.count; i++)
-    pass += test_hashing_rec (children [i], depth - 1);
-
+  for (int i = 0; i < moves.count; i++)
+    {
+      Board c = b;
+      if (c.apply (moves[i])) pass += test_hashing_rec (c, depth - 1);
+    }
+	  
   return pass;
 }
 

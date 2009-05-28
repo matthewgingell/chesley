@@ -30,7 +30,6 @@
 struct Move;
 struct Move_Vector;
 struct Board;
-struct Board_Vector;
 
 ////////////////////
 // Bitboard type. //
@@ -122,12 +121,7 @@ struct Move_Vector {
   Move_Vector (const Move_Vector &mvl, const Move_Vector &mvr);
   Move_Vector (const Board &b);
 
-  Move_Vector &operator= (const Move_Vector &mv) {
-    memcpy (move, mv.move, mv.count * sizeof (Move));
-    count = mv.count;
-    return *this;
-  }
-  
+    
   void clear () {
     count = 0;
   }
@@ -676,44 +670,6 @@ struct Board {
 
 // Output human readable board.
 std::ostream & operator<< (std::ostream &os, const Board &b);
-
-///////////////////
-// Board vectors //
-///////////////////
-
-// Vector of boards.
-struct Board_Vector {
-
-  static int const SIZE = 256;
-
-  Board_Vector () : count (0) {}
-
-  Board_Vector (const Board &b);
-
-  void push (const Board &b) {
-    board[count++] = b;
-  }
-
-  Board &operator[] (int i) {
-    return board[i];
-  }
-
-  Board board[SIZE];
-  byte count;
-};
-
-// Count as a function for sorting purposes.
-inline int count (const Board_Vector &bv) {
-  return bv.count;
-}
-
-std::ostream & operator<< (std::ostream &os, Board_Vector bv);
-
-// Get the number of legal moves available from this position.
-inline int
-Board::child_count () const {
-  return (Board_Vector (*this)).count;
-}
 
 ///////////
 // Moves //
