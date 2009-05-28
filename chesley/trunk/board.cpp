@@ -397,23 +397,6 @@ Board::apply (const Move &m) {
     }
 }
 
-////////////////////
-// Board vectors. //
-////////////////////
-
-Board_Vector::Board_Vector (const Board &b)
-{
-  Move_Vector moves (b);
-
-  count = 0;
-  for (int i = 0; i < moves.count; i++)
-    {
-      Board c = b;
-      if (c.apply (moves [i])) push (c);
-    }
-}
-
-
 /////////////
 //   I/O   //
 /////////////
@@ -423,14 +406,6 @@ ostream &
 operator<< (ostream &os, const Board &b)
 {
   return os << b.to_ascii ();
-}
-
-// Print a board vector.
-ostream &
-operator<< (ostream &os, Board_Vector bv) {
-  for (int i = 0; i < bv.count; i++)
-    os << "Position #" << i << bv[i] << endl;
-  return os;
 }
 
 // Print a move.
@@ -466,9 +441,12 @@ Board::print_tree (int depth)
     cerr<< *this << endl;
   else
     {
-      Board_Vector children (*this);
-      for (int i = 0; i < children.count; i++)
-	children[i].print_tree (depth - 1);
+      Move_Vector moves (*this);
+      for (int i = 0; i < moves.count; i++)
+	{
+	  Board c = *this;
+	  if (c.apply (moves[i])) c.print_tree (depth - 1);
+	}
     }
 }
 

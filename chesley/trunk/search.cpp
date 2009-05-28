@@ -19,6 +19,9 @@
 
 using namespace std;
 
+// Constants.
+const int Search_Engine::hist_nbuckets;
+
 // Compute the principal variation and return its first move.
 Move
 Search_Engine :: choose_move (Board &b, int depth) 
@@ -28,8 +31,6 @@ Search_Engine :: choose_move (Board &b, int depth)
   assert (pv.count > 0);
   return pv[0];
 }
-
-const int Search_Engine::hist_nbuckets;
 
 /////////////////////////////////////////////////////////////////////////
 //                                                                     //
@@ -47,7 +48,9 @@ Search_Engine :: new_search
 {
   // Age the history table.
   for (uint32 i = 0; i < sizeof (hh_table) / sizeof (uint64); i++)
-    ((uint64 *) hh_table)[i] /= 2;
+    {
+      ((uint64 *) hh_table)[i] /= 2;
+    }
   
   // Age the transposition table.
   Trans_Table :: iterator i;
@@ -63,7 +66,7 @@ Search_Engine :: new_search
   memset (hist_pv, 0, sizeof (hist_pv));
   tt_hits = 0;
   tt_misses = 0;
-
+  
   Score score = iterative_deepening (b, depth, pv);
   return score;
 }
@@ -320,7 +323,6 @@ Search_Engine :: search
 #ifdef ENABLE_LMR
 	    
 	    // Shows no effect in ~200 games.
-	    
 
 	    ///////////////////////////
             // Late move reductions. //
@@ -551,7 +553,7 @@ Search_Engine::qsearch
 #endif
         }
       insertion_sort <Move_Vector, Move, less_than> (moves);
-      
+ 
       ////////////////////////////
       // Minimax over captures. //
       ////////////////////////////

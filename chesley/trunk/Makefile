@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3
+OPT = -O3 -DNDEBUG
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -m64 -Wall $(OPT) $(ALG) $(INC) $(LIBS)
@@ -73,6 +73,10 @@ playold: chesley
 # Run the test suites.
 check: chesley
 	./run_tests.rb
+
+# Play a number of games against a (crippled version of) Olithink.
+test:  chesley
+	xboard -fcp ./chesley -scp ./olithink -mg 5 -mode TwoMachines $(XBOARD_OPTS)	
 
 #############
 # Clean up. #

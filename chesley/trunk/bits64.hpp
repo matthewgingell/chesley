@@ -57,7 +57,6 @@ clear_msbs (bits64 b) { return b & -b; }
 inline uint32
 bit_idx (bits64 b) {
 #ifdef __GNUC__
-  // Using __builtin_ffsll is a big win here.
   return __builtin_ffsll (b) - 1; 
 #else
   int c;
@@ -71,11 +70,13 @@ bit_idx (bits64 b) {
 // Count the number of bits set in b.
 inline uint32
 pop_count (bits64 b) {
-  // This is a big win over __builtin_popcount, at 
-  // least for our purposes with g++ 4.4.
+#ifdef __GNUC__
+  return __builtin_popcountll (b);
+#else
   uint32 n;
   for (n = 0; b != 0; n++, b = clear_lsb(b));
   return n;
+#endif
 }
 
 // Fetch a byte from a bits64.
