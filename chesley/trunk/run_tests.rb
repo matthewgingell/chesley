@@ -14,30 +14,30 @@
 
 # puts "Running move generation correctness tests."
 
-# c = IO.popen("./chesley", "r+")
-# for test in File.open("tests/perftsuite.epd")
-#   c.puts("epd #{test}")
-# end
+c = IO.popen("./chesley", "r+")
+for test in File.open("tests/perftsuite.epd")
+  c.puts("epd #{test}")
+end
 
 ###################################
 #      Zobrist hashing tests      #
 ###################################
 
-# puts "Running hash correctness tests."
+# # puts "Running hash correctness tests."
 # c.puts("test_hashing")
 
-puts "Running best move tests"
-puts
+# puts "Running best move tests"
+# puts
 
-#c = IO.popen("./chesley", "r+")
+# #c = IO.popen("./chesley", "r+")
 
-c = IO.popen("ssh ter.gnat.com /homes/gingell/chesley/trunk/chesley", "r+");
+# c = IO.popen("ssh ter.gnat.com /homes/gingell/chesley/trunk/chesley", "r+");
 
-for test in File.open("tests/WAC.EPD")
-  c.puts("epd #{test}")
-end
+# for test in File.open("tests/WAC.EPD")
+#   c.puts("epd #{test}")
+# end
 
-# Quit and exit.
+# # Quit and exit.
 
 c.puts("quit")
 for result in c

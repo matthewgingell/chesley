@@ -96,19 +96,6 @@ operator<< (std::ostream &os, Color c) {
 const string Board::
 INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-#if 0
-  //      FILE
-  // 0 1 2 3 4 5 6 7
-    "r n b q k b n r"  // 7
-    "p p p p p p p p"  // 6
-    ". . . . . . . ."  // 5 R
-    ". . . . . . . ."  // 4 A
-    ". . . . . . . ."  // 3 N
-    ". . . . . . . ."  // 2 K
-    "P P P P P P P P"  // 1
-    "R N B Q K B N R"; // 0
-#endif
-
 ///////////////////
 // Constructors. //
 ///////////////////
@@ -264,12 +251,12 @@ Board::apply (const Move &m) {
       else
 	clear_piece (flags.en_passant + 8);
     }
-
- ///////////////////////////////////////////////////////////////////
- // Update En Passant target square. This needs to be done before //
- // checking castling, since otherwise we may return without      //
- // clearing the En Passant target square.                        //
- ///////////////////////////////////////////////////////////////////
+  
+  ///////////////////////////////////////////////////////////////////
+  // Update En Passant target square. This needs to be done before //
+  // checking castling, since otherwise we may return without      //
+  // clearing the En Passant target square.                        //
+  ///////////////////////////////////////////////////////////////////
 
   set_en_passant (0);
   if (kind == PAWN)
@@ -297,10 +284,10 @@ Board::apply (const Move &m) {
 	{
 	  if (is_castle_qs && !(attacked & 0x1C))
 	    {
-	      clear_piece (4);
-	      clear_piece (0);
-	      set_piece (KING, WHITE, 2);
-	      set_piece (ROOK, WHITE, 3);
+	      clear_piece (E1);
+	      clear_piece (A1);
+	      set_piece (KING, WHITE, C1);
+	      set_piece (ROOK, WHITE, D1);
 	      set_castling_right (W_QUEEN_SIDE, false);
 	      set_castling_right (W_KING_SIDE, false);
 	      flags.w_has_k_castled = 1;
@@ -308,10 +295,10 @@ Board::apply (const Move &m) {
 	    }
 	  if (is_castle_ks && !(attacked & 0x70))
 	    {
-	      clear_piece (4);
-	      clear_piece (7);
-	      set_piece (KING, WHITE, 6);
-	      set_piece (ROOK, WHITE, 5);
+	      clear_piece (E1);
+	      clear_piece (H1);
+	      set_piece (KING, WHITE, G1);
+	      set_piece (ROOK, WHITE, F1);
 	      set_castling_right (W_QUEEN_SIDE, false);
 	      set_castling_right (W_KING_SIDE, false);
 	      flags.w_has_k_castled = 1;
@@ -323,10 +310,10 @@ Board::apply (const Move &m) {
 	  byte attacks = get_byte (attacked, 7);
 	  if (is_castle_qs && !(attacks & 0x1C))
 	    {
-	      clear_piece (60);
-	      clear_piece (56);
-	      set_piece (KING, BLACK, 58);
-	      set_piece (ROOK, BLACK, 59);
+	      clear_piece (E8);
+	      clear_piece (A8);
+	      set_piece (KING, BLACK, C8);
+	      set_piece (ROOK, BLACK, D8);
 	      set_castling_right (B_QUEEN_SIDE, false);
 	      set_castling_right (B_KING_SIDE, false);
 	      flags.b_has_q_castled = 1;
@@ -334,10 +321,10 @@ Board::apply (const Move &m) {
 	    }
 	  if (is_castle_ks && !(attacks & 0x70))
 	    {
-	      clear_piece (60);
-	      clear_piece (63);
-	      set_piece (KING, BLACK, 62);
-	      set_piece (ROOK, BLACK, 61);
+	      clear_piece (E8);
+	      clear_piece (H8);
+	      set_piece (KING, BLACK, G8);
+	      set_piece (ROOK, BLACK, F8);
 	      set_castling_right (B_QUEEN_SIDE, false);
 	      set_castling_right (B_KING_SIDE, false);
 	      flags.b_has_k_castled = 1;
@@ -350,43 +337,47 @@ Board::apply (const Move &m) {
   else
     {
 
-      ///////////////////////////////////
-      // Handle the non-castling case. //
-      ///////////////////////////////////
-
+      ///////////////////////////////////////////////
+      // Clear the origin and destination squares. //
+      ///////////////////////////////////////////////
+      
       clear_piece (m.from);
       clear_piece (m.to);
-
-      ////////////////////////
-      // Handle promotions. //
-      ////////////////////////
+      
+      /////////////////////////////////////////////////////
+      // Set the destination square, possibly promoting. //
+      /////////////////////////////////////////////////////
 
       if (m.promote != NULL_KIND)
-	set_piece (m.promote, color, m.to);
+	{
+	  set_piece (m.promote, color, m.to);
+	}
       else
-	set_piece (kind, color, m.to);
+	{
+	  set_piece (kind, color, m.to);
+	}
 
       /////////////////////////////
       // Update castling status. //
       /////////////////////////////
 
       // King moves.
-      if (m.from == 4)
+      if (m.from == E1)
 	{
 	  set_castling_right (W_QUEEN_SIDE, false);
 	  set_castling_right (W_KING_SIDE, false);
 	}
-      else if (m.from == 60)
+      else if (m.from == E8)
 	{
 	  set_castling_right (B_QUEEN_SIDE, false);
 	  set_castling_right (B_KING_SIDE, false);
 	}
 
       // Rook moves and attacks.
-      if (m.from ==  0 || m.to ==  0) { set_castling_right (W_QUEEN_SIDE, false); }
-      if (m.from ==  7 || m.to ==  7) { set_castling_right (W_KING_SIDE, false);  }
-      if (m.from == 56 || m.to == 56) { set_castling_right (B_QUEEN_SIDE, false); }
-      if (m.from == 63 || m.to == 63) { set_castling_right (B_KING_SIDE, false);  }
+      if (m.from == A1 || m.to == A1) { set_castling_right (W_QUEEN_SIDE, false); }
+      if (m.from == H1 || m.to == H1) { set_castling_right (W_KING_SIDE, false);  }
+      if (m.from == A8 || m.to == A8) { set_castling_right (B_QUEEN_SIDE, false); }
+      if (m.from == H8 || m.to == H8) { set_castling_right (B_KING_SIDE, false);  }
 
       ////////////////////
       // Test legality. //

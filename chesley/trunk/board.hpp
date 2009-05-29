@@ -1,12 +1,12 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
-// board.cpp							     	      //
-// 								     	      //
+//                                                                            //
+// board.cpp                                                                  //
+//                                                                            //
 // Representation and operations on a board state in a game of chess.         //
-// 								              //
-// Matthew Gingell						              //
-// gingell@adacore.com					        	      //
-// 								              //
+//                                                                            //
+// Matthew Gingell                                                            //
+// gingell@adacore.com                                                        //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef _BOARD_
@@ -47,8 +47,8 @@ struct Move {
 
   // Constructors.
 
-  // It's important we have a null constructor here, as we create
-  // large arrays of moves which we never access.
+  // It's important we have a null constructor here as we create large
+  // arrays of moves which we never access.
   Move () {}
 
   // Construct a move;
@@ -121,13 +121,17 @@ struct Move_Vector {
   Move_Vector (const Move_Vector &mvl, const Move_Vector &mvr);
   Move_Vector (const Board &b);
 
-    
   void clear () {
     count = 0;
   }
 
   void push (const Move &m) {
     move[count++] = m;
+  }
+
+  void push 
+  (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0) {
+    move[count++] = Move (from, to, promote, score);
   }
 
   Move &operator[] (byte i) {
@@ -237,8 +241,10 @@ struct Board {
   bitboard occupied_135;
 
   // Other status flags.
+
   struct {
-    Color    to_move         :2; // BLACK or WHITE.
+    Color    to_move         :8; // BLACK or WHITE.
+    unsigned en_passant      :8; // En Passant target square.
     unsigned w_has_k_castled :1; // White has castled king side.
     unsigned w_has_q_castled :1; // White has castled queen side.
     unsigned w_can_q_castle  :1; // White king and q-side rook unmoved.
@@ -247,7 +253,6 @@ struct Board {
     unsigned b_has_q_castled :1; // Black has castled queen side.
     unsigned b_can_q_castle  :1; // Black king and q-side rook unmoved.
     unsigned b_can_k_castle  :1; // Black king and k-side rook unmoved.
-    unsigned en_passant      :6; // En Passant target square.
   } flags;
 
   // Clocks
@@ -520,24 +525,25 @@ struct Board {
   clear_piece (int idx) {
     if (occupied & masks_0[idx])
       {
-	Color c = get_color (idx);
-	Kind k = get_kind (idx);
+        Color c = get_color (idx);
+        Kind k = get_kind (idx);
 
-	assert (c != NULL_COLOR);
-	assert (k != NULL_KIND);
+        assert (k != NULL_KIND);
+        assert (c == BLACK || c == WHITE);
+        assert (idx >= 0 && idx < 64);
+        
+        // Clear color and piece kind bits.
+        color_to_board (c) &= ~masks_0[idx];
+        kind_to_board (k) &= ~masks_0[idx];
 
-	// Clear color and piece kind bits.
-	color_to_board (c) &= ~masks_0[idx];
-	kind_to_board (k)  &= ~masks_0[idx];
+        // Update hash key.
+        hash ^= get_zobrist_piece_key (c, k, idx);
 
-	// Update hash key.
-	hash ^= get_zobrist_piece_key (c, k, idx);
-
-	// Clear the occupancy sets.
-	occupied     &= ~masks_0[idx];
-	occupied_45  &= ~masks_45[idx];
-	occupied_90  &= ~masks_90[idx];
-	occupied_135 &= ~masks_135[idx];
+        // Clear the occupancy sets.
+        occupied     &= ~masks_0[idx];
+        occupied_45  &= ~masks_45[idx];
+        occupied_90  &= ~masks_90[idx];
+        occupied_135 &= ~masks_135[idx];
       }
   }
 
@@ -729,10 +735,11 @@ inline bool
 Move::is_castle_qs (const Board &b) const {
   if (b.get_kind (from) == KING)
     {
-      if (b.to_move () == WHITE && from == 4 && to == 2) 
-	return true;
-      if (b.to_move () == BLACK && from == 60 && to == 58) 
-	return true;
+      if ((b.to_move () == WHITE && from == E1 && to == C1) || 
+          (b.to_move () == BLACK && from == E8 && to == C8)) 
+        {
+          return true;
+        }
     }
 
   return false;
@@ -743,10 +750,11 @@ inline bool
 Move::is_castle_ks (const Board &b) const {
   if (b.get_kind (from) == KING)
     {
-      if (b.to_move () == WHITE && from == 4 && to == 6) 
-	return true;
-      if (b.to_move () == BLACK && from == 60 && to == 62) 
-	return true;
+      if ((b.to_move () == WHITE && from == E1 && to == G1) ||
+          (b.to_move () == BLACK && from == E8 && to == G8))
+        {
+          return true;
+        }
     }
 
   return false;

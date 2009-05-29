@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3 -DNDEBUG
+OPT = -O3
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -m64 -Wall $(OPT) $(ALG) $(INC) $(LIBS)

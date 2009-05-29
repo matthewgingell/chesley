@@ -34,23 +34,33 @@ static void   print_bits (bits64)      IS_UNUSED;
 
 // Test a bit.
 inline bool 
-test_bit (bits64 b, int idx) { return b & 1llu << idx; }
+test_bit (bits64 b, int idx) { 
+  return b & 1llu << idx; 
+}
 
 // Set a bit.
 inline bits64 
-set_bit (bits64 b, int idx) { return b | 1llu << idx; }
+set_bit (bits64 b, int idx) { 
+  return b | 1llu << idx; 
+}
 
 // Clear a bit.
 inline bits64 
-clear_bit (bits64 b, int idx) { return b & ~(1llu << idx); }
+clear_bit (bits64 b, int idx) { 
+  return b & ~(1llu << idx); 
+}
 
 // Clear the least significant bit of b.
 inline bits64 
-clear_lsb (bits64 b) { return b & (b - 1); }
+clear_lsb (bits64 b) { 
+  return b & (b - 1); 
+}
 
 // Clear all but the least significant bit of b.
 inline bits64 
-clear_msbs (bits64 b) { return b & -b; }
+clear_msbs (bits64 b) { 
+  return b & -b; 
+}
 
 // Return the bit index of the least significant bit. Returns -1 in
 // the case b is 0x0.
