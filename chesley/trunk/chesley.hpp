@@ -1,9 +1,9 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
-// chesley.hpp							     	      //
-// 								     	      //
-// Chesley the Chess Engine!                                       	      //
-// 								     	      //
+//                                                                            //
+// chesley.hpp                                                                //
+//                                                                            //
+// Chesley the Chess Engine!                                                  //
+//                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
@@ -35,7 +35,7 @@ inline
 char *get_prologue () {
   static char buf[2048];
   sprintf (buf, "%s (svn r%s)\n\n%s\n%s", 
-	   ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
+           ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }
 

@@ -1,13 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
-// types.hpp							     	      //
-// 								     	      //
-// Various simple types.          					      //
-// 								     	      //
+//                                                                            //
+// types.hpp                                                                  //
+//                                                                            //
+// Various simple types.                                                      //
+//                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
-// 								     	      //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __TYPES__

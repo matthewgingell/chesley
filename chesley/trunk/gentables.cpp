@@ -303,7 +303,7 @@ init_masks_45 () {
   // Lower diagonal.
   for (int i = 0; i <= 56; i += 8)
       for (int j = i; j >= (i / 8); j -= 7)
-	masks[j] = 1llu << idx_00++;
+        masks[j] = 1llu << idx_00++;
 
   // Upper diagonal.
   for (int i = 57; i < 64; i++)
@@ -530,31 +530,31 @@ init_rank_attacks_tbl () {
 
       // For each possible rank state vector
       for (uint32 occ = 0; occ < 256; occ++)
-	{
-	  destinations = 0llu;
+        {
+          destinations = 0llu;
 
-	  // Compute moves to the left of from.
-	  int k = 0;
-	  do
-	    {
-	      k--;
-	      if (from + k < first_bit) break;
-	      destinations = set_bit (destinations, from + k);
-	    }
-	  while (!test_bit (occ, from % 8 + k));
+          // Compute moves to the left of from.
+          int k = 0;
+          do
+            {
+              k--;
+              if (from + k < first_bit) break;
+              destinations = set_bit (destinations, from + k);
+            }
+          while (!test_bit (occ, from % 8 + k));
 
-	  // Compute moves to the right of from.
-	  k = 0;
-	  do
-	    {
-	      k++;
-	      if (from + k > last_bit) break;
-	      destinations = set_bit (destinations, from + k);
-	    }
-	  while (!test_bit (occ, from % 8 + k));
+          // Compute moves to the right of from.
+          k = 0;
+          do
+            {
+              k++;
+              if (from + k > last_bit) break;
+              destinations = set_bit (destinations, from + k);
+            }
+          while (!test_bit (occ, from % 8 + k));
 
-	  rv[from * 256 + occ] = destinations;
-	}
+          rv[from * 256 + occ] = destinations;
+        }
     }
 
   return rv;
@@ -573,39 +573,39 @@ init_file_attacks_tbl () {
 
       // For each possible file state vector
       for (uint32 file_pat = 0; file_pat < 256; file_pat++)
-	{
-	  int bitnum;
-	  int bit_offset;
+        {
+          int bitnum;
+          int bit_offset;
 
-	  destinations = 0llu;
+          destinations = 0llu;
 
-	  // Compute moves up the board.
-	  bitnum = from_bit;
-	  do
-	    {
-	      bitnum--;
-	      if (bitnum < 0) break;
-	      bit_offset = from_bit - bitnum;
-	      destinations =
-		set_bit (destinations, from + 8 * bit_offset);
-	    }
-	  while (!test_bit (file_pat, bitnum));
+          // Compute moves up the board.
+          bitnum = from_bit;
+          do
+            {
+              bitnum--;
+              if (bitnum < 0) break;
+              bit_offset = from_bit - bitnum;
+              destinations =
+                set_bit (destinations, from + 8 * bit_offset);
+            }
+          while (!test_bit (file_pat, bitnum));
 
-	  // Compute moves down the board.
-	  bitnum = from_bit;
-	  do
-	    {
-	      bitnum++;
-	      if (bitnum > 7) break;
-	      bit_offset = from_bit - bitnum;
-	      destinations =
-		set_bit (destinations, from + 8 * bit_offset);
-	    }
-	  while (!test_bit (file_pat, bitnum));
+          // Compute moves down the board.
+          bitnum = from_bit;
+          do
+            {
+              bitnum++;
+              if (bitnum > 7) break;
+              bit_offset = from_bit - bitnum;
+              destinations =
+                set_bit (destinations, from + 8 * bit_offset);
+            }
+          while (!test_bit (file_pat, bitnum));
 
-	  // Collect moves in destinations bitboard.
-	  rv[from * 256 + file_pat] = destinations;
-	}
+          // Collect moves in destinations bitboard.
+          rv[from * 256 + file_pat] = destinations;
+        }
     }
 
   return rv;
@@ -628,15 +628,15 @@ init_knight_attacks_tbl()
 
       rv[off] = 0;
       for (int v = 0; v < 8; v++)
-	{
-	  int nx = x + moves[v][0];
-	  int ny = y + moves[v][1];
+        {
+          int nx = x + moves[v][0];
+          int ny = y + moves[v][1];
 
-	  if (Board::in_bounds (nx, ny))
-	    {
-	      rv[off] = set_bit (rv[off], nx + ny * 8);
-	    }
-	}
+          if (Board::in_bounds (nx, ny))
+            {
+              rv[off] = set_bit (rv[off], nx + ny * 8);
+            }
+        }
     }
   return rv;
 }
@@ -658,15 +658,15 @@ init_king_attacks_tbl()
 
       rv[off] = 0;
       for (int v = 0; v < 8; v++)
-	{
-	  int nx = x + moves[v][0];
-	  int ny = y + moves[v][1];
+        {
+          int nx = x + moves[v][0];
+          int ny = y + moves[v][1];
 
-	  if (Board::in_bounds (nx, ny))
-	    {
-	      rv[off] = set_bit (rv[off], nx + ny * 8);
-	    }
-	}
+          if (Board::in_bounds (nx, ny))
+            {
+              rv[off] = set_bit (rv[off], nx + ny * 8);
+            }
+        }
     }
   return rv;
 }
@@ -686,33 +686,33 @@ init_45d_attacks_tbl () {
 
       // For each pattern
       for (int pat = 0; pat < 256; pat++)
-	{
-	  destinations = 0llu;
+        {
+          destinations = 0llu;
 
-	  // Down and to the right.
-	  b = from_bit;
-	  do
-	    {
-	      b++;
-	      if (b >= pat_len) break;
-	      destinations =
-		set_bit (destinations, from + (from_bit - b) * 7);
-	    }
-	  while (!test_bit(pat, b));
+          // Down and to the right.
+          b = from_bit;
+          do
+            {
+              b++;
+              if (b >= pat_len) break;
+              destinations =
+                set_bit (destinations, from + (from_bit - b) * 7);
+            }
+          while (!test_bit(pat, b));
 
-	  // Up and to the left.
-	  b = from_bit;
-	  do
-	    {
-	      b--;
-	      if (b < 0) break;
-	      destinations =
-		set_bit (destinations, from + (from_bit - b) * 7);
-	    }
-	  while (!test_bit(pat, b));
+          // Up and to the left.
+          b = from_bit;
+          do
+            {
+              b--;
+              if (b < 0) break;
+              destinations =
+                set_bit (destinations, from + (from_bit - b) * 7);
+            }
+          while (!test_bit(pat, b));
 
-	  rv[from * 256 + pat] = destinations;
-	}
+          rv[from * 256 + pat] = destinations;
+        }
     }
 
   return rv;
@@ -733,33 +733,33 @@ init_135d_attacks_tbl () {
 
       // For each pattern
       for (int pat = 0; pat < 256; pat++)
-	{
-	  destinations = 0llu;
+        {
+          destinations = 0llu;
 
-	  // Down and to the left.
-	  b = from_bit;
-	  do
-	    {
-	      b++;
-	      if (b >= pat_len) break;
-	      destinations =
-		set_bit (destinations, from + (from_bit - b) * 9);
-	    }
-	  while (!test_bit(pat, b));
+          // Down and to the left.
+          b = from_bit;
+          do
+            {
+              b++;
+              if (b >= pat_len) break;
+              destinations =
+                set_bit (destinations, from + (from_bit - b) * 9);
+            }
+          while (!test_bit(pat, b));
 
-	  // Up and to the left.
-	  b = from_bit;
-	  do
-	    {
-	      b--;
-	      if (b < 0) break;
-	      destinations =
-		set_bit (destinations, from + (from_bit - b) * 9);
-	    }
-	  while (!test_bit(pat, b));
+          // Up and to the left.
+          b = from_bit;
+          do
+            {
+              b--;
+              if (b < 0) break;
+              destinations =
+                set_bit (destinations, from + (from_bit - b) * 9);
+            }
+          while (!test_bit(pat, b));
 
-	  rv[from * 256 + pat] = destinations;
-	}
+          rv[from * 256 + pat] = destinations;
+        }
     }
 
   return rv;

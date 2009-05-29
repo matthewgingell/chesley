@@ -16,12 +16,12 @@ using namespace std;
 
 
 ///////////////////////////////////////////////////////////////////////
-// 								     //
-// centrality_table:						     //
-// 								     //
+//                                                                   //
+// centrality_table:                                                 //
+//                                                                   //
 // This is a table reflecting the relative value of locations on the //
-// chess board based on their proximity to the center.		     //
-// 								     //
+// chess board based on their proximity to the center.               //
+//                                                                   //
 ///////////////////////////////////////////////////////////////////////
 
 int8 const Eval::centrality_table[64] =
@@ -129,16 +129,16 @@ sum_piece_squares (const Board &b) {
     {
       bitboard all_color_pieces = b.color_to_board (c);
       for (Kind k = PAWN; k <= KING; k++)
-	{
-	  bitboard pieces = all_color_pieces & b.kind_to_board (k);
-	  while (pieces)
-	    {
-	      int idx = bit_idx (pieces);
-	      int xfrm = (c == WHITE) ? 63 - idx : idx;
-	      bonus += sign (c) * piece_square_table[k][xfrm];
-	      pieces = clear_lsb (pieces);
-	    }
-	}
+        {
+          bitboard pieces = all_color_pieces & b.kind_to_board (k);
+          while (pieces)
+            {
+              int idx = bit_idx (pieces);
+              int xfrm = (c == WHITE) ? 63 - idx : idx;
+              bonus += sign (c) * piece_square_table[k][xfrm];
+              pieces = clear_lsb (pieces);
+            }
+        }
     }
   return bonus;
 }

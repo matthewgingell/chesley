@@ -2,14 +2,14 @@
 //                                                                            //
 // genmoves.cpp                                                               //
 //                                                                            //
-// Code to generate a vector of moves, given a state of play.		      //
+// Code to generate a vector of moves, given a state of play.                 //
 //                                                                            //
-// There is a good discusion of generating moves from bitmaps in:	      //
-// _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at	      //
-// http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.		      //
+// There is a good discusion of generating moves from bitmaps in:             //
+// _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at           //
+// http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.                    //
 //                                                                            //
-// The code here is very sensitive and changes should be checked	      //
-// against the perft suite to ensure they do not cause regressions.	      //
+// The code here is very sensitive and changes should be checked              //
+// against the perft suite to ensure they do not cause regressions.           //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
@@ -64,76 +64,76 @@ Board::gen_moves (Move_Vector &moves) const
       bitboard to;
 
       if (c == WHITE)
-	{
-	  // Empty square on step forwards.
-	  to = (from << 8) & unoccupied ();
+        {
+          // Empty square on step forwards.
+          to = (from << 8) & unoccupied ();
 
-	  // Pawns coming from rank 1 with empty square one and two steps
-	  // forwards.
-	  to |= ((to & rank_mask (2)) << 8) & unoccupied ();
+          // Pawns coming from rank 1 with empty square one and two steps
+          // forwards.
+          to |= ((to & rank_mask (2)) << 8) & unoccupied ();
 
-	  // Capture forward right.
-	  to |= ((from & ~file_mask (A)) << 7) & black;
+          // Capture forward right.
+          to |= ((from & ~file_mask (A)) << 7) & black;
 
-	  // Capture forward left.
-	  to |= ((from & ~file_mask (H)) << 9) & black;
+          // Capture forward left.
+          to |= ((from & ~file_mask (H)) << 9) & black;
 
-	  // Pawns which can reach the En Passant square.
-	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
-	    {
-	      to |= masks_0[flags.en_passant];
-	    }
-	}
+          // Pawns which can reach the En Passant square.
+          if (flags.en_passant != 0 &&
+              ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
+               (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
+            {
+              to |= masks_0[flags.en_passant];
+            }
+        }
       else
-	{
-	  // Empty square on step forwards.
-	  to = (from >> 8) & unoccupied ();
+        {
+          // Empty square on step forwards.
+          to = (from >> 8) & unoccupied ();
 
-	  // Pawns coming from rank 6 with empty square one and two steps
-	  // forwards.
-	  to |= ((to & rank_mask (5)) >> 8) & unoccupied ();
+          // Pawns coming from rank 6 with empty square one and two steps
+          // forwards.
+          to |= ((to & rank_mask (5)) >> 8) & unoccupied ();
 
-	  // Capture forward left.
-	  to |= ((from & ~file_mask (H)) >> 7) & white;
+          // Capture forward left.
+          to |= ((from & ~file_mask (H)) >> 7) & white;
 
-	  // Capture forward right.
-	  to |= ((from & ~file_mask (A)) >> 9) & white;
+          // Capture forward right.
+          to |= ((from & ~file_mask (A)) >> 9) & white;
 
-	  // Pawns which can reach the En Passant square.
-	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
-	    {
-	      to |= masks_0[flags.en_passant];
-	    }
-	}
+          // Pawns which can reach the En Passant square.
+          if (flags.en_passant != 0 &&
+              ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
+               (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
+            {
+              to |= masks_0[flags.en_passant];
+            }
+        }
 
       // Collect each destination in the moves list.
       int from_idx = bit_idx (from);
       while (to)
-	{
-	  int to_idx = bit_idx (to);
+        {
+          int to_idx = bit_idx (to);
 
-	  // Handle the case of a promotion.
-	  if ((c == WHITE && idx_to_rank (to_idx) == 7) ||
-	      (c == BLACK && idx_to_rank (to_idx) == 0))
-	    {
-	      // Generate a move for each possible promotion.
-	      for (Kind k = ROOK; k <= QUEEN; k++)
-		{
-		  moves.push (from_idx, to_idx, k);
-		}
-	    }
-	  else
-	    {
-	      // Handle non-promotion case;
-	      moves.push (from_idx, to_idx);
-	    }
+          // Handle the case of a promotion.
+          if ((c == WHITE && idx_to_rank (to_idx) == 7) ||
+              (c == BLACK && idx_to_rank (to_idx) == 0))
+            {
+              // Generate a move for each possible promotion.
+              for (Kind k = ROOK; k <= QUEEN; k++)
+                {
+                  moves.push (from_idx, to_idx, k);
+                }
+            }
+          else
+            {
+              // Handle non-promotion case;
+              moves.push (from_idx, to_idx);
+            }
 
-	  to = clear_lsb (to);
-	}
+          to = clear_lsb (to);
+        }
 
       our_pawns = clear_lsb (our_pawns);
     }
@@ -152,11 +152,11 @@ Board::gen_moves (Move_Vector &moves) const
       // Collect each destination in the moves list.
       bitboard to = ROOK_ATTACKS(from) & ~our_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
 
       our_rooks = clear_lsb (our_rooks);
     }
@@ -175,11 +175,11 @@ Board::gen_moves (Move_Vector &moves) const
       // Collect each destination in the moves list.
       bitboard to = KNIGHT_ATTACKS(from) & ~our_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
       our_knights = clear_lsb (our_knights);
     }
 
@@ -197,11 +197,11 @@ Board::gen_moves (Move_Vector &moves) const
       // Collect each destination in the moves list.
       bitboard to = BISHOP_ATTACKS (from) & ~our_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
       our_bishops = clear_lsb (our_bishops);
     }
 
@@ -219,11 +219,11 @@ Board::gen_moves (Move_Vector &moves) const
       // Collect each destination in the moves list.
       bitboard to = QUEEN_ATTACKS (from) & ~our_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
       our_queens = clear_lsb (our_queens);
     }
 
@@ -244,11 +244,11 @@ Board::gen_moves (Move_Vector &moves) const
       // Collect each destination in the moves list.
       bitboard to = KING_ATTACKS (from) & ~our_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
     }
 
   /////////////////////////////
@@ -259,29 +259,29 @@ Board::gen_moves (Move_Vector &moves) const
     {
       byte row = occ_0 (E1);
 
-      if (flags.w_can_q_castle && !(row & 0xE))	
-	{ 
-	  moves.push (E1, C1);
-	}
+      if (flags.w_can_q_castle && !(row & 0xE)) 
+        { 
+          moves.push (E1, C1);
+        }
 
       if (flags.w_can_k_castle && !(row & 0x60)) 
-	{
-	  moves.push (E1, G1);
-	}
+        {
+          moves.push (E1, G1);
+        }
     }
   else
     {
       byte row = occ_0 (E8);
 
       if (flags.b_can_q_castle && !(row & 0xE))
-	{
-	  moves.push (E8, C8);
-	}
+        {
+          moves.push (E8, C8);
+        }
 
       if (flags.b_can_k_castle && !(row & 0x60))
-	{
-	  moves.push (E8, G8);
-	}
+        {
+          moves.push (E8, G8);
+        }
     }
 }
 
@@ -302,46 +302,46 @@ Board::gen_captures (Move_Vector &moves) const
       bitboard to = 0;
 
       if (c == WHITE)
-	{
-	  // Capture forward right.
-	  to |= ((from & ~file_mask (A)) << 7) & black;
+        {
+          // Capture forward right.
+          to |= ((from & ~file_mask (A)) << 7) & black;
 
-	  // Capture forward left.
-	  to |= ((from & ~file_mask (H)) << 9) & black;
+          // Capture forward left.
+          to |= ((from & ~file_mask (H)) << 9) & black;
 
-	  // Pawns which can reach the En Passant square.
-	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
-	    {
-	      to |= masks_0[flags.en_passant];
-	    }
-	}
+          // Pawns which can reach the En Passant square.
+          if (flags.en_passant != 0 &&
+              ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
+               (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
+            {
+              to |= masks_0[flags.en_passant];
+            }
+        }
       else
-	{
-	  // Capture forward left.
-	  to |= ((from & ~file_mask (H)) >> 7) & white;
+        {
+          // Capture forward left.
+          to |= ((from & ~file_mask (H)) >> 7) & white;
 
-	  // Capture forward right.
-	  to |= ((from & ~file_mask (A)) >> 9) & white;
+          // Capture forward right.
+          to |= ((from & ~file_mask (A)) >> 9) & white;
 
-	  // Pawns which can reach the En Passant square.
-	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
-	    {
-	      to |= masks_0[flags.en_passant];
-	    }
-	}
+          // Pawns which can reach the En Passant square.
+          if (flags.en_passant != 0 &&
+              ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
+               (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
+            {
+              to |= masks_0[flags.en_passant];
+            }
+        }
 
       // Collect each destination in the moves list.
       int from_idx = bit_idx (from);
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from_idx, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from_idx, to_idx);
+          to = clear_lsb (to);
+        }
       our_pawns = clear_lsb (our_pawns);
     }
 
@@ -360,11 +360,11 @@ Board::gen_captures (Move_Vector &moves) const
       bitboard to = ROOK_ATTACKS (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
 
       our_rooks = clear_lsb (our_rooks);
     }
@@ -384,11 +384,11 @@ Board::gen_captures (Move_Vector &moves) const
       bitboard to = KNIGHT_ATTACKS (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
       our_knights = clear_lsb (our_knights);
     }
 
@@ -408,11 +408,11 @@ Board::gen_captures (Move_Vector &moves) const
       bitboard to = BISHOP_ATTACKS (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
       our_bishops = clear_lsb (our_bishops);
     }
 
@@ -432,58 +432,58 @@ Board::gen_captures (Move_Vector &moves) const
       bitboard to = QUEEN_ATTACKS (from);
       to &= other_pieces ();
       while (to)
-	{
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}
+        {
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }
       our_queens = clear_lsb (our_queens);
     }
 
   /////////////////////////////
   // Generate king captures. //
   /////////////////////////////
-			      
+                              
   bitboard our_king = kings & our_pieces ();
-			      
-  if (our_king)		      
-    {			      
+                              
+  if (our_king)               
+    {                         
       int from = bit_idx (our_king);
-			      
+                              
       // Collect each destination in the moves ylist.
       bitboard to = KING_ATTACKS (from) & ~our_pieces ();
       to &= other_pieces ();  
-      while (to)	      
-	{		      
-	  int to_idx = bit_idx (to);
-	  moves.push (from, to_idx);
-	  to = clear_lsb (to);
-	}		      
-    }			      
-}			      
-			      
+      while (to)              
+        {                     
+          int to_idx = bit_idx (to);
+          moves.push (from, to_idx);
+          to = clear_lsb (to);
+        }                     
+    }                         
+}                             
+                              
 // Compute a bitboard of every square color is attacking.
-bitboard		      
+bitboard                      
 Board::attack_set (Color c) const {
   bitboard color = c == WHITE ? white : black;
   bitboard attacks = 0llu;    
-  bitboard pieces;	      
-  int from;		      
-			      
-  // Pawns		      
+  bitboard pieces;            
+  int from;                   
+                              
+  // Pawns                    
   pieces = pawns & color;     
-  if (c == WHITE)	      
-    {			      
+  if (c == WHITE)             
+    {                         
       attacks |= ((pieces & ~file_mask (A)) << 7);
       attacks |= ((pieces & ~file_mask (H)) << 9);
-    }			      
-  else			      
-    {			      
+    }                         
+  else                        
+    {                         
       attacks |= ((pieces & ~file_mask (A)) >> 9);
       attacks |= ((pieces & ~file_mask (H)) >> 7);
-    }			      
-			      
-  // Rooks		      
+    }                         
+                              
+  // Rooks                    
   pieces = rooks & color;
   while (pieces)
     {
@@ -670,6 +670,6 @@ Board :: divide (int d) const {
       Board child = *this;
       std::cerr << to_calg (moves[i]) << " ";
       if (child.apply (moves [i]))
-	std::cerr << child.perft (d - 1) << std::endl;
+        std::cerr << child.perft (d - 1) << std::endl;
     }
 }

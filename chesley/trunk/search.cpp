@@ -103,7 +103,7 @@ Search_Engine::iterative_deepening
 
       // Search this position using a dynamically sized aspiration window.
       int delta = 
-	(i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 10 : INF;
+        (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 10 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // Break out of the loop if the search was interrupted.
@@ -270,9 +270,9 @@ Search_Engine :: search
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
     if (ply > 1 && 
-	do_null_move && 
-	pop_count (b.occupied) >= 15 && 
-	!in_check)
+        do_null_move && 
+        pop_count (b.occupied) >= 15 && 
+        !in_check)
       {
         Board c = b;
         Move_Vector dummy;
@@ -280,7 +280,7 @@ Search_Engine :: search
         int val = -search_with_memory 
           (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
         if (val >= beta)
-	  return val;
+          return val;
       }
 #endif /* ENABLE_NULL_MOVE */
     
@@ -303,69 +303,69 @@ Search_Engine :: search
           {
             legal_move_count++;
 
-	    ////////////////////////
+            ////////////////////////
             // Search extensions. //
             ////////////////////////
-	    
-	    int ext = 0;
-	    if (in_check) 
-	      ext += 1;
-	    
-	    if (moves[mi].get_kind (b) == PAWN && 
-		(moves[mi].to == 1 || moves[mi].to == 6)) 
-	      ext += 1;
+            
+            int ext = 0;
+            if (in_check) 
+              ext += 1;
+            
+            if (moves[mi].get_kind (b) == PAWN && 
+                (moves[mi].to == 1 || moves[mi].to == 6)) 
+              ext += 1;
 
-	    if (moves[mi].promote == QUEEN) 
-	      ext += 1;
+            if (moves[mi].promote == QUEEN) 
+              ext += 1;
 
 #ifdef ENABLE_LMR
-	    
-	    // Shows no effect in ~200 games.
+            
+            // Shows no effect in ~200 games.
 
-	    ///////////////////////////
+            ///////////////////////////
             // Late move reductions. //
             ///////////////////////////
 
-	    const int Full_Depth_Count = 4;
-	    const int Reduction_Limit = 3;
-	    if (mi >= Full_Depth_Count && 
-		depth >= Reduction_Limit && 
-		ext == 0 && 
-		have_pv_move &&
-		Eval (c).score () < alpha)
-	      {
-		int ds;
-		Move_Vector dummy;
-		ds = -search_with_memory 
-		  (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
-		
-		// If we fail low, we are done with this node.
-		if (ds <= alpha)
-		  continue;
-	      }
+            const int Full_Depth_Count = 4;
+            const int Reduction_Limit = 3;
+            if (mi >= Full_Depth_Count && 
+                depth >= Reduction_Limit && 
+                ext == 0 && 
+                have_pv_move &&
+                Eval (c).score () < alpha)
+              {
+                int ds;
+                Move_Vector dummy;
+                ds = -search_with_memory 
+                  (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
+                
+                // If we fail low, we are done with this node.
+                if (ds <= alpha)
+                  continue;
+              }
 #endif // ENABLE_LMR
-	    
+            
 #if ENABLE_PVS
-	    /////////////////////////////////
+            /////////////////////////////////
             // Principle variation search. //
             /////////////////////////////////
-	    if (have_pv_move) 
-	      {
-		cs = -search_with_memory
-		  (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
-		if (cs > alpha && cs < beta) 
-		  {
-		    cpv.clear ();
-		    cs = -search_with_memory 
-		      (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
-		  }
-	      }
-	    else
+            if (have_pv_move) 
+              {
+                cs = -search_with_memory
+                  (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
+                if (cs > alpha && cs < beta) 
+                  {
+                    cpv.clear ();
+                    cs = -search_with_memory 
+                      (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
+                  }
+              }
+            else
 #endif // ENABLE_PVS
-	      {
-		cs = -search_with_memory 
-		  (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
-	      }
+              {
+                cs = -search_with_memory 
+                  (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
+              }
             
             // Test whether this move is better than the moves we have
             // previously analyzed.
@@ -377,10 +377,10 @@ Search_Engine :: search
                 pv = Move_Vector (moves[mi], cpv);
               }   
 
-	    /////////////////////////
+            /////////////////////////
             // Test for fail high. //
             /////////////////////////
-	    
+            
             if (cs >= beta)
               {
                 break;
@@ -454,14 +454,14 @@ Search_Engine::order_moves
 
       // Sort our best guess first.
       if (moves[i] == best_guess)
-	{
-	  moves[i].score = +INF;
-	  continue;
-	}
+        {
+          moves[i].score = +INF;
+          continue;
+        }
       
       // Followed by promotions to queen.
       if (moves[i].promote == QUEEN)
-	moves[i].score += 1000;
+        moves[i].score += 1000;
 
       // Followed by captures.
       moves[i].score += 100 * eval_piece (moves[i].capture (b));
@@ -780,7 +780,7 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
   else
     {
       cout << setiosflags (ios::right) << setw (6) 
-	   << "Mate" << setw (2) << MATE_VAL - pv[0].score << "   ";
+           << "Mate" << setw (2) << MATE_VAL - pv[0].score << "   ";
     }
   
   for (int i = 0; i < pv.count; i++)
