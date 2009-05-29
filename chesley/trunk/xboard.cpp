@@ -1,15 +1,16 @@
-///////////////////////////////////////////////////////////////////////////////
-// 								             //
-// xboard.cpp						                     //
-// 								             //
-// This file provides Chesley's implementation of the xboard	             //
-// interface. The specification for this protocol is available at            //
-// http://tim-mann.org/xboard/engine-intf.html.		                     //
-// 								             //
-// Matthew Gingell						             //
-// gingell@adacore.com             					     //
-// 								             //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+// 								              //
+// xboard.cpp						                      //
+// 								              //
+// This file provides Chesley's implementation of the xboard	              //
+// interface. The specification for this protocol is available at             //
+// http://tim-mann.org/xboard/engine-intf.html.		                      //
+// 								              //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
+// 								              //
+////////////////////////////////////////////////////////////////////////////////
 
 #include <string>
 #include "chesley.hpp"

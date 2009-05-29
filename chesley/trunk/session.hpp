@@ -1,13 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-//  session.hpp                                                               //
+// session.hpp                                                                //
 //                                                                            //
-//  This file provides the Session object, representing a Chesley             //
-//  session, either over the xboard protocal, UCI (Universal Chess            //
-//  Interface), or interactive mode.                                          //
+// This file provides the Session object, representing a Chesley              //
+// session, either over the xboard protocal, UCI (Universal Chess             //
+// Interface), or interactive mode.                                           //
 //                                                                            //
-//  Matthew Gingell                                                           //
-//  gingell@adacore.com                                                       //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 

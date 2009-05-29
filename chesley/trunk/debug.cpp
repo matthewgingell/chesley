@@ -5,8 +5,9 @@
 // This file implements various tests and commands for debugging and          //
 // testing Chesley.						              //
 // 								              //
-// Matthew Gingell						              //
-// gingell@adacore.com					        	      //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 // 								              //
 ////////////////////////////////////////////////////////////////////////////////
 

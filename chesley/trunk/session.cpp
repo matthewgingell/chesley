@@ -6,8 +6,9 @@
 // session. This file provides the protocol independent part of the           //
 // implementation.                                                            //
 // 									      //
-// Matthew Gingell							      //
-// gingell@adacore.com							      //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 // 									      //
 ////////////////////////////////////////////////////////////////////////////////
 
