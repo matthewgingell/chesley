@@ -1,13 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
-// util.hpp							     	      //
-// 								     	      //
-// Various small utility functions.					      //
-// 								     	      //
+//                                                                            //
+// util.hpp                                                                   //
+//                                                                            //
+// Various small utility functions.                                           //
+//                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
-// 								     	      //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 #ifndef __UTIL__
@@ -166,9 +166,9 @@ is_number (const std::string &s) {
   for (uint32 i = 0; i < s.length (); i++)
     {
       if (!isdigit (s[i])) 
-	{
-	  return false;
-	}
+        {
+          return false;
+        }
     }
   return true;
 }
@@ -217,26 +217,26 @@ tokenize (const std::string &s) {
   for (std::string::const_iterator i = s.begin (); i < s.end (); i++)
     {
       if (*i == '\"')
-	{
-	  in_quote = !in_quote;
-	}
+        {
+          in_quote = !in_quote;
+        }
 
       if (!in_quote 
-	  && (isspace (*i) || *i == ';'))
-	{
-	  if (token.length ())
-	    {
-	      tokens.push_back (token);
-	      token.clear ();
-	    }
-	}
+          && (isspace (*i) || *i == ';'))
+        {
+          if (token.length ())
+            {
+              tokens.push_back (token);
+              token.clear ();
+            }
+        }
       else
-	{
-	  if (*i != '\"')
-	    {
-	      token += *i;
-	    }
-	}
+        {
+          if (*i != '\"')
+            {
+              token += *i;
+            }
+        }
     }
 
   if (token.length ())
@@ -282,9 +282,9 @@ static std::string join
     {
       out += *i;
       if (i + 1 < in.end () && delim.length () > 0)
-	{
-	  out += delim;
-	}
+        {
+          out += delim;
+        }
     }
 
   return out;
@@ -333,9 +333,9 @@ static char *get_line (FILE *in) {
     {
       int last = strlen (buf) - 1;
       if (buf[last] == '\n')
-	{
-	  buf[last] = '\0';
-	}
+        {
+          buf[last] = '\0';
+        }
     }
 
   return newstr (buf);
@@ -385,10 +385,10 @@ partition (T &items, int left, int right, int pivot_index) {
   for (int i = left; i < right; i++)
     {
       if (value (items[i]) <= pivot_value)
-	{
-	  std::swap (items [i], items[store_index]);
-	  store_index++;
-	}
+        {
+          std::swap (items [i], items[store_index]);
+          store_index++;
+        }
     }
 
   std::swap (items[store_index], items[right]);
@@ -424,13 +424,13 @@ bubble_sort (T &items) {
     {
       done = true;
       for (int i = 0; i < len - 1; i++)
-	{
-	  if (value (items[i]) > value (items[i + 1]))
-	    {
-	      std::swap (items[i], items[i + 1]);
-	      done = false;
-	    }
-	}
+        {
+          if (value (items[i]) > value (items[i + 1]))
+            {
+              std::swap (items[i], items[i + 1]);
+              done = false;
+            }
+        }
       len -= 1;
     }
   while (!done);
@@ -447,10 +447,10 @@ insertion_sort (V &items) {
       I index = items[i];
       int j = i;
       while ((j > 0) && cmp(items[j - 1], index))
-	{
-	  items[j] = items[j - 1];
-	  j = j - 1;
-	}
+        {
+          items[j] = items[j - 1];
+          j = j - 1;
+        }
       items[j] = index;
     }
 }

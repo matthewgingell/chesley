@@ -161,34 +161,34 @@ Board::set_castling_right (Castling_Right cr, bool v) {
     {
     case W_QUEEN_SIDE:
       if (flags.w_can_q_castle != v)
-	{
-	  hash ^= zobrist_w_castle_q_key;
-	  flags.w_can_q_castle = v;
-	}
+        {
+          hash ^= zobrist_w_castle_q_key;
+          flags.w_can_q_castle = v;
+        }
       break;
 
     case W_KING_SIDE:
       if (flags.w_can_k_castle != v)
-	{
-	  hash ^= zobrist_w_castle_k_key;
-	  flags.w_can_k_castle = v;
-	}
+        {
+          hash ^= zobrist_w_castle_k_key;
+          flags.w_can_k_castle = v;
+        }
       break;
 
     case B_QUEEN_SIDE:
       if (flags.b_can_q_castle != v)
-	{
-	  hash ^= zobrist_b_castle_q_key;
-	  flags.b_can_q_castle = v;
-	}
+        {
+          hash ^= zobrist_b_castle_q_key;
+          flags.b_can_q_castle = v;
+        }
       break;
 
     case B_KING_SIDE:
       if (flags.b_can_k_castle != v)
-	{
-	  hash ^= zobrist_b_castle_k_key;
-	  flags.b_can_k_castle = v;
-	}
+        {
+          hash ^= zobrist_b_castle_k_key;
+          flags.b_can_k_castle = v;
+        }
       break;
     }
 }
@@ -233,11 +233,11 @@ Board::apply (const Move &m) {
   if (kind == PAWN)
     {
       if (m.is_en_passant (*this))
-	{
-	  // Clear the square behind destination square.
-	  if (color == WHITE) clear_piece (flags.en_passant - 8);
-	  else clear_piece (flags.en_passant + 8);
-	}
+        {
+          // Clear the square behind destination square.
+          if (color == WHITE) clear_piece (flags.en_passant - 8);
+          else clear_piece (flags.en_passant + 8);
+        }
 
       ///////////////////////////////////////////////////////////////////
       // Update En Passant target square. This needs to be done before //
@@ -246,27 +246,27 @@ Board::apply (const Move &m) {
       ///////////////////////////////////////////////////////////////////
 
       if (color == WHITE)
-	{
-	  if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
-	    {
-	      set_en_passant (m.from + 8);
-	    }
-	  else
-	    {
-	      set_en_passant (0);
-	    }
-	}
+        {
+          if ((idx_to_rank (m.from) == 1) && (idx_to_rank (m.to) == 3))
+            {
+              set_en_passant (m.from + 8);
+            }
+          else
+            {
+              set_en_passant (0);
+            }
+        }
       else
-	{
-	  if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
-	    {
-	      set_en_passant (m.from - 8);
-	    }
-	  else
-	    {
-	      set_en_passant (0);
-	    }
-	}
+        {
+          if ((idx_to_rank (m.from) == 6) && (idx_to_rank (m.to) == 4))
+            {
+              set_en_passant (m.from - 8);
+            }
+          else
+            {
+              set_en_passant (0);
+            }
+        }
     }
   else
     {
@@ -282,69 +282,69 @@ Board::apply (const Move &m) {
       bool is_castle_qs = m.is_castle_qs (*this);
       bool is_castle_ks = m.is_castle_ks (*this);
       if (is_castle_qs || is_castle_ks)
-	{
-	  // Calculate attacked set for testing check.
-	  const bitboard attacked = attack_set (invert (color));
+        {
+          // Calculate attacked set for testing check.
+          const bitboard attacked = attack_set (invert (color));
 
-	  // Test castle out of, across, or in to check.
-	  if (color == WHITE)
-	    {
-	      if (is_castle_qs && !(attacked & 0x1C))
-		{
-		  clear_piece (E1);
-		  clear_piece (A1);
-		  set_piece (KING, WHITE, C1);
-		  set_piece (ROOK, WHITE, D1);
-		  set_castling_right (W_QUEEN_SIDE, false);
-		  set_castling_right (W_KING_SIDE, false);
-		  set_color (invert (to_move ()));
-  		  flags.w_has_k_castled = 1;
-		  return true;
-		}
-	      if (is_castle_ks && !(attacked & 0x70))
-		{
-		  clear_piece (E1);
-		  clear_piece (H1);
-		  set_piece (KING, WHITE, G1);
-		  set_piece (ROOK, WHITE, F1);
-		  set_castling_right (W_QUEEN_SIDE, false);
-		  set_castling_right (W_KING_SIDE, false);
-		  set_color (invert (to_move ()));
-		  flags.w_has_k_castled = 1;
-		  return true;
-		}
-	    }
-	  else
-	    {
-	      byte attacks = get_byte (attacked, 7);
-	      if (is_castle_qs && !(attacks & 0x1C))
-		{
-		  clear_piece (E8);
-		  clear_piece (A8);
-		  set_piece (KING, BLACK, C8);
-		  set_piece (ROOK, BLACK, D8);
-		  set_castling_right (B_QUEEN_SIDE, false);
-		  set_castling_right (B_KING_SIDE, false);
-		  set_color (invert (to_move ()));
-		  flags.b_has_q_castled = 1;
-		  return true;
-		}
-	      if (is_castle_ks && !(attacks & 0x70))
-		{
-		  clear_piece (E8);
-		  clear_piece (H8);
-		  set_piece (KING, BLACK, G8);
-		  set_piece (ROOK, BLACK, F8);
-		  set_castling_right (B_QUEEN_SIDE, false);
-		  set_castling_right (B_KING_SIDE, false);
-		  set_color (invert (to_move ()));
-		  flags.b_has_k_castled = 1;
-		  return true;
-		}
-	    }
+          // Test castle out of, across, or in to check.
+          if (color == WHITE)
+            {
+              if (is_castle_qs && !(attacked & 0x1C))
+                {
+                  clear_piece (E1);
+                  clear_piece (A1);
+                  set_piece (KING, WHITE, C1);
+                  set_piece (ROOK, WHITE, D1);
+                  set_castling_right (W_QUEEN_SIDE, false);
+                  set_castling_right (W_KING_SIDE, false);
+                  set_color (invert (to_move ()));
+                  flags.w_has_k_castled = 1;
+                  return true;
+                }
+              if (is_castle_ks && !(attacked & 0x70))
+                {
+                  clear_piece (E1);
+                  clear_piece (H1);
+                  set_piece (KING, WHITE, G1);
+                  set_piece (ROOK, WHITE, F1);
+                  set_castling_right (W_QUEEN_SIDE, false);
+                  set_castling_right (W_KING_SIDE, false);
+                  set_color (invert (to_move ()));
+                  flags.w_has_k_castled = 1;
+                  return true;
+                }
+            }
+          else
+            {
+              byte attacks = get_byte (attacked, 7);
+              if (is_castle_qs && !(attacks & 0x1C))
+                {
+                  clear_piece (E8);
+                  clear_piece (A8);
+                  set_piece (KING, BLACK, C8);
+                  set_piece (ROOK, BLACK, D8);
+                  set_castling_right (B_QUEEN_SIDE, false);
+                  set_castling_right (B_KING_SIDE, false);
+                  set_color (invert (to_move ()));
+                  flags.b_has_q_castled = 1;
+                  return true;
+                }
+              if (is_castle_ks && !(attacks & 0x70))
+                {
+                  clear_piece (E8);
+                  clear_piece (H8);
+                  set_piece (KING, BLACK, G8);
+                  set_piece (ROOK, BLACK, F8);
+                  set_castling_right (B_QUEEN_SIDE, false);
+                  set_castling_right (B_KING_SIDE, false);
+                  set_color (invert (to_move ()));
+                  flags.b_has_k_castled = 1;
+                  return true;
+                }
+            }
 
-	  return false;
-	}
+          return false;
+        }
     }
 
   ///////////////////////////////////////////////
@@ -418,8 +418,8 @@ std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
   return os << "[Move from "
-	    << (int) (m.from) << " => " << (int) (m.to)
-	    << " " << m.score << "]";
+            << (int) (m.from) << " => " << (int) (m.to)
+            << " " << m.score << "]";
 }
 
 //////////////
@@ -448,10 +448,10 @@ Board::print_tree (int depth)
     {
       Move_Vector moves (*this);
       for (int i = 0; i < moves.count; i++)
-	{
-	  Board c = *this;
-	  if (c.apply (moves[i])) c.print_tree (depth - 1);
-	}
+        {
+          Board c = *this;
+          if (c.apply (moves[i])) c.print_tree (depth - 1);
+        }
     }
 }
 
@@ -479,9 +479,9 @@ Board::gen_hash () const {
       Kind k = get_kind (i);
       Color c = get_color (i);
       if (k != NULL_KIND && c != NULL_COLOR)
-	{
-	  h ^= Board::get_zobrist_piece_key (c, k, i);
-	}
+        {
+          h ^= Board::get_zobrist_piece_key (c, k, i);
+        }
     }
 
   return h;

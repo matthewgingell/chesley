@@ -27,9 +27,9 @@ struct Trans_Table
     lookups++;
     while (i < sz) 
       {
-	if (table [i].key == 0 || table [i].key == key) return i;
-	collisions++;
-	i++;
+        if (table [i].key == 0 || table [i].key == key) return i;
+        collisions++;
+        i++;
       }
 
     return 0;

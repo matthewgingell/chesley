@@ -526,7 +526,7 @@ struct Board {
       {
         Color c = get_color (idx);
         Kind k = get_kind (idx);
-	clear_piece (idx, c, k);
+        clear_piece (idx, c, k);
       }
   }
 

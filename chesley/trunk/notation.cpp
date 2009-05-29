@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
+//                                                                            //
 // notation.cpp                                                               //
 //                                                                            //
 // This file implements operations on different kinds of string               //

@@ -101,18 +101,18 @@ struct Eval {
 
     // Determine game phase.
     if (major_counts [WHITE] + minor_counts [WHITE] <= 3 &&
-	major_counts [BLACK] + minor_counts [BLACK] <= 3)
+        major_counts [BLACK] + minor_counts [BLACK] <= 3)
       {
-	phase = ENDGAME;
+        phase = ENDGAME;
       }
 
     // If there are no pawns and no majors on the board.
     if ((piece_counts[WHITE][PAWN] == 0 && piece_counts[BLACK][PAWN] == 0)
-	&& (major_counts[WHITE] == 0 && major_counts[BLACK] == 0))
+        && (major_counts[WHITE] == 0 && major_counts[BLACK] == 0))
       {
-	// If both sides have one of fewer minor pieces.
-	if (minor_counts[WHITE] <= 1 && minor_counts[BLACK] <= 1)
-	  return 0;
+        // If both sides have one of fewer minor pieces.
+        if (minor_counts[WHITE] <= 1 && minor_counts[BLACK] <= 1)
+          return 0;
       }
 
     // Generate a simple material score.
@@ -124,12 +124,12 @@ struct Eval {
     // Provide a bonus for holding both bishops.
     if (piece_counts[WHITE][BISHOP] >= 2) 
       {
-	score += BISHOP_PAIR_BONUS;
+        score += BISHOP_PAIR_BONUS;
       }
     
     if (piece_counts[BLACK][BISHOP] >= 2) 
       {
-	score -= BISHOP_PAIR_BONUS;
+        score -= BISHOP_PAIR_BONUS;
       }
 
     // Reward rooks and queens on open files.
@@ -155,27 +155,27 @@ struct Eval {
   void count_material () {
     for (Color c = WHITE; c <= BLACK; c++)
       {
-	// Count pieces.
-	bitboard all_pieces = b.color_to_board (c);
-	for (Kind k = PAWN; k < KING; k++) 
-	  {
-	    int count = pop_count (all_pieces & b.kind_to_board (k));
-	    piece_counts[c][k] = count;
-	  }
+        // Count pieces.
+        bitboard all_pieces = b.color_to_board (c);
+        for (Kind k = PAWN; k < KING; k++) 
+          {
+            int count = pop_count (all_pieces & b.kind_to_board (k));
+            piece_counts[c][k] = count;
+          }
 
-	// Count pawns by file.
-	for (int file = 0; file < 8; file++)
-	  {
-	    bitboard this_file = all_pieces & b.file_mask (file) & b.pawns;
-	    pawn_counts[c][file] = pop_count (this_file);
-	  }
+        // Count pawns by file.
+        for (int file = 0; file < 8; file++)
+          {
+            bitboard this_file = all_pieces & b.file_mask (file) & b.pawns;
+            pawn_counts[c][file] = pop_count (this_file);
+          }
       }
 
     // Count majors and minors.
     for (Color c = WHITE; c <= BLACK; c++)
       {
-	major_counts[c] = piece_counts[c][ROOK] + piece_counts[c][QUEEN];
-	minor_counts[c] = piece_counts[c][KNIGHT] + piece_counts[c][BISHOP];
+        major_counts[c] = piece_counts[c][ROOK] + piece_counts[c][QUEEN];
+        minor_counts[c] = piece_counts[c][KNIGHT] + piece_counts[c][BISHOP];
       }
   }
     
@@ -194,12 +194,12 @@ struct Eval {
 
     while (pieces) 
       {
-	int idx = bit_idx (pieces);
-	int file = b.idx_to_file (idx);
-	int pawn_count = pawn_counts[c][file];
-	if (pawn_count == 1) score += 25;
-	else if (pawn_count == 0) score += 50;
-	pieces = clear_lsb (pieces);
+        int idx = bit_idx (pieces);
+        int file = b.idx_to_file (idx);
+        int pawn_count = pawn_counts[c][file];
+        if (pawn_count == 1) score += 25;
+        else if (pawn_count == 0) score += 50;
+        pieces = clear_lsb (pieces);
       }
 
     return score;
@@ -213,18 +213,18 @@ struct Eval {
     bitboard pawns = all & b.pawns;
     while (pieces) 
       {
-	// Provide a bonus when a bishop is not obstructed by pawns of
-	// its own color.
-	int idx = bit_idx (pieces);
-	if (test_bit (Board::dark_squares, idx))
-	  {
-	    score -= pop_count (pawns & Board::dark_squares);
-	  }
-	else
-	  {
-	    score -= pop_count (pawns & Board::light_squares);
-	  }
-	pieces = clear_lsb (pieces);
+        // Provide a bonus when a bishop is not obstructed by pawns of
+        // its own color.
+        int idx = bit_idx (pieces);
+        if (test_bit (Board::dark_squares, idx))
+          {
+            score -= pop_count (pawns & Board::dark_squares);
+          }
+        else
+          {
+            score -= pop_count (pawns & Board::light_squares);
+          }
+        pieces = clear_lsb (pieces);
       }
 
     return score * 5;
@@ -240,17 +240,17 @@ struct Eval {
     bitboard attacks = 0;
     if (c == WHITE)
       {
-	// Capture forward right.
-	attacks |= ((pawns & ~b.file_mask (0)) << 7) & b.black;
-	// Capture forward left.
-	attacks |= ((pawns & ~b.file_mask (7)) << 9) & b.black;
+        // Capture forward right.
+        attacks |= ((pawns & ~b.file_mask (0)) << 7) & b.black;
+        // Capture forward left.
+        attacks |= ((pawns & ~b.file_mask (7)) << 9) & b.black;
       }
     else
       {
-	// Capture forward left.
-	attacks |= ((pawns & ~b.file_mask (7)) >> 7) & b.white;
-	// Capture forward right.
-	attacks |= ((pawns & ~b.file_mask (0)) >> 9) & b.white;
+        // Capture forward left.
+        attacks |= ((pawns & ~b.file_mask (7)) >> 7) & b.white;
+        // Capture forward right.
+        attacks |= ((pawns & ~b.file_mask (0)) >> 9) & b.white;
       }
     
     score += 20 * pop_count (attacks & pawns);
@@ -258,34 +258,34 @@ struct Eval {
 
     while (pawns) 
       {
-	int idx = bit_idx (pawns);
-	int file = b.idx_to_file (idx);
+        int idx = bit_idx (pawns);
+        int file = b.idx_to_file (idx);
 
-	// Penalize rook pawns.
-	if (file == 0 || file == 7) 
-	  {
-	    // std::cerr << "penalizing rook pawn on file " << file << std::endl;
-	    score -= 15;
-	  }
+        // Penalize rook pawns.
+        if (file == 0 || file == 7) 
+          {
+            // std::cerr << "penalizing rook pawn on file " << file << std::endl;
+            score -= 15;
+          }
 
-	// Penalize doubled pawns.
-	if (pawn_counts[c][file] > 1) 
-	  {
-	    // std::cerr << "penalizing doubled pawn on file " << file << std::endl;
-	    score -= 20;
-	  }
+        // Penalize doubled pawns.
+        if (pawn_counts[c][file] > 1) 
+          {
+            // std::cerr << "penalizing doubled pawn on file " << file << std::endl;
+            score -= 20;
+          }
 
-	// Penalize isolated pawns.
-	if ((file == 0 && pawn_counts[c][1] == 0) ||
-	    (file == 7 && pawn_counts[c][6] == 0) ||
-	    (pawn_counts[c][file - 1] == 0 && 
-	     pawn_counts[c][file + 1] == 0))
-	  {
-	    // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
-	    score -= 5;
-	  }
+        // Penalize isolated pawns.
+        if ((file == 0 && pawn_counts[c][1] == 0) ||
+            (file == 7 && pawn_counts[c][6] == 0) ||
+            (pawn_counts[c][file - 1] == 0 && 
+             pawn_counts[c][file + 1] == 0))
+          {
+            // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
+            score -= 5;
+          }
 
-	pawns = clear_lsb (pawns);
+        pawns = clear_lsb (pawns);
       }
 
     // std::cerr << "pawn eval score is " << score << std::endl;

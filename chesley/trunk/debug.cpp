@@ -1,14 +1,14 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
-// debug.cpp							     	      //
-// 								     	      //
+//                                                                            //
+// debug.cpp                                                                  //
+//                                                                            //
 // This file implements various tests and commands for debugging and          //
-// testing Chesley.						              //
-// 								              //
+// testing Chesley.                                                           //
+//                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
-// 								              //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
@@ -34,15 +34,15 @@ Session::debug_execute (char *line) {
       string token = downcase (tokens[0]);
 
       if (token == "test_hashing")
-	{
-	  // For all positions to depth N, compute the hash
-	  // incrementally and from scratch and make sure each method
-	  // generates the same value.
-	  int depth = 5;
-	  if (tokens.size () > 1 && is_number (tokens[1]))
-	    depth = to_int (tokens[1]);
-	  test_hashing (depth);
-	}
+        {
+          // For all positions to depth N, compute the hash
+          // incrementally and from scratch and make sure each method
+          // generates the same value.
+          int depth = 5;
+          if (tokens.size () > 1 && is_number (tokens[1]))
+            depth = to_int (tokens[1]);
+          test_hashing (depth);
+        }
     }
       
   return true;
@@ -117,32 +117,32 @@ Session::dump_pawns (const string_vector &tokens)
       Status s;
       board = Board::startpos ();
       while ((s = get_status ()) == GAME_IN_PROGRESS)
-	{
-	  // dump white pawns vector.
-	  bitboard white_pawns = board.pawns & board.white;
-	  for (int i = 0; i < 64; i++)
-	    {
-	      if (test_bit (white_pawns, i))
-		out << "1 ";
-	      else
-		out << "0 ";
-	    }
-	  
-	  // dump black pawns vector.
-	  bitboard black_pawns = board.pawns & board.black;
-	  for (int i = 0; i < 64; i++)
-	    {
-	      if (test_bit (black_pawns, i))
-		out << "1 ";
-	      else
-		out << "0 ";
-	    }
-	  out << endl;
-	  
-	  cerr << board << endl << endl;
-	  Move m = find_a_move ();
-	  board.apply (m);
-	}
+        {
+          // dump white pawns vector.
+          bitboard white_pawns = board.pawns & board.white;
+          for (int i = 0; i < 64; i++)
+            {
+              if (test_bit (white_pawns, i))
+                out << "1 ";
+              else
+                out << "0 ";
+            }
+          
+          // dump black pawns vector.
+          bitboard black_pawns = board.pawns & board.black;
+          for (int i = 0; i < 64; i++)
+            {
+              if (test_bit (black_pawns, i))
+                out << "1 ";
+              else
+                out << "0 ";
+            }
+          out << endl;
+          
+          cerr << board << endl << endl;
+          Move m = find_a_move ();
+          board.apply (m);
+        }
       cerr << board << endl << endl;
       handle_end_of_game (s);
     }
@@ -170,7 +170,7 @@ test_hashing_rec (const Board &b, int depth) {
       Board c = b;
       if (c.apply (moves[i])) pass += test_hashing_rec (c, depth - 1);
     }
-	  
+          
   return pass;
 }
 
@@ -182,7 +182,7 @@ Session::test_hashing (int d) {
 
 //////////////////////////////////////////////////////////////////////
 // Process a string in Extended Position Notation. This can include //
-// tests, etc.							    //
+// tests, etc.                                                      //
 //////////////////////////////////////////////////////////////////////
 
 bool
@@ -200,9 +200,9 @@ Session::epd (const string_vector &args)
     {
       // Exit when we are out of tokens.
       if (tokens.size () == 0)
-	{
-	  break;
-	}
+        {
+          break;
+        }
 
       string opcode = first (tokens);
       tokens = rest (tokens);
@@ -212,56 +212,56 @@ Session::epd (const string_vector &args)
       ///////////////////////////////////////////////
 
       if (opcode[0] == 'D')
-	{
-	  if (opcode.length () != 2 || ! isdigit(opcode [1]))
-	    {
-	      throw "Bad format in D<digit> opcode";
-	    }
-	  else
-	    {
-	      string operand = first (tokens);
-	      tokens = rest (tokens);
-	      if (!is_number (operand))
-		{
-		  throw "Bad operand in D<digit> opcode";
-		}
-	      else
-		{
-		  ///////////////////////////////////////
-		  // Format: <PASS|FAIL> <DEPTH> <GOT> //
-		  ///////////////////////////////////////
-		  
-		  int depth = to_int (opcode [1]);
-		  uint64 expecting = to_int (operand);
-		  uint64 p = b.perft (depth);
-		  bool pass = (p == expecting);
-		  fprintf (out, "%s %lli\n", pass ? "PASS" : "FAIL", p);
+        {
+          if (opcode.length () != 2 || ! isdigit(opcode [1]))
+            {
+              throw "Bad format in D<digit> opcode";
+            }
+          else
+            {
+              string operand = first (tokens);
+              tokens = rest (tokens);
+              if (!is_number (operand))
+                {
+                  throw "Bad operand in D<digit> opcode";
+                }
+              else
+                {
+                  ///////////////////////////////////////
+                  // Format: <PASS|FAIL> <DEPTH> <GOT> //
+                  ///////////////////////////////////////
+                  
+                  int depth = to_int (opcode [1]);
+                  uint64 expecting = to_int (operand);
+                  uint64 p = b.perft (depth);
+                  bool pass = (p == expecting);
+                  fprintf (out, "%s %lli\n", pass ? "PASS" : "FAIL", p);
 
-		  if (!pass) 
-		    fprintf  (out, 
-			      "Position %s fails at depth %i.\n", 
-			      fen.c_str (), depth);
-		}
-	    }
-	}
+                  if (!pass) 
+                    fprintf  (out, 
+                              "Position %s fails at depth %i.\n", 
+                              fen.c_str (), depth);
+                }
+            }
+        }
 
       else if (opcode == "bm")
-	{
-	  Move best = b.from_san (first (tokens));
-	  timeout = mclock () + 15 * 1000;
-	  se.interrupt_search = false;
-	  cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
-	  Move m = se.choose_move (b, 100);
-	  (m == best) ? cerr << "PASS: " : cerr << "FAIL: ";
-	  cerr << fen << " bm " << b.to_san (best) << endl << endl;;
-	  tokens == rest (tokens);
-	}
+        {
+          Move best = b.from_san (first (tokens));
+          timeout = mclock () + 15 * 1000;
+          se.interrupt_search = false;
+          cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
+          Move m = se.choose_move (b, 100);
+          (m == best) ? cerr << "PASS: " : cerr << "FAIL: ";
+          cerr << fen << " bm " << b.to_san (best) << endl << endl;;
+          tokens == rest (tokens);
+        }
 
       else
-	{
-	  // Exit if we encounter and opcode we don't recognize.
-	  break;
-	}
+        {
+          // Exit if we encounter and opcode we don't recognize.
+          break;
+        }
     }
 
   return true;

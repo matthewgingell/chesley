@@ -1,15 +1,15 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 									      //
-// session.cpp								      //
-// 									      //
+//                                                                            //
+// session.cpp                                                                //
+//                                                                            //
 // This file provides the Session object, representing a Chesley              //
 // session. This file provides the protocol independent part of the           //
 // implementation.                                                            //
-// 									      //
+//                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
-// 									      //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cctype>
@@ -137,7 +137,7 @@ Session::cmd_loop ()
 
       // End session on EOF or false from execute.
       if (!line || !execute (line)) 
-	done = true;
+        done = true;
 
       // Discard the malloc'd line return by get_line.
       if (line) free (line);
@@ -150,10 +150,10 @@ Session::cmd_loop ()
       // Hand control over to the 'work' function until input is
       // ready.
       while (!fdready (fileno (in)))
-	{
-	  work ();
-	  usleep (100000);
-	}
+        {
+          work ();
+          usleep (100000);
+        }
     }
 }
 
@@ -230,18 +230,18 @@ Session :: get_status () {
     {
       // This is checkmate. 
       if (board.in_check (player))
-	{
-	  if (player == WHITE) 
-	    return GAME_WIN_BLACK;
-	  else
-	    return GAME_WIN_WHITE;
-	}
+        {
+          if (player == WHITE) 
+            return GAME_WIN_BLACK;
+          else
+            return GAME_WIN_WHITE;
+        }
 
       // This is a stalemate.
       else 
-	{
-	  return GAME_DRAW;
-	}
+        {
+          return GAME_DRAW;
+        }
     }
   else
     {
@@ -315,183 +315,183 @@ Session::execute (char *line) {
       string token = downcase (tokens[0]);
 
       if (token == "apply" && count > 1)
-	{
-	  running = false;
-	  Move m = board.from_calg (tokens[1]);
-	  board.apply (m);
-	  return true;
-	}
+        {
+          running = false;
+          Move m = board.from_calg (tokens[1]);
+          board.apply (m);
+          return true;
+        }
 
       if (token == "hash")
-	{
-	  cerr << board.hash << endl;
-	  return true;
-	}
+        {
+          cerr << board.hash << endl;
+          return true;
+        }
 
       if (token == "eval")
-	{
-	  cerr << Eval (board).score () << endl;
-	  return true;
-	}
+        {
+          cerr << Eval (board).score () << endl;
+          return true;
+        }
 
       ////////////////////////
       // Benchmark command. //
       ////////////////////////
       
       if (token == "bench")
-	{
-	  return bench (tokens);
-	}
+        {
+          return bench (tokens);
+        }
 
       ///////////////////
       // Disp command. //
       ///////////////////
 
       if (token == "disp")
-	{
-	  fprintf (out, "%s\n", (board.to_ascii ()).c_str ());
-	  return true;
-	}
+        {
+          fprintf (out, "%s\n", (board.to_ascii ()).c_str ());
+          return true;
+        }
 
       //////////////////
       // Div command. //
       //////////////////
 
       if (token == "div")
-	{
-	  if (tokens.size () == 2)
-	    {
-	      board.divide (to_int (tokens[1]));
-	      return true;
-	    }
-	}
+        {
+          if (tokens.size () == 2)
+            {
+              board.divide (to_int (tokens[1]));
+              return true;
+            }
+        }
 
       ////////////////////////////////////////
       // FEN command to output board state. //
       ////////////////////////////////////////
 
       if (token == "fen")
-	{
-	  fprintf (out, "%s\n", (board.to_fen ()).c_str ());
-	  return true;
-	}
+        {
+          fprintf (out, "%s\n", (board.to_fen ()).c_str ());
+          return true;
+        }
 
       /////////////////////////////////////////
       // EPD command execute an EPD string.  //
       /////////////////////////////////////////
 
       if (token == "epd")
-	{
-	  epd (tokens);
-	  return true;
-	}
+        {
+          epd (tokens);
+          return true;
+        }
 
       /////////////////////////////////////////////////////////
       // Force command to prevent computer generating moves. //
       /////////////////////////////////////////////////////////
 
       if (token == "force")
-	{
-	  running = false;
-	  return true;
-	}
+        {
+          running = false;
+          return true;
+        }
 
       ////////////////////
       // Moves command. //
       ////////////////////
 
       if (token == "moves")
-	{
-	  Move_Vector moves (board);
-	  cerr << moves << endl;
-	  return true;
-	}
+        {
+          Move_Vector moves (board);
+          cerr << moves << endl;
+          return true;
+        }
 
       //////////////////
       // New command. //
       //////////////////
 
       if (token == "new")
-	{
-	  board = Board :: startpos ();
-	  se.rt.clear ();
-	  our_color = BLACK;
-	  running = true;
-	}
+        {
+          board = Board :: startpos ();
+          se.rt.clear ();
+          our_color = BLACK;
+          running = true;
+        }
       //////////////////////
       // Attacks command. //
       //////////////////////
 
       if (token == "attacks")
-	{
-	  print_board (board.attack_set (invert (board.to_move ())));
-	  return true;
-	}
+        {
+          print_board (board.attack_set (invert (board.to_move ())));
+          return true;
+        }
 
       ////////////////////////////////////////
       // Perft position generation command. //
       ////////////////////////////////////////
 
       if (token == "perft")
-	{
-	  if (tokens.size () >= 2)
-	    {
-	      perft (tokens);
-	      return true;
-	    }
-	}
+        {
+          if (tokens.size () >= 2)
+            {
+              perft (tokens);
+              return true;
+            }
+        }
 
       ////////////////////////////////////
       // The play against self command. //
       ////////////////////////////////////
 
       if (token == "playself")
-	{
-	  return play_self (tokens);
-	}
+        {
+          return play_self (tokens);
+        }
 
       ////////////////////////////////////
       // Dump pawn structure to a file  //
       ////////////////////////////////////
 
       if (token == "dumppawns")
-	{
-	  return dump_pawns (tokens);
-	}
+        {
+          return dump_pawns (tokens);
+        }
 
       ///////////////////////////
       // setboard FEN command. //
       ///////////////////////////
 
       if (token == "setboard")
-	{
-	  board = Board::from_fen (rest (tokens), false);
-	  return true;
-	}
+        {
+          board = Board::from_fen (rest (tokens), false);
+          return true;
+        }
 
       ///////////////////
       // Quit command. //
       ///////////////////
 
       if (token == "quit")
-	{
-	  return false;
-	}
+        {
+          return false;
+        }
 
       ///////////////////////
       // Enter xboard ui.  //
       ///////////////////////
 
       if (token == "xboard")
-	{
-	  return set_xboard_mode (tokens);
-	}
+        {
+          return set_xboard_mode (tokens);
+        }
 
       // Warn about unrecognized commands in interactive mode.
       if (ui_mode == INTERACTIVE)
-	{
-	  //	  fprintf (out, "Unrecognized command.\n");
-	}
+        {
+          //      fprintf (out, "Unrecognized command.\n");
+        }
     }
 
   return true;

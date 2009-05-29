@@ -1,13 +1,13 @@
 ////////////////////////////////////////////////////////////////////////////////
-// 								     	      //
-// movevec.cpp							     	      //
-// 								     	      //
-// Operations on a list of moves.					      //
-// 								     	      //
+//                                                                            //
+// movevec.cpp                                                                //
+//                                                                            //
+// Operations on a list of moves.                                             //
+//                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
-// 								     	      //
+//                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstring>
