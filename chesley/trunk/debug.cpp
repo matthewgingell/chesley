@@ -248,7 +248,7 @@ Session::epd (const string_vector &args)
       else if (opcode == "bm")
 	{
 	  Move best = b.from_san (first (tokens));
-	  timeout = mclock () + 60 * 1000;
+	  timeout = mclock () + 15 * 1000;
 	  se.interrupt_search = false;
 	  cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
 	  Move m = se.choose_move (b, 100);

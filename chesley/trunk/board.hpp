@@ -13,12 +13,10 @@
 #ifndef _BOARD_
 #define _BOARD_
 
-#include <boost/unordered_map.hpp>
 #include <cassert>
 #include <cstring>
 #include <iostream>
 #include <string>
-#include <vector>
 
 #include "bits64.hpp"
 #include "types.hpp"

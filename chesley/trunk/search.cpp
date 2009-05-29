@@ -771,7 +771,17 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
   cout << setw (10) << calls_to_search;
   cout << setw (10) << calls_to_qsearch;
   cout << setw (8)  << setiosflags (ios::fixed) << setprecision (2) << elapsed;
-  cout << setw (8)  << pv[0].score  << "   ";
+
+
+  if (pv[0].score < MATE_VAL - 100)
+    {
+      cout << setw (8) << pv[0].score << "   ";
+    }
+  else
+    {
+      cout << setiosflags (ios::right) << setw (6) 
+	   << "Mate" << setw (2) << MATE_VAL - pv[0].score << "   ";
+    }
   
   for (int i = 0; i < pv.count; i++)
     {
