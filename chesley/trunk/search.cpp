@@ -6,8 +6,9 @@
 // configure search engine objects then call its methods to do various        //
 // types of searches.                                                         //
 //                                                                            //
-// Matthew Gingell                                                            //
-// gingell@adacore.com                                                        //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -285,10 +286,7 @@ Search_Engine :: search
     
     // Generate moves.
     Move_Vector moves (b);
-
-#ifdef ENABLE_ORDER_MOVES
     order_moves (b, depth, moves, alpha, beta);
-#endif
 
     ////////////////////////////
     // Minimax over children. //
@@ -379,7 +377,6 @@ Search_Engine :: search
                 pv = Move_Vector (moves[mi], cpv);
               }   
 
-#ifdef ENABLE_ALPHA_BETA
 	    /////////////////////////
             // Test for fail high. //
             /////////////////////////
@@ -388,7 +385,6 @@ Search_Engine :: search
               {
                 break;
               }
-#endif // ENABLE_ALPHA_BETA
           }
       }
 

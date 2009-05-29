@@ -1,11 +1,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-// board.cpp                                                                  //
+// board.hpp                                                                  //
 //                                                                            //
 // Representation and operations on a board state in a game of chess.         //
 //                                                                            //
-// Matthew Gingell                                                            //
-// gingell@adacore.com                                                        //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -527,7 +528,14 @@ struct Board {
       {
         Color c = get_color (idx);
         Kind k = get_kind (idx);
+	clear_piece (idx, c, k);
+      }
+  }
 
+  void
+  clear_piece (int idx, Color c, Kind k) {
+    if (occupied & masks_0[idx])
+      {
         assert (k != NULL_KIND);
         assert (c == BLACK || c == WHITE);
         assert (idx >= 0 && idx < 64);
@@ -733,31 +741,29 @@ Move::is_castle (const Board &b) const {
 // Is this a queen-side castle.
 inline bool 
 Move::is_castle_qs (const Board &b) const {
-  if (b.get_kind (from) == KING)
+  if ((b.to_move () == WHITE && from == E1 && to == C1) || 
+      (b.to_move () == BLACK && from == E8 && to == C8)) 
     {
-      if ((b.to_move () == WHITE && from == E1 && to == C1) || 
-          (b.to_move () == BLACK && from == E8 && to == C8)) 
-        {
-          return true;
-        }
+      return (b.get_kind (from) == KING);
     }
-
-  return false;
+  else
+    {
+      return false;
+    }
 }
 
 // Is this a king-side castle.
 inline bool 
 Move::is_castle_ks (const Board &b) const {
-  if (b.get_kind (from) == KING)
+  if ((b.to_move () == WHITE && from == E1 && to == G1) ||
+      (b.to_move () == BLACK && from == E8 && to == G8))
     {
-      if ((b.to_move () == WHITE && from == E1 && to == G1) ||
-          (b.to_move () == BLACK && from == E8 && to == G8))
-        {
-          return true;
-        }
+      return (b.get_kind (from) == KING);
     }
-
-  return false;
+  else
+    {
+      return false;
+    }
 }
 
 // Equality on moves.

@@ -8,8 +8,9 @@
 // returned to the player are multiplied by the correct sign and are          //
 // appropriate for maximization.                                              //
 //                                                                            //
-// Matthew Gingell                                                            //
-// gingell@adacore.com                                                        //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
