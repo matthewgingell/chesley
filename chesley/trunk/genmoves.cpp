@@ -46,7 +46,7 @@ using namespace std;
 
 // Collect all possible moves.
 void
-Board::gen_moves (Move_Vector &out) const
+Board::gen_moves (Move_Vector &moves) const
 {
   Color c = to_move ();
 
@@ -72,15 +72,15 @@ Board::gen_moves (Move_Vector &out) const
 	  to |= ((to & rank_mask (2)) << 8) & unoccupied ();
 
 	  // Capture forward right.
-	  to |= ((from & ~file_mask (0)) << 7) & black;
+	  to |= ((from & ~file_mask (A)) << 7) & black;
 
 	  // Capture forward left.
-	  to |= ((from & ~file_mask (7)) << 9) & black;
+	  to |= ((from & ~file_mask (H)) << 9) & black;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (0)) << 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (7)) << 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
@@ -95,42 +95,40 @@ Board::gen_moves (Move_Vector &out) const
 	  to |= ((to & rank_mask (5)) >> 8) & unoccupied ();
 
 	  // Capture forward left.
-	  to |= ((from & ~file_mask (7)) >> 7) & white;
+	  to |= ((from & ~file_mask (H)) >> 7) & white;
 
 	  // Capture forward right.
-	  to |= ((from & ~file_mask (0)) >> 9) & white;
+	  to |= ((from & ~file_mask (A)) >> 9) & white;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (7)) >> 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (0)) >> 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
 	}
 
       // Collect each destination in the moves list.
+      int from_idx = bit_idx (from);
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-
-	  Move m (bit_idx (from), to_idx);
 
 	  // Handle the case of a promotion.
 	  if ((c == WHITE && idx_to_rank (to_idx) == 7) ||
 	      (c == BLACK && idx_to_rank (to_idx) == 0))
 	    {
 	      // Generate a move for each possible promotion.
-	      for (int k = (int) ROOK; k <= (int) QUEEN; k++)
+	      for (Kind k = ROOK; k <= QUEEN; k++)
 		{
-		  m.promote = (Kind) k;
-		  out.push (m);
+		  moves.push (from_idx, to_idx, k);
 		}
 	    }
 	  else
 	    {
 	      // Handle non-promotion case;
-	      out.push (m);
+	      moves.push (from_idx, to_idx);
 	    }
 
 	  to = clear_lsb (to);
@@ -155,7 +153,7 @@ Board::gen_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from,  to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
 
@@ -178,7 +176,7 @@ Board::gen_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from, to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
       our_knights = clear_lsb (our_knights);
@@ -200,7 +198,7 @@ Board::gen_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from, to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
       our_bishops = clear_lsb (our_bishops);
@@ -222,7 +220,7 @@ Board::gen_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from,  to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
       our_queens = clear_lsb (our_queens);
@@ -247,7 +245,7 @@ Board::gen_moves (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from,  to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
     }
@@ -258,30 +256,37 @@ Board::gen_moves (Move_Vector &out) const
 
   if (c == WHITE)
     {
-      byte row = occ_0 (4);
+      byte row = occ_0 (E1);
 
-      if (flags.w_can_q_castle && (row & 0xE) == 0)
-	out.push (Move (4, 2));
+      if (flags.w_can_q_castle && !(row & 0xE))	
+	{ 
+	  moves.push (E1, C1);
+	}
 
-
-      if (flags.w_can_k_castle && (row & 0x60) == 0)
-	out.push (Move (4, 6));
+      if (flags.w_can_k_castle && !(row & 0x60)) 
+	{
+	  moves.push (E1, G1);
+	}
     }
   else
     {
-      byte row = occ_0 (60);
+      byte row = occ_0 (E8);
 
-      if (flags.b_can_q_castle && (row & 0xE) == 0)
-	out.push (Move (60, 58));
+      if (flags.b_can_q_castle && !(row & 0xE))
+	{
+	  moves.push (E8, C8);
+	}
 
-      if (flags.b_can_k_castle && (row & 0x60) == 0)
-	out.push (Move (60, 62));
+      if (flags.b_can_k_castle && !(row & 0x60))
+	{
+	  moves.push (E8, G8);
+	}
     }
 }
 
 // Generate captures
 void
-Board::gen_captures (Move_Vector &out) const
+Board::gen_captures (Move_Vector &moves) const
 {
   Color c = to_move ();
 
@@ -298,15 +303,15 @@ Board::gen_captures (Move_Vector &out) const
       if (c == WHITE)
 	{
 	  // Capture forward right.
-	  to |= ((from & ~file_mask (0)) << 7) & black;
+	  to |= ((from & ~file_mask (A)) << 7) & black;
 
 	  // Capture forward left.
-	  to |= ((from & ~file_mask (7)) << 9) & black;
+	  to |= ((from & ~file_mask (H)) << 9) & black;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (0)) << 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (7)) << 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
@@ -314,26 +319,26 @@ Board::gen_captures (Move_Vector &out) const
       else
 	{
 	  // Capture forward left.
-	  to |= ((from & ~file_mask (7)) >> 7) & white;
+	  to |= ((from & ~file_mask (H)) >> 7) & white;
 
 	  // Capture forward right.
-	  to |= ((from & ~file_mask (0)) >> 9) & white;
+	  to |= ((from & ~file_mask (A)) >> 9) & white;
 
 	  // Pawns which can reach the En Passant square.
 	  if (flags.en_passant != 0 &&
-	      ((bit_idx ((from & ~file_mask (7)) >> 7) == flags.en_passant) ||
-	       (bit_idx ((from & ~file_mask (0)) >> 9) == flags.en_passant)))
+	      ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
+	       (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
 	    {
 	      to |= masks_0[flags.en_passant];
 	    }
 	}
 
       // Collect each destination in the moves list.
+      int from_idx = bit_idx (from);
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  Move m (bit_idx (from), to_idx);
-	  out.push (m);
+	  moves.push (from_idx, to_idx);
 	  to = clear_lsb (to);
 	}
       our_pawns = clear_lsb (our_pawns);
@@ -356,7 +361,7 @@ Board::gen_captures (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from,  to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
 
@@ -380,7 +385,7 @@ Board::gen_captures (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from, to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
       our_knights = clear_lsb (our_knights);
@@ -395,7 +400,7 @@ Board::gen_captures (Move_Vector &out) const
   // For each bishop;
   while (our_bishops)
     {
-      // Look up destinations in moves table and collect each in 'out'.
+      // Look up destinations in moves table and collect each in 'moves'.
       int from = bit_idx (our_bishops);
 
       // Collect each destination in the moves list.
@@ -404,7 +409,7 @@ Board::gen_captures (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from, to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
       our_bishops = clear_lsb (our_bishops);
@@ -419,7 +424,7 @@ Board::gen_captures (Move_Vector &out) const
   // For each queen.
   while (our_queens)
     {
-      // Look up destinations in moves table and collect each in 'out'.
+      // Look up destinations in moves table and collect each in 'moves'.
       int from = bit_idx (our_queens);
 
       // Collect each destination in the moves list.
@@ -428,7 +433,7 @@ Board::gen_captures (Move_Vector &out) const
       while (to)
 	{
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from,  to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}
       our_queens = clear_lsb (our_queens);
@@ -444,13 +449,13 @@ Board::gen_captures (Move_Vector &out) const
     {			      
       int from = bit_idx (our_king);
 			      
-      // Collect each destination in the moves list.
+      // Collect each destination in the moves ylist.
       bitboard to = KING_ATTACKS (from) & ~our_pieces ();
       to &= other_pieces ();  
       while (to)	      
 	{		      
 	  int to_idx = bit_idx (to);
-	  out.push (Move (from,  to_idx));
+	  moves.push (from, to_idx);
 	  to = clear_lsb (to);
 	}		      
     }			      
@@ -468,13 +473,13 @@ Board::attack_set (Color c) const {
   pieces = pawns & color;     
   if (c == WHITE)	      
     {			      
-      attacks |= ((pieces & ~file_mask (0)) << 7);
-      attacks |= ((pieces & ~file_mask (7)) << 9);
+      attacks |= ((pieces & ~file_mask (A)) << 7);
+      attacks |= ((pieces & ~file_mask (H)) << 9);
     }			      
   else			      
     {			      
-      attacks |= ((pieces & ~file_mask (0)) >> 9);
-      attacks |= ((pieces & ~file_mask (7)) >> 7);
+      attacks |= ((pieces & ~file_mask (A)) >> 9);
+      attacks |= ((pieces & ~file_mask (H)) >> 7);
     }			      
 			      
   // Rooks		      
@@ -549,36 +554,28 @@ Board::is_attacked (int idx, Color c) const
   // move like an X and capture an X, then that X is able to attack it
 
   bitboard them = color_to_board (c);
-  bitboard attacks;
 
-  // Are we attacked along a rank or file?
-  attacks = ROOK_ATTACKS (idx);
-  if (attacks & (them & (queens | rooks))) return true;
-
-  // Are we attacked along a diagonal?
-  attacks = BISHOP_ATTACKS (idx);
-  if (attacks & (them & (queens | bishops))) return true;
-
-  // Are we attacked by a knight?
-  attacks = KNIGHT_ATTACKS (idx);
-  if (attacks & (them & knights)) return true;
-
-  // Are we attacked by a king?
-  attacks = KING_ATTACKS_TBL[idx];
-  if (attacks & (them & kings)) return true;
+  // Are we attack by a non-pawn?
+  if ((ROOK_ATTACKS   (idx) & them & (queens | rooks))   || 
+      (BISHOP_ATTACKS (idx) & them & (queens | bishops)) || 
+      (KNIGHT_ATTACKS (idx) & them & (knights))          || 
+      (KING_ATTACKS   (idx) & them & (kings)))
+    return true;
 
   // Are we attacked by a pawn?
+  bitboard attacks;
   bitboard their_pawns = pawns & them;
   if (c != WHITE)
     {
-      attacks = (((their_pawns & ~file_mask (7)) >> 7)
-                 | ((their_pawns & ~file_mask (0)) >> 9));
+      attacks = (((their_pawns & ~file_mask (H)) >> 7)
+                 | ((their_pawns & ~file_mask (A)) >> 9));
     }
   else
     {
-      attacks = (((their_pawns & ~file_mask (0)) << 7)
-                 | ((their_pawns & ~file_mask (7)) << 9));
+      attacks = (((their_pawns & ~file_mask (A)) << 7)
+                 | ((their_pawns & ~file_mask (H)) << 9));
     }
+
   if (attacks & masks_0[idx]) return true;
 
   return false;
@@ -599,16 +596,16 @@ Board::least_valuable_attacker (int sqr) const {
   bitboard our_pawns = pawns & us;
   if (c == WHITE)
     {
-      from = ((masks_0 [sqr] & ~file_mask (7)) >> 7) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (H)) >> 7) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
-      from = ((masks_0 [sqr] & ~file_mask (0)) >> 9) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (A)) >> 9) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
     }
   else
     {
-      from = ((masks_0 [sqr] & ~file_mask (0)) << 7) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (A)) << 7) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
-      from = ((masks_0 [sqr] & ~file_mask (7)) << 9) & our_pawns;
+      from = ((masks_0 [sqr] & ~file_mask (H)) << 9) & our_pawns;
       if (from) return Move (bit_idx (from), sqr);
     }
 
@@ -655,7 +652,7 @@ Board::perft (int d) const {
   Move_Vector moves (*this);
   for (int i = 0; i < moves.count; i++)
     {
-      Board c = *this;
+      Board c (*this);
       if (c.apply (moves[i])) sum += c.perft (d - 1);
     }
   return sum;
