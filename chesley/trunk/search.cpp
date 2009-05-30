@@ -772,22 +772,27 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
   cout << setw (10) << calls_to_qsearch;
   cout << setw (8)  << setiosflags (ios::fixed) << setprecision (2) << elapsed;
 
-
-  if (pv[0].score < MATE_VAL - 100)
+  // Write out the special case of mate in N.
+  Score score = pv[0].score;
+  cout << setiosflags (ios::right);
+  if (abs (score) > MATE_VAL - 100)
+    {
+      cout << setw (2) << (score < 0 ? "-" : " ");
+      cout << setw (4) << "Mate";
+      cout << setw (2) << MATE_VAL - abs(score) << "   ";
+    }
+  else 
     {
       cout << setw (8) << pv[0].score << "   ";
     }
-  else
-    {
-      cout << setiosflags (ios::right) << setw (6) 
-           << "Mate" << setw (2) << MATE_VAL - pv[0].score << "   ";
-    }
   
+  // Write out the principle variation.
   for (int i = 0; i < pv.count; i++)
     {
       cout << c.to_san (pv[i]) << " ";
       c.apply (pv[i]);
     }
+
   cout << endl;
 }
 
