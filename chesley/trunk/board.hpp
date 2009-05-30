@@ -434,8 +434,10 @@ struct Board {
     // zobrist_key_white_to_move.
     assert (c != NULL_COLOR);
     if (flags.to_move != c)
-      hash ^= Board::zobrist_key_white_to_move;
-    flags.to_move = c;
+      {
+        hash ^= Board::zobrist_key_white_to_move;
+        flags.to_move = c;
+      }
   }
 
   // Set en_passant target.
