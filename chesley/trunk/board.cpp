@@ -211,7 +211,7 @@ Board::apply (const Move &m) {
 
   // Reset the 50 move rule clock when a pawn is moved or a capture is
   // made.
-  if (capture != NULL_KIND || kind == PAWN)
+  if (capture != NULL_KIND)
     {
       half_move_clock = 0;
     }
@@ -226,24 +226,33 @@ Board::apply (const Move &m) {
   // There is no legal move with a half move clock greater than 50.
   if (half_move_clock > 50) return false;
 
-  ///////////////////////////////
-  // Handle taking En Passant. //
-  ///////////////////////////////
-
   if (kind == PAWN)
     {
+      /////////////////////////////////////////////////
+      // Zero the half move clock when a pawn moves. //
+      /////////////////////////////////////////////////
+
+      half_move_clock = 0;
+
+      //////////////////////////////////////////////
+      // Handle the case of capturing En Passant. //
+      //////////////////////////////////////////////
+
       if (m.is_en_passant (*this))
         {
-          // Clear the square behind destination square.
-          if (color == WHITE) clear_piece (flags.en_passant - 8);
-          else clear_piece (flags.en_passant + 8);
+          if (color == WHITE) 
+            {
+              clear_piece (flags.en_passant - 8);
+            }
+          else 
+            {
+              clear_piece (flags.en_passant + 8);
+            }
         }
 
-      ///////////////////////////////////////////////////////////////////
-      // Update En Passant target square. This needs to be done before //
-      // checking castling, since otherwise we may return without      //
-      // clearing the En Passant target square.                        //
-      ///////////////////////////////////////////////////////////////////
+      //////////////////////////////////////////
+      // Set the En Passant square correctly. //
+      //////////////////////////////////////////
 
       if (color == WHITE)
         {
@@ -271,91 +280,114 @@ Board::apply (const Move &m) {
   else
     {
       set_en_passant (0);
-    }
 
-  //////////////////////////////
-  // Handling castling moves. //
-  //////////////////////////////
-
-  if (kind == KING)
-    {
-      bool is_castle_qs = m.is_castle_qs (*this);
-      bool is_castle_ks = m.is_castle_ks (*this);
-      if (is_castle_qs || is_castle_ks)
+      if (kind == KING)
         {
-          // Calculate attacked set for testing check.
-          const bitboard attacked = attack_set (invert (color));
+          bool is_castle_qs = m.is_castle_qs (*this);
+          bool is_castle_ks = m.is_castle_ks (*this);
 
-          // Test castle out of, across, or in to check.
+          /////////////////////////////
+          // Update castling status. //
+          /////////////////////////////
+
           if (color == WHITE)
             {
-              if (is_castle_qs && !(attacked & 0x1C))
-                {
-                  clear_piece (E1);
-                  clear_piece (A1);
-                  set_piece (KING, WHITE, C1);
-                  set_piece (ROOK, WHITE, D1);
-                  set_castling_right (W_QUEEN_SIDE, false);
-                  set_castling_right (W_KING_SIDE, false);
-                  set_color (invert (to_move ()));
-                  flags.w_has_k_castled = 1;
-                  return true;
-                }
-              if (is_castle_ks && !(attacked & 0x70))
-                {
-                  clear_piece (E1);
-                  clear_piece (H1);
-                  set_piece (KING, WHITE, G1);
-                  set_piece (ROOK, WHITE, F1);
-                  set_castling_right (W_QUEEN_SIDE, false);
-                  set_castling_right (W_KING_SIDE, false);
-                  set_color (invert (to_move ()));
-                  flags.w_has_k_castled = 1;
-                  return true;
-                }
+              set_castling_right (W_QUEEN_SIDE, false);
+              set_castling_right (W_KING_SIDE, false);
             }
           else
             {
-              byte attacks = get_byte (attacked, 7);
-              if (is_castle_qs && !(attacks & 0x1C))
-                {
-                  clear_piece (E8);
-                  clear_piece (A8);
-                  set_piece (KING, BLACK, C8);
-                  set_piece (ROOK, BLACK, D8);
-                  set_castling_right (B_QUEEN_SIDE, false);
-                  set_castling_right (B_KING_SIDE, false);
-                  set_color (invert (to_move ()));
-                  flags.b_has_q_castled = 1;
-                  return true;
-                }
-              if (is_castle_ks && !(attacks & 0x70))
-                {
-                  clear_piece (E8);
-                  clear_piece (H8);
-                  set_piece (KING, BLACK, G8);
-                  set_piece (ROOK, BLACK, F8);
-                  set_castling_right (B_QUEEN_SIDE, false);
-                  set_castling_right (B_KING_SIDE, false);
-                  set_color (invert (to_move ()));
-                  flags.b_has_k_castled = 1;
-                  return true;
-                }
+              set_castling_right (B_QUEEN_SIDE, false);
+              set_castling_right (B_KING_SIDE, false);
             }
+      
+          if (is_castle_qs || is_castle_ks)
+            {
+              ////////////////////////////
+              // Handle castling moves. //
+              ////////////////////////////
 
-          return false;
+              const bitboard attacked = attack_set (invert (color));
+
+              if (color == WHITE)
+                {
+                  if (is_castle_qs && !(attacked & 0x1C))
+                    {
+                      clear_piece (E1);
+                      clear_piece (A1);
+                      set_piece (KING, WHITE, C1);
+                      set_piece (ROOK, WHITE, D1);
+                      set_color (invert (to_move ()));
+                      flags.w_has_k_castled = 1;
+                      return true;
+                    }
+                  if (is_castle_ks && !(attacked & 0x70))
+                    {
+                      clear_piece (E1);
+                      clear_piece (H1);
+                      set_piece (KING, WHITE, G1);
+                      set_piece (ROOK, WHITE, F1);
+                      set_color (invert (to_move ()));
+                      flags.w_has_k_castled = 1;
+                      return true;
+                    }
+                }
+              else
+                {
+                  byte attacks = get_byte (attacked, 7);
+                  if (is_castle_qs && !(attacks & 0x1C))
+                    {
+                      clear_piece (E8);
+                      clear_piece (A8);
+                      set_piece (KING, BLACK, C8);
+                      set_piece (ROOK, BLACK, D8);
+                      set_color (invert (to_move ()));
+                      flags.b_has_q_castled = 1;
+                      return true;
+                    }
+                  if (is_castle_ks && !(attacks & 0x70))
+                    {
+                      clear_piece (E8);
+                      clear_piece (H8);
+                      set_piece (KING, BLACK, G8);
+                      set_piece (ROOK, BLACK, F8);
+                      set_color (invert (to_move ()));
+                      flags.b_has_k_castled = 1;
+                      return true;
+                    }
+                }
+
+              return false;
+            }
         }
     }
+
+  /////////////////////////////////////////////////////////////////////
+  // Adjust castling rights in the case a rook is moved or captured. //
+  /////////////////////////////////////////////////////////////////////
+
+  if (kind == ROOK || capture == ROOK)
+    {
+      if (m.from == A1 || m.to == A1) 
+        set_castling_right (W_QUEEN_SIDE, false);
+      if (m.from == H1 || m.to == H1) 
+        set_castling_right (W_KING_SIDE, false); 
+      if (m.from == A8 || m.to == A8) 
+        set_castling_right (B_QUEEN_SIDE, false);
+      if (m.from == H8 || m.to == H8)
+        set_castling_right (B_KING_SIDE, false);
+    }
+  
+  ///////////////////////////
+  // Update color to move. //
+  ///////////////////////////
+
+  set_color (invert (to_move ()));
 
   ///////////////////////////////////////////////
   // Clear the origin and destination squares. //
   ///////////////////////////////////////////////
 
-  ///////////////////////////
-  // Update to_move state. //
-  ///////////////////////////
-
-  set_color (invert (to_move ()));
   clear_piece (m.from);
   clear_piece (m.to);
 
@@ -363,42 +395,12 @@ Board::apply (const Move &m) {
   // Set the destination square, possibly promoting. //
   /////////////////////////////////////////////////////
 
-  if (m.promote != NULL_KIND)
-    {
-      set_piece (m.promote, color, m.to);
-    }
-  else
-    {
-      set_piece (kind, color, m.to);
-    }
+  set_piece ((m.promote == NULL_KIND ? kind : m.promote), color, m.to);
 
-  /////////////////////////////
-  // Update castling status. //
-  /////////////////////////////
-
-  // King moves.
-  if (m.from == E1)
-    {
-      set_castling_right (W_QUEEN_SIDE, false);
-      set_castling_right (W_KING_SIDE, false);
-    }
-  else if (m.from == E8)
-    {
-      set_castling_right (B_QUEEN_SIDE, false);
-      set_castling_right (B_KING_SIDE, false);
-    }
-
-  // Rook moves and attacks.
-  if (m.from == A1 || m.to == A1) { set_castling_right (W_QUEEN_SIDE, false); }
-  if (m.from == H1 || m.to == H1) { set_castling_right (W_KING_SIDE, false);  }
-  if (m.from == A8 || m.to == A8) { set_castling_right (B_QUEEN_SIDE, false); }
-  if (m.from == H8 || m.to == H8) { set_castling_right (B_KING_SIDE, false);  }
-
-  ////////////////////
-  // Test legality. //
-  ////////////////////
-
-  // Return whether this position puts or leaves us in check.
+  //////////////////////////////////////////////
+  // Test legality of the resulting position. //
+  //////////////////////////////////////////////
+  
   return !in_check (color);
 }
 
