@@ -46,7 +46,7 @@ int8 const Eval::centrality_table[64] =
 //                                                                        //
 ////////////////////////////////////////////////////////////////////////////
 
-static const int8 piece_square_table[6][64] = 
+static const int8 piece_square_table[6][64] =
 {
   // Pawns
   {

@@ -44,7 +44,7 @@ Session::debug_execute (char *line) {
           test_hashing (depth);
         }
     }
-      
+
   return true;
 }
 
@@ -127,7 +127,7 @@ Session::dump_pawns (const string_vector &tokens)
               else
                 out << "0 ";
             }
-          
+
           // dump black pawns vector.
           bitboard black_pawns = board.pawns & board.black;
           for (int i = 0; i < 64; i++)
@@ -138,7 +138,7 @@ Session::dump_pawns (const string_vector &tokens)
                 out << "0 ";
             }
           out << endl;
-          
+
           cerr << board << endl << endl;
           Move m = find_a_move ();
           board.apply (m);
@@ -162,7 +162,7 @@ test_hashing_rec (const Board &b, int depth) {
     pass++;
   else
     cerr << "FAIL at depth: " << depth << endl;
-  
+
   if (depth == 0) return 1;
 
   for (int i = 0; i < moves.count; i++)
@@ -170,7 +170,7 @@ test_hashing_rec (const Board &b, int depth) {
       Board c = b;
       if (c.apply (moves[i])) pass += test_hashing_rec (c, depth - 1);
     }
-          
+
   return pass;
 }
 
@@ -230,16 +230,16 @@ Session::epd (const string_vector &args)
                   ///////////////////////////////////////
                   // Format: <PASS|FAIL> <DEPTH> <GOT> //
                   ///////////////////////////////////////
-                  
+
                   int depth = to_int (opcode [1]);
                   uint64 expecting = to_int (operand);
                   uint64 p = b.perft (depth);
                   bool pass = (p == expecting);
                   fprintf (out, "%s %lli\n", pass ? "PASS" : "FAIL", p);
 
-                  if (!pass) 
-                    fprintf  (out, 
-                              "Position %s fails at depth %i.\n", 
+                  if (!pass)
+                    fprintf  (out,
+                              "Position %s fails at depth %i.\n",
                               fen.c_str (), depth);
                 }
             }

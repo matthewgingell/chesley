@@ -3,11 +3,11 @@
 #include <unistd.h>
 #include "types.hpp"
 
-struct Trans_Table 
+struct Trans_Table
 {
-  struct Entry { 
-    hash_t key; 
-    int32_t depth, from, to, upperbound, lowerbound; 
+  struct Entry {
+    hash_t key;
+    int32_t depth, from, to, upperbound, lowerbound;
   };
 
   Trans_Table (size_t sz = 10 * 1024 * 1024) : sz (sz) {
@@ -25,7 +25,7 @@ struct Trans_Table
   size_t find_slot (hash_t key) {
     size_t i = key % sz;
     lookups++;
-    while (i < sz) 
+    while (i < sz)
       {
         if (table [i].key == 0 || table [i].key == key) return i;
         collisions++;

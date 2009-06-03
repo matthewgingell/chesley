@@ -40,7 +40,7 @@ extern char *arg0;
 // Return a string of spaces.
 static std::string spaces (int n) IS_UNUSED;
 
-// Downcase a string.
+// Down case a string.
 static std::string downcase (std::string &s) IS_UNUSED;
 
 // Test whether is string is a number.
@@ -59,15 +59,15 @@ static char *newstr (const char *s) IS_UNUSED;
 
 typedef std::vector <std::string> string_vector;
 
-// Collect space seperated tokens in a vector.
+// Collect space separated tokens in a vector.
 static string_vector tokenize (const std::string &s) IS_UNUSED;
 
 // Return a slice of the string_vector, from 'from' to 'to' inclusive.
-static string_vector slice 
+static string_vector slice
 (const string_vector &in, int first, int last) IS_UNUSED;
 
 // Return a slice of the string_vector, from 'from' then end.
-static string_vector slice 
+static string_vector slice
 (const string_vector &in, int first) IS_UNUSED;
 
 // Return the first element of a string_vector.
@@ -78,7 +78,7 @@ static string_vector rest (const string_vector &in) IS_UNUSED;
 
 // Return a string build from joining together each element of in. If
 // delim is not zero, it is used as the field separator.
-static std::string 
+static std::string
 join (const string_vector &in, const std::string &delim) IS_UNUSED;
 
 // Stream insertion.
@@ -100,17 +100,17 @@ static long atoi (char) IS_UNUSED;
 static bool fdready (int fd) IS_UNUSED;
 
 // Get a line, remove the trailing new line if any, and return a
-// malloced string.
+// malloc'd string.
 static char *get_line (FILE *in) IS_UNUSED;
 
 //////////////////////
 // Time and timers. //
 //////////////////////
 
-// Return the time in milliseconds since the epoch. 
+// Return the time in milliseconds since the epoch.
 static uint64 mclock () IS_UNUSED;
 
-// Return the amount of cpu time used in milliseconds.
+// Return the amount of CPU time used in milliseconds.
 static uint64 cpu_time () IS_UNUSED;
 
 ////////////////////////////
@@ -118,15 +118,15 @@ static uint64 cpu_time () IS_UNUSED;
 ////////////////////////////
 
 // Quick sort implementation.
-template <typename T> inline void 
+template <typename T> inline void
 quick_sort (T &items) IS_UNUSED;
 
 // Bubble sort implementation.
-template <typename T> inline void 
+template <typename T> inline void
 bubble_sort (T &items) IS_UNUSED;
 
-// Insertion sort implementation. 
-template <typename T> inline void 
+// Insertion sort implementation.
+template <typename T> inline void
 insertion_sort (T &items) IS_UNUSED;
 
 ////////////////////
@@ -144,13 +144,13 @@ static uint64 random64 () IS_UNUSED;
 //////////////////////
 
 // Return a string of N spaces.
-static std::string 
+static std::string
 spaces (int n) {
   return std::string (n, ' ');
 }
 
-// Downcase a string of spaces.
-static std::string 
+// Down case a string of spaces.
+static std::string
 downcase (std::string &s) {
   for (uint32 i = 0; i < s.length (); i++)
     {
@@ -161,11 +161,11 @@ downcase (std::string &s) {
 }
 
 // Test whether is string is a number.
-static bool 
+static bool
 is_number (const std::string &s) {
   for (uint32 i = 0; i < s.length (); i++)
     {
-      if (!isdigit (s[i])) 
+      if (!isdigit (s[i]))
         {
           return false;
         }
@@ -180,7 +180,7 @@ to_int (const std::string &s) {
 }
 
 // Convert a character to an integer.
-static int 
+static int
 to_int (const char &c) {
   return c - '0';
 }
@@ -204,7 +204,7 @@ static long atoi (char c) {
 // String vector functions //
 ////////////////////////////
 
-// Collect space or ';' seperated tokens in a vector. Quoted fields
+// Collect space or ';' separated tokens in a vector. Quoted fields
 // are not broken.
 typedef std::vector <std::string> string_vector;
 
@@ -221,7 +221,7 @@ tokenize (const std::string &s) {
           in_quote = !in_quote;
         }
 
-      if (!in_quote 
+      if (!in_quote
           && (isspace (*i) || *i == ';'))
         {
           if (token.length ())
@@ -248,7 +248,7 @@ tokenize (const std::string &s) {
 }
 
 // Return a slice of the string_vector, from 'from' to 'to' inclusive.
-static string_vector 
+static string_vector
 slice (const string_vector &in, int first, int last) {
   string_vector out;
   for (int i = first; i <= last; i++) out.push_back (in[i]);
@@ -256,7 +256,7 @@ slice (const string_vector &in, int first, int last) {
 }
 
 // Return a slice of the string_vector, from 'from' then end.
-static string_vector 
+static string_vector
 slice (const string_vector &in, int first) {
   return slice (in, first, in.size () - 1);
 }
@@ -273,7 +273,7 @@ static string_vector rest (const string_vector &in) {
 
 // Return a string build from joining together each element of in. If
 // delim is not zero, it is used as the field separator.
-static std::string join 
+static std::string join
 (const string_vector &in, const std::string &delim) {
   string_vector ::const_iterator i;
   std::string out = "";
@@ -302,7 +302,7 @@ operator<< (std::ostream &os, const string_vector &in) {
 
 // Check a file descriptor and return true is there is data available
 // to read from it.
-static bool 
+static bool
 fdready (int fd) {
   fd_set readfds;
   struct timeval timeout;
@@ -345,22 +345,22 @@ static char *get_line (FILE *in) {
 // Time and timers. //
 //////////////////////
 
-// Return the time in milliseconds since the epoch. 
-static uint64 
+// Return the time in milliseconds since the epoch.
+static uint64
 mclock () {
   struct timeval tv;
   gettimeofday(&tv, NULL);
-  return 
-    ((uint64) tv.tv_sec) * 1000 + 
+  return
+    ((uint64) tv.tv_sec) * 1000 +
     ((uint64) tv.tv_usec) / 1000;
 }
 
-// Return the amount of cpu time used in milliseconds.
+// Return the amount of CPU time used in milliseconds.
 static uint64
 cpu_time () {
   struct rusage ru;
   getrusage (RUSAGE_SELF, &ru);
-  return 
+  return
     ((uint64) ru.ru_utime.tv_sec) * 1000
     + ((uint64) ru.ru_utime.tv_usec) / 1000;
 }
@@ -371,8 +371,8 @@ cpu_time () {
 
 // Inline quicksort. Client type must 1) define a function count, 2)
 // define a function value and 3) be accessible with operator[].
-template <typename T> 
-inline int 
+template <typename T>
+inline int
 partition (T &items, int left, int right, int pivot_index) {
   int pivot_value = value (items[pivot_index]);
   int store_index = left;
@@ -395,8 +395,8 @@ partition (T &items, int left, int right, int pivot_index) {
   return store_index;
 }
 
-template <typename T> 
-inline void 
+template <typename T>
+inline void
 quick_sort_in_place (T &items, int left, int right) {
   if (right > left)
     {
@@ -407,20 +407,20 @@ quick_sort_in_place (T &items, int left, int right) {
     }
 }
 
-template <typename T> 
-inline void 
+template <typename T>
+inline void
 quick_sort (T &items) {
   quick_sort_in_place (items, 0, count (items) - 1);
 }
 
 // Bubble sort. Client type must 1) define a function count, 2) define
 // a function value and 3) be accessible with operator[].
-template <typename T> 
-inline void 
+template <typename T>
+inline void
 bubble_sort (T &items) {
   int len = count (items);
   bool done;
-  do  
+  do
     {
       done = true;
       for (int i = 0; i < len - 1; i++)
@@ -439,7 +439,7 @@ bubble_sort (T &items) {
 // Insertion sort implementation.  Client type must 1) define a
 // function count, 2) be accessible with operator[].
 template <typename V, typename I, bool cmp (const I&, const I&)>
-inline void 
+inline void
 insertion_sort (V &items) {
   int len = count (items);
   for (int i = 1; i < len; i++)
@@ -460,7 +460,7 @@ insertion_sort (V &items) {
 /////////////////////
 
 // Seed the random number generator
-static void 
+static void
 seed_random () {
   srandom (mclock ());
 }

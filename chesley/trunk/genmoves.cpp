@@ -4,7 +4,7 @@
 //                                                                            //
 // Code to generate a vector of moves, given a state of play.                 //
 //                                                                            //
-// There is a good discusion of generating moves from bitmaps in:             //
+// There is a good discussion of generating moves from bitmaps in:            //
 // _Rotated bitmaps, a new twist on an old idea_ by Robert Hyatt at           //
 // http://www.cis.uab.edu/info/faculty/hyatt/bitmaps.html.                    //
 //                                                                            //
@@ -23,9 +23,9 @@
 
 using namespace std;
 
-/////////////////////////////////
-// Attack table lookup macros. //
-/////////////////////////////////
+//////////////////////////////////
+// Attack table look up macros. //
+//////////////////////////////////
 
 #define RANK_ATTACKS(idx) \
   (RANK_ATTACKS_TBL     [idx * 256 + occ_0 (idx)])
@@ -259,12 +259,12 @@ Board::gen_moves (Move_Vector &moves) const
     {
       byte row = occ_0 (E1);
 
-      if (flags.w_can_q_castle && !(row & 0xE)) 
-        { 
+      if (flags.w_can_q_castle && !(row & 0xE))
+        {
           moves.push (E1, C1);
         }
 
-      if (flags.w_can_k_castle && !(row & 0x60)) 
+      if (flags.w_can_k_castle && !(row & 0x60))
         {
           moves.push (E1, G1);
         }
@@ -443,47 +443,47 @@ Board::gen_captures (Move_Vector &moves) const
   /////////////////////////////
   // Generate king captures. //
   /////////////////////////////
-                              
+
   bitboard our_king = kings & our_pieces ();
-                              
-  if (our_king)               
-    {                         
+
+  if (our_king)
+    {
       int from = bit_idx (our_king);
-                              
-      // Collect each destination in the moves ylist.
+
+      // Collect each destination in the moves list.
       bitboard to = KING_ATTACKS (from) & ~our_pieces ();
-      to &= other_pieces ();  
-      while (to)              
-        {                     
+      to &= other_pieces ();
+      while (to)
+        {
           int to_idx = bit_idx (to);
           moves.push (from, to_idx);
           to = clear_lsb (to);
-        }                     
-    }                         
-}                             
-                              
+        }
+    }
+}
+
 // Compute a bitboard of every square color is attacking.
-bitboard                      
+bitboard
 Board::attack_set (Color c) const {
   bitboard color = c == WHITE ? white : black;
-  bitboard attacks = 0llu;    
-  bitboard pieces;            
-  int from;                   
-                              
-  // Pawns                    
-  pieces = pawns & color;     
-  if (c == WHITE)             
-    {                         
+  bitboard attacks = 0llu;
+  bitboard pieces;
+  int from;
+
+  // Pawns
+  pieces = pawns & color;
+  if (c == WHITE)
+    {
       attacks |= ((pieces & ~file_mask (A)) << 7);
       attacks |= ((pieces & ~file_mask (H)) << 9);
-    }                         
-  else                        
-    {                         
+    }
+  else
+    {
       attacks |= ((pieces & ~file_mask (A)) >> 9);
       attacks |= ((pieces & ~file_mask (H)) >> 7);
-    }                         
-                              
-  // Rooks                    
+    }
+
+  // Rooks
   pieces = rooks & color;
   while (pieces)
     {
@@ -532,8 +532,8 @@ Board::attack_set (Color c) const {
 }
 
 // Get the number of legal moves available from this position.
-int 
-Board::child_count () const 
+int
+Board::child_count () const
 {
   int count = 0;
   Move_Vector moves (*this);
@@ -543,7 +543,7 @@ Board::child_count () const
       Board c = *this;
       if (c.apply (moves[i])) count++;
     }
-  
+
   return count;
 }
 
@@ -557,9 +557,9 @@ Board::is_attacked (int idx, Color c) const
   bitboard them = color_to_board (c);
 
   // Are we attack by a non-pawn?
-  if ((ROOK_ATTACKS   (idx) & them & (queens | rooks))   || 
-      (BISHOP_ATTACKS (idx) & them & (queens | bishops)) || 
-      (KNIGHT_ATTACKS (idx) & them & (knights))          || 
+  if ((ROOK_ATTACKS   (idx) & them & (queens | rooks))   ||
+      (BISHOP_ATTACKS (idx) & them & (queens | bishops)) ||
+      (KNIGHT_ATTACKS (idx) & them & (knights))          ||
       (KING_ATTACKS   (idx) & them & (kings)))
     return true;
 

@@ -151,9 +151,9 @@ Board::startpos () {
     ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-/////////////////////////////
-// Seting castling rights. //
-/////////////////////////////
+//////////////////////////////
+// Setting castling rights. //
+//////////////////////////////
 
 void
 Board::set_castling_right (Castling_Right cr, bool v) {
@@ -240,11 +240,11 @@ Board::apply (const Move &m) {
 
       if (m.is_en_passant (*this))
         {
-          if (color == WHITE) 
+          if (color == WHITE)
             {
               clear_piece (flags.en_passant - 8);
             }
-          else 
+          else
             {
               clear_piece (flags.en_passant + 8);
             }
@@ -300,7 +300,7 @@ Board::apply (const Move &m) {
               set_castling_right (B_QUEEN_SIDE, false);
               set_castling_right (B_KING_SIDE, false);
             }
-      
+
           if (is_castle_qs || is_castle_ks)
             {
               ////////////////////////////
@@ -368,16 +368,16 @@ Board::apply (const Move &m) {
 
   if (kind == ROOK || capture == ROOK)
     {
-      if (m.from == A1 || m.to == A1) 
+      if (m.from == A1 || m.to == A1)
         set_castling_right (W_QUEEN_SIDE, false);
-      if (m.from == H1 || m.to == H1) 
-        set_castling_right (W_KING_SIDE, false); 
-      if (m.from == A8 || m.to == A8) 
+      if (m.from == H1 || m.to == H1)
+        set_castling_right (W_KING_SIDE, false);
+      if (m.from == A8 || m.to == A8)
         set_castling_right (B_QUEEN_SIDE, false);
       if (m.from == H8 || m.to == H8)
         set_castling_right (B_KING_SIDE, false);
     }
-  
+
   ///////////////////////////
   // Update color to move. //
   ///////////////////////////
@@ -400,7 +400,7 @@ Board::apply (const Move &m) {
   //////////////////////////////////////////////
   // Test legality of the resulting position. //
   //////////////////////////////////////////////
-  
+
   return !in_check (color);
 }
 
