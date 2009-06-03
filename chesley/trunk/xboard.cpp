@@ -24,9 +24,9 @@ Session::set_xboard_mode (const string_vector &tokens) {
   ui_mode = BATCH;
 
   // Set chatting for ICS.
-  fprintf (out, "tellicsnoalias set 1 %s v%s\n", 
+  fprintf (out, "tellicsnoalias set 1 %s v%s\n",
            ENGINE_ID_STR, SVN_REVISION);
-  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n", 
+  fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n",
            SVN_REVISION);
 
   return true;
@@ -69,32 +69,19 @@ Session::xbd_execute (char *line) {
           fprintf (out, "feature done=1\n");
         }
 
-      ////////////////////////////////////////////////////////////////
-      // Assume we are using an up to date version of xboard and do //
-      // not pay attention to replies to the feature command.       //
-      ////////////////////////////////////////////////////////////////
 
-      if (token == "accepted" || token == "rejected")
+      // Assume we are using an up to date version of xboard and do
+      // not pay attention to replies to the feature command.
+      else if (token == "accepted" || token == "rejected")
         {
           // ignored.
         }
 
-      ////////////////////////////////////////////////////////
-      // We do not support any non-standard chess variants. //
-      ////////////////////////////////////////////////////////
 
-      if (token == "variant")
+      // We do not support any non-standard chess variants.
+      else if (token == "variant")
         {
           // ignored.
-        }
-
-      //////////////////
-      // quit command //
-      //////////////////
-
-      if (token == "quit")
-        {
-          return false;
         }
 
       ////////////////////
@@ -104,111 +91,6 @@ Session::xbd_execute (char *line) {
       if (token == "random")
         {
           // ignored.
-        }
-
-      ///////////////////
-      // force command //
-      ///////////////////
-
-      if (token == "force")
-        {
-          running = false;
-        }
-
-      ////////////////
-      // go command //
-      ////////////////
-
-      if (token == "go")
-        {
-          our_color = board.to_move ();
-          running = true;
-        }
-
-      ///////////////////////
-      // playother command //
-      ///////////////////////
-
-      if (token == "playother")
-        {
-          our_color = invert (our_color);
-        }
-
-      ///////////////////
-      // white command //
-      ///////////////////
-
-      if (token == "white")
-        {
-          board.set_color (WHITE);
-          our_color = BLACK;
-        }
-
-      ///////////////////
-      // black command //
-      ///////////////////
-
-      if (token == "black")
-        {
-          board.set_color (BLACK);
-          our_color = WHITE;
-        }
-
-      ////////////////////////////////
-      // level MPS BASE INC command //
-      ////////////////////////////////
-
-      if (token == "level")
-        {
-          // ignored.
-        }
-
-      /////////////////////
-      // st TIME command //
-      /////////////////////
-
-      if (token == "st")
-        {
-          // ignored.
-        }
-
-      ////////////////////
-      // time N command //
-      ////////////////////
-
-      if (token == "time")
-        {
-          // ignored.
-        }
-
-      /////////////////////
-      // otime N command //
-      /////////////////////
-
-      if (token == "otime")
-        {
-          // ignored.
-        }
-
-      //////////////////////
-      // usermove command //
-      //////////////////////
-
-      if (token == "usermove" && count > 1)
-        {
-          Move m = board.from_calg (tokens[1]);
-          bool applied = board.apply (m);
-
-          // The client should never pass us a move that doesn't
-          // apply.
-          assert (applied);
-
-            // This move may have ended the game.
-          Status s = get_status ();
-          if (s != GAME_IN_PROGRESS)
-            {
-              handle_end_of_game (s);
-            }
         }
 
       ////////////////
@@ -249,15 +131,6 @@ Session::xbd_execute (char *line) {
       if (token == "result")
         {
           // ignored.
-        }
-
-      //////////////////////////
-      // setboard FEN command //
-      //////////////////////////
-
-      if (token == "setboard")
-        {
-          // Handled in generic loop.
         }
 
       //////////////////
@@ -345,7 +218,7 @@ Session::xbd_execute (char *line) {
       // analyze command //
       /////////////////////
 
-      if (token == "analyse")
+      if (token == "analyze")
         {
           // ignored.
         }

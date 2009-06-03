@@ -26,15 +26,15 @@
 extern const char *SVN_REVISION;
 
 #define ENGINE_ID_STR        "Chesley the Chess Engine!"
-#define ENGINE_AUTHOR_STR    "Matthew Gingell <gingell@adacore.com>" 
+#define ENGINE_AUTHOR_STR    "Matthew Gingell <gingell@adacore.com>"
 #define ENGINE_COPYRIGHT_STR "Copyright (C) 2009 " ENGINE_AUTHOR_STR
 #define ENGINE_LICENSE_STR   "Chesley is free software, " \
                               "distributed under the GNU General Public License."
 
-inline 
+inline
 char *get_prologue () {
   static char buf[2048];
-  sprintf (buf, "%s (svn r%s)\n\n%s\n%s", 
+  sprintf (buf, "%s (svn r%s)\n\n%s\n%s",
            ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }

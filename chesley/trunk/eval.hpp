@@ -24,7 +24,7 @@
 //////////////////////
 // Material values. //
 //////////////////////
-  
+
 static const Score PAWN_VAL   = 100;
 static const Score ROOK_VAL   = 500;
 static const Score KNIGHT_VAL = 300;
@@ -92,7 +92,7 @@ struct Eval {
     memset (minor_counts, sizeof (minor_counts), 0);
     memset (major_counts, sizeof (major_counts), 0);
     memset (pawn_counts, sizeof (pawn_counts), 0);
-    count_material ();    
+    count_material ();
   }
 
   Score score () {
@@ -117,17 +117,17 @@ struct Eval {
 
     // Generate a simple material score.
     score += score_material (WHITE) - score_material (BLACK);
-    
+
     // Add net piece square values.
     score += sum_piece_squares (b);
 
     // Provide a bonus for holding both bishops.
-    if (piece_counts[WHITE][BISHOP] >= 2) 
+    if (piece_counts[WHITE][BISHOP] >= 2)
       {
         score += BISHOP_PAIR_BONUS;
       }
-    
-    if (piece_counts[BLACK][BISHOP] >= 2) 
+
+    if (piece_counts[BLACK][BISHOP] >= 2)
       {
         score -= BISHOP_PAIR_BONUS;
       }
@@ -148,7 +148,7 @@ struct Eval {
 #endif
 
     // Set the appropriate sign and return the score.
-    return sign (b.to_move ()) * score;    
+    return sign (b.to_move ()) * score;
   }
 
   // Count the pieces on the board and populate pcounts.
@@ -157,7 +157,7 @@ struct Eval {
       {
         // Count pieces.
         bitboard all_pieces = b.color_to_board (c);
-        for (Kind k = PAWN; k < KING; k++) 
+        for (Kind k = PAWN; k < KING; k++)
           {
             int count = pop_count (all_pieces & b.kind_to_board (k));
             piece_counts[c][k] = count;
@@ -178,21 +178,21 @@ struct Eval {
         minor_counts[c] = piece_counts[c][KNIGHT] + piece_counts[c][BISHOP];
       }
   }
-    
+
   // Return a raw material for Color c.
   Score score_material (Color c) {
     Score score = 0;
-    for (Kind k = PAWN; k < KING; k++)   
+    for (Kind k = PAWN; k < KING; k++)
       score += eval_piece (k) * piece_counts[c][k];
     return score;
   }
-  
+
   // Reward rooks and queens on open and semi-open files.
   Score eval_files (const Color c) {
     Score score = 0;
     bitboard pieces = b.color_to_board (c) & (b.queens | b.rooks);
 
-    while (pieces) 
+    while (pieces)
       {
         int idx = bit_idx (pieces);
         int file = b.idx_to_file (idx);
@@ -211,7 +211,7 @@ struct Eval {
     bitboard all = b.color_to_board (c);
     bitboard pieces = all & b.bishops;
     bitboard pawns = all & b.pawns;
-    while (pieces) 
+    while (pieces)
       {
         // Provide a bonus when a bishop is not obstructed by pawns of
         // its own color.
@@ -252,24 +252,24 @@ struct Eval {
         // Capture forward right.
         attacks |= ((pawns & ~b.file_mask (0)) >> 9) & b.white;
       }
-    
+
     score += 20 * pop_count (attacks & pawns);
 #endif
 
-    while (pawns) 
+    while (pawns)
       {
         int idx = bit_idx (pawns);
         int file = b.idx_to_file (idx);
 
         // Penalize rook pawns.
-        if (file == 0 || file == 7) 
+        if (file == 0 || file == 7)
           {
             // std::cerr << "penalizing rook pawn on file " << file << std::endl;
             score -= 15;
           }
 
         // Penalize doubled pawns.
-        if (pawn_counts[c][file] > 1) 
+        if (pawn_counts[c][file] > 1)
           {
             // std::cerr << "penalizing doubled pawn on file " << file << std::endl;
             score -= 20;
@@ -278,7 +278,7 @@ struct Eval {
         // Penalize isolated pawns.
         if ((file == 0 && pawn_counts[c][1] == 0) ||
             (file == 7 && pawn_counts[c][6] == 0) ||
-            (pawn_counts[c][file - 1] == 0 && 
+            (pawn_counts[c][file - 1] == 0 &&
              pawn_counts[c][file + 1] == 0))
           {
             // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
@@ -302,7 +302,7 @@ struct Eval {
     Move_Vector white_moves, black_moves;
     Score score = 0;
     Color c = b.to_move ();
-    
+
     b.flags.to_move = WHITE;
     b.gen_moves (white_moves);
     for (int i = 0; i < white_moves.count; i++)
@@ -318,12 +318,12 @@ struct Eval {
 
     for (int i = 0; i < 64; i++)
       score += control [i];
-    
+
     b.flags.to_move = c;
 
     return score / 5;
   }
-  
+
   Board b;
   int piece_counts[2][5];
   int major_counts[2];

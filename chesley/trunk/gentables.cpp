@@ -8,7 +8,7 @@
 //                                                                            //
 // Each 45 degree increment rotates the board one half step                   //
 // counterclockwise. There is a detailed and very readable description        //
-// of this approch in:                                                        //
+// of this approach in:                                                       //
 //                                                                            //
 // _Rotated bitboards in FUSc#_ by Johannes Buchner:                          //
 // page.mi.fu-berlin.de/~fusch/publications/Joe-Paper_rotated_bitboards.pdf   //
@@ -671,7 +671,7 @@ init_king_attacks_tbl()
   return rv;
 }
 
-// Precompute attacks along tht 56 - 07 diagonal.
+// Precompute attacks along the 56 - 07 diagonal.
 bitboard *
 init_45d_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
@@ -718,7 +718,7 @@ init_45d_attacks_tbl () {
   return rv;
 }
 
-// Precompute attacks along tht 0 - 63 diagonal.
+// Precompute attacks along the 0 - 63 diagonal.
 bitboard *
 init_135d_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];

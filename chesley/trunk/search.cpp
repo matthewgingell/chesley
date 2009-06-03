@@ -25,7 +25,7 @@ const int Search_Engine::hist_nbuckets;
 
 // Compute the principal variation and return its first move.
 Move
-Search_Engine :: choose_move (Board &b, int depth) 
+Search_Engine :: choose_move (Board &b, int depth)
 {
   Move_Vector pv;
   new_search (b, depth, pv);
@@ -44,15 +44,15 @@ Search_Engine :: choose_move (Board &b, int depth)
 /////////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine :: new_search 
-(const Board &b, int depth, Move_Vector &pv) 
+Search_Engine :: new_search
+(const Board &b, int depth, Move_Vector &pv)
 {
   // Age the history table.
   for (uint32 i = 0; i < sizeof (hh_table) / sizeof (uint64); i++)
     {
       ((uint64 *) hh_table)[i] /= 2;
     }
-  
+
   // Age the transposition table.
   Trans_Table :: iterator i;
   for (i = tt.begin (); i != tt.end(); i++)
@@ -60,14 +60,10 @@ Search_Engine :: new_search
       if (i -> second.age >= 5) tt.erase (i);
       else i -> second.age++;
     }
-   
+
   // Clear statistics.
-  calls_to_search = 0;
-  calls_to_qsearch = 0;
-  memset (hist_pv, 0, sizeof (hist_pv));
-  tt_hits = 0;
-  tt_misses = 0;
-  
+  clear_statistics ();
+
   Score score = iterative_deepening (b, depth, pv);
   return score;
 }
@@ -82,9 +78,9 @@ Search_Engine :: new_search
 //                                                                    //
 ////////////////////////////////////////////////////////////////////////
 
-Score 
-Search_Engine::iterative_deepening 
-(const Board &b, int depth, Move_Vector &pv) 
+Score
+Search_Engine::iterative_deepening
+(const Board &b, int depth, Move_Vector &pv)
 {
   Score s = 0;
   Score scores[100];
@@ -93,7 +89,7 @@ Search_Engine::iterative_deepening
   if (post) post_before (b);
 
   // Search progressively deeper ply until we are interrupted.
-  for (int i = 1; i <= depth; i++) 
+  for (int i = 1; i <= depth; i++)
     {
       Move_Vector tmp;
 
@@ -102,12 +98,12 @@ Search_Engine::iterative_deepening
       start_time = cpu_time ();
 
       // Search this position using a dynamically sized aspiration window.
-      int delta = 
+      int delta =
         (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 10 : INF;
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // Break out of the loop if the search was interrupted.
-      if (interrupt_search) 
+      if (interrupt_search)
         break;
 
       // Otherwise, if the search completed and we got back a
@@ -125,13 +121,13 @@ Search_Engine::iterative_deepening
   // If we got back no principal variation, return a depth 1 search.
   if (pv.count == 0) {
     interrupt_search = false;
-    search_with_memory  (b, 1, 0, pv, -INF, INF);    
+    search_with_memory  (b, 1, 0, pv, -INF, INF);
     interrupt_search = true;
   }
 
   // Check that we got at least one move.
   assert (pv.count > 0);
-  
+
   return pv[0].score;
 }
 
@@ -144,9 +140,9 @@ Search_Engine::iterative_deepening
 //                                                                         //
 /////////////////////////////////////////////////////////////////////////////
 
-Score 
-Search_Engine::aspiration_search 
-(const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw) 
+Score
+Search_Engine::aspiration_search
+(const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw)
 {
   Score s;
 
@@ -156,7 +152,7 @@ Search_Engine::aspiration_search
 
   s = search_with_memory  (b, depth, 0, pv, lower, upper);
 
-  // Re-search if we failed.
+  // Search from scratch if we failed.
   if (s <= lower || s >= upper)
     {
       pv.clear ();
@@ -169,50 +165,50 @@ Search_Engine::aspiration_search
   return s;
 }
 
-/////////////////////////////////////////////////////////////////////////
-//                                                                     //
-// Search_Engine :: search_with_memory ()                              //
-//                                                                     //
-// This routine wraps search and memoizes lookups in the transposition //
-// table.                                                              //
-//                                                                     //
-/////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//                                                                      //
+// Search_Engine :: search_with_memory ()                               //
+//                                                                      //
+// This routine wraps search and memoizes look ups in the               //
+// transposition table.                                                 //
+//                                                                      //
+//////////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine :: search_with_memory 
-(const Board &b, 
- int depth, int ply, 
- Move_Vector &pv, 
+Search_Engine :: search_with_memory
+(const Board &b,
+ int depth, int ply,
+ Move_Vector &pv,
  Score alpha, Score beta,
  bool do_null_move)
 {
   assert (pv.count == 0);
 
   // Try to find this node in the transposition table.
-  Move m;  
+  Move m;
   if (tt_try (b, depth, m, alpha, beta))
     {
       pv.push (m);
       return m.score;
     }
-  
+
   // Push this position on the repetition stack and recurse.
   rt_push (b);
   Score s = search (b, depth, ply, pv, alpha, beta, do_null_move);
   rt_pop (b);
-  
+
   // Update the transposition table if this search returned a PV.
   if (pv.count > 0)
     tt_update (b, depth, pv[0], alpha, beta);
-  
+
   return s;
 }
 
 Score
-Search_Engine :: search 
-(const Board &b, 
- int depth, int ply, 
- Move_Vector &pv, 
+Search_Engine :: search
+(const Board &b,
+ int depth, int ply,
+ Move_Vector &pv,
  Score alpha, Score beta,
  bool do_null_move)
 {
@@ -222,7 +218,7 @@ Search_Engine :: search
   assert (pv.count == 0);
 
   ////////////////////////////////////////////////
-  // Check 50 move and triple repitition rules. //
+  // Check 50 move and triple repetition rules. //
   ////////////////////////////////////////////////
 
   if (b.half_move_clock == 50 || is_rep (b))
@@ -231,7 +227,7 @@ Search_Engine :: search
   ////////////////////////////////////////
   // Abort if we have been interrupted. //
   ////////////////////////////////////////
-  
+
   if (interrupt_search)
     return 12345;
 
@@ -244,8 +240,8 @@ Search_Engine :: search
   //////////////////////////////////////////////////////////
   // Return the result of a quiescence search at depth 0. //
   //////////////////////////////////////////////////////////
-  
-  if (depth <= 0) 
+
+  if (depth <= 0)
     {
 #ifdef ENABLE_QSEARCH
       alpha = qsearch (b, -1, ply, alpha, beta);
@@ -257,7 +253,7 @@ Search_Engine :: search
   ///////////////////////////////////////////////////////
   // Otherwise recurse over the children of this node. //
   ///////////////////////////////////////////////////////
-  
+
   else {
 
 #ifdef ENABLE_NULL_MOVE
@@ -269,21 +265,21 @@ Search_Engine :: search
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 15 pieces on the board.
-    if (ply > 1 && 
-        do_null_move && 
-        pop_count (b.occupied) >= 15 && 
+    if (ply > 1 &&
+        do_null_move &&
+        pop_count (b.occupied) >= 15 &&
         !in_check)
       {
         Board c = b;
         Move_Vector dummy;
         c.set_color (invert (b.to_move ()));
-        int val = -search_with_memory 
+        int val = -search_with_memory
           (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
         if (val >= beta)
           return val;
       }
 #endif /* ENABLE_NULL_MOVE */
-    
+
     // Generate moves.
     Move_Vector moves (b);
     order_moves (b, depth, moves, alpha, beta);
@@ -306,20 +302,12 @@ Search_Engine :: search
             ////////////////////////
             // Search extensions. //
             ////////////////////////
-            
-            int ext = 0;
-            if (in_check) 
-              ext += 1;
-            
-            if (moves[mi].get_kind (b) == PAWN && 
-                (moves[mi].to == 1 || moves[mi].to == 6)) 
-              ext += 1;
 
-            if (moves[mi].promote == QUEEN) 
-              ext += 1;
+            int ext = 0;
+            if (in_check) ext += 1;
 
 #ifdef ENABLE_LMR
-            
+
             // Shows no effect in ~200 games.
 
             ///////////////////////////
@@ -328,45 +316,45 @@ Search_Engine :: search
 
             const int Full_Depth_Count = 4;
             const int Reduction_Limit = 3;
-            if (mi >= Full_Depth_Count && 
-                depth >= Reduction_Limit && 
-                ext == 0 && 
+            if (mi >= Full_Depth_Count &&
+                depth >= Reduction_Limit &&
+                ext == 0 &&
                 have_pv_move &&
                 Eval (c).score () < alpha)
               {
                 int ds;
                 Move_Vector dummy;
-                ds = -search_with_memory 
+                ds = -search_with_memory
                   (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
-                
+
                 // If we fail low, we are done with this node.
                 if (ds <= alpha)
                   continue;
               }
 #endif // ENABLE_LMR
-            
+
 #if ENABLE_PVS
             /////////////////////////////////
             // Principle variation search. //
             /////////////////////////////////
-            if (have_pv_move) 
+            if (have_pv_move)
               {
                 cs = -search_with_memory
                   (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
-                if (cs > alpha && cs < beta) 
+                if (cs > alpha && cs < beta)
                   {
                     cpv.clear ();
-                    cs = -search_with_memory 
+                    cs = -search_with_memory
                       (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
                   }
               }
             else
 #endif // ENABLE_PVS
               {
-                cs = -search_with_memory 
+                cs = -search_with_memory
                   (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
               }
-            
+
             // Test whether this move is better than the moves we have
             // previously analyzed.
             if (cs > alpha)
@@ -375,12 +363,12 @@ Search_Engine :: search
                 alpha = cs;
                 moves[mi].score = alpha;
                 pv = Move_Vector (moves[mi], cpv);
-              }   
+              }
 
             /////////////////////////
             // Test for fail high. //
             /////////////////////////
-            
+
             if (cs >= beta)
               {
                 break;
@@ -426,8 +414,8 @@ Search_Engine :: search
 
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
-void 
-Search_Engine::order_moves 
+void
+Search_Engine::order_moves
 (const Board &b, int depth, Move_Vector &moves, int alpha, int beta) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
@@ -458,19 +446,19 @@ Search_Engine::order_moves
           moves[i].score = +INF;
           continue;
         }
-      
+
       // Followed by promotions to queen.
       if (moves[i].promote == QUEEN)
         moves[i].score += 1000;
 
       // Followed by captures.
       moves[i].score += 100 * eval_piece (moves[i].capture (b));
-      
+
       // And finally, recent PV and fail-high moves.
-      moves[i].score += 
-        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];    
+      moves[i].score +=
+        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }
-  
+
   insertion_sort <Move_Vector, Move, less_than> (moves);
 }
 
@@ -496,7 +484,7 @@ Search_Engine::see (const Board &b, const Move &m) {
   c.clear_piece (m.to);
   c.set_piece (m.get_kind (b), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
-  
+
   Move lvc = c.least_valuable_attacker (m.to);
   if (!lvc.is_null () && b.get_kind (m.from) != KING)
     {
@@ -506,11 +494,11 @@ Search_Engine::see (const Board &b, const Move &m) {
   return s;
 }
 
-// Quiescence search. 
-Score 
-Search_Engine::qsearch 
-(const Board &b, int depth, int ply, 
- Score alpha, Score beta) 
+// Quiescence search.
+Score
+Search_Engine::qsearch
+(const Board &b, int depth, int ply,
+ Score alpha, Score beta)
 {
   Move_Vector dummy;
 
@@ -527,10 +515,10 @@ Search_Engine::qsearch
   alpha = max (alpha, Eval (b).score ());
 
   ////////////////////////////////////////
-  // Recurse and minimax over children. // 
+  // Recurse and minimax over children. //
   ////////////////////////////////////////
 
-  if (alpha < beta) 
+  if (alpha < beta)
     {
       Board c;
       Move_Vector moves;
@@ -540,7 +528,7 @@ Search_Engine::qsearch
       /////////////////////////////////
 
       b.gen_captures (moves);
-      for (int i = 0; i < moves.count; i++)  
+      for (int i = 0; i < moves.count; i++)
         {
 #ifdef ENABLE_SEE
           moves[i].score = see (b, moves[i]);
@@ -549,7 +537,7 @@ Search_Engine::qsearch
 #endif
         }
       insertion_sort <Move_Vector, Move, less_than> (moves);
- 
+
       ////////////////////////////
       // Minimax over captures. //
       ////////////////////////////
@@ -559,9 +547,9 @@ Search_Engine::qsearch
           c = b;
           if (c.apply (moves[i]))
             {
-              alpha = max 
+              alpha = max
                 (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
-              if (alpha >= beta) 
+              if (alpha >= beta)
                 break;
             }
         }
@@ -581,8 +569,8 @@ Search_Engine::qsearch
 // Try to get a move or tighten the window from the transposition
 // table, returning true if we found a move we can return at this
 // position.
-inline bool 
-Search_Engine::tt_try 
+inline bool
+Search_Engine::tt_try
 (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta)
 {
 #if ENABLE_TRANS_TABLE
@@ -593,10 +581,10 @@ Search_Engine::tt_try
       tt_misses++;
       return false;
     }
-  else 
+  else
     {
       tt_hits++;
-      if (i -> second.depth == depth && 
+      if (i -> second.depth == depth &&
           b.half_move_clock < 45 && rep_count (b) == 0)
         {
           TT_Entry entry = i -> second;
@@ -606,16 +594,16 @@ Search_Engine::tt_try
 
           else if (entry.type == TT_Entry::UPPERBOUND)
             beta = min (entry.move.score, beta);
-          
+
           else if (entry.type == TT_Entry::EXACT_VALUE)
             {
               m = entry.move;
               return true;
-            } 
+            }
         }
     }
 #endif
-  
+
   return false;
 }
 
@@ -625,7 +613,7 @@ inline bool
 Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 #if ENABLE_TRANS_TABLE
   Trans_Table::iterator i = tt.find (hash);
-  if (i != tt.end ()) 
+  if (i != tt.end ())
      {
        i -> second.age = 0;
        out = i -> second;
@@ -641,9 +629,9 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 
 // Update the transposition table with the results of a call to
 // search.
-inline void 
+inline void
 Search_Engine::tt_update
-(const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta) 
+(const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
@@ -655,16 +643,16 @@ Search_Engine::tt_update
       Trans_Table::value_type val (b.hash, TT_Entry ());
       i = tt.insert (val).first;
     }
-  
+
   // Populate it if it's new or deeper than the existing entry.
-  //  if (entry_is_new || depth >= i -> second.depth) */
+  // if (entry_is_new || depth >= i -> second.depth) */
 
   // Always replace
   {
     i -> second.move = m;
     i -> second.depth = depth;
     i -> second.age = 0;
-    if (m.score >= beta) 
+    if (m.score >= beta)
       i -> second.type = TT_Entry :: LOWERBOUND;
     else if (m.score <= alpha)
       i -> second.type = TT_Entry :: UPPERBOUND;
@@ -682,7 +670,7 @@ Search_Engine::tt_update
 // triple repetition rule.                                            //
 ////////////////////////////////////////////////////////////////////////
 
-// Add an entry to the repetition table. 
+// Add an entry to the repetition table.
 void
 Search_Engine::rt_push (const Board &b) {
   Rep_Table::iterator i = rt.find (b.hash);
@@ -699,7 +687,7 @@ Search_Engine::rt_push (const Board &b) {
     }
 }
 
-// Remove an entry to the repetition table. 
+// Remove an entry to the repetition table.
 void
 Search_Engine::rt_pop (const Board &b) {
   Rep_Table::iterator i = rt.find (b.hash);
@@ -708,11 +696,11 @@ Search_Engine::rt_pop (const Board &b) {
   if (i -> second == 0) rt.erase (b.hash);
 }
 
-// Fetch the repetition count for a position. 
+// Fetch the repetition count for a position.
 int
 Search_Engine::rep_count (const Board &b) {
   Rep_Table::iterator i = rt.find (b.hash);
-  if (i == rt.end ()) 
+  if (i == rt.end ())
     {
       return 0;
     }
@@ -733,7 +721,7 @@ bool
 Search_Engine::is_triple_rep (const Board &b) {
   Rep_Table::iterator i = rt.find (b.hash);
 
-  if (i == rt.end ()) 
+  if (i == rt.end ())
     {
       return false;
     }
@@ -745,23 +733,59 @@ Search_Engine::is_triple_rep (const Board &b) {
     }
 }
 
+////////////////////////////////////////////////
+// Time control.                              //
+//                                            //
+// Routines for managing game clock resource. //
+////////////////////////////////////////////////
+
+// Set fixed time per move in milliseconds.
+void
+Search_Engine :: set_fixed_depth (int depth) {
+  controls.fixed_depth = depth;
+  return;
+}
+
+// Set fixed depth per move.
+void
+Search_Engine :: set_fixed_time (int time) {
+  controls.mode = EXACT;
+  controls.fixed_time = time;
+  return;
+}
+
+// Set up time controls corresponding to and xboard "level" command.
+void
+Search_Engine :: set_level (int mptc, int tptc, int inc) {
+  controls.mode = CONVENTIONAL;
+  controls.moves_ptc = mptc;
+  controls.time_ptc = tptc;
+  controls.time_per_move = -1;
+  controls.increment = inc;
+  if (inc > 0) controls.mode = ICS;
+  if (tptc > 0) controls.time_remaining = tptc;
+  if (mptc > 0) controls.moves_remaining = mptc;
+  return;
+}
+
+
 ////////////////////////////////////////////////////////////////////////
 // Thinking output.                                                   //
 //                                                                    //
-// Output the principal variation for each individual search depth    // 
+// Output the principal variation for each individual search depth    //
 // and write out some performance statistics.                         //
 ////////////////////////////////////////////////////////////////////////
 
 // Write thinking output before iterative deeping starts.
-void 
+void
 Search_Engine::post_before (const Board &b) {
   cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
-       << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation" 
+       << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation"
        << endl;
 }
 
 // Write thinking for each depth during iterative deeping.
-void 
+void
 Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
   double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
   Board c = b;
@@ -781,11 +805,11 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
       cout << setw (4) << "Mate";
       cout << setw (2) << MATE_VAL - abs(score) << "   ";
     }
-  else 
+  else
     {
       cout << setw (8) << pv[0].score << "   ";
     }
-  
+
   // Write out the principle variation.
   for (int i = 0; i < pv.count; i++)
     {
@@ -797,7 +821,7 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
 }
 
 // Write thinking output after iterative deeping ends.
-void 
+void
 Search_Engine::post_after () {
   // Display statistics on the quality of our move ordering.
   cout << endl;
@@ -813,4 +837,3 @@ Search_Engine::post_after () {
   double hit_rate = (double) tt_hits / (tt_hits + tt_misses);
   cout << "tt hit rate: " << hit_rate * 100 << "%" << endl;
 }
- 

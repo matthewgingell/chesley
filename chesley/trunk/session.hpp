@@ -3,7 +3,7 @@
 // session.hpp                                                                //
 //                                                                            //
 // This file provides the Session object, representing a Chesley              //
-// session, either over the xboard protocal, UCI (Universal Chess             //
+// session, either over the xboard protocol, UCI (Universal Chess             //
 // Interface), or interactive mode.                                           //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //

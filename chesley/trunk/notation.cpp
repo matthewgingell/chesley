@@ -275,22 +275,22 @@ Board::from_san (const string &s) const {
   int file = -1, rank = -1;
   int to = -1;
   int dis_rank = -1, dis_file = -1;
-  
+
   // Handle the case of castling kingside.
-  if (s == "O-O") 
+  if (s == "O-O")
     {
       return (to_move () == WHITE) ? Move (4, 6) : Move (60, 62);
     }
 
   // Handle the case of castling queenside.
-  if (s == "O-O-O") 
+  if (s == "O-O-O")
     {
       return (to_move () == WHITE) ? Move (4, 2) : Move (60, 58);
     }
 
   // Otherwise, we expect an upper case piece code or a lower case
   // coordinate if the piece being moved is a pawn.
-  if (i == s.end ()) 
+  if (i == s.end ())
     throw string ("from_san: failed parsing ") + s;
 
   if (isupper (*i))
@@ -318,14 +318,14 @@ Board::from_san (const string &s) const {
     }
 
   // Otherwise, what we've just read is for disambiguating the origin
-  // and we now expect to read the destiniation.
+  // and we now expect to read the destination.
   else
     {
       dis_file = file;
       dis_rank = rank;
       if (*i == 'x')  { is_capture = true; i++; }
       if (*i >= 'a' && *i <= 'h') file = *i++ - 'a';
-      if (*i >= '1' && *i <= '8') rank = *i++ - '1';   
+      if (*i >= '1' && *i <= '8') rank = *i++ - '1';
       to = file + 8 * rank;
     }
 
@@ -347,7 +347,7 @@ Board::from_san (const string &s) const {
   // At this point, we should know the piece kind and destination of
   // this move and we may have a rank and/or file disambiguating the
   // origin.
-  if (to < 0 || to > 64 || k == NULL_KIND) 
+  if (to < 0 || to > 64 || k == NULL_KIND)
     throw string ("from_san: failed parsing ") + s;
 
   // We now iterate through the legal moves at this position looking
@@ -359,22 +359,22 @@ Board::from_san (const string &s) const {
       // Test whether this move is a candidate for the parsed move.
       if (k == moves[i].get_kind (*this) && to == moves[i].to)
         {
-          if (dis_file == -1 && dis_rank == -1) 
+          if (dis_file == -1 && dis_rank == -1)
             m = moves[i];
-          
+
           if (dis_file != -1 && dis_rank == -1 &&
               idx_to_file (moves[i].from) == dis_file)
             m = moves[i];
-          
+
           if (dis_file == -1 && dis_rank != -1 &&
               idx_to_rank (moves[i].from) == dis_rank)
             m = moves[i];
-          
-          if (dis_file != -1 && dis_rank != -1 && 
+
+          if (dis_file != -1 && dis_rank != -1 &&
               idx_to_file (moves[i].from) == dis_file &&
               idx_to_rank (moves[i].from) == dis_rank)
             m =  moves[i];
-          
+
           if (!m.is_null ()) break;
         }
     }
@@ -382,16 +382,16 @@ Board::from_san (const string &s) const {
   m.promote = promote;
 
   // Sanity check the move we've constructed.
-  if (m.is_null () || 
-      m.promote != promote || 
+  if (m.is_null () ||
+      m.promote != promote ||
       (m.capture (*this) == NULL_KIND && is_capture))
     throw string ("from_san: failed parsing ") + s;
-  
+
   return m;
 }
 
 // Construct a board object from a Forsyth-Edwards Notation position
-// string.  Note that only the first six tokens in toks are
+// string. Note that only the first six tokens in toks are
 // examined. If EPD is true then we are parsing an EPD command and the
 // last two fields, clock and half clock, are not expected.
 Board
@@ -409,10 +409,10 @@ Board::from_fen (const string_vector &toks, bool EPD) {
 
   Board b;
   Board::common_init(b);
-  
+
   // A FEN record contains six fields. The separator between fields is a
   // space. The fields are:
-  
+
   // 1. Piece placement (from white's perspective). Each rank is
   // described, starting with rank 8 and ending with rank 1; within
   // each rank, the contents of each square are described from file a
@@ -471,32 +471,32 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   // 4. En passant target square in algebraic notation. If there's no
   // en passant target square, this is "-". If a pawn has just made a
   // 2-square move, this is the position "behind" the pawn.
-  if (!toks.size () >= 4) 
+  if (!toks.size () >= 4)
     {
       b.set_en_passant (0);
     }
   else
     {
-      if (toks[3][0] != '-') 
-        b.set_en_passant 
+      if (toks[3][0] != '-')
+        b.set_en_passant
           ((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
     }
-  
+
   // These fields are not expected when we are parsing an EPD command.
   if (!EPD)
     {
-      
-      // 5. Halfmove clock: This is the number of halfmoves since the
-      // last pawn advance or capture. This is used to determine if a
-      // draw can be claimed under the fifty-move rule.
+
+      // 5. Half move clock: This is the number of half moves since
+      // the last pawn advance or capture. This is used to determine
+      // if a draw can be claimed under the fifty-move rule.
       if (toks.size () >= 5) {
         if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
       } else {
         b.half_move_clock = 0;
       }
 
-      // 6. Fullmove number: The number of the full move. It starts at
-      // 1 and is incremented after Black's move.
+      // 6. Full move number: The number of the full move. It starts
+      // at 1 and is incremented after Black's move.
       if (toks.size () >= 6) {
         if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
       } else {
@@ -589,10 +589,10 @@ Board ::to_fen () const {
       s << '-';
     }
 
-  // 5. Halfmove clock.
+  // 5. Half move clock.
   s << ' ' << half_move_clock;
 
-  // 6. Fullmove clock.
+  // 6. Full move clock.
   s << ' ' << full_move_clock;
 
   return s.str();
@@ -603,7 +603,7 @@ string
 Board::to_ascii () const {
   ostringstream s;
 
-  // Precede board diagram with status, formated as in FEN strings.
+  // Precede board diagram with status, formatted as in FEN strings.
   s << (to_move () == WHITE ? 'w' : 'b') << " ";
 
   if (flags.w_can_k_castle | flags.w_can_q_castle |
@@ -664,7 +664,7 @@ Board::to_ascii () const {
     return s.str ();
 }
 
-// Initialize a board from an ascii art representation of a board
+// Initialize a board from an ASCII art representation of a board
 // string.
 Board
 Board::from_ascii (const string &str) {
@@ -674,5 +674,3 @@ Board::from_ascii (const string &str) {
   assert (0);
   return b;
 }
-
-

@@ -19,7 +19,7 @@ using namespace std;
 // Globals.
 char *arg0;
 
-// Initializion.
+// Initialization.
 void initialize_all ()
 {
   seed_random ();
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
     {
       initialize_all ();
       Session::cmd_loop ();
-    } 
+    }
   catch (string s)
     {
       cerr << "Caught exception at top level: " << s << endl;

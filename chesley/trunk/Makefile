@@ -58,12 +58,15 @@ play: chesley
 	xboard -fcp ./chesley $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against Chesley.
-playself: chesley 
+playself: chesley
 	xboard -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against the binary chesley.old.
 playold: chesley
 	xboard -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS)
+
+playother: chesley
+	xboard -fcp ./chesley -scp gnuchess -mg 5 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #
@@ -72,10 +75,6 @@ playold: chesley
 # Run the test suites.
 check: chesley
 	./run_tests.rb
-
-# Play a number of games against a (crippled version of) Olithink.
-test:  chesley
-	xboard -fcp ./chesley -scp ./olithink -mg 5 -mode TwoMachines $(XBOARD_OPTS)	
 
 #############
 # Clean up. #

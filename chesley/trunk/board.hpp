@@ -51,12 +51,12 @@ struct Move {
   Move () {}
 
   // Construct a move;
-  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0) 
+  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0)
     :from (from), to (to), promote (promote), score (score) {
   };
 
-  // Construct a null move with a score. 
-  explicit Move (Score score) 
+  // Construct a null move with a score.
+  explicit Move (Score score)
     :from (0), to (0), promote (NULL_KIND), score (score) {
   };
 
@@ -67,7 +67,7 @@ struct Move {
   inline Color get_color (const Board &b) const;
 
   // Get the kind of the piece being moved.
-  inline Kind get_kind (const Board &b) const; 
+  inline Kind get_kind (const Board &b) const;
 
   // Returns the piece being captured, or NULL_KIND if this is not a
   // capture.
@@ -91,12 +91,12 @@ struct Move {
   Score score;
 };
 
-inline bool 
+inline bool
 less_than (const Move &lhs, const Move &rhs) {
   return lhs.score < rhs.score;
 }
 
-inline bool 
+inline bool
 more_than (const Move &lhs, const Move &rhs) {
   return lhs.score > rhs.score;
 }
@@ -128,7 +128,7 @@ struct Move_Vector {
     move[count++] = m;
   }
 
-  void push 
+  void push
   (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0) {
     move[count++] = Move (from, to, promote, score);
   }
@@ -270,7 +270,7 @@ struct Board {
   // Common initialization.
   static void common_init (Board &);
 
-  // Construct from an ascii board representation.
+  // Construct from an ASCII board representation.
   static Board from_ascii  (const std::string &str);
 
   // Construct from a FEN or EPD string.
@@ -372,7 +372,7 @@ struct Board {
   Color to_move () const {
     return flags.to_move;
   }
-  
+
   // Return the color of a piece on a square.
   Color get_color (uint32 idx) const {
     if (test_bit (white, idx)) return WHITE;
@@ -451,7 +451,7 @@ struct Board {
   void set_castling_right (Castling_Right cr, bool v);
 
   ///////////////
-  // Accessors //
+  // Assessors //
   ///////////////
 
   // Return a board reference from a Kind.
@@ -539,7 +539,7 @@ struct Board {
         assert (k != NULL_KIND);
         assert (c == BLACK || c == WHITE);
         assert (idx >= 0 && idx < 64);
-        
+
         // Clear color and piece kind bits.
         color_to_board (c) &= ~masks_0[idx];
         kind_to_board (k) &= ~masks_0[idx];
@@ -678,7 +678,7 @@ struct Board {
   void print_tree (int depth = 0);
 
   // Generate a hash key from scratch. This is used to test the
-  // correctness of our incremently hash update code.
+  // correctness of our incrementally hash update code.
   uint64 gen_hash () const;
 };
 
@@ -691,25 +691,25 @@ std::ostream & operator<< (std::ostream &os, const Board &b);
 
 // Is this a null move?
 inline bool
-Move::is_null () const { 
+Move::is_null () const {
   return to == from;
 }
 
 // Kind of color of the piece being moved.
-inline Color 
+inline Color
 Move::get_color (const Board &b) const {
   return b.get_color (from);
 }
 
 // Get the kind of the piece being moved.
-inline Kind 
+inline Kind
 Move::get_kind (const Board &b) const {
   return b.get_kind (from);
 }
 
 // Returns the piece being captured, or NULL_KIND if these is no
 // such piece.
-inline Kind 
+inline Kind
 Move::capture (const Board &b) const {
   if (is_en_passant (b))
     {
@@ -722,11 +722,11 @@ Move::capture (const Board &b) const {
 }
 
 // Is this move an en passant capture.
-inline bool 
+inline bool
 Move::is_en_passant (const Board &b) const {
   // If the piece being moved is a pawn, the square being moved to is
-  // empty, and the to square and the from sqare are on different
-  // files, then this is an enpassant capture.
+  // empty, and the to square and the from square are on different
+  // files, then this is an en passant capture.
   return get_kind (b) == PAWN
     && ((test_bit (b.occupied, to) == 0))
     && (Board::idx_to_file (to) != Board::idx_to_file (from));
@@ -739,10 +739,10 @@ Move::is_castle (const Board &b) const {
 }
 
 // Is this a queen-side castle.
-inline bool 
+inline bool
 Move::is_castle_qs (const Board &b) const {
-  if ((b.to_move () == WHITE && from == E1 && to == C1) || 
-      (b.to_move () == BLACK && from == E8 && to == C8)) 
+  if ((b.to_move () == WHITE && from == E1 && to == C1) ||
+      (b.to_move () == BLACK && from == E8 && to == C8))
     {
       return (b.get_kind (from) == KING);
     }
@@ -753,7 +753,7 @@ Move::is_castle_qs (const Board &b) const {
 }
 
 // Is this a king-side castle.
-inline bool 
+inline bool
 Move::is_castle_ks (const Board &b) const {
   if ((b.to_move () == WHITE && from == E1 && to == G1) ||
       (b.to_move () == BLACK && from == E8 && to == G8))
@@ -768,15 +768,15 @@ Move::is_castle_ks (const Board &b) const {
 
 // Equality on moves.
 inline bool operator== (const Move &lhs, const Move &rhs) {
-  return 
-    (lhs.from == rhs.from) && 
-    (lhs.to == rhs.to) && 
+  return
+    (lhs.from == rhs.from) &&
+    (lhs.to == rhs.to) &&
     (lhs.promote == rhs.promote);
 }
 
 inline bool operator!= (const Move &lhs, const Move &rhs) {
-  return 
-    (lhs.from != rhs.from) || 
+  return
+    (lhs.from != rhs.from) ||
     (lhs.to != rhs.to) ||
     (lhs.promote != rhs.promote);
 }

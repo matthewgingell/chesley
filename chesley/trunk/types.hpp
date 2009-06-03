@@ -56,8 +56,8 @@ enum File {
 
 // This type is used to index tables and the ordering here should not
 // be changed.
-enum Color { 
-  NULL_COLOR = -1, WHITE = 0, BLACK = 1 
+enum Color {
+  NULL_COLOR = -1, WHITE = 0, BLACK = 1
 };
 
 inline Color invert (Color c) { return (c == WHITE) ? BLACK : WHITE; }
@@ -72,12 +72,12 @@ std::ostream & operator<< (std::ostream &os, Color c);
 
 //////////////////
 // Piece kinds. //
-////////////////// 
+//////////////////
 
 // This type is used to index tables and the ordering here should not
 // be changed.
-enum Kind { 
-  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING 
+enum Kind {
+  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING
 };
 
 inline void operator++ (Kind &k, int) { k = (Kind) (k + 1); }
