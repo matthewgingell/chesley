@@ -32,6 +32,7 @@ extern char *arg0;
 
 #define IS_CONST __attribute__ ((const))
 #define IS_UNUSED  __attribute__ ((unused))
+#define ALIGNED(A)  __attribute__ ((aligned (A)))
 
 //////////////////////
 // String functions //

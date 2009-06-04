@@ -150,7 +150,7 @@ struct Move_Vector {
 inline int
 count (const Move_Vector &moves) {
   return moves.count;
-};
+}
 
 std::ostream &
 operator<< (std::ostream &os, const Move_Vector &moves);
@@ -240,7 +240,6 @@ struct Board {
   bitboard occupied_135;
 
   // Other status flags.
-
   struct {
     Color    to_move         :8; // BLACK or WHITE.
     unsigned en_passant      :8; // En Passant target square.
@@ -258,6 +257,9 @@ struct Board {
   uint32 half_move_clock; // Used for 50-move rule.
   uint32 full_move_clock; // Clock after each black move.
 
+  // Move that produced this position.
+  Move last_move;
+
   //////////////////////////////////////
   // Constructors and initialization. //
   //////////////////////////////////////
@@ -265,7 +267,7 @@ struct Board {
   Board () {}
 
   // Must be called to initialize static members in correct order.
-  static const void precompute_tables ();
+  static void precompute_tables ();
 
   // Common initialization.
   static void common_init (Board &);
@@ -560,7 +562,7 @@ struct Board {
   set_piece (Kind k, Color c, uint32 idx) {
     assert (k != NULL_KIND);
     assert (c == BLACK || c == WHITE);
-    assert (idx >= 0 && idx < 64);
+    assert (idx < 64);
 
     // Update color and piece sets.
     color_to_board (c) |= masks_0[idx];

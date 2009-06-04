@@ -28,7 +28,7 @@ void initialize_all ()
 }
 
 // Initialize and pass control to main loop.
-int main(int argc, char **argv)
+int main(int argc IS_UNUSED, char **argv)
 {
   arg0 = argv[0];
 

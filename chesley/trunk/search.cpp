@@ -304,7 +304,21 @@ Search_Engine :: search
             ////////////////////////
 
             int ext = 0;
+
+            // Check extensions.
             if (in_check) ext += 1;
+            
+            // Pawn to seventh rank extensions.
+            int rank = Board::idx_to_rank (moves[mi].to);
+            if ((rank == 1 || rank == 6) && 
+                moves[mi].get_kind (b) == PAWN)
+              ext+= 1;
+
+#if 0
+            // Recapture extensions: Waiting on improved move
+            // representation.
+            if (moves[mi].to == b.last_move.to) ext += 1;
+#endif 
 
 #ifdef ENABLE_LMR
 

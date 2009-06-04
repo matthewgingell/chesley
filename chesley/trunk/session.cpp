@@ -27,7 +27,7 @@
 using namespace std;
 
 // For now we use a hard coded timeout in milliseconds.
-const int TIME_OUT = 1 * 1000;
+const int TIME_OUT = 5 * 1000;
 
 ///////////////////////////////
 // Static session variables. //
@@ -101,7 +101,7 @@ Session::init_session () {
 }
 
 void
-Session::handle_alarm (int sig) {
+Session::handle_alarm (int sig IS_UNUSED) {
   // We should return from the work loop as quickly as possible if the
   // timeout has elapsed or if there is input waiting from the user.
   if ((timeout > 0 && mclock () > timeout) /* || fdready (fileno (in)) */  )
