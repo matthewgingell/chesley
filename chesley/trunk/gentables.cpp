@@ -92,7 +92,7 @@ bitboard *init_135d_attacks_tbl ();
 static void init_zobrist_keys ();
 
 // Precompute all tables.
-const void
+void
 Board::precompute_tables () {
   Board::masks_0 = init_masks_0 ();
   Board::masks_45 = init_masks_45 ();

@@ -121,16 +121,18 @@ struct Eval {
     // Add net piece square values.
     score += sum_piece_squares (b);
 
+    // Provide a bonus for having castling or being able to castle.
+    if (b.flags.w_has_k_castled) score += 125;
+    else if (b.flags.w_has_q_castled) score += 100;
+    else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score += 25;
+    
+    if (b.flags.b_has_k_castled) score -= 125;
+    else if (b.flags.w_has_q_castled) score -= 100;
+    else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score -= 25;
+    
     // Provide a bonus for holding both bishops.
-    if (piece_counts[WHITE][BISHOP] >= 2)
-      {
-        score += BISHOP_PAIR_BONUS;
-      }
-
-    if (piece_counts[BLACK][BISHOP] >= 2)
-      {
-        score -= BISHOP_PAIR_BONUS;
-      }
+    if (piece_counts[WHITE][BISHOP] >= 2) score += BISHOP_PAIR_BONUS;
+    if (piece_counts[BLACK][BISHOP] >= 2) score -= BISHOP_PAIR_BONUS;
 
     // Reward rooks and queens on open files.
     score += eval_files (WHITE) - eval_files (BLACK);

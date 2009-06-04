@@ -667,10 +667,7 @@ Board::to_ascii () const {
 // Initialize a board from an ASCII art representation of a board
 // string.
 Board
-Board::from_ascii (const string &str) {
-  Board b;
-
-  Board::common_init (b);
+Board::from_ascii (const string &str IS_UNUSED) {
+  // Warning: this is method isn't implemented.
   assert (0);
-  return b;
 }

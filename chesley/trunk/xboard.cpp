@@ -19,7 +19,7 @@ using namespace std;
 
 // Set xboard protocol mode.
 bool
-Session::set_xboard_mode (const string_vector &tokens) {
+Session::set_xboard_mode (const string_vector &tokens IS_UNUSED) {
   protocol = XBOARD;
   ui_mode = BATCH;
 

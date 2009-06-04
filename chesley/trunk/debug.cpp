@@ -90,7 +90,7 @@ Session::perft (const string_vector &tokens)
 /////////////////////////////////////////////////////
 
 bool
-Session::play_self (const string_vector &tokens)
+Session::play_self (const string_vector &tokens IS_UNUSED)
 {
   Status s;
   board = Board::startpos ();
@@ -107,7 +107,7 @@ Session::play_self (const string_vector &tokens)
 
 
 bool
-Session::dump_pawns (const string_vector &tokens)
+Session::dump_pawns (const string_vector &tokens IS_UNUSED)
 {
   ofstream out;
   out.open ("pawn_struct");
