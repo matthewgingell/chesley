@@ -650,6 +650,7 @@ Board::perft (int d) const {
   uint64 sum = 0;
 
   if (d == 0) return 1;
+
   Move_Vector moves (*this);
   for (int i = 0; i < moves.count; i++)
     {

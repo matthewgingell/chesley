@@ -58,8 +58,6 @@ Session::bench (const string_vector &tokens) {
 
   if (tokens.size () > 1 && is_number (tokens[1]))
     depth = to_int (tokens[1]);
-  timeout = 0;
-  se.interrupt_search = false;
   Move m = se.choose_move (board, depth);
   return true;
 }
@@ -94,6 +92,7 @@ Session::play_self (const string_vector &tokens IS_UNUSED)
 {
   Status s;
   board = Board::startpos ();
+  running = true;
   while ((s = get_status ()) == GAME_IN_PROGRESS)
     {
       cerr << board << endl << endl;
@@ -102,6 +101,8 @@ Session::play_self (const string_vector &tokens IS_UNUSED)
     }
   cerr << board << endl << endl;
   handle_end_of_game (s);
+  running = false;
+
   return true;
 }
 
@@ -248,9 +249,9 @@ Session::epd (const string_vector &args)
       else if (opcode == "bm")
         {
           Move best = b.from_san (first (tokens));
-          timeout = mclock () + 15 * 1000;
-          se.interrupt_search = false;
           cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
+          se.set_fixed_time (15 * 1000);
+          se.post = true;
           Move m = se.choose_move (b, 100);
           (m == best) ? cerr << "PASS: " : cerr << "FAIL: ";
           cerr << fen << " bm " << b.to_san (best) << endl << endl;;

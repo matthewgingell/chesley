@@ -10,19 +10,18 @@
 
 #include <iostream>
 
-using namespace std;
-
 #include "chesley.hpp"
 
+using namespace std;
 
-///////////////////////////////////////////////////////////////////////
-//                                                                   //
-// centrality_table:                                                 //
-//                                                                   //
-// This is a table reflecting the relative value of locations on the //
-// chess board based on their proximity to the center.               //
-//                                                                   //
-///////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////
+//                                                                  //
+// centrality_table:                                                //
+//                                                                  //
+// This is a table reflects the relative value of locations on the  //
+// chess board based on their proximity to the center.              //
+//                                                                  //
+//////////////////////////////////////////////////////////////////////
 
 int8 const Eval::centrality_table[64] =
   {
@@ -36,15 +35,15 @@ int8 const Eval::centrality_table[64] =
      1,   1,   1,   1,   1,   1,   1,   1
   };
 
-////////////////////////////////////////////////////////////////////////////
-//                                                                        //
-//  piece_square_table:                                                   //
-//                                                                        //
-//  This is a table of bonuses for each piece-location pair. The table    //
-//  is written in 'reverse' for readability and a transformation is       //
-//  required for fetching values for black and white.                     //
-//                                                                        //
-////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+//                                                                     //
+//  piece_square_table:                                                //
+//                                                                     //
+//  This is a table of bonuses for each piece-location pair. The table //
+//  is written in 'reverse' for readability and a transformation is    //
+//  required for fetching values for black and white.                  //
+//                                                                     //
+/////////////////////////////////////////////////////////////////////////
 
 static const int8 piece_square_table[6][64] =
 {
