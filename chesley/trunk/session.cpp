@@ -26,9 +26,6 @@
 
 using namespace std;
 
-// For now we use a hard coded timeout in milliseconds.
-const int TIME_OUT = 5 * 1000;
-
 ///////////////////////////////
 // Static session variables. //
 ///////////////////////////////
@@ -52,7 +49,6 @@ Search_Engine Session::se;
 
 // Engine state.
 bool        Session::running;
-uint64      Session::timeout;
 const char *Session::prompt;
 
 ////////////////////////////////
@@ -69,7 +65,6 @@ Session::init_session () {
 
   // Set initial engine state.
   running = false;
-  timeout = 0;
 
   // Set initial search state.
   se = Search_Engine ();
@@ -88,27 +83,19 @@ Session::init_session () {
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
 
-  // Setup periodic alarm.
+  // Setup periodic 100 Hz alarm.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
-  timer.it_value.tv_usec = 50 * 1000;
+  timer.it_value.tv_usec = 100 * 1000;
   timer.it_interval.tv_sec = 0;
-  timer.it_interval.tv_usec = 50 * 1000;
+  timer.it_interval.tv_usec = 100 * 1000;
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
-
-  return;
 }
 
 void
 Session::handle_alarm (int sig IS_UNUSED) {
-  // We should return from the work loop as quickly as possible if the
-  // timeout has elapsed or if there is input waiting from the user.
-  if ((timeout > 0 && mclock () > timeout) /* || fdready (fileno (in)) */  )
-    {
-      se.interrupt_search = true;
-      timeout = 0;
-    }
+  se.poll (mclock ());
 }
 
 // Write the command prompt.
@@ -179,7 +166,9 @@ Session::work ()
 
   // If it isn't our turn, return and block for input.
   if (board.to_move () != our_color)
-    return;
+    {
+      return;
+    }
 
   // Otherwise the game is still running and it's our turn, so compute
   // and send a move.
@@ -187,7 +176,7 @@ Session::work ()
     {
       Move m = find_a_move ();
 
-      // We should never get back a null move.
+      // We should never get back a null move from the search engine.
       assert (!m.is_null());
 
       // Apply the move.
@@ -207,8 +196,6 @@ Session::work ()
   s = get_status ();
   if (s != GAME_IN_PROGRESS)
     handle_end_of_game (s);
-
-  return;
 }
 
 // Determine the current status of this game.
@@ -223,6 +210,17 @@ Session :: get_status () {
   // Check for a triple repetition.
   if (se.is_triple_rep (board))
     return GAME_DRAW;
+
+#if 0
+  // Check for loss on time.
+  if (se.controls.time_remaining == 0) 
+    {
+      if (player == WHITE)
+        return GAME_WIN_BLACK;
+      else
+        return GAME_WIN_WHITE;
+    }
+#endif
 
   // Check whether there are any moves legal moves for the current
   // player from this position
@@ -275,20 +273,33 @@ Session::handle_end_of_game (Status s) {
 
   // We should halt and block for user input.
   running = false;
-  timeout = 0;
 }
 
 // Find a move to play.
 Move
 Session::find_a_move () {
-  se.interrupt_search = false;
-  timeout = mclock () + TIME_OUT;
+  uint64 start_time = mclock ();
+  Move m = se.choose_move (board, 99);
+  uint64 elapsed = mclock () - start_time;
 
-  // Add a random time bonus to ensure a variety of games are played
-  // during testing.
-  //  timeout += (random () % 2) * TIME_OUT;
+  // The caller is responsible for managing the time and move limits
+  // set in the search engine, since the search engine can't know what
+  // is being done with the results it returns.
+  if (((uint64) se.controls.time_remaining) > elapsed)
+    {
+      se.controls.time_remaining -= elapsed;
+    }
+  else
+    {
+      se.controls.time_remaining = 0;
+    }
 
-  return se.choose_move (board, 99);
+  if (se.controls.moves_remaining > 0)
+    {
+      se.controls.moves_remaining--;
+    }
+
+  return m;
 }
 
 ///////////////////////////////////////
@@ -418,7 +429,6 @@ Session::execute (char *line) {
 
           fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
           fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
-          fprintf (out, "time_per_move:   %i\n", se.controls.time_per_move);
           fprintf (out, "increment:       %i\n", se.controls.increment);
           fprintf (out, "fixed_time:      %i\n", se.controls.fixed_time);
           fprintf (out, "fixed_depth:     %i\n", se.controls.fixed_depth);
@@ -565,20 +575,42 @@ Session::execute (char *line) {
         {
           if (count > 1)
             {
-              se.set_fixed_time (to_int (tokens[1]));
+              se.set_fixed_time (1000 * to_int (tokens[1]));
+              
             }
         }
 
       // Set the clock.
       else if (token == "time")
         {
-          // ignored.
+          if (count > 1)
+            {
+              se.set_time_remaining (10 * to_int (tokens[1]));
+#if 0
+              fprintf (out, "mode:            ");
+              switch (se.controls.mode)
+                {
+                case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
+                case ICS:          fprintf (out, "ICS"); break;
+                case EXACT:        fprintf (out, "EXACT"); break;
+                }
+              fprintf (out, "\n");
+              fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
+              fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
+              fprintf (out, "increment:       %i\n", se.controls.increment);
+              fprintf (out, "fixed_time:      %i\n", se.controls.fixed_time);
+              fprintf (out, "fixed_depth:     %i\n", se.controls.fixed_depth);
+              fprintf (out, "time_remaining:  %i\n", se.controls.time_remaining);
+              fprintf (out, "moves_remaining: %i\n", se.controls.moves_remaining);
+#endif
+            }
         }
 
-      // otime N command //
+      // otime N command
       else if (token == "otime")
         {
-          // ignored.
+          // For now we don't care about the amount of time remaining
+          // to the opponent.
         }
 
       //////////////////////

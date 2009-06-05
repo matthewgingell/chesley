@@ -21,7 +21,7 @@
 using namespace std;
 
 // Constants.
-const int Search_Engine::hist_nbuckets;
+const int Search_Engine :: hist_nbuckets;
 
 // Compute the principal variation and return its first move.
 Move
@@ -64,13 +64,48 @@ Search_Engine :: new_search
   // Clear statistics.
   clear_statistics ();
 
-  Score score = iterative_deepening (b, depth, pv);
-  return score;
+  // Setup the clock.
+  controls.interrupt_search = false;
+  if (controls.mode == EXACT || controls.fixed_time >= 0)
+    {
+      // Set an absolute fixed time limit for this move.
+      controls.deadline = mclock () + controls.fixed_time;
+    }
+  else if (controls.time_remaining >= 0)
+    {
+      if (controls.moves_remaining > 0)
+        {
+          // All we do is divide the time available by the moves
+          // remaining.
+          controls.deadline = mclock () + 
+            (controls.time_remaining / controls.moves_remaining);
+        }
+      else
+        {
+          // If time is limited but the move count is not, always
+          // assume the game will end in 25 more moves. This should be
+          // improved by choosing a limit based on the game phase.
+          controls.deadline = mclock () + 
+            (controls.time_remaining / 25);
+        }
+    } 
+  else
+    {
+      // Some reasonable time control should always be configured.
+      assert (0);
+    }
+
+  // If one has been configured, set a fixed maximum search depth.
+  if (controls.fixed_depth > 0)
+    depth = min (depth, controls.fixed_depth);
+  
+  // Do the actual tree search.
+  return iterative_deepening (b, depth, pv);
 }
 
 ////////////////////////////////////////////////////////////////////////
 //                                                                    //
-// Search_Engine::iterative_deepening                                 //
+// Search_Engine :: iterative_deepening                               //
 //                                                                    //
 // Do a depth first search repeatedly, each time increasing the depth //
 // by one. This allows us to return a reasonable move if we are       //
@@ -79,7 +114,7 @@ Search_Engine :: new_search
 ////////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine::iterative_deepening
+Search_Engine :: iterative_deepening
 (const Board &b, int depth, Move_Vector &pv)
 {
   Score s = 0;
@@ -103,7 +138,7 @@ Search_Engine::iterative_deepening
       scores[i] = s = aspiration_search (b, i, tmp, s, delta);
 
       // Break out of the loop if the search was interrupted.
-      if (interrupt_search)
+      if (controls.interrupt_search)
         break;
 
       // Otherwise, if the search completed and we got back a
@@ -120,9 +155,9 @@ Search_Engine::iterative_deepening
 
   // If we got back no principal variation, return a depth 1 search.
   if (pv.count == 0) {
-    interrupt_search = false;
+    controls.interrupt_search = false;
     search_with_memory  (b, 1, 0, pv, -INF, INF);
-    interrupt_search = true;
+    controls.interrupt_search = true;
   }
 
   // Check that we got at least one move.
@@ -133,7 +168,7 @@ Search_Engine::iterative_deepening
 
 /////////////////////////////////////////////////////////////////////////////
 //                                                                         //
-// Search_Engine::aspiration_search ()                                     //
+// Search_Engine :: aspiration_search ()                                   //
 //                                                                         //
 // Try a search with a window around 'best_guess' and only do a full width //
 // search if that fails.                                                   //
@@ -141,7 +176,7 @@ Search_Engine::iterative_deepening
 /////////////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine::aspiration_search
+Search_Engine :: aspiration_search
 (const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw)
 {
   Score s;
@@ -228,7 +263,7 @@ Search_Engine :: search
   // Abort if we have been interrupted. //
   ////////////////////////////////////////
 
-  if (interrupt_search)
+  if (controls.interrupt_search)
     return 12345;
 
   ////////////////////////
@@ -309,7 +344,7 @@ Search_Engine :: search
             if (in_check) ext += 1;
             
             // Pawn to seventh rank extensions.
-            int rank = Board::idx_to_rank (moves[mi].to);
+            int rank = Board :: idx_to_rank (moves[mi].to);
             if ((rank == 1 || rank == 6) && 
                 moves[mi].get_kind (b) == PAWN)
               ext+= 1;
@@ -429,7 +464,7 @@ Search_Engine :: search
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void
-Search_Engine::order_moves
+Search_Engine :: order_moves
 (const Board &b, int depth, Move_Vector &moves, int alpha, int beta) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
@@ -489,7 +524,7 @@ Search_Engine::order_moves
 //////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine::see (const Board &b, const Move &m) {
+Search_Engine :: see (const Board &b, const Move &m) {
   Score s = eval_piece (m.capture (b));
 
   // Construct child position.
@@ -510,7 +545,7 @@ Search_Engine::see (const Board &b, const Move &m) {
 
 // Quiescence search.
 Score
-Search_Engine::qsearch
+Search_Engine :: qsearch
 (const Board &b, int depth, int ply,
  Score alpha, Score beta)
 {
@@ -584,7 +619,7 @@ Search_Engine::qsearch
 // table, returning true if we found a move we can return at this
 // position.
 inline bool
-Search_Engine::tt_try
+Search_Engine :: tt_try
 (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta)
 {
 #if ENABLE_TRANS_TABLE
@@ -603,13 +638,13 @@ Search_Engine::tt_try
         {
           TT_Entry entry = i -> second;
 
-          if (entry.type == TT_Entry::LOWERBOUND)
+          if (entry.type == TT_Entry :: LOWERBOUND)
             alpha = max (entry.move.score, alpha);
 
-          else if (entry.type == TT_Entry::UPPERBOUND)
+          else if (entry.type == TT_Entry :: UPPERBOUND)
             beta = min (entry.move.score, beta);
 
-          else if (entry.type == TT_Entry::EXACT_VALUE)
+          else if (entry.type == TT_Entry :: EXACT_VALUE)
             {
               m = entry.move;
               return true;
@@ -624,9 +659,9 @@ Search_Engine::tt_try
 // Fetch an entry from the transposition table. Returns false if no
 // entry is found.
 inline bool
-Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
+Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
 #if ENABLE_TRANS_TABLE
-  Trans_Table::iterator i = tt.find (hash);
+  Trans_Table :: iterator i = tt.find (hash);
   if (i != tt.end ())
      {
        i -> second.age = 0;
@@ -644,7 +679,7 @@ Search_Engine::tt_fetch (uint64 hash, TT_Entry &out) {
 // Update the transposition table with the results of a call to
 // search.
 inline void
-Search_Engine::tt_update
+Search_Engine :: tt_update
 (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
@@ -654,7 +689,7 @@ Search_Engine::tt_update
   // Insert an element if it's new.
   if (entry_is_new)
     {
-      Trans_Table::value_type val (b.hash, TT_Entry ());
+      Trans_Table :: value_type val (b.hash, TT_Entry ());
       i = tt.insert (val).first;
     }
 
@@ -686,8 +721,8 @@ Search_Engine::tt_update
 
 // Add an entry to the repetition table.
 void
-Search_Engine::rt_push (const Board &b) {
-  Rep_Table::iterator i = rt.find (b.hash);
+Search_Engine :: rt_push (const Board &b) {
+  Rep_Table :: iterator i = rt.find (b.hash);
 
   assert (rt.size () < 1000);
 
@@ -703,8 +738,8 @@ Search_Engine::rt_push (const Board &b) {
 
 // Remove an entry to the repetition table.
 void
-Search_Engine::rt_pop (const Board &b) {
-  Rep_Table::iterator i = rt.find (b.hash);
+Search_Engine :: rt_pop (const Board &b) {
+  Rep_Table :: iterator i = rt.find (b.hash);
   assert (i != rt.end ());
   i -> second -= 1;
   if (i -> second == 0) rt.erase (b.hash);
@@ -712,8 +747,8 @@ Search_Engine::rt_pop (const Board &b) {
 
 // Fetch the repetition count for a position.
 int
-Search_Engine::rep_count (const Board &b) {
-  Rep_Table::iterator i = rt.find (b.hash);
+Search_Engine :: rep_count (const Board &b) {
+  Rep_Table :: iterator i = rt.find (b.hash);
   if (i == rt.end ())
     {
       return 0;
@@ -726,14 +761,14 @@ Search_Engine::rep_count (const Board &b) {
 
 // Test whether this board is a repetition.
 bool
-Search_Engine::is_rep (const Board &b) {
+Search_Engine :: is_rep (const Board &b) {
   return rep_count (b) > 1;
 }
 
 // Test whether this board is a third repetition.
 bool
-Search_Engine::is_triple_rep (const Board &b) {
-  Rep_Table::iterator i = rt.find (b.hash);
+Search_Engine :: is_triple_rep (const Board &b) {
+  Rep_Table :: iterator i = rt.find (b.hash);
 
   if (i == rt.end ())
     {
@@ -753,6 +788,17 @@ Search_Engine::is_triple_rep (const Board &b) {
 // Routines for managing game clock resource. //
 ////////////////////////////////////////////////
 
+// Method polled periodically by the owner of the Search_Engine
+// object.
+void 
+Search_Engine :: poll (uint64 clock) {
+  if (clock >= controls.deadline) 
+    {
+      controls.interrupt_search = true;
+    }
+}
+
+
 // Set fixed time per move in milliseconds.
 void
 Search_Engine :: set_fixed_depth (int depth) {
@@ -765,6 +811,11 @@ void
 Search_Engine :: set_fixed_time (int time) {
   controls.mode = EXACT;
   controls.fixed_time = time;
+  controls.moves_ptc = -1;
+  controls.time_ptc = -1;
+  controls.increment = -1;
+  controls.time_remaining = -1;
+  controls.moves_remaining = -1;
   return;
 }
 
@@ -774,14 +825,18 @@ Search_Engine :: set_level (int mptc, int tptc, int inc) {
   controls.mode = CONVENTIONAL;
   controls.moves_ptc = mptc;
   controls.time_ptc = tptc;
-  controls.time_per_move = -1;
+  controls.fixed_time = -1;
   controls.increment = inc;
   if (inc > 0) controls.mode = ICS;
   if (tptc > 0) controls.time_remaining = tptc;
   if (mptc > 0) controls.moves_remaining = mptc;
-  return;
 }
 
+// Set the time remaining before the game clock expires.
+void 
+Search_Engine :: set_time_remaining (int msecs) {
+  controls.time_remaining = msecs;
+}
 
 ////////////////////////////////////////////////////////////////////////
 // Thinking output.                                                   //
@@ -792,7 +847,7 @@ Search_Engine :: set_level (int mptc, int tptc, int inc) {
 
 // Write thinking output before iterative deeping starts.
 void
-Search_Engine::post_before (const Board &b) {
+Search_Engine :: post_before (const Board &b) {
   cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
        << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation"
        << endl;
@@ -800,7 +855,7 @@ Search_Engine::post_before (const Board &b) {
 
 // Write thinking for each depth during iterative deeping.
 void
-Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
+Search_Engine :: post_each (const Board &b, int depth, const Move_Vector &pv) {
   double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
   Board c = b;
 
@@ -808,11 +863,11 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
   cout << setw (3)  << depth;
   cout << setw (10) << calls_to_search;
   cout << setw (10) << calls_to_qsearch;
-  cout << setw (8)  << setiosflags (ios::fixed) << setprecision (2) << elapsed;
+  cout << setw (8)  << setiosflags (ios :: fixed) << setprecision (2) << elapsed;
 
   // Write out the special case of mate in N.
   Score score = pv[0].score;
-  cout << setiosflags (ios::right);
+  cout << setiosflags (ios :: right);
   if (abs (score) > MATE_VAL - 100)
     {
       cout << setw (2) << (score < 0 ? "-" : " ");
@@ -836,7 +891,7 @@ Search_Engine::post_each (const Board &b, int depth, const Move_Vector &pv) {
 
 // Write thinking output after iterative deeping ends.
 void
-Search_Engine::post_after () {
+Search_Engine :: post_after () {
   // Display statistics on the quality of our move ordering.
   cout << endl;
   double sum = 0;

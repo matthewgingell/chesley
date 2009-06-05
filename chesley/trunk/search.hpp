@@ -33,7 +33,7 @@ struct Search_Engine {
   static const uint32 TT_SIZE = 2.5 * 1000 * 1000;
 
   // Default fixed time per move in milliseconds.
-  static const uint32 DEFAULT_TIMEOUT = 1 * 1000 * 1000;
+  static const uint32 DEFAULT_TIMEOUT = 1 * 1000;
 
   //////////////////////////////////////
   // Constructors and initialization. //
@@ -47,16 +47,16 @@ struct Search_Engine {
   void reset () {
 
     // Time management parameters.
-    interrupt_search = false;
     controls.mode = EXACT;
     controls.moves_ptc = -1;
     controls.time_ptc = -1;
-    controls.time_per_move = -1;
     controls.increment = -1;
     controls.fixed_time = DEFAULT_TIMEOUT;
     controls.fixed_depth = -1;
     controls.time_remaining = -1;
     controls.moves_remaining = -1;
+    controls.interrupt_search = false;
+    controls.deadline = 0;
 
     // Transposition and repetition tables.
     tt.clear ();
@@ -138,11 +138,11 @@ struct Search_Engine {
   // Time management. Times are always expected to be in milliseconds. //
   ///////////////////////////////////////////////////////////////////////
 
-  // If set true, the search should conclude as quickly as possible.
-  bool interrupt_search;
-
-   // Parse a string passed to the "level" command.
-  void set_time_controls (string_vector &tokens);
+  // The caller is responsible for periodically calling the poll
+  // method while a search is underway. It's important that the caller
+  // manage this and not the search object, since there may be many
+  // searches but only a few timers.
+  void poll (uint64 clock);
 
   // Set fixed time per move in milliseconds.
   void set_fixed_depth (int depth);
@@ -152,6 +152,9 @@ struct Search_Engine {
 
   // Setup time controls corresponding to and xboard "level" command.
   void set_level (int mptc, int tptc, int inc);
+
+  // Set the time remaining before the game clock expires.
+  void set_time_remaining (int msecs);
 
   struct {
 
@@ -163,7 +166,6 @@ struct Search_Engine {
     time_mode mode;
     int moves_ptc;       // Moves per time control.
     int time_ptc;        // Milliseconds per time control.
-    int time_per_move;   // Time per move in EXACT mode.
     int increment;       // Increment in ICS mode.
     int fixed_time;      // Fixed milliseconds per move.
     int fixed_depth;     // Absolute fixed depth per move.
@@ -173,8 +175,16 @@ struct Search_Engine {
     // number indicates a resource is unlimited.                  //
     ////////////////////////////////////////////////////////////////
 
-    int time_remaining;  // Time remaining.
-    int moves_remaining; // Moves remaining.
+    int time_remaining;  // Time remaining for this game.
+    int moves_remaining; // Moves remaining for this game.
+
+    /////////////////////////////////////////////////////////////
+    // Resources remaining for the search currently underway.  //
+    /////////////////////////////////////////////////////////////
+
+    uint64 deadline;       // Deadline after which to halt.
+    bool interrupt_search; // If true, return as soon as possible.
+
   } controls;
 
   ////////////////////////
