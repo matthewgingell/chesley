@@ -19,35 +19,6 @@
 
 using namespace std;
 
-////////////////////////////////////////
-// Parse and execute a debug command. //
-////////////////////////////////////////
-
-bool
-Session::debug_execute (char *line) {
-  string_vector tokens = tokenize (line);
-  int count = tokens.size ();
-
-  // Execute a standard command.
-  if (count > 0)
-    {
-      string token = downcase (tokens[0]);
-
-      if (token == "test_hashing")
-        {
-          // For all positions to depth N, compute the hash
-          // incrementally and from scratch and make sure each method
-          // generates the same value.
-          int depth = 5;
-          if (tokens.size () > 1 && is_number (tokens[1]))
-            depth = to_int (tokens[1]);
-          test_hashing (depth);
-        }
-    }
-
-  return true;
-}
-
 ///////////////////////////////////////////////////////////////
 // Generate a benchmark. Calculate the best move to depth N. //
 ///////////////////////////////////////////////////////////////
@@ -55,9 +26,9 @@ Session::debug_execute (char *line) {
 bool
 Session::bench (const string_vector &tokens) {
   int depth = 6;
-
   if (tokens.size () > 1 && is_number (tokens[1]))
     depth = to_int (tokens[1]);
+  running = false;
   Move m = se.choose_move (board, depth);
   return true;
 }
@@ -106,6 +77,9 @@ Session::play_self (const string_vector &tokens IS_UNUSED)
   return true;
 }
 
+/////////////////////////////////////////////////////////////////////
+// Dump a vector representing the pawn structure of this position. //
+/////////////////////////////////////////////////////////////////////
 
 bool
 Session::dump_pawns (const string_vector &tokens IS_UNUSED)

@@ -12,15 +12,10 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cctype>
 #include <cstdio>
 #include <cstring>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <signal.h>
 #include <string>
-#include <sys/time.h>
+#include <unistd.h>
 
 #include "chesley.hpp"
 
@@ -83,7 +78,7 @@ Session::init_session () {
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
 
-  // Setup periodic 100 Hz alarm.
+  // Setup periodic 100 Hz timer.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
   timer.it_value.tv_usec = 100 * 1000;
@@ -95,7 +90,7 @@ Session::init_session () {
 
 void
 Session::handle_alarm (int sig IS_UNUSED) {
-  se.poll (mclock ());
+  if (running) se.poll (mclock ());
 }
 
 // Write the command prompt.
@@ -298,347 +293,13 @@ Session::find_a_move () {
     {
       se.controls.moves_remaining--;
     }
-
-  return m;
-}
-
-///////////////////////////////////////
-// Parse and execute a command line. //
-///////////////////////////////////////
-
-bool
-Session::execute (char *line) {
-
-  // Pass this command to the protocol specific handler.
-  if (protocol == XBOARD && !xbd_execute (line))
-    return false;
-
-  // Apply a debugging command.
-  if (!debug_execute (line))
-    return false;
-
-  // Otherwise, execute a standard command.
-  string_vector tokens = tokenize (line);
-  int count = tokens.size ();
-
-  if (count > 0)
+  else
     {
-      string token = downcase (tokens[0]);
-
-      /////////////////////////
-      // Debugging commands. //
-      /////////////////////////
-
-      // Apply a move to the current position.
-      if (token == "apply" && count > 1)
-        {
-          running = false;
-          Move m = board.from_calg (tokens[1]);
-          board.apply (m);
-        }
-
-      // Write a bitboard of attacks against the side to move.
-      else if (token == "attacks")
-        {
-          print_board (board.attack_set (invert (board.to_move ())));
-        }
-
-      // Search the current position to a fixed depth.
-      else if (token == "bench")
-        {
-          bench (tokens);
-        }
-
-      // Output the perft score for each child.
-      else if (token == "div")
-        {
-          if (tokens.size () == 2)
-            {
-              board.divide (to_int (tokens[1]));
-            }
-        }
-
-      // Dump pawn structure to a file.
-      else if (token == "dumppawns")
-        {
-          dump_pawns (tokens);
-        }
-
-      // Execute an epd string.
-      else if (token == "epd")
-        {
-          epd (tokens);
-        }
-
-      // Output the static evaluation for this position.
-      else if (token == "eval")
-        {
-          cerr << Eval (board).score () << endl;
-        }
-
-      // Output the hash key for this position.
-      else if (token == "hash")
-        {
-          cerr << board.hash << endl;
-        }
-
-      // Output the legal moves from this position.
-      else if (token == "moves")
-        {
-          Move_Vector moves (board);
-          cerr << moves << endl;
-        }
-
-      // Output the number of positions exactly N moves from this
-      // position.
-      else if (token == "perft")
-        {
-          if (tokens.size () >= 2)
-            {
-              perft (tokens);
-            }
-        }
-
-      // Play an engine vs. engine game on the console.
-      else if (token == "playself")
-        {
-          play_self (tokens);
-        }
-
-      ///////////////////////
-      // Display commands. //
-      ///////////////////////
-
-      // Write an ASCII are board.
-      else if (token == "disp")
-        {
-          fprintf (out, "%s\n", (board.to_ascii ()).c_str ());
-        }
-
-      // Display the current time controls.
-      else if (token == "dtc")
-        {
-          fprintf (out, "mode:            ");
-          switch (se.controls.mode)
-            {
-            case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
-            case ICS:          fprintf (out, "ICS"); break;
-            case EXACT:        fprintf (out, "EXACT"); break;
-            }
-          fprintf (out, "\n");
-
-          fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
-          fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
-          fprintf (out, "increment:       %i\n", se.controls.increment);
-          fprintf (out, "fixed_time:      %i\n", se.controls.fixed_time);
-          fprintf (out, "fixed_depth:     %i\n", se.controls.fixed_depth);
-          fprintf (out, "time_remaining:  %i\n", se.controls.time_remaining);
-          fprintf (out, "moves_remaining: %i\n", se.controls.moves_remaining);
-        }
-
-      // Write the current position as a fen string.
-      else if (token == "fen")
-        {
-          fprintf (out, "%s\n", (board.to_fen ()).c_str ());
-        }
-
-      ///////////////////////////////////////////////
-      // Commands for play a game with the engine. //
-      ///////////////////////////////////////////////
-
-      // Set user to play black.
-      else if (token == "black")
-        {
-          board.set_color (BLACK);
-          our_color = WHITE;
-        }
-
-      // Put the engine into force mode.
-      else if (token == "force")
-        {
-          running = false;
-        }
-
-      // Leave force mode.
-      else if (token == "go") {
-        our_color = board.to_move ();
-        running = true;
-      }
-
-      // Play a move.
-      else if ((token == "move" || token == "usermove") && count > 1)
-        {
-          Move m = board.from_calg (tokens[1]);
-          bool applied = board.apply (m);
-
-          // The client should never pass us a move that doesn't
-          // apply.
-          assert (applied);
-
-          // This move may have ended the game.
-          Status s = get_status ();
-          if (s != GAME_IN_PROGRESS)
-            {
-              handle_end_of_game (s);
-            }
-        }
-
-      // Start a new game.
-      else if (token == "new")
-        {
-          board = Board :: startpos ();
-          se.reset ();
-          our_color = BLACK;
-          running = true;
-        }
-
-      // Swap colors between the engine and the user.
-      else if (token == "playother")
-        {
-          our_color = invert (our_color);
-        }
-
-      // Set the board from a fen string.
-      else if (token == "setboard")
-        {
-          board = Board::from_fen (rest (tokens), false);
-        }
-
-      // Set user to play white.
-      else if (token == "white")
-        {
-          board.set_color (WHITE);
-          our_color = BLACK;
-        }
-
-      ////////////////////////////////////
-      // Time control related commands. //
-      ////////////////////////////////////
-
-      // level MPC BASE INC command.
-      else if (token == "level")
-        {
-          tokens = rest (tokens);
-
-          // Check we've been passed enough arguments.
-          if (tokens.size () == 3)
-            {
-              int moves_per_control = 0, time_per_control = 0, increment = 0;
-              string field = first (tokens);
-
-              // Field 1: Parse the moves per time control.
-              if (!is_number (field)) assert (0);
-              moves_per_control = to_int (field);
-              tokens = rest (tokens);
-
-              // Field 2: Parse the number of seconds per time control. This
-              // may be written as "<minutes>:<second>".
-              field = first (tokens);
-              size_t idx = field.find (':');
-              int minutes = 0, seconds = 0;
-              if (idx != string::npos)
-                {
-                  if (idx != 0) minutes = to_int (field.substr (0, idx));
-                  seconds = to_int (field.substr (idx + 1));
-                }
-              else
-                {
-                  minutes = to_int (field);
-                }
-              time_per_control = 1000 * (60 * minutes + seconds);
-              tokens = rest (tokens);
-
-              // Field 3: Parse to incremental time bonus.
-              field = first (tokens);
-              increment = to_int (field);
-
-              // Set search engine time controls.
-              se.set_level (moves_per_control, time_per_control, increment);
-            }
-          else
-            {
-              // TODO: Raise a UI exception.
-            }
-        }
-
-      // Set fixed depth move mode.
-      else if (token == "sd")
-        {
-          if (count > 1)
-            {
-              se.set_fixed_depth (to_int (tokens[1]));
-            }
-        }
-
-      // Set fixed time move mode.
-      else if (token == "st")
-        {
-          if (count > 1)
-            {
-              se.set_fixed_time (1000 * to_int (tokens[1]));
-              
-            }
-        }
-
-      // Set the clock.
-      else if (token == "time")
-        {
-          if (count > 1)
-            {
-              se.set_time_remaining (10 * to_int (tokens[1]));
-#if 0
-              fprintf (out, "mode:            ");
-              switch (se.controls.mode)
-                {
-                case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
-                case ICS:          fprintf (out, "ICS"); break;
-                case EXACT:        fprintf (out, "EXACT"); break;
-                }
-              fprintf (out, "\n");
-              fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
-              fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
-              fprintf (out, "increment:       %i\n", se.controls.increment);
-              fprintf (out, "fixed_time:      %i\n", se.controls.fixed_time);
-              fprintf (out, "fixed_depth:     %i\n", se.controls.fixed_depth);
-              fprintf (out, "time_remaining:  %i\n", se.controls.time_remaining);
-              fprintf (out, "moves_remaining: %i\n", se.controls.moves_remaining);
-#endif
-            }
-        }
-
-      // otime N command
-      else if (token == "otime")
-        {
-          // For now we don't care about the amount of time remaining
-          // to the opponent.
-        }
-
-      //////////////////////
-      // Session commands //
-      //////////////////////
-
-      else if (token == "quit" || token == "exit")
-        {
-          return false;
-        }
-
-      else if (token == "xboard")
-        {
-          return set_xboard_mode (tokens);
-        }
-
-      ///////////////////////
-      // Enter xboard ui.  //
-      ///////////////////////
-
-      // Warn about unrecognized commands in interactive mode.
-      else if (ui_mode == INTERACTIVE)
-        {
-          fprintf (out, "Unrecognized command.\n");
-        }
+      se.controls.moves_remaining = 
+        se.controls.moves_ptc;
     }
 
-  return true;
+  return m;
 }
 
 //////////////////

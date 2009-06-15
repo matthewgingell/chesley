@@ -41,8 +41,11 @@ extern char *arg0;
 // Return a string of spaces.
 static std::string spaces (int n) IS_UNUSED;
 
-// Down case a string.
+// Downcase a string.
 static std::string downcase (std::string &s) IS_UNUSED;
+
+// Upcase a string.
+static std::string upcase (std::string &s) IS_UNUSED;
 
 // Test whether is string is a number.
 static bool is_number (const std::string &s) IS_UNUSED;
@@ -158,6 +161,15 @@ downcase (std::string &s) {
       s[i] = tolower (s[i]);
     }
 
+  return s;
+}
+
+// Upcase a string.
+static std::string upcase (std::string &s) {
+  for (uint32 i = 0; i < s.length (); i++)
+    {
+      s[i] = toupper (s[i]);
+    }
   return s;
 }
 

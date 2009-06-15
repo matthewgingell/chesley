@@ -63,10 +63,10 @@ playself: chesley
 
 # Run an xboard game of Chesley against the binary chesley.old.
 playold: chesley
-	xboard -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS)
+	xboard -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 15
 
 playother: chesley
-	xboard -fcp ./chesley -scp gnuchess -mg 5 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 10 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #
