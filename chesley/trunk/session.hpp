@@ -138,6 +138,9 @@ struct Session {
   // Process a string in Extended Position Notation.
   static bool epd (const string_vector &tokens);
 
+  // Set up time controls from level command.
+  static bool level (const string_vector &tokens);
+
   /////////////////////////
   // Debugging commands. //
   /////////////////////////

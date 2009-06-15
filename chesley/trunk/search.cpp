@@ -153,13 +153,6 @@ Search_Engine :: iterative_deepening
   // Write out statistics about this search.
   if (post) post_after ();
 
-  // If we got back no principal variation, return a depth 1 search.
-  if (pv.count == 0) {
-    controls.interrupt_search = false;
-    search_with_memory  (b, 1, 0, pv, -INF, INF);
-    controls.interrupt_search = true;
-  }
-
   // Check that we got at least one move.
   assert (pv.count > 0);
 
@@ -221,7 +214,7 @@ Search_Engine :: search_with_memory
 
   // Try to find this node in the transposition table.
   Move m;
-  if (tt_try (b, depth, m, alpha, beta))
+  if (ply > 0 && tt_try (b, depth, m, alpha, beta))
     {
       pv.push (m);
       return m.score;
