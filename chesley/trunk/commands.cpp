@@ -38,6 +38,7 @@ enum Command
     CMD_FEN, 
     CMD_FORCE, 
     CMD_GO, 
+    CMD_HELP,
     CMD_LEVEL, 
     CMD_MOVE, 
     CMD_MOVES, 
@@ -132,6 +133,9 @@ static const struct {
 
   { CMD_GO,        "GO",        "",
     "Set the engine running."},
+
+  { CMD_HELP,      "HELP",      "",
+    "Print a help message."},
 
   { CMD_LEVEL,     "LEVEL",     "<moves time increment>",
     "Set time controls"},
@@ -241,7 +245,7 @@ static const struct {
   { CMD_NOPOST,    "NOPOST",    "",
     ""},
 
-  { CMD_OTIM,      "OTIM",      "command ignored",
+  { CMD_OTIM,      "OTIM",      "",
     "Command ignored."},
   
   { CMD_PAUSE,     "PAUSE",     "",
@@ -307,13 +311,15 @@ bool
 Session::execute (char *line) {
 
   string_vector tokens = tokenize (line);
+
+  if (tokens.size () == 0) return true;
+    
   string token = tokens[0];
   Command cmd = match_command (token);
-
   switch (cmd)
     { 
     case CMD_NULL: 
-      fprintf (out, "Unrecognized command:%s\n", token.c_str ());
+      fprintf (out, "Unrecognized command: %s\n", token.c_str ());
       break;
 
     ////////////////////
@@ -333,21 +339,7 @@ Session::execute (char *line) {
 
     case CMD_DTC: 
       // Display the current time controls.
-      fprintf (out, "mode:            ");
-      switch (se.controls.mode)
-        {
-        case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
-        case ICS:          fprintf (out, "ICS"); break;
-        case EXACT:        fprintf (out, "EXACT"); break;
-        }
-      fprintf (out, "\n");
-      fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
-      fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
-      fprintf (out, "increment:       %i\n", se.controls.increment);
-      fprintf (out, "fixed_time:      %i\n", se.controls.fixed_time);
-      fprintf (out, "fixed_depth:     %i\n", se.controls.fixed_depth);
-      fprintf (out, "time_remaining:  %i\n", se.controls.time_remaining);
-      fprintf (out, "moves_remaining: %i\n", se.controls.moves_remaining);
+      display_time_controls (rest (tokens));
       break;
 
     case CMD_EVAL: 
@@ -369,6 +361,11 @@ Session::execute (char *line) {
       // Leave force mode.
       our_color = board.to_move ();
       running = true;
+      break;
+
+    case CMD_HELP: 
+      // Print help message for the user.
+      display_help (rest (tokens));
       break;
 
     case CMD_LEVEL:
@@ -677,3 +674,36 @@ Session::level (const string_vector &ctokens) {
 
   return true;
 }
+
+bool 
+Session::display_time_controls (const string_vector &ctokens IS_UNUSED) {
+  fprintf (out, "mode:            ");
+  switch (se.controls.mode) {
+  case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
+  case ICS:          fprintf (out, "ICS"); break;
+  case EXACT:        fprintf (out, "EXACT"); break;
+  }
+  fprintf (out, "\n");
+  fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
+  fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
+  fprintf (out, "increment:       %i\n", se.controls.increment);
+  fprintf (out, "fixed_time:      %i\n", se.controls.fixed_time);
+  fprintf (out, "fixed_depth:     %i\n", se.controls.fixed_depth);
+  fprintf (out, "time_remaining:  %i\n", se.controls.time_remaining);
+  fprintf (out, "moves_remaining: %i\n", se.controls.moves_remaining);
+
+  return true;
+}
+
+bool 
+Session::display_help (const string_vector &ctokens IS_UNUSED) {
+  for (int i = 0; i < CMD_COUNT; i++)
+    {
+      fprintf  (out, "%s\t%s\t%s\n", 
+                commands[i].str, commands [i].usage, commands[i].doc);
+    }
+
+  return true;
+}
+
+

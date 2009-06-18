@@ -40,7 +40,7 @@ chesley: $(OBJS) vsn.o
 
 # Create an object containing the version number from svn info.
 vsn.o: *.cpp *.hpp
-	svn info -r HEAD | sed -n 's/Revision: \([0-9]*\)/const char	\
+	svn info | sed -n 's/Revision: \([0-9]*\)/const char	\
 	*SVN_REVISION = \"\1\";/p' > vsn.xxx
 	$(CXX) -x c++ -c $(CXXFLAGS) vsn.xxx -o $@
 
@@ -63,10 +63,11 @@ playself: chesley
 
 # Run an xboard game of Chesley against the binary chesley.old.
 playold: chesley
-	xboard -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 15
+	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 100
 
 playother: chesley
-	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 10 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 25 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #

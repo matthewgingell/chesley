@@ -66,11 +66,11 @@ Session::play_self (const string_vector &tokens IS_UNUSED)
   running = true;
   while ((s = get_status ()) == GAME_IN_PROGRESS)
     {
-      cerr << board << endl << endl;
+      cout << board << endl << endl;
       Move m = find_a_move ();
       board.apply (m);
     }
-  cerr << board << endl << endl;
+  cout << board << endl << endl;
   handle_end_of_game (s);
   running = false;
 
@@ -114,11 +114,11 @@ Session::dump_pawns (const string_vector &tokens IS_UNUSED)
             }
           out << endl;
 
-          cerr << board << endl << endl;
+          cout << board << endl << endl;
           Move m = find_a_move ();
           board.apply (m);
         }
-      cerr << board << endl << endl;
+      cout << board << endl << endl;
       handle_end_of_game (s);
     }
   return true;
@@ -136,7 +136,7 @@ test_hashing_rec (const Board &b, int depth) {
   if (b.hash == b.gen_hash ())
     pass++;
   else
-    cerr << "FAIL at depth: " << depth << endl;
+    cout << "FAIL at depth: " << depth << endl;
 
   if (depth == 0) return 1;
 
@@ -152,7 +152,7 @@ test_hashing_rec (const Board &b, int depth) {
 void
 Session::test_hashing (int d) {
   int pass = test_hashing_rec (board, d);
-  cerr << pass << endl;
+  cout << pass << endl;
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -223,12 +223,14 @@ Session::epd (const string_vector &args)
       else if (opcode == "bm")
         {
           Move best = b.from_san (first (tokens));
-          cerr << "Trying " << fen << " bm " << b.to_san (best) << endl;
-          se.set_fixed_time (15 * 1000);
+          cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
+          se.set_fixed_time (60 * 1000);
           se.post = true;
+          running = true;
           Move m = se.choose_move (b, 100);
-          (m == best) ? cerr << "PASS: " : cerr << "FAIL: ";
-          cerr << fen << " bm " << b.to_san (best) << endl << endl;;
+          running = false;
+          (m == best) ? cout << "PASS: " : cout << "FAIL: ";
+          cout << fen << " bm " << b.to_san (best) << endl << endl;;
           tokens == rest (tokens);
         }
 
