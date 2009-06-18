@@ -82,7 +82,7 @@ inline bool is_major (Kind k) {
 }
 
 // Compute a simple net positional value from the piece square table.
-Score sum_piece_squares (const Board &b) IS_CONST;
+Score sum_piece_squares (const Board &b, Phase p) IS_CONST;
 
 struct Eval {
   Eval (const Board &board) {
@@ -119,16 +119,16 @@ struct Eval {
     score += score_material (WHITE) - score_material (BLACK);
 
     // Add net piece square values.
-    score += sum_piece_squares (b);
+    score += sum_piece_squares (b, phase);
 
     // Provide a bonus for having castling or being able to castle.
-    if (b.flags.w_has_k_castled) score += 125;
-    else if (b.flags.w_has_q_castled) score += 100;
-    else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score += 25;
+    if (b.flags.w_has_k_castled) score += 50;
+    else if (b.flags.w_has_q_castled) score += 30;
+    else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score += 10;
     
-    if (b.flags.b_has_k_castled) score -= 125;
-    else if (b.flags.w_has_q_castled) score -= 100;
-    else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score -= 25;
+    if (b.flags.b_has_k_castled) score -= 50;
+    else if (b.flags.w_has_q_castled) score -= 30;
+    else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score -= 10;
     
     // Provide a bonus for holding both bishops.
     if (piece_counts[WHITE][BISHOP] >= 2) score += BISHOP_PAIR_BONUS;
@@ -137,10 +137,10 @@ struct Eval {
     // Reward rooks and queens on open files.
     score += eval_files (WHITE) - eval_files (BLACK);
 
-    // Evaluate bishops. This is a very significant win.
+    // Evaluate bishops.
     score += eval_bishops (WHITE) - eval_bishops (BLACK);
 
-    // Evaluate pawn structure. This is a very significant win.
+    // Evaluate pawn structure.
     score += eval_pawns (WHITE) - eval_pawns (BLACK);
 
     // Evaluate board control. At the moment this seems to degrade
@@ -150,7 +150,7 @@ struct Eval {
 #endif
 
     // Add a small random number for variety.
-    score += random () % 3 - 1 ;
+    score += random () % 5 - 2;
 
     // Set the appropriate sign and return the score.
     return sign (b.to_move ()) * score;
@@ -269,31 +269,25 @@ struct Eval {
         // Penalize rook pawns.
         if (file == 0 || file == 7)
           {
-            // std::cerr << "penalizing rook pawn on file " << file << std::endl;
             score -= 15;
           }
 
         // Penalize doubled pawns.
         if (pawn_counts[c][file] > 1)
           {
-            // std::cerr << "penalizing doubled pawn on file " << file << std::endl;
             score -= 20;
           }
 
         // Penalize isolated pawns.
         if ((file == 0 && pawn_counts[c][1] == 0) ||
             (file == 7 && pawn_counts[c][6] == 0) ||
-            (pawn_counts[c][file - 1] == 0 &&
-             pawn_counts[c][file + 1] == 0))
+            (pawn_counts[c][file - 1] == 0 && pawn_counts[c][file + 1] == 0))
           {
-            // std::cerr << "penalizing isolated pawn on file " << file << std::endl;
             score -= 5;
           }
 
         pawns = clear_lsb (pawns);
       }
-
-    // std::cerr << "pawn eval score is " << score << std::endl;
 
     return score;
   }

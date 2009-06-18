@@ -141,6 +141,12 @@ struct Session {
   // Set up time controls from level command.
   static bool level (const string_vector &tokens);
 
+  // Display the current time controls.
+  static bool display_time_controls (const string_vector &tokens);
+
+  // Display the a help message.
+  static bool display_help (const string_vector &tokens);
+
   /////////////////////////
   // Debugging commands. //
   /////////////////////////
