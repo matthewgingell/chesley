@@ -483,8 +483,6 @@ Board::from_fen (const string_vector &toks, bool EPD) {
     }
   else
     {
-      cout << toks << endl;
-      cout << toks[3] << endl;
       if (toks[3][0] != '-')
         b.set_en_passant
           ((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
