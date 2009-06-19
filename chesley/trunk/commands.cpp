@@ -485,6 +485,19 @@ Session::execute (char *line) {
       epd (tokens);
       break;
 
+    case CMD_PERFT:
+      // Compute perft to a fixed depth.
+      {
+        int depth = (to_int (tokens[1]));
+        fprintf (out, "Computing perft to depth %i...\n", depth);
+        uint64 start = cpu_time();
+        uint64 count = board.perft (depth);
+        uint64 elapsed = cpu_time() - start;
+        fprintf (out, "moves = %lli\n", count);
+        fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
+      }
+      break;
+
     case CMD_HASH: 
       // Output the hash key for this position.
       cout << board.hash << endl;

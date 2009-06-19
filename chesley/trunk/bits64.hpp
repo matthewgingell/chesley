@@ -81,11 +81,12 @@ bit_idx (bits64 b) {
 // Count the number of bits set in b.
 inline uint32
 pop_count (bits64 b) {
-#ifdef __GNUC__
+#if 0
+  // This appears to be slower the code below.
   return __builtin_popcountll (b);
 #else
   uint32 n;
-  for (n = 0; b != 0; n++, b = clear_lsb(b));
+  for (n = 0; b != 0; n++, b = clear_lsb(b)) {};
   return n;
 #endif
 }

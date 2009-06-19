@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = 
+OPT = -O3 -DNDEBUG
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -m64 -Wall -Wextra $(OPT) $(ALG) $(INC) $(LIBS)
@@ -52,7 +52,7 @@ vsn.o: *.cpp *.hpp
 # Running games under xboard  #
 ###############################
 
-XBOARD_OPTS = -debug -coords -size Medium -xponder -thinking
+XBOARD_OPTS = -debug -coords -size Giant -thinking -xponder -sgf games.out
 
 # Launch an xboard session with Chesley.
 play: chesley
@@ -64,12 +64,13 @@ playself: chesley
 
 # Run an xboard game of Chesley against the binary chesley.old.
 playold: chesley
-	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 100
+	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 250
 
 playother: chesley
 #	xboard -st 0:01 -xreuse -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 25 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	
+#	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #
