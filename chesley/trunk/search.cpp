@@ -143,13 +143,14 @@ Search_Engine :: iterative_deepening
       // Break out of the loop if the search was interrupted.
       if (controls.interrupt_search) break;
 
-      // Otherwise, if the search completed and we got back a
-      // principle variation, copy it back to the caller.
-      if (tmp.count > 0)
-        {
-          pv = tmp;
-          if (post) post_each (b, i, pv);
-        }
+      // Otherwise copy the principle variation back to the caller.
+      assert (tmp.count > 0);
+      pv = tmp;
+      if (post) post_each (b, i, pv);
+
+      // Don't bother searching any further if we've found a
+      // checkmate.
+      if (is_mate (s)) break;
     }
 
   // Write out statistics about this search.
@@ -247,7 +248,8 @@ Search_Engine :: search_with_memory
   rt_pop (b);
 
   // Update the transposition table if this search returned a PV.
-  if (pv.count > 0) tt_update (b, depth, pv[0], alpha, beta);
+  if (pv.count > 0 && !controls.interrupt_search)
+    tt_update (b, depth, pv[0], alpha, beta);
 
   return s;
 }
@@ -367,7 +369,6 @@ Search_Engine :: search
 #endif // ENABLE_EXTENSIONS
 
 #ifdef ENABLE_LMR
-
         ///////////////////////////
         // Late move reductions. //
         ///////////////////////////
