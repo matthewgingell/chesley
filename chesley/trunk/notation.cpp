@@ -429,7 +429,7 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   // designated using upper-case letters ("PNBRQK") while Black take
   // lowercase ("pnbrqk"). Blank squares are noted using digits 1
   // through 8 (the number of blank squares), and "/" separate ranks.
-  if (!toks.size () >= 1) return b;
+  if (toks.size () < 1) return b;
 
   int row = 7, file = 0;
   string::const_iterator i;
@@ -449,7 +449,7 @@ Board::from_fen (const string_vector &toks, bool EPD) {
     }
 
   // 2. Active color. "w" means white moves next, "b" means black.
-  if (!toks.size () >= 2) return b;
+  if (toks.size () < 2) return b;
   b.set_color (tolower (toks[1][0]) == 'w' ? WHITE : BLACK);
 
   // 3. Castling availability. If neither side can castle, this is
@@ -461,7 +461,7 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   b.set_castling_right (B_QUEEN_SIDE, false);
   b.set_castling_right (B_KING_SIDE, false);
 
-  if (!toks.size () >= 3) return b;
+  if (toks.size () < 3) return b;
 
   for (i = toks[2].begin (); i < toks[2].end (); i++)
     {
@@ -477,12 +477,14 @@ Board::from_fen (const string_vector &toks, bool EPD) {
   // 4. En passant target square in algebraic notation. If there's no
   // en passant target square, this is "-". If a pawn has just made a
   // 2-square move, this is the position "behind" the pawn.
-  if (!toks.size () >= 4)
+  if (toks.size () < 4)
     {
       b.set_en_passant (0);
     }
   else
     {
+      cout << toks << endl;
+      cout << toks[3] << endl;
       if (toks[3][0] != '-')
         b.set_en_passant
           ((toks[3][0] - 'a') + 8 * ((toks[3][1] - '0') - 1));
@@ -495,21 +497,21 @@ Board::from_fen (const string_vector &toks, bool EPD) {
       // 5. Half move clock: This is the number of half moves since
       // the last pawn advance or capture. This is used to determine
       // if a draw can be claimed under the fifty-move rule.
-      if (toks.size () >= 5) {
-        if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
-      } else {
+      if (toks.size () < 5) {
         b.half_move_clock = 0;
+      } else {
+        if (is_number (toks[4])) b.half_move_clock = to_int (toks[4]);
       }
 
       // 6. Full move number: The number of the full move. It starts
       // at 1 and is incremented after Black's move.
-      if (toks.size () >= 6) {
-        if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
-      } else {
+      if (toks.size () < 6) {
         b.full_move_clock = 0;
+      } else {
+        if (is_number (toks[5])) b.full_move_clock = to_int (toks[5]);
       }
     }
-
+  
   return b;
 }
 

@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3
+OPT = 
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -m64 -Wall -Wextra $(OPT) $(ALG) $(INC) $(LIBS)
@@ -28,7 +28,7 @@ SRCS = $(wildcard *.cpp)
 
 ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 -DENABLE_TRANS_TABLE -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS	\
-# -DENABLE_LMR -DENABLE_SEE
+# -DENABLE_LMR # -DENABLE_SEE
 
 ################
 # Main binary. #
@@ -67,8 +67,9 @@ playold: chesley
 	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 100
 
 playother: chesley
-	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 25 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -xreuse -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 25 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #
