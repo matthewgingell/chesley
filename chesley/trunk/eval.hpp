@@ -125,7 +125,6 @@ struct Eval {
     if (b.flags.w_has_k_castled) score += 50;
     else if (b.flags.w_has_q_castled) score += 30;
     else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score += 10;
-    
     if (b.flags.b_has_k_castled) score -= 50;
     else if (b.flags.w_has_q_castled) score -= 30;
     else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) score -= 10;
@@ -150,7 +149,7 @@ struct Eval {
 #endif
 
     // Add a small random number for variety.
-    //    score += random () % 5 - 2;
+    score += random () % 5 - 2;
 
     // Set the appropriate sign and return the score.
     return sign (b.to_move ()) * score;

@@ -2,13 +2,13 @@
 //                                                                            //
 // search.cpp                                                                 //
 //                                                                            //
-// Interface to the search engine. Clients are expected to create and         //
-// configure search engine objects then call its methods to do various        //
-// types of searches.                                                         //
+// Interface to the search engine. Clients are expected to create             //
+// and configure search engine objects then call its methods to do            //
+// various types of searches.                                                 //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
-// GNU Public License.                                                        //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley             //
+// the Chess Engine! is free software distributed under the terms             //
+// of the GNU Public License.                                                 //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -378,7 +378,7 @@ Search_Engine :: search
         if (mi >= Full_Depth_Count &&
             depth >= Reduction_Limit &&
             ext == 0 &&
-            have_pv_move &&
+            !have_pv_move &&
             Eval (c).score () < alpha)
           {
             int ds;
@@ -386,9 +386,8 @@ Search_Engine :: search
             ds = -search_with_memory
               (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
 
-            // If we fail low, we are done with this node.
-            if (ds <= alpha)
-              continue;
+            // If we fail low, we are done with this move.
+            if (ds <= alpha) continue;
           }
 #endif // ENABLE_LMR
 
