@@ -252,14 +252,20 @@ Board::to_san (const Move &m) const {
 
   // Determine whether this is a check or checkmate.
   Board c = *this;
-  bool applied = c.apply (m);
-  assert (applied);
-  if (c.in_check (c.to_move ()))
+
+  if (c.apply (m)) 
     {
-      if (c.child_count () == 0)
-        s << "#";
-      else
-        s << "+";
+      if (c.in_check (c.to_move ()))
+        {
+          if (c.child_count () == 0)
+            s << "#";
+          else
+            s << "+";
+        }
+    }
+  else
+    {
+      s << " <illegal>";
     }
 
   return s.str ();

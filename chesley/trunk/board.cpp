@@ -142,9 +142,6 @@ Board::common_init (Board &b) {
   // Initialize clocks.
   b.half_move_clock =
     b.full_move_clock = 0;
-
-  // Set last move to null.
-  b.last_move = Move (0, 0);
 }
 
 // Construct a board from the standard starting position.
@@ -207,9 +204,6 @@ Board::apply (const Move &m) {
   Kind kind = m.get_kind (*this);
   Kind capture = m.capture (*this);
   Color color = to_move ();
-
-  // Set the last move field.
-  last_move = m;
 
   ////////////////////
   // Update clocks. //

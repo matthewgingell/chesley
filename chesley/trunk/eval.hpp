@@ -150,7 +150,7 @@ struct Eval {
 #endif
 
     // Add a small random number for variety.
-    score += random () % 5 - 2;
+    //    score += random () % 5 - 2;
 
     // Set the appropriate sign and return the score.
     return sign (b.to_move ()) * score;

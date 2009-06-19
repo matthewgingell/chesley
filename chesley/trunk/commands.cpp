@@ -396,7 +396,8 @@ Session::execute (char *line) {
       // Output the legal moves from this position.
       {
         Move_Vector moves (board);
-        cerr << moves << endl;
+        for (int i = 0; i < moves.count; i++) 
+          cout << board.to_san (moves[i]) << endl;
       }
       break;
 
@@ -486,7 +487,7 @@ Session::execute (char *line) {
 
     case CMD_HASH: 
       // Output the hash key for this position.
-      cerr << board.hash << endl;
+      cout << board.hash << endl;
       break;
 
     case CMD_TESTHASHING:
@@ -624,7 +625,7 @@ Session::execute (char *line) {
       break;
 
     default:
-      cerr << token << endl;
+      cout << token << endl;
       assert (0);
       break;
     }
