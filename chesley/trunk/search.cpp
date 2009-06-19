@@ -252,6 +252,14 @@ Search_Engine :: search_with_memory
   return s;
 }
 
+//////////////////////////////////////////////////////////////////////////
+//                                                                      //
+// Search_Engine :: search ()                                           //
+//                                                                      //
+// This is the negamax implementation at the core of search hierarchy.  //
+///                                                                     //
+//////////////////////////////////////////////////////////////////////////
+
 Score
 Search_Engine :: search
 (const Board &b,
@@ -263,7 +271,7 @@ Search_Engine :: search
   assert (pv.count == 0);
   assert (alpha <= beta);
 
-  bool legal_move_count = 0;
+  int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
 
   // Check 50 move and triple repetition rules.
@@ -280,11 +288,19 @@ Search_Engine :: search
   // Return the result of a quiescence search at depth 0.
   if (depth <= 0)
     {
+      // Check whether this position is checkmate.
+      if (in_check && b.child_count () == 0)
+        {
+          return -(MATE_VAL - ply);
+        }
+      else
+        {
 #ifdef ENABLE_QSEARCH
-      alpha = qsearch (b, -1, ply, alpha, beta);
+          alpha = qsearch (b, -1, ply, alpha, beta);
 #else
-      alpha = Eval (b).score ();
+          alpha = Eval (b).score ();
 #endif /* ENABLE_QSEARCH */
+        }
     }
 
   // Otherwise recurse over the children of this node.
@@ -295,7 +311,7 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
-    const int R = 2;
+    const int R = (depth > 6) ? 3 : 2;
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 10 pieces on the board.
@@ -337,6 +353,7 @@ Search_Engine :: search
         ////////////////////////
 
         int ext = 0;
+#ifdef ENABLE_EXTENSIONS
 
         // Check extensions.
         if (in_check) ext += 1;
@@ -346,11 +363,8 @@ Search_Engine :: search
         if ((rank == 1 || rank == 6) &&
             moves[mi].get_kind (b) == PAWN)
           ext+= 1;
-#if 0
-        // Recapture extensions: Waiting on improved move
-        // representation.
-        if (moves[mi].to == b.last_move.to) ext += 1;
-#endif
+
+#endif // ENABLE_EXTENSIONS
 
 #ifdef ENABLE_LMR
 

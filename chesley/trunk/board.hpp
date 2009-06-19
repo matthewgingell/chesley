@@ -254,11 +254,8 @@ struct Board {
   } flags;
 
   // Clocks
-  uint32 half_move_clock; // Used for 50-move rule.
-  uint32 full_move_clock; // Clock after each black move.
-
-  // Move that produced this position.
-  Move last_move;
+  uint16 half_move_clock; // Used for 50-move rule.
+  uint16 full_move_clock; // Clock after each black move.
 
   //////////////////////////////////////
   // Constructors and initialization. //
