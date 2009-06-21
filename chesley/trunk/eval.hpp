@@ -92,12 +92,13 @@ struct Eval {
     memset (minor_counts, sizeof (minor_counts), 0);
     memset (major_counts, sizeof (major_counts), 0);
     memset (pawn_counts, sizeof (pawn_counts), 0);
-    count_material ();
   }
 
-  Score score () {
-    int score = 0;
+  Score score (Score alpha IS_UNUSED = -INF, Score beta IS_UNUSED = INF) {
+    Score score = 0;
     Phase phase = OPENING;
+
+    count_material ();
 
     // Determine game phase.
     if (major_counts [WHITE] + minor_counts [WHITE] <= 3 &&
@@ -114,7 +115,7 @@ struct Eval {
         if (minor_counts[WHITE] <= 1 && minor_counts[BLACK] <= 1)
           return 0;
       }
-
+    
     // Generate a simple material score.
     score += score_material (WHITE) - score_material (BLACK);
 
@@ -150,7 +151,7 @@ struct Eval {
 
     // Add a small random number for variety.
     score += random () % 5 - 2;
-
+    
     // Set the appropriate sign and return the score.
     return sign (b.to_move ()) * score;
   }
@@ -304,22 +305,19 @@ struct Eval {
     b.flags.to_move = WHITE;
     b.gen_moves (white_moves);
     for (int i = 0; i < white_moves.count; i++)
-      control[white_moves[i].to]++;
+      control[white_moves[i].to] += 1 * centrality_table[i];
 
     b.flags.to_move = BLACK;
     b.gen_moves (black_moves);
     for (int i = 0; i < black_moves.count; i++)
-      control[black_moves[i].to]--;
-
-    for (int i = 0; i < 64; i++)
-      control[i] *= centrality_table[i];
+      control[black_moves[i].to] -= 1 * centrality_table[i];
 
     for (int i = 0; i < 64; i++)
       score += control [i];
 
     b.flags.to_move = c;
 
-    return score / 5;
+    return score;
   }
 
   Board b;

@@ -49,7 +49,7 @@ Session::perft (const string_vector &tokens)
   uint64 start = cpu_time();
   uint64 count = board.perft (depth);
   uint64 elapsed = cpu_time() - start;
-  fprintf (out, "moves = %lli\n", count);
+  fprintf (out, "moves = %llu\n", count);
   fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
   return true;
 }
@@ -210,7 +210,7 @@ Session::epd (const string_vector &args)
                   uint64 expecting = to_int (operand);
                   uint64 p = b.perft (depth);
                   bool pass = (p == expecting);
-                  fprintf (out, "%s %lli\n", pass ? "PASS" : "FAIL", p);
+                  fprintf (out, "%s %llu\n", pass ? "PASS" : "FAIL", p);
 
                   if (!pass)
                     fprintf  (out,

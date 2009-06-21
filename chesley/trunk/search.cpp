@@ -135,10 +135,8 @@ Search_Engine :: iterative_deepening
       calls_to_search = calls_to_qsearch = 0;
       start_time = cpu_time ();
 
-      // Search this position using a dynamically sized aspiration window.
-      int delta =
-        (i > 2) ? (abs(scores[i - 1] - scores[i - 2])) + 10 : INF;
-      scores[i] = s = aspiration_search (b, i, tmp, s, delta);
+      // Search this position using an aspiration window.
+      scores[i] = s = aspiration_search (b, i, tmp, s, 25);
 
       // Break out of the loop if the search was interrupted.
       if (controls.interrupt_search) break;
@@ -300,7 +298,7 @@ Search_Engine :: search
 #ifdef ENABLE_QSEARCH
           alpha = qsearch (b, -1, ply, alpha, beta);
 #else
-          alpha = Eval (b).score ();
+          alpha = Eval (b).score (alpha, beta);
 #endif /* ENABLE_QSEARCH */
         }
     }
@@ -331,7 +329,7 @@ Search_Engine :: search
 
     // Generate moves.
     Move_Vector moves (b);
-    order_moves (b, depth, moves, alpha, beta);
+    order_moves (b, depth, moves);
 
     ////////////////////////////
     // Minimax over children. //
@@ -379,7 +377,7 @@ Search_Engine :: search
             depth >= Reduction_Limit &&
             ext == 0 &&
             !have_pv_move &&
-            Eval (c).score () < alpha)
+            Eval (c).score (alpha, beta) < alpha)
           {
             int ds;
             Move_Vector dummy;
@@ -469,24 +467,16 @@ Search_Engine :: search
 // cutoffs.
 void
 Search_Engine :: order_moves
-(const Board &b, int depth, Move_Vector &moves, int alpha, int beta) {
+(const Board &b, int depth, Move_Vector &moves) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
-  Move best_guess;
+  Move best_guess = Move (0);
 
   // If we have an entry in the transposition table, use that as our
   // best guess.
   if (have_entry)
     {
       best_guess = e.move;
-    }
-
-  // Otherwise find a best guess using a reduced depth search.
-  else
-    {
-      Move_Vector pv;
-      search_with_memory (b, depth - 3, 0, pv, alpha, beta);
-      if (pv.count > 0) best_guess = pv [0];
     }
 
   for (int i = 0; i < moves.count; i++)
@@ -559,7 +549,7 @@ Search_Engine :: qsearch
   calls_to_qsearch++;
 
   // Do static evaluation at this node.
-  alpha = max (alpha, Eval (b).score ());
+  alpha = max (alpha, Eval (b).score (alpha, beta));
 
   // Recurse and minimax over children.
   if (alpha < beta)
@@ -625,6 +615,7 @@ Search_Engine :: tt_try
   else
     {
       tt_hits++;
+      i -> second.age = 0;
       if (i -> second.depth >= depth &&
           b.half_move_clock < 45 && rep_count (b) == 0)
         {
@@ -690,22 +681,16 @@ Search_Engine :: tt_update
       i = tt.insert (val).first;
     }
 
-  // Populate it if it's new or deeper than the existing entry.
-  // if (entry_is_new || depth >= i -> second.depth) */
+  i -> second.move = m;
+  i -> second.depth = depth;
+  i -> second.age = 0;
 
-  // Always replace
-  {
-    i -> second.move = m;
-    i -> second.depth = depth;
-    i -> second.age = 0;
-    if (m.score >= beta)
-      i -> second.type = TT_Entry :: LOWERBOUND;
-    else if (m.score <= alpha)
-      i -> second.type = TT_Entry :: UPPERBOUND;
-    else
-      i -> second.type = TT_Entry :: EXACT_VALUE;
-  }
-
+  if (m.score >= beta)
+    i -> second.type = TT_Entry :: LOWERBOUND;
+  else if (m.score <= alpha)
+    i -> second.type = TT_Entry :: UPPERBOUND;
+  else
+    i -> second.type = TT_Entry :: EXACT_VALUE;
 #endif // ENABLE_TRANS_TABLE
 }
 
@@ -846,7 +831,7 @@ Search_Engine :: set_time_remaining (int msecs) {
 void
 Search_Engine :: post_before (const Board &b) {
   cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
-       << "Ply     Nodes    Qnodes    Time    Eval   Principal Variation"
+       << "Ply   Eval    Time     Nodes   Principal Variation"
        << endl;
 }
 
@@ -856,27 +841,36 @@ Search_Engine :: post_each (const Board &b, int depth, const Move_Vector &pv) {
   double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
   Board c = b;
 
-  // Write out ply, node count, qnode count, time, score, and pv;
-  cout << setw (3)  << depth;
-  cout << setw (10) << calls_to_search;
-  cout << setw (10) << calls_to_qsearch;
-  cout << setw (8)  << setiosflags (ios :: fixed) << setprecision (2) << elapsed;
+  // Xboard format is: ply, score, time, nodes, pv.
 
-  // Write out the special case of mate in N.
-  Score score = pv[0].score;
   cout << setiosflags (ios :: right);
+
+  // Ply.
+  cout << setw (3) << depth;
+
+  // Scorce
+  Score score = pv[0].score;
   if (is_mate (score))
     {
       cout << setw (2) << (score < 0 ? "-" : " ");
       cout << setw (4) << "Mate";
-      cout << setw (2) << MATE_VAL - abs(score) << "   ";
+      cout << setw (2) << MATE_VAL - abs(score);
     }
   else
     {
-      cout << setw (8) << pv[0].score << "   ";
+      cout << setw (7) << pv[0].score;
     }
 
-  // Write out the principle variation.
+  // Time elapsed.
+  cout << setw (8) << setiosflags (ios :: fixed) << setprecision (2);
+  cout << elapsed;
+
+  // Node count.
+  cout << setw (10);
+  cout << calls_to_search + calls_to_qsearch;
+  cout << "   ";
+  
+  // Principle variation.
   for (int i = 0; i < pv.count; i++)
     {
       cout << c.to_san (pv[i]) << " ";

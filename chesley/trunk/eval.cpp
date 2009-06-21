@@ -25,14 +25,14 @@ using namespace std;
 
 int8 const Eval::centrality_table[64] =
   {
-     1,   1,   1,   1,   1,   1,   1,   1,
-     1,   1,   1,   1,   1,   1,   1,   1,
-     1,   1,   2,   2,   2,   2,   1,   1,
-     1,   1,   2,   4,   4,   2,   1,   1,
-     1,   1,   2,   4,   4,   2,   1,   1,
-     1,   1,   2,   2,   2,   2,   1,   1,
-     1,   1,   1,   1,   1,   1,   1,   1,
-     1,   1,   1,   1,   1,   1,   1,   1
+   1, 1, 1, 1, 1, 1, 1, 1,
+   1, 2, 2, 2, 2, 2, 2, 1,
+   1, 2, 4, 4, 4, 4, 2, 1,
+   1, 2, 4, 8, 8, 4, 2, 1,
+   1, 2, 4, 8, 8, 4, 2, 1,
+   1, 2, 4, 4, 4, 4, 2, 1,
+   1, 2, 2, 2, 2, 2, 2, 1,
+   1, 1, 1, 1, 1, 1, 1, 1
   };
 
 /////////////////////////////////////////////////////////////////////////
@@ -178,27 +178,31 @@ static const int8 king_square_table[3][64] =
 Score
 sum_piece_squares (const Board &b, const Phase p) {
   Score bonus = 0;
+
   for (Color c = WHITE; c <= BLACK; c++)
     {
       bitboard all = b.color_to_board (c);
-      for (Kind k = PAWN; k <= KING; k++)
+      int s = sign (c);
+
+      for (Kind k = PAWN; k < KING; k++)
         {
           bitboard pieces = all & b.kind_to_board (k);
+          // Do all pieces but the king.
           while (pieces)
             {
-              int idx = bit_idx (pieces);
-              if (k != KING)
-                {
-                  bonus += sign (c) * 
-                    piece_square_table[k][xfrm[c][idx]];
-                }
-              else
-                {
-                  bonus += sign (c) * 
-                    king_square_table[p][xfrm[c][idx]];
-                }
+              bonus += s *
+                piece_square_table[k][xfrm[c][bit_idx (pieces)]];
               pieces = clear_lsb (pieces);
             }
+        }
+
+      // Do the king
+      bitboard pieces = all & b.kind_to_board (KING);
+      while (pieces)
+        {
+          bonus += s * 
+            king_square_table[p][xfrm[c][bit_idx (pieces)]];
+          pieces = clear_lsb (pieces);
         }
     }
   return bonus;
