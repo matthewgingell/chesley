@@ -8,7 +8,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3 -DNDEBUG
+OPT = -O3
 INC = -Ideps
 LIBS =
 CXXFLAGS = -g -m64 -Wall -Wextra $(OPT) $(ALG) $(INC) $(LIBS)
@@ -52,7 +52,7 @@ vsn.o: *.cpp *.hpp
 # Running games under xboard  #
 ###############################
 
-XBOARD_OPTS = -debug -coords -size Giant -thinking -xponder -sgf games.out
+XBOARD_OPTS = -debug -coords -size Giant -thinking -xponder -sgf out.pgn
 
 # Launch an xboard session with Chesley.
 play: chesley
@@ -68,9 +68,9 @@ playold: chesley
 
 playother: chesley
 #	xboard -st 0:01 -xreuse -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	
+#	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #

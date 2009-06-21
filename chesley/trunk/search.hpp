@@ -267,8 +267,7 @@ struct Search_Engine {
   inline Score see (const Board &b, const Move &capture);
 
   // Heuristically order a list of moves by value.
-  inline void order_moves
-  (const Board &b, int depth, Move_Vector &moves, int alpha, int beta);
+  inline void order_moves (const Board &b, int depth, Move_Vector &moves);
 
   /////////////////
   // Heuristics. //

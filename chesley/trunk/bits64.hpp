@@ -82,7 +82,7 @@ bit_idx (bits64 b) {
 inline uint32
 pop_count (bits64 b) {
 #if 0
-  // This appears to be slower the code below.
+  // This appears to be slower than the code below.
   return __builtin_popcountll (b);
 #else
   uint32 n;
