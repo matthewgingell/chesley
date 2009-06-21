@@ -831,7 +831,7 @@ Search_Engine :: set_time_remaining (int msecs) {
 void
 Search_Engine :: post_before (const Board &b) {
   cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
-       << "Ply   Eval    Time     Nodes   Principal Variation"
+       << "Ply    Eval    Time    Nodes   Principal Variation"
        << endl;
 }
 
@@ -852,13 +852,13 @@ Search_Engine :: post_each (const Board &b, int depth, const Move_Vector &pv) {
   Score score = pv[0].score;
   if (is_mate (score))
     {
-      cout << setw (2) << (score < 0 ? "-" : " ");
+      cout << setw (2) << (score > 0 ? "+" : "-");
       cout << setw (4) << "Mate";
       cout << setw (2) << MATE_VAL - abs(score);
     }
   else
     {
-      cout << setw (7) << pv[0].score;
+      cout << setw (8) << pv[0].score;
     }
 
   // Time elapsed.
@@ -866,7 +866,7 @@ Search_Engine :: post_each (const Board &b, int depth, const Move_Vector &pv) {
   cout << elapsed;
 
   // Node count.
-  cout << setw (10);
+  cout << setw (9);
   cout << calls_to_search + calls_to_qsearch;
   cout << "   ";
   
