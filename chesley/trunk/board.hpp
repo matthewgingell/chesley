@@ -688,6 +688,12 @@ std::ostream & operator<< (std::ostream &os, const Board &b);
 // Moves //
 ///////////
 
+// Create a null move;
+inline Move 
+null_move () {
+  return Move (0, 0);
+}
+
 // Is this a null move?
 inline bool
 Move::is_null () const {

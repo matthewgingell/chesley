@@ -86,10 +86,11 @@ struct Search_Engine {
   //////////////////////////////////////////
 
   // Transposition table entry.
+  enum Node_Type { LOWERBOUND, UPPERBOUND, EXACT_VALUE };
   struct TT_Entry {
     Move move;
+    Node_Type type;
     int32 depth;
-    enum { LOWERBOUND, UPPERBOUND, EXACT_VALUE } type;
     int32 age;
   };
 
@@ -275,6 +276,10 @@ struct Search_Engine {
 
   // History heuristic table.
   uint64 hh_table[2][100][64][64];
+
+  // Killer moves.
+  Move killers[100][2];
+
 };
 
 #endif // _SEARCH_
