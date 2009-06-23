@@ -56,6 +56,13 @@ Search_Engine :: new_search
       ((uint64 *) hh_table)[i] /= 2;
     }
 
+  memset (hh_table, 0, sizeof (hh_table));
+  
+  // Clear killer moves.
+  for (int i = 0; i < 100; i++)
+    for (int j = 0; j < 2; j++)
+      killers[i][j] = null_move ();
+  
   // Age the transposition table.
   Trans_Table :: iterator i;
   for (i = tt.begin (); i != tt.end(); i++)
@@ -79,9 +86,9 @@ Search_Engine :: new_search
       if (controls.moves_remaining > 0)
         {
           // All we do is divide the time available by the moves
-          // remaining.
+          // remaining plus a fudge factor.
           controls.deadline = mclock () +
-            (controls.time_remaining / controls.moves_remaining);
+            (controls.time_remaining / controls.moves_remaining + 10);
         }
       else
         {
@@ -420,8 +427,6 @@ Search_Engine :: search
             alpha = cs;
             moves[mi].score = alpha;
             pv = Move_Vector (moves[mi], cpv);
-
-            // This must be either a PV node or a fail high.
             if (alpha < beta) 
               have_pv_move = true;
             else
@@ -437,14 +442,6 @@ Search_Engine :: search
       {
         if (in_check)
           {
-            ///////////////////////////////////////////////////////////
-            // We need to provide a bonus to shallower wins over     //
-            // deeper ones, since if we're ambivalent between near   //
-            // and far wins at every ply the search will happily     //
-            // prove it can mate in N forever and never actually get //
-            // there.                                                //
-            ///////////////////////////////////////////////////////////
-
             alpha = -(MATE_VAL - ply);
           }
         else
@@ -454,9 +451,17 @@ Search_Engine :: search
       }
     else
       {
-        // Update the history table with this result.
+        // If we found a move, this is either a PV or a fail high move.
         if (pv.count > 0)
-          hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;
+          {
+            hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;
+            
+            if (alpha > beta && pv[0] != killers[depth][0])
+              {
+                killers[depth][1] = killers[depth][0];
+                killers[depth][0] = pv[0];
+              }
+          }
       }
   }
 
@@ -495,11 +500,17 @@ Search_Engine :: order_moves
         moves[i].score += 1000;
 
       // Followed by captures.
-      moves[i].score += 100 * eval_piece (moves[i].capture (b));
+      if (moves[i].capture(b) != NULL_KIND)
+        moves[i].score += 100 * eval_piece (moves[i].capture (b));
+      
+      // Followed by PV and fail high nodes.
+#if 0
+      if (moves[i] == killers[depth][0]) moves[i].score += 1000;
+      if (moves[i] == killers[depth][1]) moves[i].score += 1000;
+#endif
 
-      // And finally, recent PV and fail-high moves.
-      moves[i].score +=
-        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+      uint64 hh_val = hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+      moves[i].score += hh_val;
     }
 
   insertion_sort <Move_Vector, Move, less_than> (moves);
@@ -617,17 +628,18 @@ Search_Engine :: tt_try
       tt_hits++;
       i -> second.age = 0;
       if (i -> second.depth >= depth &&
-          b.half_move_clock < 45 && rep_count (b) == 0)
+          b.half_move_clock < 45  && 
+          rep_count (b) == 0)
         {
           TT_Entry entry = i -> second;
 
-          if (entry.type == TT_Entry :: LOWERBOUND)
+          if (entry.type == LOWERBOUND)
             alpha = max (entry.move.score, alpha);
 
-          else if (entry.type == TT_Entry :: UPPERBOUND)
+          else if (entry.type == UPPERBOUND)
             beta = min (entry.move.score, beta);
 
-          else if (entry.type == TT_Entry :: EXACT_VALUE)
+          else if (entry.type == EXACT_VALUE)
             {
               m = entry.move;
               return true;
@@ -666,11 +678,6 @@ Search_Engine :: tt_update
 (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
-
-  // Do not store mate scores, as these score are dependant on the
-  // depth at which they are found.
-  if (is_mate (m.score)) return;
-
   Trans_Table :: iterator i = tt.find (b.hash);
   bool entry_is_new = (i == tt.end ());
 
@@ -681,16 +688,27 @@ Search_Engine :: tt_update
       i = tt.insert (val).first;
     }
 
+  // Determine the kind of value we are recording.
+  Node_Type type;
+  if (m.score >= beta) 
+    {
+      type = LOWERBOUND;
+    }
+  else if (m.score <= alpha)
+    {
+      type = UPPERBOUND;
+    }
+  else
+    {
+      type = EXACT_VALUE;
+    }
+
+  // Use an 'always replace' scheme.
   i -> second.move = m;
   i -> second.depth = depth;
   i -> second.age = 0;
+  i -> second.type = type;
 
-  if (m.score >= beta)
-    i -> second.type = TT_Entry :: LOWERBOUND;
-  else if (m.score <= alpha)
-    i -> second.type = TT_Entry :: UPPERBOUND;
-  else
-    i -> second.type = TT_Entry :: EXACT_VALUE;
 #endif // ENABLE_TRANS_TABLE
 }
 
@@ -896,4 +914,7 @@ Search_Engine :: post_after () {
   // Display statistics on transposition table hit rate.
   double hit_rate = (double) tt_hits / (tt_hits + tt_misses);
   cout << "tt hit rate: " << hit_rate * 100 << "%" << endl;
+
+  // Display transposition table size.
+  cout << "tt entries: " << tt.size () << endl;
 }

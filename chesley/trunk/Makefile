@@ -1,19 +1,24 @@
-##############################################
-# Makefile for the Chesley the Chess Engine. #
-# 	                                     #
-# Matthew Gingell			     #
-# gingell@adacore.com			     #
-##############################################
+######################################################################
+# Makefile for the Chesley the Chess Engine.			     #
+# 								     #
+# Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the #
+# Chess Engine! is free software distributed under the terms of the  #
+######################################################################
 
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3
+OPT = -O3 -m64
 INC = -Ideps
 LIBS =
-CXXFLAGS = -g -m64 -Wall -Wextra $(OPT) $(ALG) $(INC) $(LIBS)
+WARN = -Wall -Wextra
+
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
+
+VSN = -DSVN_REVISION=\"$(shell svnversion)\"
+
+CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
 
 ########################################################################
 #                                                                      #
@@ -36,14 +41,8 @@ ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 
 all: chesley
 
-chesley: $(OBJS) vsn.o
-	$(CXX) $(CXXFLAGS) $(OBJS) vsn.o $(LIBS) -o $@
-
-# Create an object containing the version number from svn info.
-vsn.o: *.cpp *.hpp
-	svn info | sed -n 's/Revision: \([0-9]*\)/const char	\
-	*SVN_REVISION = \"\1\";/p' > vsn.xxx
-	$(CXX) -x c++ -c $(CXXFLAGS) vsn.xxx -o $@
+chesley: $(OBJS)
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
 
 %.o : %.cpp *.hpp
 	$(CXX) $(CXXFLAGS) -c $<
@@ -70,7 +69,9 @@ playother: chesley
 #	xboard -st 0:01 -xreuse -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp ./zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -fcp ./chesley -scp ./faile -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #
@@ -86,6 +87,6 @@ check: chesley
 
 clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
-	      Saturn* game.00* log.00* book.lrn position.bin		\
-	      position.lrn *.d /cores/core.* *.pgn *.fen \#*\# *.log	\
-	      log.0* game.0* vsn.xxx *mshark
+	      Saturn* game.00* log.* book.lrn position.bin		\
+	      position.lrn *.d /cores/core.* *.fen \#*\# *.log log.0*	\
+	      game.0* *mshark *.s

@@ -23,13 +23,15 @@
 #include "types.hpp"
 #include "util.hpp"
 
-extern const char *SVN_REVISION;
-
 #define ENGINE_ID_STR        "Chesley the Chess Engine!"
 #define ENGINE_AUTHOR_STR    "Matthew Gingell <gingell@adacore.com>"
 #define ENGINE_COPYRIGHT_STR "Copyright (C) 2009 " ENGINE_AUTHOR_STR
 #define ENGINE_LICENSE_STR   "Chesley is free software, " \
                               "distributed under the GNU General Public License."
+
+#ifndef SVN_REVISION
+#define SVN_REVISION "<unknown>"
+#endif // SVN_REVISION
 
 inline
 char *get_prologue () {
