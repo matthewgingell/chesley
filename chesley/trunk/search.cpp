@@ -24,13 +24,16 @@ using namespace std;
 const int Search_Engine :: hist_nbuckets;
 
 // Utility functions.
-bool is_mate (Score s) { return abs (s) > MATE_VAL - 100; }
+bool is_mate (Score s) { 
+  return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH; 
+}
 
 // Compute the principal variation and return its first move.
 Move
 Search_Engine :: choose_move (Board &b, int depth)
 {
   Move_Vector pv;
+  depth = min (depth, MAX_DEPTH);
   new_search (b, depth, pv);
   assert (pv.count > 0);
   return pv[0];
@@ -49,27 +52,23 @@ Search_Engine :: choose_move (Board &b, int depth)
 Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
-{
-  // Age the history table.
-  for (uint32 i = 0; i < sizeof (hh_table) / sizeof (uint64); i++)
+{  
+  // Age the transposition table.
+  for (Trans_Table :: iterator i = tt.begin (); i != tt.end(); i++)
     {
-      ((uint64 *) hh_table)[i] /= 2;
+      if (i -> second.age >= 5) 
+        {
+          tt.erase (i);
+        }
+      else 
+        {
+          i -> second.age++;
+        }
     }
 
+  // Clear history and killer tables. 
   memset (hh_table, 0, sizeof (hh_table));
-  
-  // Clear killer moves.
-  for (int i = 0; i < 100; i++)
-    for (int j = 0; j < 2; j++)
-      killers[i][j] = null_move ();
-  
-  // Age the transposition table.
-  Trans_Table :: iterator i;
-  for (i = tt.begin (); i != tt.end(); i++)
-    {
-      if (i -> second.age >= 5) tt.erase (i);
-      else i -> second.age++;
-    }
+  memset (killers, 0, sizeof (killers));
 
   // Clear statistics.
   clear_statistics ();
@@ -128,7 +127,6 @@ Search_Engine :: iterative_deepening
 (const Board &b, int depth, Move_Vector &pv)
 {
   Score s = 0;
-  Score scores[100];
 
   // Print header for posting thinking.
   if (post) post_before (b);
@@ -143,7 +141,7 @@ Search_Engine :: iterative_deepening
       start_time = cpu_time ();
 
       // Search this position using an aspiration window.
-      scores[i] = s = aspiration_search (b, i, tmp, s, 25);
+      s = aspiration_search (b, i, tmp, s, 25);
 
       // Break out of the loop if the search was interrupted.
       if (controls.interrupt_search) break;
@@ -186,7 +184,7 @@ Search_Engine :: aspiration_search
   const Score lower = best_guess - hw;
   const Score upper = best_guess + hw;
 
-  s = search_with_memory  (b, depth, 0, pv, lower, upper);
+  s = search_with_memory (b, depth, 0, pv, lower, upper);
 
   // Search from scratch if we failed.
   if (s <= lower || s >= upper)
@@ -195,8 +193,10 @@ Search_Engine :: aspiration_search
       s = search_with_memory (b, depth, 0, pv);
     }
 #else
-  s = search_with_memory (b, depth, 0, pv);
-#endif /* ENABLE_ASPIRATION_WINDOW */
+    {
+      s = search_with_memory (b, depth, 0, pv);
+    }
+#endif  /* ENABLE_ASPIRATION_WINDOW */
 
   return s;
 }
@@ -276,7 +276,7 @@ Search_Engine :: search
  bool do_null_move)
 {
   assert (pv.count == 0);
-  assert (alpha <= beta);
+  assert (alpha < beta);
 
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
@@ -380,11 +380,10 @@ Search_Engine :: search
 
         const int Full_Depth_Count = 4;
         const int Reduction_Limit = 3;
-        if (mi >= Full_Depth_Count &&
+        if (mi >= Full_Depth_Count && 
             depth >= Reduction_Limit &&
-            ext == 0 &&
-            !have_pv_move &&
-            Eval (c).score (alpha, beta) < alpha)
+            ext == 0 && 
+            moves[mi].capture (b) == NULL_KIND)
           {
             int ds;
             Move_Vector dummy;
@@ -454,8 +453,7 @@ Search_Engine :: search
         // If we found a move, this is either a PV or a fail high move.
         if (pv.count > 0)
           {
-            hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;
-            
+            hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;            
             if (alpha > beta && pv[0] != killers[depth][0])
               {
                 killers[depth][1] = killers[depth][0];
