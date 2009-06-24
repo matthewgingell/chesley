@@ -35,6 +35,9 @@ struct Search_Engine {
   // Default fixed time per move in milliseconds.
   static const uint32 DEFAULT_TIMEOUT = 1 * 1000;
 
+  // Maximum search depth. 
+  static const int32 MAX_DEPTH = 100;
+
   //////////////////////////////////////
   // Constructors and initialization. //
   //////////////////////////////////////
@@ -68,8 +71,9 @@ struct Search_Engine {
     // Search statistics.
     clear_statistics ();
 
-    // Initialize the history heuristic table.
+    // Initialize history and killer tables. 
     memset (hh_table, 0, sizeof (hh_table));
+    memset (killers, 0, sizeof (killers));
   }
 
   // Clear accumulated search statistics.
@@ -275,10 +279,10 @@ struct Search_Engine {
   /////////////////
 
   // History heuristic table.
-  uint64 hh_table[2][100][64][64];
+  uint64 hh_table[2][MAX_DEPTH][64][64];
 
   // Killer moves.
-  Move killers[100][2];
+  Move killers[MAX_DEPTH][2];
 
 };
 
