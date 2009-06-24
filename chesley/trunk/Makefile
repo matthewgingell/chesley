@@ -66,12 +66,11 @@ playold: chesley
 	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 250
 
 playother: chesley
-#	xboard -st 0:01 -xreuse -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -fcp ./chesley -scp ./faile -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
@@ -88,6 +87,6 @@ check: chesley
 
 clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
-	      Saturn* game.00* log.* book.lrn position.bin		\
+	      Saturn* game.00* log.* logfile.* book.lrn position.bin	\
 	      position.lrn *.d /cores/core.* *.fen \#*\# *.log log.0*	\
 	      game.0* *mshark *.s
