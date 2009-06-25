@@ -145,7 +145,7 @@ Search_Engine :: iterative_deepening
 
       // Break out of the loop if the search was interrupted and we've
       // found at least one move.
-      if (i > 1 &&controls.interrupt_search) break;
+      if (i > 1 && controls.interrupt_search) break;
 
       // Otherwise copy the principle variation back to the caller.
       assert (tmp.count > 0);
