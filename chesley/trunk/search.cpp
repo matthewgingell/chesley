@@ -132,9 +132,7 @@ Search_Engine :: iterative_deepening
   if (post) post_before (b);
 
   // Search progressively deeper ply until we are interrupted.
-  s = aspiration_search (b, 1, pv, 0, INF);
-  assert (pv.count > 0);
-  for (int i = 2; i <= depth; i++)
+  for (int i = 1; i <= depth; i++)
     {
       Move_Vector tmp;
 
@@ -145,8 +143,9 @@ Search_Engine :: iterative_deepening
       // Search this position using an aspiration window.
       s = aspiration_search (b, i, tmp, s, 25);
 
-      // Break out of the loop if the search was interrupted.
-      if (controls.interrupt_search) break;
+      // Break out of the loop if the search was interrupted and we've
+      // found at least one move.
+      if (i > 1 &&controls.interrupt_search) break;
 
       // Otherwise copy the principle variation back to the caller.
       assert (tmp.count > 0);
