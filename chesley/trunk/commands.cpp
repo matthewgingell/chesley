@@ -11,6 +11,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstdio>
+#include <iostream>
+#include <iomanip>
 #include <string>
 
 #include "chesley.hpp"
@@ -22,6 +24,11 @@ using namespace std;
 // Command declarations. //
 //                       //
 ///////////////////////////
+
+enum Command_Kind  
+  {
+    USER_CMD, DEBUG_CMD, XBOARD_CMD
+  };
 
 enum Command
   { 
@@ -102,10 +109,11 @@ enum Command
   };
 
 static const struct { 
-  Command     code; 
-  char const *str; 
-  char const *usage; 
-  char const *doc; 
+  Command      code; 
+  Command_Kind kind;
+  char const  *str; 
+  char const  *usage; 
+  char const  *doc; 
 } commands[CMD_COUNT] = {
 
 
@@ -113,181 +121,181 @@ static const struct {
   // User commands. //
   ////////////////////
 
-  { CMD_BLACK,     "BLACK",     "",
+  { CMD_BLACK, USER_CMD,      "BLACK",     "",
     "Set user to play black." },
 
-  { CMD_DISP,      "DISP",      "",
+  { CMD_DISP,  USER_CMD,      "DISP",      "",
     "Print this position." },
 
-  { CMD_DTC,       "DTC" ,      "",
+  { CMD_DTC,   USER_CMD,      "DTC" ,      "",
     "Print time control settings." },
 
-  { CMD_EVAL,      "EVAL",      "",
+  { CMD_EVAL,  USER_CMD,      "EVAL",      "",
     "Print the static evaluation for this position."},
 
-  { CMD_FEN,       "FEN",       "",
+  { CMD_FEN,   USER_CMD,      "FEN",       "",
     "Print a FEN string for this position."},
 
-  { CMD_FORCE,     "FORCE",     "",
+  { CMD_FORCE, USER_CMD,      "FORCE",     "",
     "Freeze the engine." },
 
-  { CMD_GO,        "GO",        "",
+  { CMD_GO,    USER_CMD,      "GO",        "",
     "Set the engine running."},
 
-  { CMD_HELP,      "HELP",      "",
+  { CMD_HELP,  USER_CMD,      "HELP",      "",
     "Print a help message."},
 
-  { CMD_LEVEL,     "LEVEL",     "<moves time increment>",
+  { CMD_LEVEL, USER_CMD,      "LEVEL",     "<moves time increment>",
     "Set time controls"},
 
-  { CMD_MOVE,      "MOVE",      "<move>",                 
+  { CMD_MOVE,  USER_CMD,      "MOVE",      "<move>",                 
     "Make a move." },
 
-  { CMD_MOVES,     "MOVES",     "",
+  { CMD_MOVES, USER_CMD,      "MOVES",     "",
     "Print a list of all legal moves." },
 
-  { CMD_NEW,       "NEW",       "",
+  { CMD_NEW,   USER_CMD,      "NEW",       "",
     "Start a new game." },
 
-  { CMD_PLAYOTHER, "PLAYOTHER", "",                       
+  { CMD_PLAYOTHER, USER_CMD,  "PLAYOTHER", "",                       
     "Swap the sides played by the engine and the user." },
 
-  { CMD_PLAYSELF,  "PLAYSELF",  "",                       
+  { CMD_PLAYSELF, USER_CMD,   "PLAYSELF",  "",                       
     "Display play a computer vs. computer games."},
 
-  { CMD_QUIT,      "QUIT",      "",
+  { CMD_QUIT,  USER_CMD,      "QUIT",      "",
     "Quit Chesley." },
 
-  { CMD_SD,        "SD",        "",
+  { CMD_SD,    USER_CMD,       "SD",       "",
     "Set a fixed search depth limit."},
 
-  { CMD_SETBOARD,  "SETBOARD",  "<fen>",                  
+  { CMD_SETBOARD, USER_CMD,   "SETBOARD",  "<fen>",                  
     "Set the board from a FEN string."},
 
-  { CMD_ST,        "ST",        "<time>",
+  { CMD_ST,    USER_CMD,      "ST",        "<time>",
     "Set a fixed time per move"},
 
-  { CMD_TIME,      "TIME",      "<centiseconds>",
+  { CMD_TIME,  USER_CMD,      "TIME",      "<centiseconds>",
     "Set time remaining on the clock."},
 
-  { CMD_WHITE,     "WHITE",     "",
+  { CMD_WHITE, USER_CMD,      "WHITE",     "",
     "Set user to play black." },
 
   /////////////////////////
   // Debugging commands. //
   /////////////////////////
 
-  { CMD_APPLY,     "APPLY",     "",                       
+  { CMD_APPLY,      DEBUG_CMD,     "APPLY",     "",                       
     "Apply a move." },
 
-  { CMD_ATTACKS,   "ATTACKS",   "",                      
+  { CMD_ATTACKS,    DEBUG_CMD,     "ATTACKS",   "",                      
     "Display a map of attacked squares." },
 
-  { CMD_BENCH,     "BENCH",     "<depth>",
+  { CMD_BENCH,      DEBUG_CMD,     "BENCH",     "<depth>",
     "Analyze this position to a fixed depth." },
 
-  { CMD_DIV,       "DIV",       "<depth>",
+  { CMD_DIV,        DEBUG_CMD,     "DIV",       "<depth>",
     "Compute div to a fixed depth" },
 
-  { CMD_DUMPPAWNS, "DUMPPAWNS", "",
+  { CMD_DUMPPAWNS,  DEBUG_CMD,     "DUMPPAWNS", "",
     "Dump a vector of pawns."
   },
 
-  { CMD_EPD,       "EPD",       "<epd>",
+  { CMD_EPD,        DEBUG_CMD,     "EPD",       "<epd>",
     "Evaluate an EPD string."},
 
-  { CMD_HASH,      "HASH",      "",
+  { CMD_HASH,       DEBUG_CMD,     "HASH",      "",
     "Print the current position hash."},
 
-  { CMD_PERFT,     "PERFT",     "<depth>",
+  { CMD_PERFT,      DEBUG_CMD,     "PERFT",     "<depth>",
     "Compute perft to a fixed depth."},
 
-  { CMD_TESTHASHING, "TESTHASHING", "",
+  { CMD_TESTHASHING,DEBUG_CMD, "TESTHASHING", "",
     "Run a test on hash code generation."},
 
   //////////////////////
   // XBoard commands. //
   //////////////////////
 
-  { CMD_ACCEPTED,  "ACCEPTED",  "",
+  { CMD_ACCEPTED, XBOARD_CMD, "ACCEPTED",  "",
     ""},
 
-  { CMD_ANALYZE,   "ANALYZE",   "",
+  { CMD_ANALYZE,  XBOARD_CMD, "ANALYZE",   "",
     ""},
 
-  { CMD_BK,        "BK",        "",
+  { CMD_BK,       XBOARD_CMD, "BK",        "",
     ""},
 
-  { CMD_COMPUTER,  "COMPUTER",  "",
+  { CMD_COMPUTER, XBOARD_CMD, "COMPUTER",  "",
     ""},
 
-  { CMD_DRAW,      "DRAW",      "",
+  { CMD_DRAW,     XBOARD_CMD, "DRAW",      "",
     ""},
 
-  { CMD_EASY,      "EASY",      "",
+  { CMD_EASY,     XBOARD_CMD, "EASY",      "",
     ""},
 
-  { CMD_EDIT,      "EDIT",      "",
+  { CMD_EDIT,     XBOARD_CMD, "EDIT",      "",
     ""},
 
-  { CMD_HARD,      "HARD",      "",
+  { CMD_HARD,     XBOARD_CMD, "HARD",      "",
     ""},
 
-  { CMD_HINT,      "HINT",      "",
+  { CMD_HINT,     XBOARD_CMD, "HINT",      "",
     ""},
 
-  { CMD_ICS,       "ICS",       "",
+  { CMD_ICS,      XBOARD_CMD,  "ICS",       "",
     ""},
 
-  { CMD_NAME,      "NAME",      "",
+  { CMD_NAME,     XBOARD_CMD,  "NAME",      "",
     ""},
 
-  { CMD_NOPOST,    "NOPOST",    "",
+  { CMD_NOPOST,   XBOARD_CMD,  "NOPOST",    "",
     ""},
 
-  { CMD_OTIM,      "OTIM",      "",
+  { CMD_OTIM,     XBOARD_CMD,  "OTIM",      "",
     "Command ignored."},
   
-  { CMD_PAUSE,     "PAUSE",     "",
+  { CMD_PAUSE,    XBOARD_CMD,  "PAUSE",     "",
     ""},
 
-  { CMD_PING,      "PING",      "",
+  { CMD_PING,     XBOARD_CMD,  "PING",      "",
     ""},
 
-  { CMD_POST,      "POST",      "",
+  { CMD_POST,     XBOARD_CMD,  "POST",      "",
     ""},
 
-  { CMD_PROTOVER,  "PROTOVER",  "",
+  { CMD_PROTOVER, XBOARD_CMD,  "PROTOVER",  "",
     ""},
 
-  { CMD_QMARK,     "QMARK",     "",
+  { CMD_QMARK,    XBOARD_CMD,  "QMARK",     "",
     ""},
 
-  { CMD_RANDOM,    "RANDOM",    "",
+  { CMD_RANDOM,   XBOARD_CMD,  "RANDOM",    "",
     ""},
 
-  { CMD_RATING,    "RATING",    "",
+  { CMD_RATING,   XBOARD_CMD,  "RATING",    "",
     ""},
 
-  { CMD_REJECTED,  "REJECTED",  "",
+  { CMD_REJECTED, XBOARD_CMD,  "REJECTED",  "",
     ""},
 
-  { CMD_REMOVE,    "REMOVE",    "",
+  { CMD_REMOVE,   XBOARD_CMD,  "REMOVE",    "",
     ""},
 
-  { CMD_RESULT,    "RESULT",    "",
+  { CMD_RESULT,   XBOARD_CMD,  "RESULT",    "",
     ""},
 
-  { CMD_RESUME,    "RESUME",    "",
+  { CMD_RESUME,   XBOARD_CMD,  "RESUME",    "",
     ""},
 
-  { CMD_USERMOVE,  "USERMOVE",      "<move>",                 
+  { CMD_USERMOVE, XBOARD_CMD,  "USERMOVE",  "<move>",                 
     "Make a move." },
 
-  { CMD_VARIANT,   "VARIANT",   "",
+  { CMD_VARIANT,  XBOARD_CMD,  "VARIANT",   "",
     ""},
 
-  { CMD_XBOARD,    "XBOARD",    "",
+  { CMD_XBOARD,   XBOARD_CMD,  "XBOARD",    "",
     "Put Chesley in Xboard mode."}
 };
 
@@ -653,6 +661,9 @@ Session::execute (char *line) {
 // Set up time controls from level command.
 bool 
 Session::level (const string_vector &ctokens) {
+  if (ctokens.size () < 3) 
+    return true;
+
   int moves_per_control = 0, time_per_control = 0, increment = 0;
   string_vector tokens = ctokens;
   string field = first (tokens);
@@ -711,13 +722,17 @@ Session::display_time_controls (const string_vector &ctokens IS_UNUSED) {
 
 bool 
 Session::display_help (const string_vector &ctokens IS_UNUSED) {
+  // Write out help for user commands.
   for (int i = 0; i < CMD_COUNT; i++)
     {
-      fprintf  (out, "%s\t%s\t%s\n", 
-                commands[i].str, commands [i].usage, commands[i].doc);
+      cout << setfill ('.');
+      if (commands[i].kind == USER_CMD)
+        {
+          cout << left << setw (15) << commands[i].str;
+          cout << left << setw (10) << commands[i].doc;
+          cout << endl;
+        }
     }
-
+  cout << setfill (' ');
   return true;
 }
-
-
