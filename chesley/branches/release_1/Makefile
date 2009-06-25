@@ -7,7 +7,7 @@
 
 SHELL = /bin/sh
 
-CXX = /opt/local/bin/g++-mp-4.4
+CXX = g++
 OPT = -O3 -m64
 INC = -Ideps
 LIBS =
@@ -16,9 +16,9 @@ WARN = -Wall -Wextra
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 
-VSN = -DSVN_REVISION=\"$(shell svnversion)\"
+VSN = \"1.0\"
 
-CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
+CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(WARN) -DRELEASE_VERSION=$(VSN)
 
 ########################################################################
 #                                                                      #
@@ -33,7 +33,7 @@ CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
 
 ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 -DENABLE_TRANS_TABLE -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS	\
--DENABLE_LMR # -DENABLE_SEE
+-DENABLE_LMR
 
 ################
 # Main binary. #
@@ -59,27 +59,11 @@ play: chesley
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley
-	xboard -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
 
-# Run an xboard game of Chesley against the binary chesley.old.
-playold: chesley
-	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 250
-
+# Have Chesley play a game against another engine.
 playother: chesley
-#	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-
-#######################
-# Regression testing. #
-#######################
-
-# Run the test suites.
-check: chesley
-	./run_tests.rb
+	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mode TwoMachines $(XBOARD_OPTS)
 
 #############
 # Clean up. #
