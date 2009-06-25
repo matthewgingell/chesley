@@ -132,7 +132,9 @@ Search_Engine :: iterative_deepening
   if (post) post_before (b);
 
   // Search progressively deeper ply until we are interrupted.
-  for (int i = 1; i <= depth; i++)
+  s = aspiration_search (b, 1, pv, 0, INF);
+  assert (pv.count > 0);
+  for (int i = 2; i <= depth; i++)
     {
       Move_Vector tmp;
 
@@ -361,7 +363,6 @@ Search_Engine :: search
 
         int ext = 0;
 #ifdef ENABLE_EXTENSIONS
-
         // Check extensions.
         if (in_check) ext += 1;
 
@@ -370,7 +371,6 @@ Search_Engine :: search
         if ((rank == 1 || rank == 6) &&
             moves[mi].get_kind (b) == PAWN)
           ext+= 1;
-
 #endif // ENABLE_EXTENSIONS
 
 #ifdef ENABLE_LMR
