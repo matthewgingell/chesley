@@ -1,0 +1,6 @@
+#! /bin/sh
+
+# Allow large core dumps. Note the Darwin sticks its core files in
+# /cores and they are enourmous.
+
+ulimit -c unlimited
