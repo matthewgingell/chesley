@@ -1,0 +1,123 @@
+Who, What, Where, Why? 
+
+Matthew Gingell, <gingell@adacore.com>. May 2009.
+
+Chesley the Chess Engine is a computer chess program for Unix-like
+targets written in C++. Chesley takes its name from Chesley B. "Sully"
+Sullenberger, the pilot who successfully landed a airplane on the
+Hudson river around the time I was getting started.
+
+Starting in December of 2008, I began out fiddling around with a chess
+program written in Ruby, partly just to learn the language and partly
+because I'm interested in artificial intelligence. My theory at the
+time was that search is an exponential time problem, so even if Ruby
+is one or two orders of magnitude slower than C that would only
+translate in to a one or two ply shallower search. 
+
+While in some respects I suppose this is true, in practice the
+constants involved are big enough that I gave up on Ruby when all I
+could squeeze out of it was an absurdly slow 500 moves per second!
+
+In January of 2009 I started again in C++, referencing some of the
+fantastic resources around the net provided by people like Robert
+Hyatt, Bruce Moreland, Tim Mann, Jaco van Niekerk, Jonatan Pettersson,
+among many others. Somehow it stuck and 5 months later I'm still
+banging away.
+
+While Chesley is missing some important pieces before it's generally
+useful to end-users, I think it's now in reasonable enough shape that
+I'm publishing it as free software. As of the initial release, Chesely
+features and correct and fast move generator, a tactically strong
+search implementation, and an interface to xboard. The following are
+some examples of things you can do with Chesley right now:
+
+  * Play a game against Chesley:
+
+    $ xboard -fcp ./chesley
+
+  * Watch Chesley play a game against another engine, and in this case
+    get soundly thrashed:
+
+    $ xboard -fcp ./chesley -scp crafty  -mode TwoMachines
+
+  * Do analysis from the command. For instance, analyze, and solving
+    best move puzzles in epd format:
+
+    $ ./chesley
+    Chesley the Chess Engine! (svn r150)
+    
+    Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
+    Chesley is free software, distributed under the GNU General Public License.
+    > 
+
+    * perft and div for testing the move generator:
+
+    > perft 6
+    Computing perft to depth 6...
+    moves = 119060324
+    13.40 seconds elapsed.
+
+    > div 5
+    a2a3 181046
+    a2a4 217832
+    b2b3 215255
+    b2b4 216145
+    ...
+
+    * verifying that the perft values we generate are expected:
+
+    > epd 4k3/8/8/8/8/8/8/R3K2R b KQ - D4 22180; D5 118882; D6 3517770
+    PASS 22180
+    PASS 118882
+    PASS 3517770
+
+    * verifying we solve tactical problems correctly, in this case
+      mate in 7 half moves:
+
+    > epd r2rb1k1/pp1q1p1p/2n1p1p1/2bp4/5P2/PP1BPR1Q/1BPN2PP/R5K1 w - - bm Qxh7+
+    Trying r2rb1k1/pp1q1p1p/2n1p1p1/2bp4/5P2/PP1BPR1Q/1BPN2PP/R5K1 w - - bm Qxh7+
+    Move 0:0
+    Ply     Nodes    Qnodes    Time    Eval   Principal Variation
+      1        50       111    0.00      16   Rd1 
+      2       304       987    0.00      -7   b4 Bb6 
+      3      2370      2533    0.01      18   b4 Bb6 Rd1 
+      4     12637     21876    0.02     246   Qxh7+ Kf8 Qg7+ Ke7 Bf6+ Kd6 Bxd8 
+      5     20137     29241    0.03     253   Qxh7+ Kf8 Qg7+ Ke7 Bf6+ Kd6 b4 Bb6 
+      6     87091    143516    0.15     253   Qxh7+ Kf8 Qg7+ Ke7 Bf6+ Kd6 b4 Bb6 Bxd8 
+      7    296859    386540    0.41  Mate 7   Qxh7+ Kf8 Bf6 Bxe3+ Rxe3 Rac8 Qg7# 
+      8    783158   1099451    1.20  Mate 7   Qxh7+ Kf8 Bf6 Bxe3+ Rxe3 Rac8 Qg7# 
+      9   2344889   3113417    3.69  Mate 7   Qxh7+ Kf8 Bf6 Bxe3+ Rxe3 Rac8 Qg7# 
+    
+    pv hist: 87.60% 1.81% 2.26% 2.49% 2.18% 1.67% 0.95% 0.48% 0.35% 0.22% 
+    tt hit rate: 5.69%
+    PASS: r2rb1k1/pp1q1p1p/2n1p1p1/2bp4/5P2/PP1BPR1Q/1BPN2PP/R5K1 w - - bm Qxh7+
+
+   * analyzing an arbitrary position to some fixed depth:
+
+    > setboard 1k6/5RP1/1P6/1K6/6r1/8/8/8 w - -
+    > disp
+    w - - 0 0
+    . k . . . . . .
+    . . . . . R P .
+    . P . . . . . .
+    . K . . . . . .
+    . . . . . . r .
+    . . . . . . . .
+    . . . . . . . .
+    . . . . . . . .
+    > bench 10
+    Move 0:0
+    Ply     Nodes    Qnodes    Time    Eval   Principal Variation
+      1        48        56    0.00     330   b7 
+      2       196       175    0.00     655   Rf8+ Kb7 g7g8=Q Rxg8 
+      3      1244      1062    0.00     655   Rf8+ Kb7 g7g8=R Rxg8 
+      4     11357      8337    0.01     550   Rf8+ Kb7 g7g8=R Rg5+ Kc4 Rxg8 
+      5     30429     24185    0.03     655   Ka5 Rg5+ Ka6 Kc8 Rf8+ Kd7 g7g8=Q Rxg8 
+      6     97408     71786    0.11     655   Ka5 Rg1 Rf8+ Kb7 g7g8=Q Rxg8 Rxg8 Kc6 
+      7    411632    325246    0.44     655   Ka5 Rg1 Rf8+ Kb7 g7g8=Q Rxg8 Rxg8 Kc6 Rg7 
+      8   1431756   1076730    1.51     655   Ka5 Rg1 Rf8+ Kb7 g7g8=Q Rxg8 Rxg8 Kc6 Rg7 Kc5 
+      9   6187994   4775048    6.39     715   Ka5 Rg1 Rf8+ Kb7 g7g8=Q Rxg8 Rxg8 Kc6 Rg7 Kc5 b7 
+     10  24182262  18543561   25.70     715   Ka5 Rg1 Rf8+ Kb7 g7g8=Q Rxg8 Rxg8 Kc6 Rg7 Kc5 b7 Kc4 
+    
+    pv hist: 89.45% 1.19% 0.38% 0.19% 0.21% 1.81% 0.30% 0.33% 4.90% 1.25% 
+    tt hit rate: 69.79%
