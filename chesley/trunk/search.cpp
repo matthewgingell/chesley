@@ -17,11 +17,15 @@
 #include <iostream>
 
 #include "chesley.hpp"
+#include "search.hpp"
 
 using namespace std;
 
 // Constants.
 const int Search_Engine :: hist_nbuckets;
+const int32 Search_Engine::MAX_DEPTH;
+
+
 
 // Utility functions.
 bool is_mate (Score s) { 
