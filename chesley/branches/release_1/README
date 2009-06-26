@@ -2,9 +2,8 @@ Who, What, Where, Why?
 
 Matthew Gingell, <gingell@adacore.com>. June 2009.
 
-* Chesley the Chess Engine is a computer chess program for Unix-like
-  targets written in C++. Chesley is compatible with the xboard user
-  interface. 
+* Chesley the Chess Engine! is a computer chess program for Unix-like
+  targets written in C++. Chesley is compatible with the xboard GUI.
 
 * Chesley takes its name from Chesley B. "Sully" Sullenberger, the
   pilot who successfully landed a airplane on the Hudson river around
