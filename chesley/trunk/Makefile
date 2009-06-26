@@ -7,7 +7,7 @@
 
 SHELL = /bin/sh
 
-CXX = /opt/local/bin/g++-mp-4.4
+CXX = g++
 OPT = -O3 -m64
 INC = -Ideps
 LIBS =
