@@ -25,6 +25,9 @@ typedef uint32_t uint32;
 typedef uint64_t uint64;
 typedef uint8_t  byte;
 
+// Type for a number representing a square on the board.
+typedef uint32 coord;
+
 // Score type for a chess position.
 typedef int32 Score;
 

@@ -201,8 +201,8 @@ Board::set_castling_right (Castling_Right cr, bool v) {
 // because it places or leaves the color to move in check.
 bool
 Board::apply (const Move &m) {
-  Kind kind = m.get_kind (*this);
-  Kind capture = m.capture (*this);
+  Kind kind = m.get_kind ();
+  Kind capture = m.get_capture ();
   Color color = to_move ();
 
   ////////////////////
@@ -238,7 +238,7 @@ Board::apply (const Move &m) {
       // Handle the case of capturing En Passant. //
       //////////////////////////////////////////////
 
-      if (m.is_en_passant (*this))
+      if (m.is_en_passant ())
         {
           if (color == WHITE)
             {
@@ -283,8 +283,8 @@ Board::apply (const Move &m) {
 
       if (kind == KING)
         {
-          bool is_castle_qs = m.is_castle_qs (*this);
-          bool is_castle_ks = m.is_castle_ks (*this);
+          bool is_castle_qs = m.is_castle_qs ();
+          bool is_castle_ks = m.is_castle_ks ();
 
           /////////////////////////////
           // Update castling status. //
@@ -420,7 +420,7 @@ std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
   return os << "[Move from "
-            << (int) (m.from) << " => " << (int) (m.to)
+            << (coord) (m.from) << " => " << (coord) (m.to)
             << " " << m.score << "]";
 }
 

@@ -7,7 +7,7 @@
 
 SHELL = /bin/sh
 
-CXX = g++
+CXX = /opt/local/bin/g++-mp-4.4
 OPT = -O3 -m64
 INC = -Ideps
 LIBS =
@@ -67,10 +67,10 @@ playold: chesley
 
 playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
