@@ -31,11 +31,31 @@ Board::from_calg (const string &s) const {
   assert (s.length () >= 4);
 
   // Decode string
-  uint32 from = (s[0] - 'a') + 8 * (s[1] - '1');
-  uint32 to   = (s[2] - 'a') + 8 * (s[3] - '1');
+  coord from = (s[0] - 'a') + 8 * (s[1] - '1');
+  coord to   = (s[2] - 'a') + 8 * (s[3] - '1');
 
   // Build move.
-  return Move (from, to, (s.length () >= 5) ? to_kind (s[4]) : NULL_KIND);
+  Kind kind = get_kind (from);
+  Kind capture = get_kind (to);
+  Kind promote = NULL_KIND;
+  bool en_passant = false;
+
+  // Handle the case of promotion and En Passant.
+  if (kind == PAWN)
+    {
+      if (s.length () >= 5)
+        {
+          promote = to_kind (s[4]);
+        }
+
+      if (idx_to_file (from) != idx_to_file (to) && 
+          capture == NULL_KIND)
+        {
+          en_passant = true;
+        }
+    }
+  
+  return Move (from, to, to_move (), kind, capture, promote, en_passant);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -142,7 +162,7 @@ Board::to_calg (const Move &m) const {
 // Produce an algebraic letter-number pair for an integer square
 // number.
 string
-Board::to_alg_coord (int idx) const {
+Board::to_alg_coord (coord idx) const {
   ostringstream s;
 
   s << (char) ('a' + idx_to_file (idx));
@@ -161,8 +181,8 @@ Board::from_alg_coord (const string &s) const {
 string
 Board::to_san (const Move &m) const {
   ostringstream s;
-  Kind k = m.get_kind (*this);
-  Kind cap = m.capture (*this);
+  Kind k = m.get_kind ();
+  Kind cap = m.get_capture ();
   Kind promote = m.promote;
 
   if (m.is_null ())
@@ -180,7 +200,7 @@ Board::to_san (const Move &m) const {
   // 8.2.3.3: Basic SAN move construction //
   //////////////////////////////////////////
 
-  if (!m.is_castle (*this))
+  if (!m.is_castle ())
     {
       // Write letter for moving piece.
       if (k != PAWN) s << to_char (k);
@@ -198,7 +218,7 @@ Board::to_san (const Move &m) const {
         {
           if (m == moves[i]) continue;
 
-          Kind ki = moves[i].get_kind (*this);
+          Kind ki = moves[i].get_kind ();
 
           // Is another piece of the same kind is attacking the same
           // destination?
@@ -236,7 +256,7 @@ Board::to_san (const Move &m) const {
   else
     {
       // Write a castling move.
-      if (m.is_castle_ks (*this))
+      if (m.is_castle_ks ())
         {
           return "O-O";
         }
@@ -279,19 +299,23 @@ Board::from_san (const string &s) const {
   Kind promote = NULL_KIND;
   bool is_capture = false;
   int file = -1, rank = -1;
-  int to = -1;
+  uint32 to = -1;
   int dis_rank = -1, dis_file = -1;
 
   // Handle the case of castling kingside.
   if (s == "O-O")
     {
-      return (to_move () == WHITE) ? Move (4, 6) : Move (60, 62);
+      return (to_move () == WHITE) ? 
+        Move (E1, C1, WHITE, KING, NULL_KIND, NULL_KIND) :
+        Move (E8, G8, BLACK, KING, NULL_KIND, NULL_KIND);
     }
 
   // Handle the case of castling queenside.
   if (s == "O-O-O")
     {
-      return (to_move () == WHITE) ? Move (4, 2) : Move (60, 58);
+      return (to_move () == WHITE) ? 
+        Move (E1, G1, WHITE, KING, NULL_KIND, NULL_KIND) :
+        Move (E8, C8, BLACK, NULL_KIND, NULL_KIND);
     }
 
   // Otherwise, we expect an upper case piece code or a lower case
@@ -353,17 +377,17 @@ Board::from_san (const string &s) const {
   // At this point, we should know the piece kind and destination of
   // this move and we may have a rank and/or file disambiguating the
   // origin.
-  if (to < 0 || to > 64 || k == NULL_KIND)
+  if (to > 64 || k == NULL_KIND)
     throw string ("from_san: failed parsing ") + s;
 
   // We now iterate through the legal moves at this position looking
   // for the one we've just read.
-  Move m (0, 0, NULL_KIND, 0);
+  Move m = null_move ();
   Move_Vector moves (*this);
   for (int i = 0; i < moves.count; i++)
     {
       // Test whether this move is a candidate for the parsed move.
-      if (k == moves[i].get_kind (*this) && to == moves[i].to)
+      if (k == moves[i].get_kind () && to == moves[i].to)
         {
           if (dis_file == -1 && dis_rank == -1)
             m = moves[i];
@@ -390,7 +414,7 @@ Board::from_san (const string &s) const {
   // Sanity check the move we've constructed.
   if (m.is_null () ||
       m.promote != promote ||
-      (m.capture (*this) == NULL_KIND && is_capture))
+      (m.get_capture () == NULL_KIND && is_capture))
     throw string ("from_san: failed parsing ") + s;
 
   return m;

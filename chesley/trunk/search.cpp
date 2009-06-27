@@ -372,7 +372,7 @@ Search_Engine :: search
         // Pawn to seventh rank extensions.
         int rank = Board :: idx_to_rank (moves[mi].to);
         if ((rank == 1 || rank == 6) &&
-            moves[mi].get_kind (b) == PAWN)
+            moves[mi].get_kind () == PAWN)
           ext+= 1;
 #endif // ENABLE_EXTENSIONS
 
@@ -386,7 +386,7 @@ Search_Engine :: search
         if (mi >= Full_Depth_Count && 
             depth >= Reduction_Limit &&
             ext == 0 && 
-            moves[mi].capture (b) == NULL_KIND)
+            moves[mi].get_capture () == NULL_KIND)
           {
             int ds;
             Move_Vector dummy;
@@ -476,7 +476,7 @@ Search_Engine :: order_moves
 (const Board &b, int depth, Move_Vector &moves) {
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
-  Move best_guess = Move (0);
+  Move best_guess = null_move ();
 
   // If we have an entry in the transposition table, use that as our
   // best guess.
@@ -501,8 +501,8 @@ Search_Engine :: order_moves
         moves[i].score += 1000;
 
       // Followed by captures.
-      if (moves[i].capture(b) != NULL_KIND)
-        moves[i].score += 100 * eval_piece (moves[i].capture (b));
+      if (moves[i].get_capture() != NULL_KIND)
+        moves[i].score += 100 * eval_piece (moves[i].get_capture ());
       
       // Followed by PV and fail high nodes.
 #if 0
@@ -531,13 +531,13 @@ Search_Engine :: order_moves
 
 Score
 Search_Engine :: see (const Board &b, const Move &m) {
-  Score s = eval_piece (m.capture (b));
+  Score s = eval_piece (m.get_capture ());
 
   // Construct child position.
   Board c = b;
   c.clear_piece (m.from);
   c.clear_piece (m.to);
-  c.set_piece (m.get_kind (b), b.to_move (), m.to);
+  c.set_piece (m.get_kind (), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
 
   Move lvc = c.least_valuable_attacker (m.to);
@@ -579,7 +579,7 @@ Search_Engine :: qsearch
 #ifdef ENABLE_SEE
           moves[i].score = see (b, moves[i]);
 #else
-          moves[i].score = eval_piece (moves[i].capture (b));
+          moves[i].score = eval_piece (moves[i].get_capture ());
 #endif
         }
       insertion_sort <Move_Vector, Move, less_than> (moves);

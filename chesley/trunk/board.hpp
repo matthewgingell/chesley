@@ -26,7 +26,6 @@
 // Types. //
 ////////////
 
-struct Move;
 struct Move_Vector;
 struct Board;
 
@@ -51,55 +50,86 @@ struct Move {
   Move () {}
 
   // Construct a move;
-  Move (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0)
-    :from (from), to (to), promote (promote), score (score) {
-  };
-
-  // Construct a null move with a score.
-  explicit Move (Score score)
-    :from (0), to (0), promote (NULL_KIND), score (score) {
-  };
+  Move (coord from, coord to, 
+        Color color, Kind kind, 
+        Kind capture, Kind promote = NULL_KIND,
+        bool en_passant = false,
+        Score score = 0) 
+    :from (from), to (to),
+     color (color), kind (kind), 
+     capture (capture), promote (promote),
+     en_passant (en_passant),
+     score (score) 
+  {};
 
   // Is this a null move?
-  inline bool is_null () const;
+  inline bool is_null () const { return to == from; }
 
   // Kind of color of the piece being moved.
-  inline Color get_color (const Board &b) const;
+  inline Color get_color () const { return color; }
 
   // Get the kind of the piece being moved.
-  inline Kind get_kind (const Board &b) const;
+  inline Kind get_kind () const { return kind; }
 
   // Returns the piece being captured, or NULL_KIND if this is not a
   // capture.
-  inline Kind capture (const Board &b) const;
+  inline Kind get_capture () const { return capture; }
 
   // Is this move an en passant capture.
-  inline bool is_en_passant (const Board &b) const;
+  inline bool is_en_passant () const { return en_passant; }
 
   // Is this a castling move?
-  inline bool is_castle (const Board &b) const;
+  inline bool is_castle () const {
+    return is_castle_qs () || is_castle_ks ();
+  }
 
   // Is this a queen-side castle.
-  inline bool is_castle_qs (const Board &b) const;
+  inline bool is_castle_qs () const {
+    return (kind == KING &&
+            ((color == WHITE && from == E1 && to == C1) ||
+             (color == BLACK && from == E8 && to == C8)));
+  }
 
   // Is this a king-side castle.
-  inline bool is_castle_ks (const Board &b) const;
+  inline bool is_castle_ks () const {
+    return (kind == KING &&
+            ((color == WHITE && from == E1 && to == G1) ||
+             (color == BLACK && from == E8 && to == G8)));
+  }
 
   // State
-  int8 from, to;
-  Kind promote :16;
-  Score score;
+  coord  from       :6;
+  coord  to         :6;
+  Color  color      :4;
+  Kind   kind       :4;
+  Kind   capture    :4;
+  Kind   promote    :4;
+  bool   en_passant :1;
+  uint32 unused     :3;
+  Score  score      :32;
 };
 
+// Create a null move;
+inline Move 
+null_move () {
+  return Move (0, 0, NULL_COLOR, NULL_KIND, NULL_KIND);
+}
+
+// Compare moves.
 inline bool
 less_than (const Move &lhs, const Move &rhs) {
   return lhs.score < rhs.score;
 }
 
+// Compare moves.
 inline bool
 more_than (const Move &lhs, const Move &rhs) {
   return lhs.score > rhs.score;
 }
+
+// Output for moves.
+std::ostream & operator<< (std::ostream &os, const Move &b);
+
 
 ///////////////////
 // Move vectors. //
@@ -110,7 +140,7 @@ struct Move_Vector {
 
   // Amazingly, examples of positions with 218 different possible
   // moves exist.
-  static int const SIZE = 256;
+  static uint32 const SIZE = 256;
 
   Move_Vector ();
   Move_Vector (const Move &m);
@@ -129,8 +159,14 @@ struct Move_Vector {
   }
 
   void push
-  (uint8 from, uint8 to, Kind promote = NULL_KIND, Score score = 0) {
-    move[count++] = Move (from, to, promote, score);
+  (coord from, coord to, 
+   Color color, Kind kind,
+   Kind capture, Kind promote = NULL_KIND, 
+   bool en_passant = false,
+   Score score = 0) 
+  {
+    move[count++] = 
+      Move (from, to, color, kind, capture, promote, en_passant, score);
   }
 
   Move &operator[] (byte i) {
@@ -147,7 +183,7 @@ struct Move_Vector {
   byte count;
 };
 
-inline int
+inline uint32
 count (const Move_Vector &moves) {
   return moves.count;
 }
@@ -299,7 +335,7 @@ struct Board {
   uint64 hash;
 
   // Fetch the key for a piece.
-  static uint64 get_zobrist_piece_key (Color c, Kind k, int32 idx) {
+  static uint64 get_zobrist_piece_key (Color c, Kind k, coord idx) {
     uint32 i = (c == BLACK ? 0 : 1);
     uint32 j = (int32) k;
     assert (c != NULL_COLOR);
@@ -325,7 +361,7 @@ struct Board {
 
   // Produce an algebraic letter-number pair for an integer square
   // number.
-  std::string to_alg_coord (int idx) const;
+  std::string to_alg_coord (coord idx) const;
 
   // Produce an an integer square number from an algebraic letter-number
   // pair.
@@ -358,11 +394,11 @@ struct Board {
   int child_count () const;
 
   // Return whether the square idx is attacked by a piece of color c.
-  bool is_attacked (int idx, Color c) const;
+  bool is_attacked (coord idx, Color c) const;
 
   // For the currently moving side, find the least valuable piece
   // attacking a square.
-  Move least_valuable_attacker (int sqr) const;
+  Move least_valuable_attacker (coord sqr) const;
 
   // Return whether color c is in check.
   bool in_check (Color c) const;
@@ -373,7 +409,7 @@ struct Board {
   }
 
   // Return the color of a piece on a square.
-  Color get_color (uint32 idx) const {
+  Color get_color (coord idx) const {
     if (test_bit (white, idx)) return WHITE;
     if (test_bit (black, idx)) return BLACK;
     return NULL_COLOR;
@@ -385,7 +421,7 @@ struct Board {
   }
 
   // Return the kind of piece on a square.
-  Kind get_kind (uint32 idx) const {
+  Kind get_kind (coord idx) const {
     if (!test_bit (occupied, idx)) return NULL_KIND;
     if ( test_bit    (pawns, idx)) return PAWN;
     if ( test_bit    (rooks, idx)) return ROOK;
@@ -440,7 +476,7 @@ struct Board {
   }
 
   // Set en_passant target.
-  void set_en_passant (int32 idx) {
+  void set_en_passant (coord idx) {
     hash ^= zobrist_enpassant_keys[flags.en_passant];
     hash ^= zobrist_enpassant_keys[idx];
     flags.en_passant = idx;
@@ -522,7 +558,7 @@ struct Board {
 
   // Clear a piece on the board.
   void
-  clear_piece (int idx) {
+  clear_piece (coord idx) {
     if (occupied & masks_0[idx])
       {
         Color c = get_color (idx);
@@ -532,12 +568,12 @@ struct Board {
   }
 
   void
-  clear_piece (int idx, Color c, Kind k) {
+  clear_piece (coord idx, Color c, Kind k) {
     if (occupied & masks_0[idx])
       {
         assert (k != NULL_KIND);
         assert (c == BLACK || c == WHITE);
-        assert (idx >= 0 && idx < 64);
+        assert (idx < 64);
 
         // Clear color and piece kind bits.
         color_to_board (c) &= ~masks_0[idx];
@@ -556,7 +592,7 @@ struct Board {
 
   // Set a piece on the board with an index.
   void
-  set_piece (Kind k, Color c, uint32 idx) {
+  set_piece (Kind k, Color c, coord idx) {
     assert (k != NULL_KIND);
     assert (c == BLACK || c == WHITE);
     assert (idx < 64);
@@ -602,13 +638,13 @@ struct Board {
 
   // Return the rank 0 .. 7 containing a piece.
   static int
-  idx_to_rank (int idx) {
+  idx_to_rank (coord idx) {
     return idx / 8;
   }
 
   // Return the file 0 .. 7 containing a piece.
   static int
-  idx_to_file (int idx) {
+  idx_to_file (coord idx) {
     return idx % 8;
   }
 
@@ -635,22 +671,22 @@ struct Board {
   /////////////////////////
 
   byte
-  occ_0 (int from) const {
+  occ_0 (coord from) const {
     return get_byte (occupied, from / 8);
   }
 
   byte
-  occ_45 (int from) const {
+  occ_45 (coord from) const {
     return occupied_45 >> diag_shifts_45[from];
   }
 
   byte
-  occ_90 (int from) const {
+  occ_90 (coord from) const {
     return get_byte (occupied_90, from % 8);
   }
 
   byte
-  occ_135 (int from) const {
+  occ_135 (coord from) const {
     return occupied_135 >> diag_shifts_135[from];
   }
 
@@ -684,93 +720,6 @@ struct Board {
 // Output human readable board.
 std::ostream & operator<< (std::ostream &os, const Board &b);
 
-///////////
-// Moves //
-///////////
-
-// Create a null move;
-inline Move 
-null_move () {
-  return Move (0, 0);
-}
-
-// Is this a null move?
-inline bool
-Move::is_null () const {
-  return to == from;
-}
-
-// Kind of color of the piece being moved.
-inline Color
-Move::get_color (const Board &b) const {
-  return b.get_color (from);
-}
-
-// Get the kind of the piece being moved.
-inline Kind
-Move::get_kind (const Board &b) const {
-  return b.get_kind (from);
-}
-
-// Returns the piece being captured, or NULL_KIND if these is no
-// such piece.
-inline Kind
-Move::capture (const Board &b) const {
-  if (is_en_passant (b))
-    {
-      return PAWN;
-    }
-  else
-    {
-      return b.get_kind (to);
-    }
-}
-
-// Is this move an en passant capture.
-inline bool
-Move::is_en_passant (const Board &b) const {
-  // If the piece being moved is a pawn, the square being moved to is
-  // empty, and the to square and the from square are on different
-  // files, then this is an en passant capture.
-  return get_kind (b) == PAWN
-    && ((test_bit (b.occupied, to) == 0))
-    && (Board::idx_to_file (to) != Board::idx_to_file (from));
-}
-
-// Is this a castling move?
-inline bool
-Move::is_castle (const Board &b) const {
-  return is_castle_qs (b) || is_castle_ks (b);
-}
-
-// Is this a queen-side castle.
-inline bool
-Move::is_castle_qs (const Board &b) const {
-  if ((b.to_move () == WHITE && from == E1 && to == C1) ||
-      (b.to_move () == BLACK && from == E8 && to == C8))
-    {
-      return (b.get_kind (from) == KING);
-    }
-  else
-    {
-      return false;
-    }
-}
-
-// Is this a king-side castle.
-inline bool
-Move::is_castle_ks (const Board &b) const {
-  if ((b.to_move () == WHITE && from == E1 && to == G1) ||
-      (b.to_move () == BLACK && from == E8 && to == G8))
-    {
-      return (b.get_kind (from) == KING);
-    }
-  else
-    {
-      return false;
-    }
-}
-
 // Equality on moves.
 inline bool operator== (const Move &lhs, const Move &rhs) {
   return
@@ -785,8 +734,5 @@ inline bool operator!= (const Move &lhs, const Move &rhs) {
     (lhs.to != rhs.to) ||
     (lhs.promote != rhs.promote);
 }
-
-// Output for moves.
-std::ostream & operator<< (std::ostream &os, const Move &b);
 
 #endif // _BOARD_
