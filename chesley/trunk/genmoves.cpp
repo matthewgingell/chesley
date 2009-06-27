@@ -656,7 +656,7 @@ Board::least_valuable_attacker (coord sqr) const {
   if (from) return Move (bit_idx (from), sqr, c, KING, get_kind (sqr));
 
   // Return a null move if no piece is attacking this square.
-  return null_move ();
+  return NULL_MOVE;
 }
 
 // Return whether color c is in check.

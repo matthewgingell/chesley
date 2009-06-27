@@ -487,4 +487,17 @@ random64 () {
   return ((uint64) random()) | (((uint64) random()) << 32);
 }
 
+/////////////////////////////
+// Miscellaneous routines. //
+/////////////////////////////
+
+template <typename elt>
+inline void swap (elt &l, elt &r) {
+  elt tmp;
+  memcpy (&tmp, &l, sizeof (elt));
+  memcpy (&l,   &r, sizeof (elt));
+  memcpy (&r, &tmp, sizeof (elt));
+}
+
+
 #endif // __UTIL__

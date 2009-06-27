@@ -1,6 +1,28 @@
+Release 1.0:
+
+Chesley the Chess Engine! (Release 1.0)
+
 Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
 Chesley is free software, distributed under the GNU General Public License.
-> perft 6
-Computing perft to depth 6...
-moves = 119060324
-26.38 seconds elapsed.
+> bench 15
+Move 1:0
+Ply    Eval    Time    Nodes   Principal Variation
+  1      49    0.00       66   Nc3 
+  2      -1    0.00      195   Nc3 Nc6 
+  3      52    0.00      433   Nc3 Nc6 Nf3 
+  4       0    0.01     5189   Nc3 Nc6 Nf3 Nf6 
+  5      39    0.00     3132   Nc3 Nc6 Nf3 Nf6 d4 
+  6       1    0.03    40086   Nc3 Nc6 Nf3 Nf6 d4 d5 
+  7      36    0.02    25407   Nc3 Nc6 Nf3 d5 d4 
+  8      11    0.08   125707   Nc3 
+  9      20    0.09   132697   Nc3 Nc6 d4 d6 Nf3 
+ 10      14    0.38   582007   e3 Nc6 
+ 11      23    0.47   707863   e3 Nc6 Nf3 e5 d3 Nf6 Be2 Bc5 O-O O-O 
+ 12      24    7.21 10309461   e4 d5 exd5 
+ 13      19    8.26 11239396   Nc3 Nc6 
+ 14      18   27.56 32350435   e4 d5 exd5 Nf6 Nf3 Nxd5 Be2 Nc6 O-O e6 Nc3 Bc5 Ne4 Bb6 
+ 15      35   78.27 75002644   e4 e6 Nf3 Nf6 e5 Nd5 Nc3 d6 Nxd5 
+
+pv hist: 74.14% 13.49% 4.94% 2.39% 1.39% 1.02% 0.88% 0.71% 0.57% 0.48% 
+tt hit rate: 6.18%
+tt entries: 1919017
