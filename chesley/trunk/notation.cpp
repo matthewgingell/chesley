@@ -185,7 +185,7 @@ Board::to_san (const Move &m) const {
   Kind cap = m.get_capture ();
   Kind promote = m.promote;
 
-  if (m.is_null ())
+  if (m == NULL_MOVE)
     {
       return "<null>";
     }
@@ -382,7 +382,7 @@ Board::from_san (const string &s) const {
 
   // We now iterate through the legal moves at this position looking
   // for the one we've just read.
-  Move m = null_move ();
+  Move m = NULL_MOVE;
   Move_Vector moves (*this);
   for (int i = 0; i < moves.count; i++)
     {
@@ -405,14 +405,14 @@ Board::from_san (const string &s) const {
               idx_to_rank (moves[i].from) == dis_rank)
             m =  moves[i];
 
-          if (!m.is_null ()) break;
+          if (m != NULL_MOVE) break;
         }
     }
 
   m.promote = promote;
 
   // Sanity check the move we've constructed.
-  if (m.is_null () ||
+  if (m == NULL_MOVE ||
       m.promote != promote ||
       (m.get_capture () == NULL_KIND && is_capture))
     throw string ("from_san: failed parsing ") + s;

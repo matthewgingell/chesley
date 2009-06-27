@@ -22,10 +22,8 @@
 using namespace std;
 
 // Constants.
-const int Search_Engine :: hist_nbuckets;
-const int32 Search_Engine::MAX_DEPTH;
-
-
+const int32 Search_Engine :: hist_nbuckets;
+const int32 Search_Engine :: MAX_DEPTH;
 
 // Utility functions.
 bool is_mate (Score s) { 
@@ -474,47 +472,37 @@ Search_Engine :: search
 void
 Search_Engine :: order_moves
 (const Board &b, int depth, Move_Vector &moves) {
+  Score scores[moves.count];
+  memset (scores, 0, sizeof (scores));
+  Move best_guess = NULL_MOVE;
   TT_Entry e;
   bool have_entry = tt_fetch (b.hash, e);
-  Move best_guess = null_move ();
 
   // If we have an entry in the transposition table, use that as our
   // best guess.
-  if (have_entry)
-    {
-      best_guess = e.move;
-    }
+  if (have_entry) best_guess = e.move;
 
   for (int i = 0; i < moves.count; i++)
     {
-      assert (moves[i].score == 0);
-
       // Sort our best guess first.
-      if (moves[i] == best_guess)
-        {
-          moves[i].score = +INF;
-          continue;
-        }
+      if (moves[i] == best_guess) {
+        scores[i] = +INF;
+        continue;
+      }
 
       // Followed by promotions to queen.
-      if (moves[i].promote == QUEEN)
-        moves[i].score += 1000;
+      if (moves[i].promote == QUEEN) scores[i] += 1000;
 
       // Followed by captures.
       if (moves[i].get_capture() != NULL_KIND)
-        moves[i].score += 100 * eval_piece (moves[i].get_capture ());
+        scores[i] += 100 * eval_piece (moves[i].get_capture ());
       
-      // Followed by PV and fail high nodes.
-#if 0
-      if (moves[i] == killers[depth][0]) moves[i].score += 1000;
-      if (moves[i] == killers[depth][1]) moves[i].score += 1000;
-#endif
-
-      uint64 hh_val = hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
-      moves[i].score += hh_val;
+      // Follow by history table adjustments. 
+      scores[i] +=
+        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
     }
 
-  insertion_sort <Move_Vector, Move, less_than> (moves);
+  moves.sort (scores);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -541,7 +529,7 @@ Search_Engine :: see (const Board &b, const Move &m) {
   c.set_color (invert (b.to_move ()));
 
   Move lvc = c.least_valuable_attacker (m.to);
-  if (!lvc.is_null () && b.get_kind (m.from) != KING)
+  if (lvc != NULL_MOVE && b.get_kind (m.from) != KING)
     {
       assert (lvc.to == m.to);
       s += -max (see (c, lvc), 0);
@@ -574,15 +562,17 @@ Search_Engine :: qsearch
       /////////////////////////////////
 
       b.gen_captures (moves);
+      Score scores[moves.count];
+      memset (scores, 0, sizeof (scores));
       for (int i = 0; i < moves.count; i++)
         {
 #ifdef ENABLE_SEE
-          moves[i].score = see (b, moves[i]);
+          scores[i] = see (b, moves[i]);
 #else
-          moves[i].score = eval_piece (moves[i].get_capture ());
+          scores[i] = eval_piece (moves[i].get_capture ());
 #endif
         }
-      insertion_sort <Move_Vector, Move, less_than> (moves);
+      moves.sort (scores);
 
       // Minimax over captures.
       for (int i = 0; i < moves.count; i++)

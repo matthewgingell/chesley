@@ -173,7 +173,7 @@ Session::work ()
       Move m = find_a_move ();
 
       // We should never get back a null move from the search engine.
-      assert (!m.is_null());
+      assert (m != NULL_MOVE);
 
       // Apply the move.
       bool applied = board.apply (m);
