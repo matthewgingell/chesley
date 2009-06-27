@@ -51,6 +51,7 @@ inline Score eval_piece (Kind k) {
     case KNIGHT: return KNIGHT_VAL;
     case BISHOP: return BISHOP_VAL;
     case QUEEN:  return QUEEN_VAL;
+      //    case KING:   return MATE_VAL;
     default:     return 0;
     }
 }

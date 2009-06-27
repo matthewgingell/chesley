@@ -490,13 +490,16 @@ Search_Engine :: order_moves
         continue;
       }
 
-      // Followed by promotions to queen.
-      if (moves[i].promote == QUEEN) scores[i] += 1000;
-
       // Followed by captures.
       if (moves[i].get_capture() != NULL_KIND)
-        scores[i] += 100 * eval_piece (moves[i].get_capture ());
-      
+        {
+#if ENABLE_SEE
+          scores[i] += 100 * (see (b, moves[i]) + 2 * QUEEN_VAL);
+#else
+          scores[i] += 100 * eval_piece (moves[i].get_capture ());
+#endif
+        }
+
       // Follow by history table adjustments. 
       scores[i] +=
         hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
@@ -523,17 +526,20 @@ Search_Engine :: see (const Board &b, const Move &m) {
 
   // Construct child position.
   Board c = b;
-  c.clear_piece (m.from);
-  c.clear_piece (m.to);
+
+  // Make the move.
+  c.clear_piece (m.from, b.to_move (), m.get_kind ());
+  c.clear_piece (m.to, invert (b.to_move ()), m.get_capture ());
   c.set_piece (m.get_kind (), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
-
+  
   Move lvc = c.least_valuable_attacker (m.to);
-  if (lvc != NULL_MOVE && b.get_kind (m.from) != KING)
+  if (lvc != NULL_MOVE)
     {
       assert (lvc.to == m.to);
-      s += -max (see (c, lvc), 0);
+      s -= max (see (c, lvc), 0);
     }
+
   return s;
 }
 
@@ -566,7 +572,7 @@ Search_Engine :: qsearch
       memset (scores, 0, sizeof (scores));
       for (int i = 0; i < moves.count; i++)
         {
-#ifdef ENABLE_SEE
+#if ENABLE_SEE
           scores[i] = see (b, moves[i]);
 #else
           scores[i] = eval_piece (moves[i].get_capture ());
