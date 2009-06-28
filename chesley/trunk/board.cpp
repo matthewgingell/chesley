@@ -420,8 +420,7 @@ std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
   return os << "[Move from "
-            << (coord) (m.from) << " => " << (coord) (m.to)
-            << " " << m.score << "]";
+            << (coord) (m.from) << " => " << (coord) (m.to) << "]";
 }
 
 //////////////

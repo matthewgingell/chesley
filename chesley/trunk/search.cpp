@@ -129,30 +129,32 @@ Search_Engine :: iterative_deepening
 (const Board &b, int depth, Move_Vector &pv)
 {
   Score s = 0;
-
+  
   // Print header for posting thinking.
   if (post) post_before (b);
 
   // Search progressively deeper ply until we are interrupted.
   for (int i = 1; i <= depth; i++)
     {
-      Move_Vector tmp;
+      Move_Vector pv_tmp;
+      Score s_tmp;
 
       // Initialize statistics for this iteration.
       calls_to_search = calls_to_qsearch = 0;
       start_time = cpu_time ();
 
       // Search this position using an aspiration window.
-      s = aspiration_search (b, i, tmp, s, 25);
+      s_tmp = aspiration_search (b, i, pv_tmp, s, 25);
 
       // Break out of the loop if the search was interrupted and we've
       // found at least one move.
       if (i > 1 && controls.interrupt_search) break;
 
       // Otherwise copy the principle variation back to the caller.
-      assert (tmp.count > 0);
-      pv = tmp;
-      if (post) post_each (b, i, pv);
+      assert (pv_tmp.count > 0);
+      pv = pv_tmp;
+      s = s_tmp;
+      if (post) post_each (b, i, s, pv);
 
       // Don't bother searching any further if we've found a
       // checkmate.
@@ -165,7 +167,7 @@ Search_Engine :: iterative_deepening
   // Check that we got at least one move.
   assert (pv.count > 0);
 
-  return pv[0].score;
+  return s;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -222,16 +224,17 @@ Search_Engine :: search_with_memory
  bool do_null_move)
 {
   assert (pv.count == 0);
-
   Move m;
+  Score s;
   Score original_alpha = alpha;
   Score original_beta = beta;
+  
 
   // Try to find this node in the transposition table.
-  if (ply > 0 && tt_try (b, depth, m, alpha, beta))
+  if (ply > 0 && tt_try (b, depth, m, s, alpha, beta))
     {
       pv.push (m);
-      return m.score;
+      return s;
     }
 
   // After narrowing alpha and beta from the transposition table, we
@@ -241,7 +244,7 @@ Search_Engine :: search_with_memory
 
   // Push this position on the repetition stack and recurse.
   rt_push (b);
-  Score s = search (b, depth, ply, pv, alpha, beta, do_null_move);
+  s = search (b, depth, ply, pv, alpha, beta, do_null_move);
 
   // We must always return at least one move at ply 0. Because the
   // search is unstable our top level search may cut off because the
@@ -257,7 +260,7 @@ Search_Engine :: search_with_memory
 
   // Update the transposition table if this search returned a PV.
   if (pv.count > 0 && !controls.interrupt_search)
-    tt_update (b, depth, pv[0], alpha, beta);
+    tt_update (b, depth, pv[0], s, alpha, beta);
 
   return s;
 }
@@ -425,7 +428,6 @@ Search_Engine :: search
         if (cs > alpha)
           {
             alpha = cs;
-            moves[mi].score = alpha;
             pv = Move_Vector (moves[mi], cpv);
             if (alpha < beta) 
               have_pv_move = true;
@@ -610,7 +612,7 @@ Search_Engine :: qsearch
 // position.
 inline bool
 Search_Engine :: tt_try
-(const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta)
+(const Board &b, int32 depth, Move &m, Score &s, int32 &alpha, int32 &beta)
 {
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
@@ -631,14 +633,15 @@ Search_Engine :: tt_try
           TT_Entry entry = i -> second;
 
           if (entry.type == LOWERBOUND)
-            alpha = max (entry.move.score, alpha);
+            alpha = max (entry.score, alpha);
 
           else if (entry.type == UPPERBOUND)
-            beta = min (entry.move.score, beta);
+            beta = min (entry.score, beta);
 
           else if (entry.type == EXACT_VALUE)
             {
               m = entry.move;
+              s = entry.score;
               return true;
             }
         }
@@ -672,7 +675,7 @@ Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
 // search.
 inline void
 Search_Engine :: tt_update
-(const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta)
+(const Board &b, int32 depth, const Move &m, Score s, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
@@ -687,11 +690,11 @@ Search_Engine :: tt_update
 
   // Determine the kind of value we are recording.
   Node_Type type;
-  if (m.score >= beta) 
+  if (s >= beta) 
     {
       type = LOWERBOUND;
     }
-  else if (m.score <= alpha)
+  else if (s <= alpha)
     {
       type = UPPERBOUND;
     }
@@ -702,9 +705,10 @@ Search_Engine :: tt_update
 
   // Use an 'always replace' scheme.
   i -> second.move = m;
+  i -> second.score = s;
   i -> second.depth = depth;
-  i -> second.age = 0;
   i -> second.type = type;
+  i -> second.age = 0;
 
 #endif // ENABLE_TRANS_TABLE
 }
@@ -852,7 +856,8 @@ Search_Engine :: post_before (const Board &b) {
 
 // Write thinking for each depth during iterative deeping.
 void
-Search_Engine :: post_each (const Board &b, int depth, const Move_Vector &pv) {
+Search_Engine :: 
+post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
   Board c = b;
 
@@ -864,16 +869,15 @@ Search_Engine :: post_each (const Board &b, int depth, const Move_Vector &pv) {
   cout << setw (3) << depth;
 
   // Scorce
-  Score score = pv[0].score;
-  if (is_mate (score))
+  if (is_mate (s))
     {
-      cout << setw (2) << (score > 0 ? "+" : "-");
+      cout << setw (2) << (s > 0 ? "+" : "-");
       cout << setw (4) << "Mate";
-      cout << setw (2) << MATE_VAL - abs(score);
+      cout << setw (2) << MATE_VAL - abs(s);
     }
   else
     {
-      cout << setw (8) << pv[0].score;
+      cout << setw (8) << s;
     }
 
   // Time elapsed.

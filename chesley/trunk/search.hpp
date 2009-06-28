@@ -93,6 +93,7 @@ struct Search_Engine {
   enum Node_Type { LOWERBOUND, UPPERBOUND, EXACT_VALUE };
   struct TT_Entry {
     Move move;
+    Score score;
     Node_Type type;
     int32 depth;
     int32 age;
@@ -108,12 +109,14 @@ struct Search_Engine {
   // table, returning true if we found a move we can return at this
   // position.
   inline bool tt_try
-  (const Board &b, int32 depth, Move &m, int32 &alpha, int32 &beta);
+  (const Board &b, int32 depth, 
+   Move &m, Score &s, int32 &alpha, int32 &beta);
 
   // Update the transposition table with the results of a call to
   // search.
   inline void tt_update
-  (const Board &b, int32 depth, const Move &m, int32 alpha, int32 beta);
+  (const Board &b, int32 depth, 
+   const Move &m, Score s, int32 alpha, int32 beta);
 
   // Fetch a transposition table entry.
   inline bool tt_fetch (uint64 hash, TT_Entry &out);
@@ -203,7 +206,7 @@ struct Search_Engine {
   void post_before (const Board &b);
 
   // Write thinking for each depth during iterative deeping.
-  void post_each (const Board &b, int depth, const Move_Vector &pv);
+  void post_each (const Board &b, int depth, Score s, const Move_Vector &pv);
 
   // Write thinking output after iterative deeping ends.
   void post_after ();

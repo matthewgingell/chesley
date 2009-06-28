@@ -24,18 +24,16 @@ struct Board;
 
 struct Move {
 
-  // Constructors.
-
   // It's important we have a null constructor here as we create large
   // arrays of moves which we never access.
   Move () {}
 
   // Construct a move;
   Move (coord from, coord to, Color color, Kind kind, Kind capture, 
-        Kind promote = NULL_KIND, bool en_passant = false, Score score = 0) 
+        Kind promote = NULL_KIND, bool en_passant = false) 
     : from (from), to (to), color (color), kind (kind), 
-      capture (capture), promote (promote), en_passant (en_passant),
-      score (score) {};
+      capture (capture), promote (promote), en_passant (en_passant) {}
+
   
   // Kind of color of the piece being moved.
   inline Color get_color () const { 
@@ -78,31 +76,18 @@ struct Move {
   }
 
   // State
-  coord  from       :6;
-  coord  to         :6;
-  Color  color      :4;
-  Kind   kind       :4;
-  Kind   capture    :4;
-  Kind   promote    :4;
-  bool   en_passant :1;
-  uint32 unused     :3;
-  Score  score      :32;
+  coord  from       : 8;
+  coord  to         : 8;
+  Color  color      : 8;
+  Kind   kind       : 8;
+  Kind   capture    : 8;
+  Kind   promote    : 8;
+  bool   en_passant : 8;
+  uint32 unused     : 8;
 };
 
 // A type to use for null moves.
 const Move NULL_MOVE (0, 0, NULL_COLOR, NULL_KIND, NULL_KIND);
-
-// Compare moves.
-inline bool
-less_than (const Move &lhs, const Move &rhs) {
-  return lhs.score < rhs.score;
-}
-
-// Compare moves.
-inline bool
-more_than (const Move &lhs, const Move &rhs) {
-  return lhs.score > rhs.score;
-}
 
 // Output for moves.
 std::ostream & operator<< (std::ostream &os, const Move &b);
@@ -147,11 +132,10 @@ struct Move_Vector {
   (coord from, coord to, 
    Color color, Kind kind,
    Kind capture, Kind promote = NULL_KIND, 
-   bool en_passant = false,
-   Score score = 0) 
+   bool en_passant = false) 
   {
     move[count++] = 
-      Move (from, to, color, kind, capture, promote, en_passant, score);
+      Move (from, to, color, kind, capture, promote, en_passant);
   }
 
   // Access elements with the [] operator.
