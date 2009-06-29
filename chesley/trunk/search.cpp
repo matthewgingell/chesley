@@ -228,7 +228,6 @@ Search_Engine :: search_with_memory
   Score s;
   Score original_alpha = alpha;
   Score original_beta = beta;
-  
 
   // Try to find this node in the transposition table.
   if (ply > 0 && tt_try (b, depth, m, s, alpha, beta))
@@ -305,7 +304,7 @@ Search_Engine :: search
       // Check whether this position is checkmate.
       if (in_check && b.child_count () == 0)
         {
-          return -MATE_VAL;
+          return -(MATE_VAL - ply);
         }
       else
         {
@@ -449,7 +448,7 @@ Search_Engine :: search
       {
         if (in_check)
           {
-            return -MATE_VAL;
+            alpha = -(MATE_VAL - ply);
           }
         else
           {
@@ -470,10 +469,6 @@ Search_Engine :: search
           }
       }
   }
-
-  // If our best child is mate in N, then our score is mate in N + 1.
-  if (have_pv_move)
-    if (is_mate (alpha)) alpha -= sign (alpha);
 
   return alpha;
 }
