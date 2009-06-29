@@ -27,7 +27,7 @@ const int32 Search_Engine :: MAX_DEPTH;
 
 // Utility functions.
 bool is_mate (Score s) { 
-  return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH; 
+  return abs (s) > (MATE_VAL - Search_Engine::MAX_DEPTH);
 }
 
 // Compute the principal variation and return its first move.
@@ -285,6 +285,7 @@ Search_Engine :: search
   assert (alpha < beta);
 
   int legal_move_count = 0;
+  bool have_pv_move = false;
   bool in_check = b.in_check ((b.to_move ()));
 
   // Check 50 move and triple repetition rules.
@@ -304,7 +305,7 @@ Search_Engine :: search
       // Check whether this position is checkmate.
       if (in_check && b.child_count () == 0)
         {
-          return -(MATE_VAL - ply);
+          return -MATE_VAL;
         }
       else
         {
@@ -349,7 +350,6 @@ Search_Engine :: search
     ////////////////////////////
 
     int mi = 0;
-    bool have_pv_move = false;
     for (mi = 0; mi < moves.count; mi++)
       {
         int cs;
@@ -417,7 +417,7 @@ Search_Engine :: search
         else
 #endif // ENABLE_PVS
 
-       // Search this child recursively.
+          // Search this child recursively.
           {
             cs = -search_with_memory
               (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
@@ -429,10 +429,15 @@ Search_Engine :: search
           {
             alpha = cs;
             pv = Move_Vector (moves[mi], cpv);
+
             if (alpha < beta) 
-              have_pv_move = true;
+              {
+                have_pv_move = true;
+              }
             else
-              break;
+              {
+                break;
+              }
           }
       }
 
@@ -444,7 +449,7 @@ Search_Engine :: search
       {
         if (in_check)
           {
-            alpha = -(MATE_VAL - ply);
+            return -MATE_VAL;
           }
         else
           {
@@ -465,6 +470,10 @@ Search_Engine :: search
           }
       }
   }
+
+  // If our best child is mate in N, then our score is mate in N + 1.
+  if (have_pv_move)
+    if (is_mate (alpha)) alpha -= sign (alpha);
 
   return alpha;
 }
@@ -612,9 +621,10 @@ Search_Engine :: qsearch
 // position.
 inline bool
 Search_Engine :: tt_try
-(const Board &b, int32 depth, Move &m, Score &s, int32 &alpha, int32 &beta)
+(const Board &b, int32 depth, Move &m, 
+ Score &s, int32 &alpha, int32 &beta)
 {
-#if ENABLE_TRANS_TABLE
+#ifdef ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
 
   if (i == tt.end ())
@@ -647,7 +657,6 @@ Search_Engine :: tt_try
         }
     }
 #endif
-
   return false;
 }
 
@@ -655,7 +664,7 @@ Search_Engine :: tt_try
 // entry is found.
 inline bool
 Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
-#if ENABLE_TRANS_TABLE
+#ifdef ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (hash);
   if (i != tt.end ())
      {
@@ -677,7 +686,7 @@ inline void
 Search_Engine :: tt_update
 (const Board &b, int32 depth, const Move &m, Score s, int32 alpha, int32 beta)
 {
-#if ENABLE_TRANS_TABLE
+#ifdef ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
   bool entry_is_new = (i == tt.end ());
 
