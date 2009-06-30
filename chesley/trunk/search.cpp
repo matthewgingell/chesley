@@ -55,19 +55,6 @@ Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
-  // Age the transposition table.
-  for (Trans_Table :: iterator i = tt.begin (); i != tt.end(); i++)
-    {
-      if (i -> second.age >= 5) 
-        {
-          tt.erase (i);
-        }
-      else 
-        {
-          i -> second.age++;
-        }
-    }
-
   // Clear history and killer tables. 
   memset (hh_table, 0, sizeof (hh_table));
   memset (killers, 0, sizeof (killers));
@@ -158,7 +145,7 @@ Search_Engine :: iterative_deepening
 
       // Don't bother searching any further if we've found a
       // checkmate.
-      if (is_mate (s)) break;
+      //      if (is_mate (s)) break;
     }
 
   // Write out statistics about this search.
@@ -189,18 +176,16 @@ Search_Engine :: aspiration_search
   const Score lower = best_guess - hw;
   const Score upper = best_guess + hw;
 
-  s = search_with_memory (b, depth, 0, pv, lower, upper);
+  s = search_with_memory (b, depth, 0, pv, lower, upper, false);
 
   // Search from scratch if we failed.
   if (s <= lower || s >= upper)
     {
       pv.clear ();
-      s = search_with_memory (b, depth, 0, pv);
+      s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
     }
 #else
-    {
-      s = search_with_memory (b, depth, 0, pv);
-    }
+  s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
 #endif  /* ENABLE_ASPIRATION_WINDOW */
 
   return s;
@@ -328,7 +313,7 @@ Search_Engine :: search
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 10 pieces on the board.
-    if (ply > 1 && do_null_move && pop_count (b.occupied) >= 15 && !in_check)
+    if (do_null_move && pop_count (b.occupied) >= 15 && !in_check)
       {
         Move_Vector dummy;
         Board c = b;
@@ -427,11 +412,10 @@ Search_Engine :: search
         if (cs > alpha)
           {
             alpha = cs;
-            pv = Move_Vector (moves[mi], cpv);
-
             if (alpha < beta) 
-              {
+              {                
                 have_pv_move = true;
+                pv = Move_Vector (moves[mi], cpv);
               }
             else
               {
@@ -481,12 +465,10 @@ Search_Engine :: order_moves
   Score scores[moves.count];
   memset (scores, 0, sizeof (scores));
   Move best_guess = NULL_MOVE;
-  TT_Entry e;
-  bool have_entry = tt_fetch (b.hash, e);
 
   // If we have an entry in the transposition table, use that as our
   // best guess.
-  if (have_entry) best_guess = e.move;
+  best_guess = tt_fetch (b.hash);
 
   for (int i = 0; i < moves.count; i++)
     {
@@ -620,59 +602,44 @@ Search_Engine :: tt_try
  Score &s, int32 &alpha, int32 &beta)
 {
 #ifdef ENABLE_TRANS_TABLE
-  Trans_Table :: iterator i = tt.find (b.hash);
+  Trans_Table :: Entry e;
 
-  if (i == tt.end ())
+  if (tt.fetch (b.hash, e) &&
+      e.depth >= depth &&
+      b.half_move_clock < 45  && 
+      rep_count (b) == 0)
     {
-      tt_misses++;
-      return false;
-    }
-  else
-    {
-      tt_hits++;
-      i -> second.age = 0;
-      if (i -> second.depth >= depth &&
-          b.half_move_clock < 45  && 
-          rep_count (b) == 0)
+      if (e.type == LOWERBOUND)
         {
-          TT_Entry entry = i -> second;
-
-          if (entry.type == LOWERBOUND)
-            alpha = max (entry.score, alpha);
-
-          else if (entry.type == UPPERBOUND)
-            beta = min (entry.score, beta);
-
-          else if (entry.type == EXACT_VALUE)
-            {
-              m = entry.move;
-              s = entry.score;
-              return true;
-            }
+          alpha = max (e.score, alpha);
+        }
+      else if (e.type == UPPERBOUND)
+        {
+          beta = min (e.score, beta);
+        }
+      else if (e.type == EXACT_VALUE)
+        {
+          m = e.move;
+          s = e.score;
+          return true;
         }
     }
-#endif
+#endif // ENABLE_TRANS_TABLE
+  
   return false;
 }
 
 // Fetch an entry from the transposition table. Returns false if no
 // entry is found.
-inline bool
-Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
+inline Move
+Search_Engine :: tt_fetch (uint64 hash) {
 #ifdef ENABLE_TRANS_TABLE
-  Trans_Table :: iterator i = tt.find (hash);
-  if (i != tt.end ())
-     {
-       i -> second.age = 0;
-       out = i -> second;
-       return true;
-     }
-  else
+  Trans_Table :: Entry e;
+  tt.fetch (hash, e);
+  return e.move;
+#else
+  return NULL_MOVE;
 #endif // ENABLE_TRANS_TABLE
-    {
-      return false;
-    }
-
 }
 
 // Update the transposition table with the results of a call to
@@ -682,38 +649,26 @@ Search_Engine :: tt_update
 (const Board &b, int32 depth, const Move &m, Score s, int32 alpha, int32 beta)
 {
 #ifdef ENABLE_TRANS_TABLE
-  Trans_Table :: iterator i = tt.find (b.hash);
-  bool entry_is_new = (i == tt.end ());
+  Trans_Table :: Entry e;
 
-  // Insert an element if it's new.
-  if (entry_is_new)
-    {
-      Trans_Table :: value_type val (b.hash, TT_Entry ());
-      i = tt.insert (val).first;
-    }
-
-  // Determine the kind of value we are recording.
-  Node_Type type;
+  e.key = b.hash;
+  e.move = m;
+  e.score = s;
+  e.depth = depth;
   if (s >= beta) 
     {
-      type = LOWERBOUND;
+      e.type = LOWERBOUND;
     }
   else if (s <= alpha)
     {
-      type = UPPERBOUND;
+      e.type = UPPERBOUND;
     }
   else
     {
-      type = EXACT_VALUE;
+      e.type = EXACT_VALUE;
     }
-
-  // Use an 'always replace' scheme.
-  i -> second.move = m;
-  i -> second.score = s;
-  i -> second.depth = depth;
-  i -> second.type = type;
-  i -> second.age = 0;
-
+  
+  tt.store (b.hash, e);
 #endif // ENABLE_TRANS_TABLE
 }
 
@@ -921,5 +876,5 @@ Search_Engine :: post_after () {
   cout << "tt hit rate: " << hit_rate * 100 << "%" << endl;
 
   // Display transposition table size.
-  cout << "tt entries: " << tt.size () << endl;
+  //  cout << "tt entries: " << tt.size () << endl;
 }
