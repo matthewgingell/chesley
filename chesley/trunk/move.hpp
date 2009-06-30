@@ -76,6 +76,7 @@ struct Move {
   }
 
   // State
+#if 1
   coord  from       : 8;
   coord  to         : 8;
   Color  color      : 8;
@@ -84,6 +85,16 @@ struct Move {
   Kind   promote    : 8;
   bool   en_passant : 8;
   uint32 unused     : 8;
+#else
+  coord  from       : 6;
+  coord  to         : 6;
+  Color  color      : 2;
+  Kind   kind       : 4;
+  Kind   capture    : 4;
+  Kind   promote    : 4;
+  bool   en_passant : 1;
+  uint32 unused     : 5;
+#endif
 };
 
 // A type to use for null moves.

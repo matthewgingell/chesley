@@ -31,9 +31,9 @@ CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
 #                                                                      #
 ########################################################################
 
-ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
--DENABLE_TRANS_TABLE -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS	\
--DENABLE_LMR -DENABLE_SEE
+ALG = -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW -DENABLE_NULL_MOVE	\
+-DENABLE_EXTENSIONS -DENABLE_LMR -DENABLE_QSEARCH -DENABLE_TRANS_TABLE	\
+# -DENABLE_SEE
 
 ################
 # Main binary. #
@@ -90,4 +90,4 @@ clean :
 	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
 	      Saturn* game.00* log.* logfile.* book.lrn position.bin	\
 	      position.lrn *.d /cores/core.* *.fen \#*\# *.log log.0*	\
-	      game.0* *mshark *.s
+	      game.0* *mshark *.s out out.pgn
