@@ -93,6 +93,4 @@ Kind to_kind (char k);
 
 std::ostream & operator<< (std::ostream &os, Kind k);
 
-enum Node_Type { LOWERBOUND, UPPERBOUND, EXACT_VALUE };
-
 #endif // __TYPES__

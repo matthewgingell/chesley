@@ -19,7 +19,6 @@
 #include <boost/unordered_map.hpp>
 #include "board.hpp"
 #include "eval.hpp"
-#include "ttable.hpp"
 
 // Supported time keeping modes.
 enum time_mode { CONVENTIONAL, ICS, EXACT };
@@ -89,8 +88,9 @@ struct Search_Engine {
   //////////////////////////////////////////
   // Transposition and repetition tables. //
   //////////////////////////////////////////
-#if 0
+
   // Transposition table entry.
+  enum Node_Type { LOWERBOUND, UPPERBOUND, EXACT_VALUE };
   struct TT_Entry {
     Move move;
     Score score;
@@ -103,9 +103,6 @@ struct Search_Engine {
   typedef boost::unordered_map <hash_t, TT_Entry> Trans_Table;
 
   // Transposition table instance.
-  Trans_Table tt;
-#endif
-
   Trans_Table tt;
 
   // Try to get a move or tighten the window from the transposition
@@ -122,7 +119,7 @@ struct Search_Engine {
    const Move &m, Score s, int32 alpha, int32 beta);
 
   // Fetch a transposition table entry.
-  inline Move tt_fetch (uint64 hash);
+  inline bool tt_fetch (uint64 hash, TT_Entry &out);
 
   // A table type mapping from a 64-bit key to a repetition count.
   typedef boost::unordered_map <hash_t, int> Rep_Table;
