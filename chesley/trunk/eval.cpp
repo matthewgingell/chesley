@@ -174,6 +174,14 @@ static const int8 king_square_table[3][64] =
   }
 };
 
+Score 
+psq_value (const Board &b, const Move &m) {
+  if (m.kind == KING) return 0;
+  return 
+    piece_square_table[m.get_kind()][xfrm[b.to_move()][m.to]] -
+    piece_square_table[m.get_kind()][xfrm[b.to_move()][m.from]];
+}
+
 // Evaluate a positional strength based on the preceding table.
 Score
 sum_piece_squares (const Board &b, const Phase p) {
