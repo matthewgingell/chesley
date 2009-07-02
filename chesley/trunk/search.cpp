@@ -229,7 +229,7 @@ Search_Engine :: search_with_memory
   Score original_beta = beta;
 
   // Try to find this node in the transposition table.
-  bool have_exact = tt_try (b, depth, m, s, alpha, beta);
+  bool have_exact = tt_try (b, depth, ply, m, s, alpha, beta);
   
   if (have_exact)
     {
@@ -282,7 +282,7 @@ Search_Engine :: search_with_memory
 
   // Update the transposition table.
   if (!controls.interrupt_search)
-    tt_update (b, depth, pv, s, alpha, beta);
+    tt_update (b, depth, ply, pv, s, alpha, beta);
 
   // Don't return a PV in fail high cases.
   if (s >= beta)
@@ -661,7 +661,8 @@ Search_Engine :: qsearch
 // position.
 inline bool
 Search_Engine :: tt_try
-(const Board &b, int32 depth, Move &m, Score &s, int32 &alpha, int32 &beta)
+(const Board &b, int32 depth, int32 ply,
+ Move &m, Score &s, int32 &alpha, int32 &beta)
 {
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
@@ -679,23 +680,29 @@ Search_Engine :: tt_try
           rep_count (b) == 0)
         {
           TT_Entry entry = i -> second;
+          Score es = entry.score;
           m = entry.move;
+          
+          // Mate score need to be treated specially when fetched from
+          // the cache.
+          if (is_mate (es))
+            es -= sign (es) * ply;
 
           if (entry.type == LOWERBOUND)
             {
-              alpha = max (entry.score, alpha);
+              alpha = max (es, alpha);
               return false;
             }
 
           else if (entry.type == UPPERBOUND)
             {
-              beta = min (entry.score, beta);
+              beta = min (es, beta);
               return false;
             }
 
           else if (entry.type == EXACT_VALUE)
             {
-              s = entry.score;
+              s = es;
               return true;
             }
         }
@@ -729,8 +736,8 @@ Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
 // search.
 inline void
 Search_Engine :: tt_update
-(const Board &b, int32 depth, const Move_Vector &pv, 
- Score s, int32 alpha, int32 beta)
+(const Board &b, int32 depth, int32 ply, 
+ const Move_Vector &pv, Score s, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
   assert (alpha <= beta);
@@ -761,6 +768,15 @@ Search_Engine :: tt_update
   else
     {
       type = EXACT_VALUE;
+    }
+
+  // The case of putting a mate score in the cache has to be treated
+  // specially.
+  if (is_mate (s))
+    {
+      int mate_ply_from_root = MATE_VAL - abs (s);
+      int mate_ply_from_here = mate_ply_from_root - ply;
+      s = sign (s) * (MATE_VAL - mate_ply_from_here);
     }
 
   // Use an 'always replace' scheme.
