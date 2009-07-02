@@ -5,7 +5,7 @@
 # Matthew Gingell
 # gingell@adacore.com
 
-for test in File.open("tests/WAC.EPD")
+for test in File.open("mate.epd")
   puts("epd #{test}")
 end
 puts("quit")

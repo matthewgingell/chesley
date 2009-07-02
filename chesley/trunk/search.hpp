@@ -109,13 +109,13 @@ struct Search_Engine {
   // table, returning true if we found a move we can return at this
   // position.
   inline bool tt_try
-  (const Board &b, int32 depth, 
+  (const Board &b, int32 depth, int32 ply,
    Move &m, Score &s, int32 &alpha, int32 &beta);
 
   // Update the transposition table with the results of a call to
   // search.
   inline void tt_update
-  (const Board &b, int32 depth, 
+  (const Board &b, int32 depth, int32 ply,
    const Move_Vector &pv, Score s, int32 alpha, int32 beta);
 
   // Fetch a transposition table entry.
