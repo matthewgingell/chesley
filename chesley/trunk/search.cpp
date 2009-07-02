@@ -258,7 +258,10 @@ Search_Engine :: search_with_memory
           pv.push (m);
         }
 
-      s = alpha;
+      // Don't clobber the existing entry for this position. Just
+      // return immediately.
+      rt_pop (b);
+      return alpha;
     }
   else
     {
@@ -515,6 +518,10 @@ Search_Engine :: order_moves
 
   for (int i = 0; i < moves.count; i++)
     {
+      // Add estimated value from piece square table, as per advice
+      // published by Ed Schroeder.
+      scores[i] += psq_value (b, moves[i]);
+
       // Sort our best guess first.
       if (moves[i] == best_guess) 
         {
@@ -726,9 +733,7 @@ Search_Engine :: tt_update
  Score s, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
-
-  // Do not store positions with bogus bounds.
-  if (alpha >= beta) return;
+  assert (alpha <= beta);
 
   // This rule seems to work well in practice.
   if (pv.count == 0) return;
@@ -981,3 +986,4 @@ Search_Engine :: post_after () {
   // Display transposition table size.
   cout << "tt entries: " << tt.size () << endl;
 }
+

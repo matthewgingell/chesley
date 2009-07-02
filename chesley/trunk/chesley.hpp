@@ -40,5 +40,4 @@ char *get_prologue () {
            ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }
-
 #endif // __CHESLEY__

@@ -82,8 +82,12 @@ inline bool is_major (Kind k) {
     }
 }
 
+Score psq_value (const Board &b, const Move &m) IS_CONST;
+
 // Compute a simple net positional value from the piece square table.
 Score sum_piece_squares (const Board &b, Phase p) IS_CONST;
+
+
 
 struct Eval {
   Eval (const Board &board) {
@@ -151,7 +155,7 @@ struct Eval {
 #endif
 
     // Add a small random number for variety.
-    //    score += random () % 5 - 2;
+    score += random () % 5 - 2;
     
     // Set the appropriate sign and return the score.
     return sign (b.to_move ()) * score;
