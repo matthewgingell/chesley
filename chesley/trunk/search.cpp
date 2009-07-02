@@ -184,7 +184,6 @@ Search_Engine :: aspiration_search
 (const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw)
 {
   Score s;
-
 #ifdef ENABLE_ASPIRATION_WINDOW
   const Score lower = best_guess - hw;
   const Score upper = best_guess + hw;
@@ -228,38 +227,63 @@ Search_Engine :: search_with_memory
   Score s;
   Score original_alpha = alpha;
   Score original_beta = beta;
-  
+
   // Try to find this node in the transposition table.
-  if (ply > 0 && tt_try (b, depth, m, s, alpha, beta))
+  bool have_exact = tt_try (b, depth, m, s, alpha, beta);
+  
+  if (have_exact)
     {
-      pv.push (m);
+      if (ply == 0)
+        {
+          assert (m != NULL_MOVE);
+        }
+
+      if (m != NULL_MOVE)
+        {
+          pv.push (m);
+        }
+
       return s;
     }
 
-  // After narrowing alpha and beta from the transposition table, we
-  // may sometimes end up with null bounds. In that case return
-  // immediately.
-  if (alpha >= beta) return alpha;
-
   // Push this position on the repetition stack and recurse.
   rt_push (b);
-  s = search (b, depth, ply, pv, alpha, beta, do_null_move);
 
-  // We must always return at least one move at ply 0. Because the
-  // search is unstable our top level search may cut off because the
-  // bounds stored in the transposition do not yeild a PV node. In
-  // this case, we search again with the original window.
-  if (ply == 0 && pv.count == 0)
+  // It may be the case that fetching alpha from the hash causes us to
+  // fail high immediately.
+  if (alpha >= beta)
     {
-      s = search
+      if (m != NULL_MOVE)
+        {
+          pv.push (m);
+        }
+
+      s = alpha;
+    }
+  else
+    {
+      s = search (b, depth, ply, pv, alpha, beta, do_null_move);
+    }
+
+  // If we got back a cut off at ply 0, we need to try again without
+  // narrowing [alpha, beta] from the transposition table.
+  if (ply == 0 && (s <= alpha || s >= beta))
+    {
+      pv.clear ();
+      s = search 
         (b, depth, ply, pv, original_alpha, original_beta, do_null_move);
     }
 
+  // Pop the repetition stack.
   rt_pop (b);
 
-  // Update the transposition table if this search returned a PV.
-  if (pv.count > 0 && !controls.interrupt_search)
-    tt_update (b, depth, pv[0], s, alpha, beta);
+  // Update the transposition table.
+  if (!controls.interrupt_search)
+    tt_update (b, depth, pv, s, alpha, beta);
+
+  // Don't return a PV in fail high cases.
+  if (s >= beta)
+    pv.clear ();
 
   return s;
 }
@@ -317,7 +341,6 @@ Search_Engine :: search
 
   // Otherwise recurse over the children of this node.
   else {
-
 #ifdef ENABLE_NULL_MOVE
     //////////////////////////
     // Null move heuristic. //
@@ -416,7 +439,7 @@ Search_Engine :: search
         else
 #endif // ENABLE_PVS
 
-       // Search this child recursively.
+        // Search this child recursively.
           {
             cs = -search_with_memory
               (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
@@ -427,11 +450,18 @@ Search_Engine :: search
         if (cs > alpha)
           {
             alpha = cs;
-            pv = Move_Vector (moves[mi], cpv);
             if (alpha < beta) 
-              have_pv_move = true;
+              {
+                have_pv_move = true;
+                pv = Move_Vector (moves[mi], cpv);
+              }
             else
-              break;
+              {
+                // In the fail high case, only copy back the move and
+                // then exit the loop.
+                pv = Move_Vector (moves[mi]);
+                break;
+              }
           }
       }
 
@@ -486,10 +516,23 @@ Search_Engine :: order_moves
   for (int i = 0; i < moves.count; i++)
     {
       // Sort our best guess first.
-      if (moves[i] == best_guess) {
-        scores[i] = +INF;
-        continue;
-      }
+      if (moves[i] == best_guess) 
+        {
+          scores[i] = +INF;
+          continue;
+        }
+
+#if 0
+      if (moves[i] == killers[depth][0] || move[i] == killers[depth][1])
+        {
+          scores[i] = +INF / 2;
+          continue;
+        }
+#endif
+
+      // Followed by promotions to queen.
+      if (moves[i].promote == QUEEN)
+        scores[i] += 1000;
 
       // Followed by captures.
       if (moves[i].get_capture() != NULL_KIND)
@@ -533,7 +576,7 @@ Search_Engine :: see (const Board &b, const Move &m) {
   c.clear_piece (m.to, invert (b.to_move ()), m.get_capture ());
   c.set_piece (m.get_kind (), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
-  
+
   Move lvc = c.least_valuable_attacker (m.to);
   if (lvc != NULL_MOVE)
     {
@@ -615,7 +658,7 @@ Search_Engine :: tt_try
 {
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (b.hash);
-
+  m = NULL_MOVE;
   if (i == tt.end ())
     {
       tt_misses++;
@@ -624,22 +667,27 @@ Search_Engine :: tt_try
   else
     {
       tt_hits++;
-      i -> second.age = 0;
       if (i -> second.depth >= depth &&
           b.half_move_clock < 45  && 
           rep_count (b) == 0)
         {
           TT_Entry entry = i -> second;
+          m = entry.move;
 
           if (entry.type == LOWERBOUND)
-            alpha = max (entry.score, alpha);
+            {
+              alpha = max (entry.score, alpha);
+              return false;
+            }
 
           else if (entry.type == UPPERBOUND)
-            beta = min (entry.score, beta);
+            {
+              beta = min (entry.score, beta);
+              return false;
+            }
 
           else if (entry.type == EXACT_VALUE)
             {
-              m = entry.move;
               s = entry.score;
               return true;
             }
@@ -674,9 +722,17 @@ Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
 // search.
 inline void
 Search_Engine :: tt_update
-(const Board &b, int32 depth, const Move &m, Score s, int32 alpha, int32 beta)
+(const Board &b, int32 depth, const Move_Vector &pv, 
+ Score s, int32 alpha, int32 beta)
 {
 #if ENABLE_TRANS_TABLE
+
+  // Do not store positions with bogus bounds.
+  if (alpha >= beta) return;
+
+  // This rule seems to work well in practice.
+  if (pv.count == 0) return;
+
   Trans_Table :: iterator i = tt.find (b.hash);
   bool entry_is_new = (i == tt.end ());
 
@@ -703,7 +759,14 @@ Search_Engine :: tt_update
     }
 
   // Use an 'always replace' scheme.
-  i -> second.move = m;
+  if (pv.count > 0) 
+    {
+      i -> second.move = pv[0];
+    }
+  else
+    {
+      i -> second.move = NULL_MOVE;
+    }
   i -> second.score = s;
   i -> second.depth = depth;
   i -> second.type = type;

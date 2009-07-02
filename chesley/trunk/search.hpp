@@ -116,7 +116,7 @@ struct Search_Engine {
   // search.
   inline void tt_update
   (const Board &b, int32 depth, 
-   const Move &m, Score s, int32 alpha, int32 beta);
+   const Move_Vector &pv, Score s, int32 alpha, int32 beta);
 
   // Fetch a transposition table entry.
   inline bool tt_fetch (uint64 hash, TT_Entry &out);
