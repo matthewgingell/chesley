@@ -124,6 +124,12 @@ struct Search_Engine {
   // A table type mapping from a 64-bit key to a repetition count.
   typedef boost::unordered_map <hash_t, int> Rep_Table;
 
+  // Fetch a move from the transposition table.
+  inline Move tt_move (const Board &b);
+
+  // Extend the principal variation from the transposition table.
+  inline void tt_extend_pv (const Board &b, Move_Vector &pv);
+
   // The repetition table.
   Rep_Table rt;
 
@@ -282,7 +288,7 @@ struct Search_Engine {
   /////////////////
 
   // History heuristic table.
-  uint64 hh_table[2][MAX_DEPTH][64][64];
+  uint64 hh_table[MAX_DEPTH][64][64];
 
   // Killer moves.
   Move killers[MAX_DEPTH][2];
