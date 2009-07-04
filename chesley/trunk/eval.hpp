@@ -51,7 +51,6 @@ inline Score eval_piece (Kind k) {
     case KNIGHT: return KNIGHT_VAL;
     case BISHOP: return BISHOP_VAL;
     case QUEEN:  return QUEEN_VAL;
-      //    case KING:   return MATE_VAL;
     default:     return 0;
     }
 }
@@ -86,8 +85,6 @@ Score psq_value (const Board &b, const Move &m) IS_CONST;
 
 // Compute a simple net positional value from the piece square table.
 Score sum_piece_squares (const Board &b, Phase p) IS_CONST;
-
-
 
 struct Eval {
   Eval (const Board &board) {
@@ -148,9 +145,8 @@ struct Eval {
     // Evaluate pawn structure.
     score += eval_pawns (WHITE) - eval_pawns (BLACK);
 
-    // Evaluate board control. At the moment this seems to degrade
-    // performance.
 #if 0
+    // This degrades performace.
     score += eval_control ();
 #endif
 
@@ -214,7 +210,7 @@ struct Eval {
 
     return score;
   }
-
+  
   // Reward bishops not blocked by their own pawns.
   Score eval_bishops (const Color c) {
     Score score = 0;
@@ -244,9 +240,8 @@ struct Eval {
     Score score = 0;
     bitboard pawns = b.color_to_board (c) & b.pawns;
 
-
-    // This appears to have no effect.
 #if 0
+    // This appears to have no effect.
     bitboard attacks = 0;
     if (c == WHITE)
       {
@@ -271,6 +266,7 @@ struct Eval {
         int idx = bit_idx (pawns);
         int file = b.idx_to_file (idx);
 
+#if 0
         // Penalize rook pawns.
         if (file == 0 || file == 7)
           {
@@ -282,6 +278,7 @@ struct Eval {
           {
             score -= 20;
           }
+#endif
 
         // Penalize isolated pawns.
         if ((file == 0 && pawn_counts[c][1] == 0) ||

@@ -142,6 +142,9 @@ Board::common_init (Board &b) {
   // Initialize clocks.
   b.half_move_clock =
     b.full_move_clock = 0;
+
+  // Initialize history.
+  b.last_move = NULL_MOVE;
 }
 
 // Construct a board from the standard starting position.
@@ -225,6 +228,9 @@ Board::apply (const Move &m) {
 
   // There is no legal move with a half move clock greater than 50.
   if (half_move_clock > 50) return false;
+
+  // Update history.
+  last_move = m;
 
   if (kind == PAWN)
     {

@@ -104,11 +104,11 @@ struct Board {
   // Bitboards representing the state of the board.  //
   /////////////////////////////////////////////////////
 
-  // Color
+  // Color.
   bitboard white;
   bitboard black;
 
-  // Pieces
+  // Pieces.
   bitboard pawns;
   bitboard rooks;
   bitboard knights;
@@ -136,9 +136,12 @@ struct Board {
     unsigned b_can_k_castle  :1; // Black king and k-side rook unmoved.
   } flags;
 
-  // Clocks
+  // Clocks.
   uint16 half_move_clock; // Used for 50-move rule.
   uint16 full_move_clock; // Clock after each black move.
+
+  // History.
+  Move last_move;
 
   //////////////////////////////////////
   // Constructors and initialization. //
@@ -251,9 +254,7 @@ struct Board {
   bool in_check (Color c) const;
 
   // Return the color to move.
-  Color to_move () const {
-    return flags.to_move;
-  }
+  Color to_move () const { return flags.to_move; }
 
   // Return the color of a piece on a square.
   Color get_color (coord idx) const {
@@ -306,7 +307,7 @@ struct Board {
   // Flags setters //
   ///////////////////
 
-  // It is crucial to use the following routines to set board flags,
+  // It is crucial to use the following routines to set board flags
   // rather than accessing those fields directly. Otherwise the
   // incrementally maintained hash key will not be properly updated.
 
@@ -483,13 +484,13 @@ struct Board {
     return 0x0101010101010101llu << file;
   }
 
-  // Return the rank 0 .. 7 containing a piece.
+  // Return the rank 0 .. 7 containing a coordinate.
   static int
   idx_to_rank (coord idx) {
     return idx / 8;
   }
 
-  // Return the file 0 .. 7 containing a piece.
+  // Return the file 0 .. 7 containing a coordinate.
   static int
   idx_to_file (coord idx) {
     return idx % 8;
@@ -509,9 +510,7 @@ struct Board {
 
   // Return a bitboard of unoccupied squares.
   bitboard
-  unoccupied () const {
-    return ~occupied;
-  }
+  unoccupied () const { return ~occupied; }
 
   /////////////////////////
   // Occupancy patterns. //

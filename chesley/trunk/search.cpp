@@ -69,9 +69,9 @@ Search_Engine :: new_search
     }
 
   // Clear history and killer tables. 
-  memset (hh_table, 0, sizeof (hh_table));
   memset (killers, 0, sizeof (killers));
-
+  memset (hh_table, 0, sizeof (killers));
+  
   // Clear statistics.
   clear_statistics ();
 
@@ -96,8 +96,7 @@ Search_Engine :: new_search
           // If time is limited but the move count is not, always
           // assume the game will end in 25 more moves. This should be
           // improved by choosing a limit based on the game phase.
-          controls.deadline = mclock () +
-            (controls.time_remaining / 25);
+          controls.deadline = mclock () + (controls.time_remaining / 25);
         }
     }
   else
@@ -106,9 +105,8 @@ Search_Engine :: new_search
       assert (0);
     }
 
-  // If one has been configured, set a fixed maximum search depth.
-  if (controls.fixed_depth > 0)
-    depth = min (depth, controls.fixed_depth);
+  // If one has been configured set a fixed maximum search depth.
+  if (controls.fixed_depth > 0) depth = min (depth, controls.fixed_depth);
 
   // Do the actual tree search.
   return iterative_deepening (b, depth, pv);
@@ -197,9 +195,9 @@ Search_Engine :: aspiration_search
       s = search_with_memory (b, depth, 0, pv);
     }
 #else
-    {
-      s = search_with_memory (b, depth, 0, pv);
-    }
+  {
+    s = search_with_memory (b, depth, 0, pv);
+  }
 #endif  /* ENABLE_ASPIRATION_WINDOW */
 
   return s;
@@ -386,19 +384,26 @@ Search_Engine :: search
 
         legal_move_count++;
 
+        int ext = 0;
+#ifdef ENABLE_EXTENSIONS
         ////////////////////////
         // Search extensions. //
         ////////////////////////
 
-        int ext = 0;
-#ifdef ENABLE_EXTENSIONS
         // Check extensions.
-        if (in_check) ext += 1;
+        if (in_check) 
+          ext += 1;
 
+        // Recapture extensions.
+#if 0
+        if (b.last_move.get_capture() != NULL_KIND && 
+            moves[mi].to == b.last_move.to)
+          ext += 1;
+#endif
+        
         // Pawn to seventh rank extensions.
         int rank = Board :: idx_to_rank (moves[mi].to);
-        if ((rank == 1 || rank == 6) &&
-            moves[mi].get_kind () == PAWN)
+        if ((rank == 1 || rank == 6) && moves[mi].get_kind () == PAWN)
           ext+= 1;
 #endif // ENABLE_EXTENSIONS
 
@@ -442,7 +447,7 @@ Search_Engine :: search
         else
 #endif // ENABLE_PVS
 
-        // Search this child recursively.
+          // Search this child recursively.
           {
             cs = -search_with_memory
               (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
@@ -488,11 +493,28 @@ Search_Engine :: search
         // If we found a move, this is either a PV or a fail high move.
         if (pv.count > 0)
           {
-            hh_table[b.to_move ()][depth][pv[0].from][pv[0].to] += 1;            
-            if (alpha > beta && pv[0] != killers[depth][0])
+            coord from = pv[0].from;
+            coord to = pv[0].to;
+            Color c = b.to_move ();
+
+            hh_table[depth][from][to] += 1;
+
+            if (pv[0].get_capture () == NULL_KIND)
               {
-                killers[depth][1] = killers[depth][0];
-                killers[depth][0] = pv[0];
+                if (killers[depth][0] != NULL_MOVE)
+                  {
+                    coord kto = killers[depth][0].to;
+                    coord kfrom = killers[depth][0].from;
+                    if (hh_table[depth][from][to] > hh_table[depth][kfrom][kto])
+                      {
+                        killers[depth][1] = killers[depth][0];
+                        killers[depth][0] = pv[0];
+                      }
+                  }
+                else
+                  {
+                    killers[depth][0] = pv[0];
+                  }
               }
           }
       }
@@ -506,59 +528,53 @@ Search_Engine :: search
 void
 Search_Engine :: order_moves
 (const Board &b, int depth, Move_Vector &moves) {
-  Score scores[moves.count];
+  Score scores[256];
   memset (scores, 0, sizeof (scores));
-  Move best_guess = NULL_MOVE;
-  TT_Entry e;
-  bool have_entry = tt_fetch (b.hash, e);
+  Move hash_move = tt_move (b);
 
-  // If we have an entry in the transposition table, use that as our
-  // best guess.
-  if (have_entry) best_guess = e.move;
-
+  // Compute ordering scores.
+  memset (scores, 0, sizeof (scores));
   for (int i = 0; i < moves.count; i++)
     {
-      // Add estimated value from piece square table, as per advice
-      // published by Ed Schroeder.
-      scores[i] += psq_value (b, moves[i]);
-
-      // Sort our best guess first.
-      if (moves[i] == best_guess) 
+      Kind kind = moves[i].get_kind ();
+      Kind cap = moves[i].get_capture ();
+      
+      // Sort the hash move first.
+      if (moves[i] == hash_move)
         {
           scores[i] = +INF;
           continue;
         }
 
-#if 0
-      if (moves[i] == killers[depth][0] || move[i] == killers[depth][1])
-        {
-          scores[i] = +INF / 2;
-          continue;
-        }
-#endif
-
+      // Add killer move bonuses.
+      if (moves[i] == killers[depth][0])
+        scores[i] += 250;
+      else if (moves[i] == killers[depth][1])
+        scores[i] += 100;
+      
       // Followed by promotions to queen.
       if (moves[i].promote == QUEEN)
-        scores[i] += 1000;
-
-      // Followed by captures.
-      if (moves[i].get_capture() != NULL_KIND)
+        scores[i] += 10 * 1000;
+      
+      // Apply capture bonuses.
+      if (cap != NULL_KIND)
         {
-#if ENABLE_SEE
-          scores[i] += 100 * (see (b, moves[i]) + 2 * QUEEN_VAL);
-#else
-          scores[i] += 100 * eval_piece (moves[i].get_capture ());
-#endif
+          if (eval_piece (cap) > eval_piece (kind))
+            scores[i] += 100 * eval_piece (cap);
+          else if (eval_piece (cap) == eval_piece (kind))
+            scores[i] += 50 * eval_piece (cap);
+          else
+            scores[i] += 25 * eval_piece (cap);
         }
 
-      // Follow by history table adjustments. 
-      scores[i] +=
-        hh_table[b.to_move ()][depth][moves[i].from][moves[i].to];
+      // Apply killer move bonuses.
+      uint64 hh_val = hh_table[depth][moves[i].from][moves[i].to];
+      scores[i] += hh_val;
     }
-
-  moves.sort (scores);
+         
+  moves.sort (scores);  
 }
-
+  
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
 // Search_Engine :: see ()                                          //
@@ -683,8 +699,8 @@ Search_Engine :: tt_try
           Score es = entry.score;
           m = entry.move;
           
-          // Mate score need to be treated specially when fetched from
-          // the cache.
+          // Mate scores need to be treated specially when fetched
+          // from the cache.
           if (is_mate (es))
             es -= sign (es) * ply;
 
@@ -712,6 +728,23 @@ Search_Engine :: tt_try
   return false;
 }
 
+inline Move 
+Search_Engine :: tt_move (const Board &b) {
+#if ENABLE_TRANS_TABLE  
+  Trans_Table :: iterator i = tt.find (b.hash);
+  if (i == tt.end ()) 
+    {
+      return NULL_MOVE;
+    }
+  else 
+    {
+      return i -> second.move;
+    }
+#else
+  return NULL_MOVE;
+#endif //ENABLE_TRANS_TABLE
+}
+
 // Fetch an entry from the transposition table. Returns false if no
 // entry is found.
 inline bool
@@ -719,11 +752,11 @@ Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
 #if ENABLE_TRANS_TABLE
   Trans_Table :: iterator i = tt.find (hash);
   if (i != tt.end ())
-     {
-       i -> second.age = 0;
-       out = i -> second;
-       return true;
-     }
+    {
+      i -> second.age = 0;
+      out = i -> second;
+      return true;
+    }
   else
 #endif // ENABLE_TRANS_TABLE
     {
@@ -795,6 +828,31 @@ Search_Engine :: tt_update
 
 #endif // ENABLE_TRANS_TABLE
 }
+
+// Extend the principal variation from the transposition table, if
+// possible.
+inline void
+Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
+#ifdef ENABLE_TRANS_TABLE
+  Trans_Table :: iterator h;
+  Board c = b;
+
+  // Compute the position to the end of the PV.
+  for (int i = 0; i < pv.count; i++)
+    c.apply (pv[i]);
+
+  // Walk the table this we run out of exact value nodes. If somehow
+  // we end up with a ridiculously long move list, assume that there's
+  // a loop in the table and bail out.
+  while ((h = tt.find (c.hash)) != tt.end () && 
+         h -> second.type == EXACT_VALUE && h -> second.move != NULL_MOVE)
+    {
+      pv.push (h -> second.move);
+      c.apply (h -> second.move);
+    }
+#endif // ENABLE_TRANS_TABLE
+}
+
 
 ////////////////////////////////////////////////////////////////////////
 // Repetition tables.                                                 //
@@ -973,10 +1031,12 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   cout << "   ";
   
   // Principle variation.
-  for (int i = 0; i < pv.count; i++)
+  Move_Vector pve = pv;
+  //  tt_extend_pv (b, pve);
+  for (int i = 0; i < pve.count; i++)
     {
-      cout << c.to_san (pv[i]) << " ";
-      c.apply (pv[i]);
+      cout << c.to_san (pve[i]) << " ";
+      c.apply (pve[i]);
     }
 
   cout << endl;
@@ -1002,4 +1062,3 @@ Search_Engine :: post_after () {
   // Display transposition table size.
   cout << "tt entries: " << tt.size () << endl;
 }
-
