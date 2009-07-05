@@ -127,6 +127,8 @@ Search_Engine :: iterative_deepening
 (const Board &b, int depth, Move_Vector &pv)
 {
   Score s = 0;
+  bool found_mate = false;
+  Score best_mate = 0;
   
   // Print header for posting thinking.
   if (post) post_before (b);
@@ -146,17 +148,32 @@ Search_Engine :: iterative_deepening
 
       // Break out of the loop if the search was interrupted and we've
       // found at least one move.
-      if (i > 1 && controls.interrupt_search) break;
+      if (controls.interrupt_search) 
+        {
+          assert (i > 1);
+          break;
+        }
 
+      // Because of techniques like grafting the results of searches
+      // from the transposition table on to shallow searches, etc., we
+      // never know if we've found the quickest mate possible. Here we
+      // keep looking for better mates until time expires.
+      if (found_mate && abs (s_tmp) <= best_mate)
+        continue;
+
+      if (is_mate (s_tmp))
+        {
+          found_mate = true;
+          best_mate = max (abs (s_tmp), abs (best_mate));
+        }
+      
       // Otherwise copy the principle variation back to the caller.
       assert (pv_tmp.count > 0);
+
       pv = pv_tmp;
       s = s_tmp;
-      if (post) post_each (b, i, s, pv);
 
-      // Don't bother searching any further if we've found a
-      // checkmate.
-      if (is_mate (s)) break;
+      if (post) post_each (b, i, s, pv);
     }
 
   // Write out statistics about this search.
@@ -186,17 +203,17 @@ Search_Engine :: aspiration_search
   const Score lower = best_guess - hw;
   const Score upper = best_guess + hw;
 
-  s = search_with_memory (b, depth, 0, pv, lower, upper);
+  s = search_with_memory (b, depth, 0, pv, lower, upper, false);
 
   // Search from scratch if we failed.
   if (s <= lower || s >= upper)
     {
       pv.clear ();
-      s = search_with_memory (b, depth, 0, pv);
+      s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
     }
 #else
   {
-    s = search_with_memory (b, depth, 0, pv);
+    s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
   }
 #endif  /* ENABLE_ASPIRATION_WINDOW */
 
@@ -266,7 +283,7 @@ Search_Engine :: search_with_memory
       s = search (b, depth, ply, pv, alpha, beta, do_null_move);
     }
 
-  // If we got back a cut off at ply 0, we need to try again without
+  // If we got back a cutoff at ply 0, we need to try again without
   // narrowing [alpha, beta] from the transposition table.
   if (ply == 0 && (s <= alpha || s >= beta))
     {
@@ -347,11 +364,11 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
-    const int R = (depth > 6) ? 3 : 2;
+    const int R = 3;
 
     // Since we don't have Zugzwang detection we just disable null
-    // move if there are fewer than 10 pieces on the board.
-    if (ply > 1 && do_null_move && pop_count (b.occupied) >= 15 && !in_check)
+    // move if there are fewer than 9 pieces on the board.
+    if (ply > 0 && do_null_move && pop_count (b.occupied) >= 9 && !in_check)
       {
         Move_Vector dummy;
         Board c = b;
@@ -362,7 +379,7 @@ Search_Engine :: search
         c.set_color (invert (b.to_move ()));
       }
 #endif // ENABLE_NULL_MOVE
-
+    
     // Generate moves.
     Move_Vector moves (b);
     order_moves (b, depth, moves);
@@ -373,6 +390,7 @@ Search_Engine :: search
 
     int mi = 0;
     bool have_pv_move = false;
+    Score meval = Eval (b).net_material ();
     for (mi = 0; mi < moves.count; mi++)
       {
         int cs;
@@ -395,17 +413,61 @@ Search_Engine :: search
           ext += 1;
 
         // Recapture extensions.
-#if 0
         if (b.last_move.get_capture() != NULL_KIND && 
             moves[mi].to == b.last_move.to)
           ext += 1;
-#endif
         
         // Pawn to seventh rank extensions.
         int rank = Board :: idx_to_rank (moves[mi].to);
         if ((rank == 1 || rank == 6) && moves[mi].get_kind () == PAWN)
           ext+= 1;
 #endif // ENABLE_EXTENSIONS
+
+#ifdef ENABLE_FUTILITY
+        // The approach taken to futility pruning here come from Ernst
+        // A. Heinz and his discussion of pruning in Deep Thought at
+        // http://people.csail.mit.edu/heinz/dt.
+
+        /////////////////////////////////////////
+        // Razoring at pre-pre frontier nodes. //
+        /////////////////////////////////////////
+
+        // If this position looks extremely bad at depth two, proceed
+        // with a reduced depth search.
+        const Score RAZORING_MARGIN = 10 * PAWN_VAL;
+        Score upperbound = meval + RAZORING_MARGIN;
+        if (ply > 0 && depth == 2 && ext == 0 && upperbound <= alpha)
+          {
+            depth = 1;
+          }
+        
+        ////////////////////////
+        // Futility pruning.  //
+        ////////////////////////
+
+        // At frontier nodes we estimate the most this move could
+        // reasonably improve the score of the position, and if it
+        // still isn't better than alpha we skip it.
+        const Score FUTILITY_MARGIN = 2 * PAWN_VAL;
+        upperbound = meval + FUTILITY_MARGIN + eval_capture (moves[mi]);
+        if (ply > 0 && depth == 1 && ext == 0 && upperbound <= alpha)
+          {
+            continue;
+          }
+
+        ////////////////////////////////
+        // Extended futility pruning. //
+        ////////////////////////////////
+
+        // This is exactly like normal futility pruning, just at
+        // pre-frontier nodes with a bigger margin.
+        const Score EXT_FUTILITY_MARGIN = 6 * PAWN_VAL;
+        upperbound = meval + EXT_FUTILITY_MARGIN + eval_capture (moves[mi]);
+        if (ply > 0 && depth == 2 && ext == 0 && upperbound <= alpha)
+          {
+            continue;
+          }
+#endif // ENABLE_FUTILITY
 
 #ifdef ENABLE_LMR
         ///////////////////////////
@@ -495,7 +557,6 @@ Search_Engine :: search
           {
             coord from = pv[0].from;
             coord to = pv[0].to;
-            Color c = b.to_move ();
 
             hh_table[depth][from][to] += 1;
 
@@ -530,8 +591,19 @@ Search_Engine :: order_moves
 (const Board &b, int depth, Move_Vector &moves) {
   Score scores[256];
   memset (scores, 0, sizeof (scores));
-  Move hash_move = tt_move (b);
+  Move best_guess = NULL_MOVE;
 
+  // Look up the hash move.
+  best_guess = tt_move (b);
+
+  // If we don't have a hash move, try internal iterative deepening.
+  if (best_guess == NULL_MOVE && depth > 5)
+    {
+      Move_Vector pv;
+      search_with_memory (b, depth - 2, 0, pv);
+      if (pv.count > 0) best_guess = pv[0];
+    }
+    
   // Compute ordering scores.
   memset (scores, 0, sizeof (scores));
   for (int i = 0; i < moves.count; i++)
@@ -539,8 +611,8 @@ Search_Engine :: order_moves
       Kind kind = moves[i].get_kind ();
       Kind cap = moves[i].get_capture ();
       
-      // Sort the hash move first.
-      if (moves[i] == hash_move)
+      // Sort the best guess move first.
+      if (moves[i] == best_guess)
         {
           scores[i] = +INF;
           continue;
@@ -567,7 +639,14 @@ Search_Engine :: order_moves
             scores[i] += 25 * eval_piece (cap);
         }
 
-      // Apply killer move bonuses.
+      // Apply history table bonuses. The approach here is truly
+      // bizarre: We add the unscaled value from the history table
+      // directly to the value to sort on. This value is a count of
+      // cutoffs which varies by orders of magnitude depending on
+      // search depth, and nothing at all is done to scale the
+      // absolute frequency into anything bounded or sensible.
+      // However, nothing else I've tried works as well, so for now
+      // I'm leaving this very odd and unsound code here.
       uint64 hh_val = hh_table[depth][moves[i].from][moves[i].to];
       scores[i] += hh_val;
     }
@@ -583,18 +662,17 @@ Search_Engine :: order_moves
 // captures in least-valuable attacker order, stopping when all     //
 // captures are resolved or a capture is disadvantageous for the    //
 // moving side. The goal here is to generate a good estimate of the //
-// value of a capture in linear time.                               //
+// value of a capture in linear time. (Robert Hyatt refers to this  //
+// as "minimaxing a unary tree.")                                   //
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
 Score
 Search_Engine :: see (const Board &b, const Move &m) {
-  Score s = eval_piece (m.get_capture ());
+  Score s = eval_capture (m);
 
   // Construct child position.
   Board c = b;
-
-  // Make the move.
   c.clear_piece (m.from, b.to_move (), m.get_kind ());
   c.clear_piece (m.to, invert (b.to_move ()), m.get_capture ());
   c.set_piece (m.get_kind (), b.to_move (), m.to);
@@ -642,7 +720,7 @@ Search_Engine :: qsearch
 #if ENABLE_SEE
           scores[i] = see (b, moves[i]);
 #else
-          scores[i] = eval_piece (moves[i].get_capture ());
+          scores[i] = eval_capture (moves[i]);
 #endif
         }
       moves.sort (scores);
@@ -987,7 +1065,7 @@ Search_Engine :: set_time_remaining (int msecs) {
 // and write out some performance statistics.                         //
 ////////////////////////////////////////////////////////////////////////
 
-// Write thinking output before iterative deeping starts.
+// Write thinking output before iterative deepening starts.
 void
 Search_Engine :: post_before (const Board &b) {
   cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
@@ -995,7 +1073,7 @@ Search_Engine :: post_before (const Board &b) {
        << endl;
 }
 
-// Write thinking for each depth during iterative deeping.
+// Write thinking for each depth during iterative deepening.
 void
 Search_Engine :: 
 post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
@@ -1009,7 +1087,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   // Ply.
   cout << setw (3) << depth;
 
-  // Scorce
+  // Score.
   if (is_mate (s))
     {
       cout << setw (2) << (s > 0 ? "+" : "-");
@@ -1042,7 +1120,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   cout << endl;
 }
 
-// Write thinking output after iterative deeping ends.
+// Write thinking output after iterative deepening ends.
 void
 Search_Engine :: post_after () {
   // Display statistics on the quality of our move ordering.

@@ -55,6 +55,10 @@ inline Score eval_piece (Kind k) {
     }
 }
 
+inline Score eval_capture (const Move &m) {
+  return eval_piece (m.get_capture ());
+}
+
 inline bool is_minor (Kind k) IS_CONST;
 inline bool is_minor (Kind k) {
   switch (k)
@@ -94,6 +98,21 @@ struct Eval {
     memset (minor_counts, sizeof (minor_counts), 0);
     memset (major_counts, sizeof (major_counts), 0);
     memset (pawn_counts, sizeof (pawn_counts), 0);
+  }
+
+  // Calculate a score from a material imbalance.
+  Score net_material () {
+    return sign (b.to_move ()) * 
+      (PAWN_VAL   * (pop_count (b.pawns   & b.white) - 
+                     pop_count (b.pawns   & b.black)) + 
+       ROOK_VAL   * (pop_count (b.rooks   & b.white) - 
+                     pop_count (b.rooks   & b.black)) +
+       KNIGHT_VAL * (pop_count (b.knights & b.white) - 
+                     pop_count (b.knights & b.black)) +
+       BISHOP_VAL * (pop_count (b.bishops & b.white) - 
+                     pop_count (b.bishops & b.black)) +
+       QUEEN_VAL  * (pop_count (b.queens  & b.white) - 
+                     pop_count (b.queens  & b.black)));
   }
 
   Score score (Score alpha IS_UNUSED = -INF, Score beta IS_UNUSED = INF) {
