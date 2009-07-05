@@ -28,13 +28,13 @@ CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
 # The following macros are used to enable and disable various parts of #
 # the tree search. Valid options are: ENABLE_ASPIRATION_WINDOW,	       #
 # ENABLE_TRANS_TABLE, ENABLE_QSEARCH, ENABLE_NULL_MOVE, ENABLE_SEE,    #
-# -DENABLE_PVS, -DENABLE_LMR					       #
+# -DENABLE_PVS, -DENABLE_LMR, -DENABLE_FUTILITY 		       #
 #                                                                      #
 ########################################################################
 
 ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 -DENABLE_TRANS_TABLE -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS	\
--DENABLE_LMR # -DENABLE_SEE
+-DENABLE_LMR -DENABLE_FUTILITY # -DENABLE_SEE
 
 ################
 # Main binary. #
@@ -68,11 +68,11 @@ playold: chesley
 
 playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard  -fcp ./chesley -scp ./other_binaries/pepitox -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
