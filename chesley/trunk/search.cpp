@@ -18,6 +18,7 @@
 
 #include "chesley.hpp"
 #include "search.hpp"
+#include "session.hpp"
 
 using namespace std;
 
@@ -86,17 +87,16 @@ Search_Engine :: new_search
     {
       if (controls.moves_remaining > 0)
         {
-          // All we do is divide the time available by the moves
-          // remaining plus a fudge factor.
           controls.deadline = mclock () +
-            (controls.time_remaining / controls.moves_remaining + 10);
+            (controls.time_remaining) / 
+            (controls.moves_remaining + 1);
         }
       else
         {
           // If time is limited but the move count is not, always
           // assume the game will end in 25 more moves. This should be
           // improved by choosing a limit based on the game phase.
-          controls.deadline = mclock () + (controls.time_remaining / 25);
+          controls.deadline = mclock () + controls.time_remaining / 25;
         }
     }
   else
@@ -105,7 +105,7 @@ Search_Engine :: new_search
       assert (0);
     }
 
-  // If one has been configured set a fixed maximum search depth.
+  // If one has been configured, set a fixed maximum search depth.
   if (controls.fixed_depth > 0) depth = min (depth, controls.fixed_depth);
 
   // Do the actual tree search.
@@ -141,16 +141,19 @@ Search_Engine :: iterative_deepening
 
       // Initialize statistics for this iteration.
       calls_to_search = calls_to_qsearch = 0;
-      start_time = cpu_time ();
+      start_time = mclock ();
 
       // Search this position using an aspiration window.
       s_tmp = aspiration_search (b, i, pv_tmp, s, 25);
 
+      // Collect statistics.
+      calls_at_ply[i] = calls_to_search + calls_to_qsearch;
+      time_at_ply[i] = mclock () - start_time;
+
       // Break out of the loop if the search was interrupted and we've
       // found at least one move.
-      if (controls.interrupt_search) 
+      if (controls.interrupt_search && i > 1) 
         {
-          assert (i > 1);
           break;
         }
 
@@ -169,7 +172,6 @@ Search_Engine :: iterative_deepening
       
       // Otherwise copy the principle variation back to the caller.
       assert (pv_tmp.count > 0);
-
       pv = pv_tmp;
       s = s_tmp;
 
@@ -311,7 +313,7 @@ Search_Engine :: search_with_memory
 // Search_Engine :: search ()                                           //
 //                                                                      //
 // This is the negamax implementation at the core of search hierarchy.  //
-///                                                                     //
+//                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
 Score
@@ -328,13 +330,18 @@ Search_Engine :: search
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
 
-  // Check 50 move and triple repetition rules.
-  if (b.half_move_clock == 50 || is_rep (b))
-    return 0;
+  // Call poll every 64K moves. This is on the order of 100Hz on a
+  // fast machine.
+  if ((calls_to_qsearch + calls_to_search) % (64 * 1024) == 0)
+    poll ();
 
   // Abort if we have been interrupted.
   if (controls.interrupt_search)
     return 12345;
+
+  // Check 50 move and triple repetition rules.
+  if (b.half_move_clock == 50 || is_rep (b))
+    return 0;
 
   // Update statistics.
   calls_to_search++;
@@ -696,6 +703,15 @@ Search_Engine :: qsearch
 {
   Move_Vector dummy;
 
+  // Call poll every 64K moves. This is on the order of 100Hz on a
+  // fast machine.
+  if ((calls_to_qsearch + calls_to_search) % (64 * 1024) == 0)
+    poll ();
+
+  // Abort if we have been interrupted.
+  if (controls.interrupt_search)
+    return 12345;
+
   // Update statistics.
   calls_to_qsearch++;
 
@@ -806,6 +822,7 @@ Search_Engine :: tt_try
   return false;
 }
 
+// Fetch the move, if any, associated with this position in the cache.
 inline Move 
 Search_Engine :: tt_move (const Board &b) {
 #if ENABLE_TRANS_TABLE  
@@ -820,7 +837,7 @@ Search_Engine :: tt_move (const Board &b) {
     }
 #else
   return NULL_MOVE;
-#endif //ENABLE_TRANS_TABLE
+#endif // ENABLE_TRANS_TABLE
 }
 
 // Fetch an entry from the transposition table. Returns false if no
@@ -840,7 +857,6 @@ Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
     {
       return false;
     }
-
 }
 
 // Update the transposition table with the results of a call to
@@ -852,6 +868,10 @@ Search_Engine :: tt_update
 {
 #if ENABLE_TRANS_TABLE
   assert (alpha <= beta);
+
+  // Throw away cache when it gets too big.
+  if (tt.size () > 4 * 1024 * 1024) 
+    tt.clear ();
 
   // This rule seems to work well in practice.
   if (pv.count == 0) return;
@@ -930,7 +950,6 @@ Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
     }
 #endif // ENABLE_TRANS_TABLE
 }
-
 
 ////////////////////////////////////////////////////////////////////////
 // Repetition tables.                                                 //
@@ -1011,8 +1030,10 @@ Search_Engine :: is_triple_rep (const Board &b) {
 // Method polled periodically by the owner of the Search_Engine
 // object.
 void
-Search_Engine :: poll (uint64 clock) {
-  if (clock >= controls.deadline)
+Search_Engine :: poll () {
+  uint64 clock = mclock ();
+
+  if (controls.deadline > 0 && clock >= controls.deadline)
     {
       controls.interrupt_search = true;
     }
@@ -1068,7 +1089,8 @@ Search_Engine :: set_time_remaining (int msecs) {
 // Write thinking output before iterative deepening starts.
 void
 Search_Engine :: post_before (const Board &b) {
-  cout << "Move " << b.full_move_clock << ":" << b.half_move_clock << endl
+  cout << (b.to_move () == WHITE ? "w" : "b")
+       << ":" << b.full_move_clock << ":" << b.half_move_clock << endl
        << "Ply    Eval    Time    Nodes   Principal Variation"
        << endl;
 }
@@ -1077,7 +1099,7 @@ Search_Engine :: post_before (const Board &b) {
 void
 Search_Engine :: 
 post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
-  double elapsed = ((double) cpu_time () - (double) start_time) / 1000;
+  double elapsed = ((double) mclock () - (double) start_time) / 1000;
   Board c = b;
 
   // Xboard format is: ply, score, time, nodes, pv.
@@ -1099,9 +1121,17 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
       cout << setw (8) << s;
     }
 
-  // Time elapsed.
-  cout << setw (8) << setiosflags (ios :: fixed) << setprecision (2);
-  cout << elapsed;
+  // Time elapsed. Xboard expects time in centiseconds.
+  if (Session::protocol == XBOARD)
+    {
+      cout << setw (8) << setiosflags (ios :: fixed) 
+           << setprecision (0) << elapsed * 100;
+    }
+  else
+    {
+      cout << setw (8) << setiosflags (ios :: fixed) 
+           << setprecision (2) << elapsed;
+    }
 
   // Node count.
   cout << setw (9);
@@ -1135,8 +1165,24 @@ Search_Engine :: post_after () {
 
   // Display statistics on transposition table hit rate.
   double hit_rate = (double) tt_hits / (tt_hits + tt_misses);
-  cout << "tt hit rate: " << hit_rate * 100 << "%" << endl;
-
+  cout << "tt hit rate " << hit_rate * 100 << "%, ";
   // Display transposition table size.
-  cout << "tt entries: " << tt.size () << endl;
+  cout << "tt entries " << tt.size () << ", ";
+
+  // Display nodes per second.
+  uint64 total_nodes = 0;
+  uint64 total_time = 0;
+  for (int i = 1; i < MAX_DEPTH; i++) {
+    total_nodes += calls_at_ply[i];
+    total_time  += time_at_ply[i];
+  }
+
+  if (total_time > 0) 
+    {
+      cerr << total_nodes / total_time << " knps." << endl;
+    }
+  else
+    {
+      cerr << 0 << " knps." << endl;
+    }
 }
