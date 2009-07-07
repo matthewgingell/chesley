@@ -690,11 +690,11 @@ Session::level (const string_vector &ctokens) {
   time_per_control = 1000 * (60 * minutes + seconds);
   tokens = rest (tokens);
           
-  // Field 3: Parse to incremental time bonus.
+  // Field 3: Parse the incremental time bonus.
   field = first (tokens);
   increment = to_int (field);
           
-  // Set search engine time controls.
+  // Set engine time controls.
   se.set_level (moves_per_control, time_per_control, increment);
 
   return true;

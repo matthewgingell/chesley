@@ -52,7 +52,8 @@ chesley: $(OBJS)
 # Running games under xboard  #
 ###############################
 
-XBOARD_OPTS = -debug -coords -size Giant -thinking -xponder -sgf out.pgn
+XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
+-sgf out.pgn
 
 # Launch an xboard session with Chesley.
 play: chesley
@@ -60,7 +61,7 @@ play: chesley
 
 # Run an xboard game of Chesley against Chesley.
 playself: chesley
-	xboard -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
+	xboard -tc 1 -mps 100 -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against the binary chesley.old.
 playold: chesley
@@ -68,11 +69,11 @@ playold: chesley
 
 playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard  -fcp ./chesley -scp ./other_binaries/pepitox -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -st 0:01 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################

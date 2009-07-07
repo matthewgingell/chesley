@@ -83,6 +83,7 @@ struct Search_Engine {
     tt_hits = 0;
     tt_misses = 0;
     memset (hist_pv, 0, sizeof (hist_pv));
+    memset (calls_at_ply, 0, sizeof (calls_at_ply));
   }
 
   //////////////////////////////////////////
@@ -152,11 +153,8 @@ struct Search_Engine {
   // Time management. Times are always expected to be in milliseconds. //
   ///////////////////////////////////////////////////////////////////////
 
-  // The caller is responsible for periodically calling the poll
-  // method while a search is underway. It's important that the caller
-  // manage this and not the search object, since there may be many
-  // searches but only a few timers.
-  void poll (uint64 clock);
+  // Poll is called periodically either by the caller or during search.
+  void poll ();
 
   // Set fixed time per move in milliseconds.
   void set_fixed_depth (int depth);
@@ -225,8 +223,10 @@ struct Search_Engine {
   uint64 start_time;
 
   // Count the number of times search and qsearch have been called.
-  uint64 calls_to_search;
   uint64 calls_to_qsearch;
+  uint64 calls_to_search;
+  uint64 calls_at_ply[MAX_DEPTH];
+  uint64 time_at_ply[MAX_DEPTH];
 
   // A histogram of times we found a PV node at an index into the
   // moves list. This is a measure of the performance of our move

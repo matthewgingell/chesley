@@ -79,7 +79,7 @@ Session::init_session () {
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
 
-  // Setup periodic 100 Hz timer.
+  // Setup periodic timer.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
   timer.it_value.tv_usec = 100 * 1000;
@@ -91,7 +91,7 @@ Session::init_session () {
 
 void
 Session::handle_alarm (int sig IS_UNUSED) {
-  if (running) se.poll (mclock ());
+  //  if (running) se.poll ();
 }
 
 // Write the command prompt.
@@ -278,6 +278,9 @@ Session::find_a_move () {
   Move m = se.choose_move (board, 99);
   uint64 elapsed = mclock () - start_time;
 
+  cout << "moves: " << se.controls.moves_remaining << endl;
+  cout << "time: " << se.controls.time_remaining << endl;
+
   // The caller is responsible for managing the time and move limits
   // set in the search engine, since the search engine can't know what
   // is being done with the results it returns.
@@ -299,6 +302,10 @@ Session::find_a_move () {
       se.controls.moves_remaining = 
         se.controls.moves_ptc;
     }
+
+  cout << "moves: " << se.controls.moves_remaining << endl;
+  cout << "time: " << se.controls.time_remaining << endl;
+  cout << endl << endl;
 
   return m;
 }

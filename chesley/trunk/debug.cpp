@@ -28,7 +28,7 @@ Session::bench (const string_vector &tokens) {
   int depth = 6;
   if (tokens.size () > 1 && is_number (tokens[1]))
     depth = to_int (tokens[1]);
-  running = false;
+  se.set_level (0, 1024 * 1024, 0);
   Move m = se.choose_move (board, depth);
   return true;
 }
@@ -224,7 +224,7 @@ Session::epd (const string_vector &args)
         {
           Move best = b.from_san (first (tokens));
           cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
-          se.set_fixed_time (15 * 1000);
+          se.set_fixed_time (60 * 1000);
           se.post = true;
           running = true;
           Move m = se.choose_move (b, 100);
