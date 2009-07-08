@@ -370,11 +370,11 @@ Search_Engine :: search
     // Null move heuristic. //
     //////////////////////////
 
-    const int R = 3;
+    const int R = depth >= 6 ? 3 : 2;
 
     // Since we don't have Zugzwang detection we just disable null
-    // move if there are fewer than 9 pieces on the board.
-    if (ply > 0 && do_null_move && pop_count (b.occupied) >= 9 && !in_check)
+    // move if there are fewer than 12 pieces on the board.
+    if (ply > 0 && do_null_move && pop_count (b.occupied) >= 12 && !in_check)
       {
         Move_Vector dummy;
         Board c = b;
@@ -468,7 +468,7 @@ Search_Engine :: search
         // pre-frontier nodes with a bigger margin.
         const Score EXT_FUTILITY_MARGIN = 6 * PAWN_VAL;
         upperbound = meval + EXT_FUTILITY_MARGIN + eval_capture (moves[mi]);
-        if (ply > 0 && depth == 2 && ext == 0 && upperbound <= alpha)
+        if (ply > 0 && depth == 2 && ext == 0 && upperbound <= alpha && beta)
           {
             continue;
           }
