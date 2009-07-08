@@ -278,9 +278,6 @@ Session::find_a_move () {
   Move m = se.choose_move (board, 99);
   uint64 elapsed = mclock () - start_time;
 
-  cout << "moves: " << se.controls.moves_remaining << endl;
-  cout << "time: " << se.controls.time_remaining << endl;
-
   // The caller is responsible for managing the time and move limits
   // set in the search engine, since the search engine can't know what
   // is being done with the results it returns.
@@ -302,10 +299,6 @@ Session::find_a_move () {
       se.controls.moves_remaining = 
         se.controls.moves_ptc;
     }
-
-  cout << "moves: " << se.controls.moves_remaining << endl;
-  cout << "time: " << se.controls.time_remaining << endl;
-  cout << endl << endl;
 
   return m;
 }
