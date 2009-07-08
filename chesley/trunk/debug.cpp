@@ -28,7 +28,7 @@ Session::bench (const string_vector &tokens) {
   int depth = 6;
   if (tokens.size () > 1 && is_number (tokens[1]))
     depth = to_int (tokens[1]);
-  se.set_level (0, 1024 * 1024, 0);
+  se.set_fixed_time (1024 * 1024);
   Move m = se.choose_move (board, depth);
   return true;
 }

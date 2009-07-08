@@ -21,6 +21,8 @@
 #include "chesley.hpp"
 #include "util.hpp"
 
+struct Eval;
+
 //////////////////////
 // Material values. //
 //////////////////////
@@ -35,12 +37,6 @@ static const Score MATE_VAL   = 500  * 1000;
 static const Score INF        = 1000 * 1000;
 
 static const Score BISHOP_PAIR_BONUS = 50;
-
-/////////////////
-// Game phase. //
-/////////////////
-
-enum Phase { OPENING, MIDGAME, ENDGAME };
 
 inline Score eval_piece (Kind k) IS_CONST;
 inline Score eval_piece (Kind k) {
@@ -85,10 +81,34 @@ inline bool is_major (Kind k) {
     }
 }
 
-Score psq_value (const Board &b, const Move &m) IS_CONST;
-
 // Compute a simple net positional value from the piece square table.
-Score sum_piece_squares (const Board &b, Phase p) IS_CONST;
+Score sum_piece_squares (const Board &b);
+
+inline Score psq_value (const Board &b, const Move &m);
+inline Score psq_value (Kind k, Color c, coord idx);
+
+
+
+/////////////////
+// Game phase. //
+/////////////////
+
+// Return the games phase.
+inline Phase compute_phase (const Board &b) {
+  int count = (pop_count (b.rooks | b.queens | b.knights | b.bishops));
+  if (count < 6)
+    {
+      return ENDGAME;
+    }
+  else
+    {
+      return OPENING;
+    }
+}
+
+/////////////////////////
+// The evaluator type. //
+/////////////////////////
 
 struct Eval {
   Eval (const Board &board) {
@@ -97,29 +117,27 @@ struct Eval {
     memset (piece_counts, sizeof (piece_counts), 0);
     memset (minor_counts, sizeof (minor_counts), 0);
     memset (major_counts, sizeof (major_counts), 0);
-    memset (pawn_counts, sizeof (pawn_counts), 0);
+    memset (pawn_counts,  sizeof (pawn_counts), 0);
   }
 
   // Calculate a score from a material imbalance.
   Score net_material () {
-    return sign (b.to_move ()) * 
-      (PAWN_VAL   * (pop_count (b.pawns   & b.white) - 
-                     pop_count (b.pawns   & b.black)) + 
-       ROOK_VAL   * (pop_count (b.rooks   & b.white) - 
-                     pop_count (b.rooks   & b.black)) +
-       KNIGHT_VAL * (pop_count (b.knights & b.white) - 
-                     pop_count (b.knights & b.black)) +
-       BISHOP_VAL * (pop_count (b.bishops & b.white) - 
-                     pop_count (b.bishops & b.black)) +
-       QUEEN_VAL  * (pop_count (b.queens  & b.white) - 
-                     pop_count (b.queens  & b.black)));
+    return sign (b.to_move ()) * (b.material[WHITE] - b.material[BLACK]);
   }
 
   Score score (Score alpha IS_UNUSED = -INF, Score beta IS_UNUSED = INF) {
     Score score = 0;
-    Phase phase = OPENING;
+    phase = OPENING;
 
     count_material ();
+
+    if ((piece_counts[WHITE][PAWN] == 0 && piece_counts[BLACK][PAWN] == 0)
+        && (major_counts[WHITE] == 0 && major_counts[BLACK] == 0))
+      {
+        // If both sides have one of fewer minor pieces.
+        if (minor_counts[WHITE] <= 1 && minor_counts[BLACK] <= 1)
+          return 0;
+      }
 
     // Determine game phase.
     if (major_counts [WHITE] + minor_counts [WHITE] <= 3 &&
@@ -128,20 +146,14 @@ struct Eval {
         phase = ENDGAME;
       }
 
-    // If there are no pawns and no majors on the board.
-    if ((piece_counts[WHITE][PAWN] == 0 && piece_counts[BLACK][PAWN] == 0)
-        && (major_counts[WHITE] == 0 && major_counts[BLACK] == 0))
-      {
-        // If both sides have one of fewer minor pieces.
-        if (minor_counts[WHITE] <= 1 && minor_counts[BLACK] <= 1)
-          return 0;
-      }
-    
     // Generate a simple material score.
-    score += score_material (WHITE) - score_material (BLACK);
+    score += b.material[WHITE] - b.material[BLACK];
 
     // Add net piece square values.
-    score += sum_piece_squares (b, phase);
+    score += b.psquares[WHITE] - b.psquares[BLACK];
+
+    // Evaluate the king.
+    score += eval_king (WHITE) - eval_king (BLACK);
 
     // Provide a bonus for having castling or being able to castle.
     if (b.flags.w_has_k_castled) score += 50;
@@ -209,6 +221,9 @@ struct Eval {
     Score score = 0;
     for (Kind k = PAWN; k < KING; k++)
       score += eval_piece (k) * piece_counts[c][k];
+
+    assert (score == b.material[c]);
+
     return score;
   }
 
@@ -313,6 +328,11 @@ struct Eval {
     return score;
   }
 
+  Score eval_king (const Color c) {
+    coord idx = bit_idx(b.kings & b.color_to_board (c));
+    return king_square_table[phase][xfrm[c][idx]];
+  }
+
   // Compute the set of squares controlled by each side and adjust by
   // centrality.
   Score
@@ -342,12 +362,42 @@ struct Eval {
   }
 
   Board b;
+  Phase phase;
   int piece_counts[2][5];
   int major_counts[2];
   int minor_counts[2];
   int pawn_counts[2][8];
 
-  static int8 const centrality_table[64];
+  // The main piece square table.
+  static const int8 piece_square_table[6][64];
+
+  // A table for computing indicies from the perspective of one or the
+  // other color.
+  static const int8 xfrm[2][64];
+
+  // A table reflecting centrality values.
+  static const int8 centrality_table[64];
+
+  // A table used for computing the positional value of the king.
+  static const int8 king_square_table[3][64];
 };
+
+//////////////////////////
+// Piece-Square tables. //
+//////////////////////////
+
+// Fetch a value from the piece square tables.
+inline Score 
+psq_value (const Board &b, const Move &m) {
+  if (m.kind == KING) return 0;
+  return 
+    Eval::piece_square_table[m.get_kind()][Eval::xfrm[b.to_move()][m.to]] -
+    Eval::piece_square_table[m.get_kind()][Eval::xfrm[b.to_move()][m.from]];
+}
+
+inline Score 
+psq_value (Kind k, Color c, coord idx) {
+  return Eval::piece_square_table[k][Eval::xfrm[c][idx]];
+}
 
 #endif // _EVAL_

@@ -20,7 +20,7 @@
 
 #include "bits64.hpp"
 #include "move.hpp"
-#include "types.hpp"
+#include "common.hpp"
 #include "util.hpp"
 
 ////////////
@@ -405,65 +405,12 @@ struct Board {
   }
 
   // Clear a piece on the board.
-  void
-  clear_piece (coord idx) {
-    if (occupied & masks_0[idx])
-      {
-        Color c = get_color (idx);
-        Kind k = get_kind (idx);
-        clear_piece (idx, c, k);
-      }
-  }
+  void clear_piece (coord idx);
+  void clear_piece (coord idx, Color c, Kind k);
 
-  void
-  clear_piece (coord idx, Color c, Kind k) {
-    if (occupied & masks_0[idx])
-      {
-        assert (k != NULL_KIND);
-        assert (c == BLACK || c == WHITE);
-        assert (idx < 64);
-
-        // Clear color and piece kind bits.
-        color_to_board (c) &= ~masks_0[idx];
-        kind_to_board (k) &= ~masks_0[idx];
-
-        // Update hash key.
-        hash ^= get_zobrist_piece_key (c, k, idx);
-
-        // Clear the occupancy sets.
-        occupied     &= ~masks_0[idx];
-        occupied_45  &= ~masks_45[idx];
-        occupied_90  &= ~masks_90[idx];
-        occupied_135 &= ~masks_135[idx];
-      }
-  }
-
-  // Set a piece on the board with an index.
-  void
-  set_piece (Kind k, Color c, coord idx) {
-    assert (k != NULL_KIND);
-    assert (c == BLACK || c == WHITE);
-    assert (idx < 64);
-
-    // Update color and piece sets.
-    color_to_board (c) |= masks_0[idx];
-    kind_to_board (k) |= masks_0[idx];
-
-    // Update hash key.
-    hash ^= get_zobrist_piece_key (c, k, idx);
-
-    // Update occupancy sets.
-    occupied |= masks_0[idx];
-    occupied_45 |= masks_45[idx];
-    occupied_90 |= masks_90[idx];
-    occupied_135 |= masks_135[idx];
-  }
-
-  // Set a piece on the board with a row and file.
-  void
-  set_piece (Kind kind, Color color, int row, int file) {
-    set_piece (kind, color, file + 8 * row);
-  }
+  // Set a piece on the board.
+  void set_piece (Kind k, Color c, coord idx);
+  void set_piece (Kind kind, Color color, int row, int file);
 
   // Apply a move to this board.
   bool apply (const Move &m);
@@ -561,6 +508,13 @@ struct Board {
   // Generate a hash key from scratch. This is used to test the
   // correctness of our incrementally hash update code.
   uint64 gen_hash () const;
+  
+  ////////////////////////////////////////////////
+  // Incrementally updated scoring information. //
+  ////////////////////////////////////////////////
+
+  Score material[2];
+  Score psquares[2];
 };
 
 // Output human readable board.

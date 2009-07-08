@@ -32,9 +32,9 @@ CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
 #                                                                      #
 ########################################################################
 
-ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
--DENABLE_TRANS_TABLE -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS	\
--DENABLE_LMR -DENABLE_FUTILITY # -DENABLE_SEE
+ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW		\
+-DENABLE_NULL_MOVE -DENABLE_EXTENSIONS -DENABLE_LMR -DENABLE_FUTILITY	\
+-DENABLE_TRANS_TABLE # -DENABLE_SEE
 
 ################
 # Main binary. #

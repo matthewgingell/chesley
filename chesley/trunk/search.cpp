@@ -1,4 +1,4 @@
-////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 //                                                                            //
 // search.cpp                                                                 //
 //                                                                            //
@@ -28,7 +28,7 @@ const int32 Search_Engine :: MAX_DEPTH;
 
 // Utility functions.
 bool is_mate (Score s) { 
-  return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH; 
+  return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH;
 }
 
 // Compute the principal variation and return its first move.
@@ -56,19 +56,6 @@ Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
-  // Age the transposition table.
-  for (Trans_Table :: iterator i = tt.begin (); i != tt.end(); i++)
-    {
-      if (i -> second.age >= 5) 
-        {
-          tt.erase (i);
-        }
-      else 
-        {
-          i -> second.age++;
-        }
-    }
-
   // Clear history and killer tables. 
   memset (killers, 0, sizeof (killers));
   memset (hh_table, 0, sizeof (killers));
@@ -171,7 +158,19 @@ Search_Engine :: iterative_deepening
         }
       
       // Otherwise copy the principle variation back to the caller.
-      assert (pv_tmp.count > 0);
+      if (pv_tmp.count == 0)
+        {
+          cerr << b.to_fen () << endl;
+          cerr << i << endl;
+          cerr << s << endl;
+          cerr << s_tmp << endl;
+          cerr << mclock () << endl;
+          cerr << controls.interrupt_search << endl;
+          cerr << controls.deadline << endl;
+          cerr << found_mate << endl;
+          assert (0);
+        }
+
       pv = pv_tmp;
       s = s_tmp;
 
@@ -200,11 +199,11 @@ Score
 Search_Engine :: aspiration_search
 (const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw)
 {
+  assert (depth > 0);
   Score s;
 #ifdef ENABLE_ASPIRATION_WINDOW
   const Score lower = best_guess - hw;
   const Score upper = best_guess + hw;
-
   s = search_with_memory (b, depth, 0, pv, lower, upper, false);
 
   // Search from scratch if we failed.
@@ -240,7 +239,7 @@ Search_Engine :: search_with_memory
  bool do_null_move)
 {
   assert (pv.count == 0);
-  Move m;
+  Move m = NULL_MOVE;
   Score s;
   Score original_alpha = alpha;
   Score original_beta = beta;
@@ -330,6 +329,9 @@ Search_Engine :: search
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
 
+  // Update statistics.
+  calls_to_search++;
+
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
   if ((calls_to_qsearch + calls_to_search) % (64 * 1024) == 0)
@@ -342,9 +344,6 @@ Search_Engine :: search
   // Check 50 move and triple repetition rules.
   if (b.half_move_clock == 50 || is_rep (b))
     return 0;
-
-  // Update statistics.
-  calls_to_search++;
 
   // Return the result of a quiescence search at depth 0.
   if (depth <= 0)
@@ -408,7 +407,6 @@ Search_Engine :: search
         if (!c.apply (moves[mi])) continue;
 
         legal_move_count++;
-
         int ext = 0;
 #ifdef ENABLE_EXTENSIONS
         ////////////////////////
@@ -775,44 +773,45 @@ Search_Engine :: tt_try
  Move &m, Score &s, int32 &alpha, int32 &beta)
 {
 #if ENABLE_TRANS_TABLE
-  Trans_Table :: iterator i = tt.find (b.hash);
-  m = NULL_MOVE;
-  if (i == tt.end ())
+  SKind hash_skind = NULL_SKIND;
+  Move hash_move = NULL_MOVE;
+  Score hash_score = 0;
+  int hash_depth = 0;
+
+  // Find the hash table entry for this position.
+  hash_skind = tt.lookup (b, hash_move, hash_score, hash_depth);
+
+  if (hash_skind == NULL_SKIND)
     {
-      tt_misses++;
       return false;
     }
   else
     {
-      tt_hits++;
-      if (i -> second.depth >= depth &&
+      if (hash_depth >= depth &&
           b.half_move_clock < 45  && 
           rep_count (b) == 0)
         {
-          TT_Entry entry = i -> second;
-          Score es = entry.score;
-          m = entry.move;
-          
           // Mate scores need to be treated specially when fetched
           // from the cache.
-          if (is_mate (es))
-            es -= sign (es) * ply;
+          m = hash_move;
+          if (is_mate (hash_score))
+            hash_score -= sign (hash_score) * ply;
 
-          if (entry.type == LOWERBOUND)
+          if (hash_skind == LOWER_BOUND)
             {
-              alpha = max (es, alpha);
+              alpha = max (hash_score, alpha);
               return false;
             }
 
-          else if (entry.type == UPPERBOUND)
+          else if (hash_skind == UPPER_BOUND)
             {
-              beta = min (es, beta);
+              beta = min (hash_score, beta);
               return false;
             }
 
-          else if (entry.type == EXACT_VALUE)
+          else if (hash_skind == EXACT_VALUE)
             {
-              s = es;
+              s = hash_score;
               return true;
             }
         }
@@ -826,37 +825,10 @@ Search_Engine :: tt_try
 inline Move 
 Search_Engine :: tt_move (const Board &b) {
 #if ENABLE_TRANS_TABLE  
-  Trans_Table :: iterator i = tt.find (b.hash);
-  if (i == tt.end ()) 
-    {
-      return NULL_MOVE;
-    }
-  else 
-    {
-      return i -> second.move;
-    }
+  return tt.get_move (b);
 #else
   return NULL_MOVE;
 #endif // ENABLE_TRANS_TABLE
-}
-
-// Fetch an entry from the transposition table. Returns false if no
-// entry is found.
-inline bool
-Search_Engine :: tt_fetch (uint64 hash, TT_Entry &out) {
-#if ENABLE_TRANS_TABLE
-  Trans_Table :: iterator i = tt.find (hash);
-  if (i != tt.end ())
-    {
-      i -> second.age = 0;
-      out = i -> second;
-      return true;
-    }
-  else
-#endif // ENABLE_TRANS_TABLE
-    {
-      return false;
-    }
 }
 
 // Update the transposition table with the results of a call to
@@ -869,36 +841,22 @@ Search_Engine :: tt_update
 #if ENABLE_TRANS_TABLE
   assert (alpha <= beta);
 
-  // Throw away cache when it gets too big.
-  if (tt.size () > 4 * 1024 * 1024) 
-    tt.clear ();
-
   // This rule seems to work well in practice.
   if (pv.count == 0) return;
 
-  Trans_Table :: iterator i = tt.find (b.hash);
-  bool entry_is_new = (i == tt.end ());
-
-  // Insert an element if it's new.
-  if (entry_is_new)
-    {
-      Trans_Table :: value_type val (b.hash, TT_Entry ());
-      i = tt.insert (val).first;
-    }
-
   // Determine the kind of value we are recording.
-  Node_Type type;
+  SKind skind;
   if (s >= beta) 
     {
-      type = LOWERBOUND;
+      skind = LOWER_BOUND;
     }
   else if (s <= alpha)
     {
-      type = UPPERBOUND;
+      skind = UPPER_BOUND;
     }
   else
     {
-      type = EXACT_VALUE;
+      skind = EXACT_VALUE;
     }
 
   // The case of putting a mate score in the cache has to be treated
@@ -911,27 +869,27 @@ Search_Engine :: tt_update
     }
 
   // Use an 'always replace' scheme.
+  Move m;
   if (pv.count > 0) 
     {
-      i -> second.move = pv[0];
+      m = pv[0];
     }
   else
     {
-      i -> second.move = NULL_MOVE;
+      m = NULL_MOVE;
     }
-  i -> second.score = s;
-  i -> second.depth = depth;
-  i -> second.type = type;
-  i -> second.age = 0;
 
+  // Store this entry.
+  tt.set (b, skind, m, s, depth);
 #endif // ENABLE_TRANS_TABLE
 }
 
+#if 0
 // Extend the principal variation from the transposition table, if
 // possible.
 inline void
 Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
-#ifdef ENABLE_TRANS_TABLE
+#if ENABLE_TRANS_TABLE
   Trans_Table :: iterator h;
   Board c = b;
 
@@ -943,13 +901,16 @@ Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
   // we end up with a ridiculously long move list, assume that there's
   // a loop in the table and bail out.
   while ((h = tt.find (c.hash)) != tt.end () && 
-         h -> second.type == EXACT_VALUE && h -> second.move != NULL_MOVE)
+         h -> second.skind == EXACT_VALUE && h -> second.move != NULL_MOVE)
     {
       pv.push (h -> second.move);
       c.apply (h -> second.move);
+      if (pv.count > 50) 
+        break;
     }
 #endif // ENABLE_TRANS_TABLE
 }
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 // Repetition tables.                                                 //
@@ -1032,22 +993,20 @@ Search_Engine :: is_triple_rep (const Board &b) {
 void
 Search_Engine :: poll () {
   uint64 clock = mclock ();
-
   if (controls.deadline > 0 && clock >= controls.deadline)
     {
       controls.interrupt_search = true;
     }
 }
 
-
-// Set fixed time per move in milliseconds.
+// Set fixed depth per move.
 void
 Search_Engine :: set_fixed_depth (int depth) {
   controls.fixed_depth = depth;
   return;
 }
 
-// Set fixed depth per move.
+// Set fixed time per move in milliseconds.
 void
 Search_Engine :: set_fixed_time (int time) {
   controls.mode = EXACT;
@@ -1164,10 +1123,10 @@ Search_Engine :: post_after () {
   cout << endl;
 
   // Display statistics on transposition table hit rate.
-  double hit_rate = (double) tt_hits / (tt_hits + tt_misses);
+  double hit_rate = (double) tt.hits / (tt.hits + tt.misses);
   cout << "tt hit rate " << hit_rate * 100 << "%, ";
-  // Display transposition table size.
-  cout << "tt entries " << tt.size () << ", ";
+  double coll_rate = (double) tt.collisions / tt.writes;
+  cout << "coll rate " << coll_rate * 100 << "%, ";
 
   // Display nodes per second.
   uint64 total_nodes = 0;
@@ -1179,10 +1138,10 @@ Search_Engine :: post_after () {
 
   if (total_time > 0) 
     {
-      cerr << total_nodes / total_time << " knps." << endl;
+      cout << total_nodes / total_time << " knps." << endl;
     }
   else
     {
-      cerr << 0 << " knps." << endl;
+      cout << "? knps." << endl;
     }
 }

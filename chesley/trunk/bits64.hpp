@@ -14,7 +14,7 @@
 #define _BITS64_
 
 #include <iostream>
-#include "types.hpp"
+#include "common.hpp"
 #include "util.hpp"
 
 typedef uint64 bits64;

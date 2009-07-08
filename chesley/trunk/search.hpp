@@ -19,6 +19,7 @@
 #include <boost/unordered_map.hpp>
 #include "board.hpp"
 #include "eval.hpp"
+#include "ttable.hpp"
 
 // Supported time keeping modes.
 enum time_mode { CONVENTIONAL, ICS, EXACT };
@@ -29,10 +30,10 @@ struct Search_Engine {
   // Constants. //
   ////////////////
 
-  // Transposition table size in entries.
-  static const uint32 TT_SIZE = 2.5 * 1000 * 1000;
+  // Transposition table size in entries. This should be a power of 2.
+  static const uint32 TT_SIZE = 4 * 1024 * 1024;
 
-  // Default fixed time per move in milliseconds.
+  // Default timeout to use if none has been set.
   static const uint32 DEFAULT_TIMEOUT = 1 * 1000;
 
   // Maximum search depth. 
@@ -42,7 +43,7 @@ struct Search_Engine {
   // Constructors and initialization. //
   //////////////////////////////////////
 
-  Search_Engine () {
+  Search_Engine () : tt (TT_SIZE) {
     reset ();
   }
 
@@ -80,8 +81,6 @@ struct Search_Engine {
   void clear_statistics () {
     calls_to_search = 0;
     calls_to_qsearch = 0;
-    tt_hits = 0;
-    tt_misses = 0;
     memset (hist_pv, 0, sizeof (hist_pv));
     memset (calls_at_ply, 0, sizeof (calls_at_ply));
   }
@@ -90,21 +89,8 @@ struct Search_Engine {
   // Transposition and repetition tables. //
   //////////////////////////////////////////
 
-  // Transposition table entry.
-  enum Node_Type { LOWERBOUND, UPPERBOUND, EXACT_VALUE };
-  struct TT_Entry {
-    Move move;
-    Score score;
-    Node_Type type;
-    int32 depth;
-    int32 age;
-  };
-
-  // Transposition table type.
-  typedef boost::unordered_map <hash_t, TT_Entry> Trans_Table;
-
   // Transposition table instance.
-  Trans_Table tt;
+  TTable tt;
 
   // Try to get a move or tighten the window from the transposition
   // table, returning true if we found a move we can return at this
@@ -119,17 +105,16 @@ struct Search_Engine {
   (const Board &b, int32 depth, int32 ply,
    const Move_Vector &pv, Score s, int32 alpha, int32 beta);
 
-  // Fetch a transposition table entry.
-  inline bool tt_fetch (uint64 hash, TT_Entry &out);
-
   // A table type mapping from a 64-bit key to a repetition count.
   typedef boost::unordered_map <hash_t, int> Rep_Table;
 
   // Fetch a move from the transposition table.
   inline Move tt_move (const Board &b);
 
+#if 0
   // Extend the principal variation from the transposition table.
   inline void tt_extend_pv (const Board &b, Move_Vector &pv);
+#endif
 
   // The repetition table.
   Rep_Table rt;
@@ -234,11 +219,6 @@ struct Search_Engine {
   static const int hist_nbuckets = 10;
   uint32 hist_pv [hist_nbuckets];
 
-  // Count the number of times we hit and miss entries in the
-  // transposition table.
-  uint64 tt_hits;
-  uint64 tt_misses;
-
   ///////////////////////////////////
   // Hierarchy of search routines. //
   //////////////////////////////////
@@ -292,7 +272,6 @@ struct Search_Engine {
 
   // Killer moves.
   Move killers[MAX_DEPTH][2];
-
 };
 
 #endif // _SEARCH_

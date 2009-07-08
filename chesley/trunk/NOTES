@@ -1,123 +1,28 @@
-Release 1.0 baseline:
+Baseline:
 
-Chesley the Chess Engine! (Release 1.0)
-
-Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
-Chesley is free software, distributed under the GNU General Public License.
-> bench 15
-Move 1:0
-Ply    Eval    Time    Nodes   Principal Variation
-  1      52    0.00       68   Nf3 
-  2      -1    0.00      274   Nc3 Nf6 
-  3      50    0.00      372   Nc3 Nf6 Nf3 
-  4       2    0.01     5984   Nf3 Nc6 Nc3 Nf6 
-  5      39    0.00     2733   Nf3 Nc6 Nc3 Nf6 e4 
-  6      -2    0.03    50132   Nf3 Nf6 Nc3 
-  7      33    0.01    22257   Nf3 Nf6 Nc3 d5 d3 
-  8       8    0.10   155642   Nf3 
-  9      21    0.07   107486   Nf3 Nf6 e3 Nc6 Nc3 e6 d4 
- 10      15    0.35   536977   Nf3 Nf6 e3 Nc6 Nc3 e5 d4 d6 dxe5 Nxe5 
- 11      22    0.55   842461   Nf3 Nc6 e3 
- 12      29    2.91  4078706   Nf3 e6 e3 Nf6 Bb5 Bd6 Nc3 Nc6 O-O 
- 13      19   11.12 15423026   e4 d5 exd5 Nf6 Bb5+ Bd7 Bxd7+ Qxd7 Nf3 Nxd5 O-O Nc6 d3 O-O-O 
- 14      24    5.96  7856025   e4 d5 exd5 Nf6 Bb5+ Nbd7 Nf3 Nxd5 O-O a6 Bc4 N5b6 Bd3 Nc5 Be2 
- 15      28   28.04 31911339   e4 d5 e5 Nc6 
-
-pv hist: 76.31% 11.30% 4.76% 2.48% 1.46% 1.11% 0.88% 0.66% 0.56% 0.48% 
-tt hit rate: 6.42%
-tt entries: 929018
-
-Baseline r194:
-
-Chesley the Chess Engine! (svn r194:195M)
+Chesley the Chess Engine! (svn r200:201M)
 
 Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
 Chesley is free software, distributed under the GNU General Public License.
-> bench 15
-Move 1:0
+> bench 14
+w:1:0
 Ply    Eval    Time    Nodes   Principal Variation
-  1      50    0.00       64   Nc3 
-  2       0    0.00      190   Nc3 Nc6 
-  3      50    0.00      382   Nc3 Nc6 Nf3 
-  4       0    0.01     5606   Nc3 Nc6 Nf3 Nf6 
-  5      38    0.00     3139   Nc3 Nc6 Nf3 Nf6 d4 
-  6       0    0.03    41724   Nc3 Nc6 Nf3 Nf6 d4 d5 
-  7      35    0.01    23316   Nc3 Nc6 Nf3 Nf6 d4 d5 e3 
-  8      10    0.17   274478   Nf3 
-  9      20    0.08   131508   Nf3 Nc6 Nc3 d5 d4 Nf6 e3 e6 Bd3 
- 10      17    0.24   383308   Nf3 Nc6 Nc3 Nf6 e3 e5 d4 d6 dxe5 Nxe5 
- 11      17    0.36   591541   Nf3 Nc6 Nc3 Nf6 e3 e5 d4 e4 Ne5 Bd6 Nc4 
- 12      33    1.95  3021152   Nf3 Nc6 d4 Nf6 e3 e6 Bd3 Bd6 Nc3 O-O O-O Qe7 
- 13      26   11.57 16557481   e4 d5 exd5 Nf6 Nf3 Nxd5 Be2 e6 O-O 
- 14      20    6.52  8066879   e4 d5 exd5 Nf6 Nf3 Nxd5 Be2 e6 O-O Nc6 Nc3 Bc5 Ne4 Bb6 
- 15      27   32.31 34865577   e4 d5 e5 Nc6 
+  1      50    0.00       67   Nc3 
+  2       0    0.00      293   Nc3 Nc6 
+  3      50    0.00      314   Nc3 Nc6 Nf3 
+  4       0    0.00     5408   Nc3 Nc6 Nf3 Nf6 
+  5      38    0.00     3104   Nc3 Nc6 Nf3 Nf6 d4 
+  6       0    0.05    40763   Nc3 Nc6 Nf3 Nf6 d4 d5 
+  7      35    0.03    22836   Nc3 Nc6 Nf3 Nf6 d4 d5 e3 
+  8      20    0.07    98588   e4 Nc6 Nf3 d5 exd5 
+  9      17    0.11   112248   e4 Nc6 Nf3 Nf6 d3 d5 Nc3 e5 Be3 
+ 10      17    0.57   871102   e4 e6 Nc3 Ne7 Nf3 d5 Bd3 dxe4 Nxe4 f5 Bb5+ 
+ 11      19    0.44   675872   e4 e6 Nc3 Nc6 Nf3 
+ 12      29    5.26  8010734   d4 Nf6 Nf3 
+ 13      29    2.85  4853091   Nf3 Nf6 
+ 14      31   25.58 42855023   e4 e6 Nf3 
 
-pv hist: 76.18% 11.58% 4.58% 2.43% 1.48% 1.14% 0.94% 0.66% 0.54% 0.46% 
-tt hit rate: 6.33%
-tt entries: 991013
+pv hist: 78.04% 10.33% 4.18% 2.14% 1.46% 1.14% 0.90% 0.75% 0.60% 0.45% 
+tt hit rate 4.21%, coll rate 9.91%, 1646 knps.
 
-Hash moveless scores, prune depth 0 positions:
-
-Chesley the Chess Engine! (svn r194:195M)
-
-Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
-Chesley is free software, distributed under the GNU General Public License.
-> bench 15
-Move 1:0
-Ply    Eval    Time    Nodes   Principal Variation
-  1      50    0.00       64   Nc3 
-  2       0    0.00      523   Nc3 Nc6 
-  3      50    0.00      567   Nc3 Nc6 Nf3 
-  4       0    0.01     5794   Nc3 Nc6 Nf3 Nf6 
-  5      38    0.00     4984   Nc3 Nc6 Nf3 Nf6 d4 
-  6       0    0.03    41575   d4 Nf6 Nc3 Nc6 Nf3 d5 
-  7      35    0.02    36197   d4 d5 Nc3 Nc6 Nf3 Nf6 e3 
-  8      17    0.04    66964   d4 d5 Bf4 Nf6 Nc3 a5 Nf3 Nc6 
-  9      15    0.09   127534   d4 d5 Bf4 Nf6 Nc3 Nh5 Be5 Nc6 Nf3 
- 10      13    0.48   686261   d4 e6 e4 Nc6 Nc3 Nge7 Nf3 d5 Be3 dxe4 
- 11      26    1.68  2343451   Nf3 Nc6 d4 Nf6 e3 e6 
- 12      28    0.81  1019713   Nf3 Nc6 d4 Nf6 e3 e6 Be2 Bd6 
- 13      21    7.46 10068340   e4 Nc6 
- 14      21    9.84 12976352   e4 d5 exd5 Nf6 c4 e6 
- 15      36   78.57 75102271   e4 e6 Nf3 
-
-pv hist: 76.12% 12.53% 4.47% 2.18% 1.27% 0.94% 0.77% 0.69% 0.56% 0.46% 
-tt hit rate: 17.66%
-tt entries: 7858157
-
-Hash moveless scores, prune depth 0, 1 positions:
-
-gingell$ ./chesley
-Chesley the Chess Engine! (svn r194:195M)
-
-Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
-Chesley is free software, distributed under the GNU General Public License.
-> bench 15
-Move 1:0
-Ply    Eval    Time    Nodes   Principal Variation
-  1      50    0.00       64   Nc3 
-  2       0    0.00      677   Nc3 Nc6 
-  3      50    0.00      612   Nc3 Nc6 Nf3 
-  4       0    0.01     7314   Nc3 Nc6 Nf3 Nf6 
-  5      38    0.01     6364   Nc3 Nc6 Nf3 Nf6 d4 
-  6       0    0.03    51016   d4 Nf6 Nc3 Nc6 Nf3 d5 
-  7      35    0.04    59500   d4 d5 Nc3 Nc6 Nf3 Nf6 e3 
-  8      17    0.06    89414   d4 d5 Nc3 Nf6 Bf4 a5 Nf3 Nc6 
-  9      15    0.10   156106   d4 d5 Nc3 Nf6 Bf4 Nh5 Be5 Nc6 Nf3 
- 10      20    0.14   221520   d4 d5 Nc3 Nf6 e3 Nc6 Nf3 a5 Ne5 Nxe5 
- 11      18    0.78  1233561   d4 e6 e3 
- 12      33    1.35  2083085   d4 e6 e3 Nc6 Nf3 Nf6 Bd3 Bd6 Nc3 O-O O-O Qe7 
- 13      20    4.79  7102050   d4 e6 e3 Nf6 Nf3 Be7 Nc3 Nc6 Bd3 d5 O-O O-O Bd2 
- 14      32   39.34 50813908   e4 Nf6 e5 
- 15      33   21.09 22568462   e4 Nf6 e5 Nd5 c4 Nb4 
-
-pv hist: 74.22% 13.49% 5.24% 2.32% 1.25% 0.91% 0.79% 0.69% 0.60% 0.52% 
-tt hit rate: 6.91%
-tt entries: 1229746
-> 
-
-
-
-
-quit
-
+1861 knps.

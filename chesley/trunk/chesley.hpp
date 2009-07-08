@@ -20,7 +20,7 @@
 #include "eval.hpp"
 #include "search.hpp"
 #include "session.hpp"
-#include "types.hpp"
+#include "common.hpp"
 #include "util.hpp"
 
 #define ENGINE_ID_STR        "Chesley the Chess Engine!"

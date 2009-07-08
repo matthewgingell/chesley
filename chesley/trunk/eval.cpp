@@ -23,7 +23,7 @@ using namespace std;
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
-int8 const Eval::centrality_table[64] =
+const int8 Eval::centrality_table[64] =
   {
    1, 1, 1, 1, 1, 1, 1, 1,
    1, 2, 2, 2, 2, 2, 2, 1,
@@ -45,7 +45,7 @@ int8 const Eval::centrality_table[64] =
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
 
-static const int8 xfrm[2][64] = 
+const int8 Eval::xfrm[2][64] = 
 {
   // Transformation for white.
   {
@@ -72,7 +72,7 @@ static const int8 xfrm[2][64] =
   }
 };
 
-static const int8 piece_square_table[6][64] =
+const int8 Eval::piece_square_table[6][64] =
 {
   // Pawns
   {
@@ -135,7 +135,8 @@ static const int8 piece_square_table[6][64] =
   }
 };
 
-static const int8 king_square_table[3][64] =
+const int8 
+Eval::king_square_table[3][64] =
 {
   // Kings in the opening.
   {
@@ -174,19 +175,10 @@ static const int8 king_square_table[3][64] =
   }
 };
 
-Score 
-psq_value (const Board &b, const Move &m) {
-  if (m.kind == KING) return 0;
-  return 
-    piece_square_table[m.get_kind()][xfrm[b.to_move()][m.to]] -
-    piece_square_table[m.get_kind()][xfrm[b.to_move()][m.from]];
-}
-
 // Evaluate a positional strength based on the preceding table.
 Score
-sum_piece_squares (const Board &b, const Phase p) {
+sum_piece_squares (const Board &b) {
   Score bonus = 0;
-
   for (Color c = WHITE; c <= BLACK; c++)
     {
       bitboard all = b.color_to_board (c);
@@ -199,18 +191,9 @@ sum_piece_squares (const Board &b, const Phase p) {
           while (pieces)
             {
               bonus += s *
-                piece_square_table[k][xfrm[c][bit_idx (pieces)]];
+                Eval::piece_square_table[k][Eval::xfrm[c][bit_idx (pieces)]];
               pieces = clear_lsb (pieces);
             }
-        }
-
-      // Do the king
-      bitboard pieces = all & b.kind_to_board (KING);
-      while (pieces)
-        {
-          bonus += s * 
-            king_square_table[p][xfrm[c][bit_idx (pieces)]];
-          pieces = clear_lsb (pieces);
         }
     }
   return bonus;

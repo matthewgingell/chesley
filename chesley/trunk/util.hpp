@@ -22,7 +22,7 @@
 #include <sys/time.h>
 #include <vector>
 
-#include "types.hpp"
+#include "common.hpp"
 
 extern char *arg0;
 

@@ -1,51 +1,106 @@
+////////////////////////////////////////////////////////////////////////////////
+// ttable.cpp                                                                 //
+//                                                                            //
+// The transposition table data type.                                         //        
+//                                                                            //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+#ifndef _TTABLE_
+#define _TTABLE_
+
 #include <cassert>
 #include <stdlib.h>
 #include <unistd.h>
-#include "types.hpp"
+#include "common.hpp"
+#include "move.hpp"
 
-struct Trans_Table
+struct TTable
 {
+  // Initialize the table, defaulting to one million entries.
+  TTable (size_t sz = 1 << 20) : 
+    sz (sz), hits (0), misses (0), writes (0), collisions (0) {
+    table = (Entry *) calloc (sz, sizeof (Entry));
+  }
+
+  // An entry in the hash table.
   struct Entry {
     hash_t key;
-    int32_t depth, from, to, upperbound, lowerbound;
+    Move   move;
+    Score  score;
+    int    depth;
+    SKind  skind;
   };
 
-  Trans_Table (size_t sz = 10 * 1024 * 1024) : sz (sz) {
-    lookups = collisions = 0;
-    table = (Entry *) calloc (sz, sizeof (Entry));
-    assert (table);
-  }
-
+  // Clear the entire table.
   void clear () {
-    free (table);
-    table = (Entry *) calloc (sz, sizeof (Entry));
-    assert (table);
+    hits = misses = collisions = writes = 0;
+    memset (table, 0, sz * sizeof (Entry));
   }
 
-  size_t find_slot (hash_t key) {
-    size_t i = key % sz;
-    lookups++;
-    while (i < sz)
+  // Set an entry by key.
+  void set
+  (const Board &b, SKind k, Move m, Score s, int d) {
+    Entry &e = table[b.hash % sz];
+    
+    // Collect statistics.
+    writes++;
+    if (e.key != 0 && e.key != b.hash)
+      collisions++;
+
+    e.key = b.hash;
+    e.move = m;
+    e.score = s;
+    e.depth = d;
+    e.skind = k;
+  }
+
+  // Find an entry by key.
+  SKind 
+  lookup (const Board &b, Move &m, Score &s, int &d) {
+    Entry &e = table[b.hash % sz];
+    if (e.key == b.hash && e.skind != NULL_SKIND) 
       {
-        if (table [i].key == 0 || table [i].key == key) return i;
-        collisions++;
-        i++;
+        hits++;
+        m = e.move;
+        s = e.score;
+        d = e.depth;
+        return e.skind;
       }
-
-    return 0;
+    else
+      {
+        misses++;
+        return NULL_SKIND;
+      }
   }
 
-  void store (hash_t key, Entry &e) {
-    table[find_slot (key)] = e;
+  // Fetch the move, if any, associated with this position.
+  Move get_move (const Board &b) {
+    Entry &e = table[b.hash % sz];
+    if (e.key == b.hash && e.skind != NULL_SKIND)
+      {
+        hits++;
+        return e.move;
+      }
+    else
+      {
+        misses++;
+        return NULL_MOVE;
+      }
   }
-
-  bool fetch (hash_t key, Entry &e) {
-    e = table[find_slot (key)];
-    return (e.key != 0);
-  }
-
-  int lookups;
-  int collisions;
+  
+  // Data.
   size_t sz;
   Entry *table;
+
+  // Statistics.
+  uint64 hits;
+  uint64 misses;
+  uint64 writes;
+  uint64 collisions;
 };
+
+#endif // _TTABLE_
