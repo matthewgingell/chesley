@@ -13,7 +13,7 @@
 #ifndef _MOVE_
 #define _MOVE_
 
-#include "types.hpp"
+#include "common.hpp"
 #include "util.hpp"
 
 ///////////////////////

@@ -14,6 +14,7 @@
 #include <sstream>
 
 #include "chesley.hpp"
+#include "eval.hpp"
 
 using namespace std;
 
@@ -145,6 +146,10 @@ Board::common_init (Board &b) {
 
   // Initialize history.
   b.last_move = NULL_MOVE;
+
+  // Initialize scoring information.
+  memset (b.material, 0, sizeof (b.material));
+  memset (b.psquares, 0, sizeof (b.psquares));
 }
 
 // Construct a board from the standard starting position.
@@ -194,6 +199,82 @@ Board::set_castling_right (Castling_Right cr, bool v) {
         }
       break;
     }
+}
+
+//////////////////////////////////////
+// Setting and updating the board.  //
+//////////////////////////////////////
+
+
+// Clear a piece on the board.
+void
+Board::clear_piece (coord idx) {
+  if (occupied & masks_0[idx])
+    {
+      Color c = get_color (idx);
+      Kind k = get_kind (idx);
+      clear_piece (idx, c, k);
+    }
+}
+
+void
+Board::clear_piece (coord idx, Color c, Kind k) {
+  if (occupied & masks_0[idx])
+    {
+      assert (k != NULL_KIND);
+      assert (c == BLACK || c == WHITE);
+      assert (idx < 64);
+
+      // Clear color and piece kind bits.
+      color_to_board (c) &= ~masks_0[idx];
+      kind_to_board (k) &= ~masks_0[idx];
+
+      // Update hash key.
+      hash ^= get_zobrist_piece_key (c, k, idx);
+
+      // Update evaluation information.
+      material[c] -= eval_piece (k);
+      psquares[c] -= psq_value (k, c, idx);
+
+      // Clear the occupancy sets.
+      occupied     &= ~masks_0[idx];
+      occupied_45  &= ~masks_45[idx];
+      occupied_90  &= ~masks_90[idx];
+      occupied_135 &= ~masks_135[idx];
+    }
+}
+
+// Set a piece on the board with an index.
+void
+Board::set_piece (Kind k, Color c, coord idx) {
+  assert (~occupied & masks_0[idx]);
+  assert (k != NULL_KIND);
+  assert (c == BLACK || c == WHITE);
+  assert (idx < 64);
+
+  // Update color and piece sets.
+  color_to_board (c) |= masks_0[idx];
+  kind_to_board (k) |= masks_0[idx];
+
+  // Update hash key.
+  hash ^= get_zobrist_piece_key (c, k, idx);
+
+  // Update evaluation information.
+  material[c] += eval_piece (k);
+  psquares[c] += psq_value (k, c, idx);
+
+  // Update occupancy sets.
+  occupied |= masks_0[idx];
+  occupied_45 |= masks_45[idx];
+  occupied_90 |= masks_90[idx];
+  occupied_135 |= masks_135[idx];
+}
+
+
+// Set a piece on the board with a row and file.
+void
+Board::set_piece (Kind kind, Color color, int row, int file) {
+  set_piece (kind, color, file + 8 * row);
 }
 
 ///////////////////////

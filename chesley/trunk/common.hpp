@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-// types.hpp                                                                  //
+// common.hpp                                                                  //
 //                                                                            //
 // Various simple types.                                                      //
 //                                                                            //
@@ -10,8 +10,8 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __TYPES__
-#define __TYPES__
+#ifndef __COMMON__
+#define __COMMON__
 
 #include <stdint.h>
 
@@ -27,9 +27,6 @@ typedef uint8_t  byte;
 
 // Type for a number representing a square on the board.
 typedef uint32 coord;
-
-// Score type for a chess position.
-typedef int32 Score;
 
 // Hash type for a chess position.
 typedef uint64 hash_t;
@@ -93,4 +90,21 @@ Kind to_kind (char k);
 
 std::ostream & operator<< (std::ostream &os, Kind k);
 
-#endif // __TYPES__
+////////////////////////////
+// Score type and kinds.  //
+////////////////////////////
+
+// Score type for a chess position.
+typedef int32 Score;
+
+enum SKind {
+  NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 
+};
+
+////////////////////////////////
+// Position evaluation types. //
+////////////////////////////////
+
+enum Phase { OPENING, MIDGAME, ENDGAME };
+
+#endif // __COMMON__
