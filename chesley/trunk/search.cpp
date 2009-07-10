@@ -401,6 +401,7 @@ Search_Engine :: search
       {
         int cs;
         Board c = b;
+        bool c_in_check = c.in_check (c.to_move());
         Move_Vector cpv;
 
         // Skip this move if it's illegal.
@@ -414,13 +415,14 @@ Search_Engine :: search
         ////////////////////////
 
         // Check extensions.
-        if (in_check) 
+        if (in_check)
           ext += 1;
-
+#if 0
         // Recapture extensions.
         if (b.last_move.get_capture() != NULL_KIND && 
             moves[mi].to == b.last_move.to)
           ext += 1;
+#endif
         
         // Pawn to seventh rank extensions.
         int rank = Board :: idx_to_rank (moves[mi].to);
@@ -441,7 +443,11 @@ Search_Engine :: search
         // with a reduced depth search.
         const Score RAZORING_MARGIN = 10 * PAWN_VAL;
         Score upperbound = meval + RAZORING_MARGIN;
-        if (ply > 0 && depth == 2 && ext == 0 && upperbound <= alpha)
+        if (ply > 0 && 
+            depth == 2 && 
+            ext == 0 && 
+            !c_in_check &&
+            upperbound <= alpha)
           {
             depth = 1;
           }
@@ -453,9 +459,15 @@ Search_Engine :: search
         // At frontier nodes we estimate the most this move could
         // reasonably improve the score of the position, and if it
         // still isn't better than alpha we skip it.
-        const Score FUTILITY_MARGIN = 2 * PAWN_VAL;
-        upperbound = meval + FUTILITY_MARGIN + eval_capture (moves[mi]);
-        if (ply > 0 && depth == 1 && ext == 0 && upperbound <= alpha)
+        const Score FUTILITY_MARGIN = 3 * PAWN_VAL;
+        upperbound = meval + FUTILITY_MARGIN;
+        if (ply > 0 
+            && depth == 1
+            && ext == 0 
+            && !in_check
+            && !c_in_check
+            && moves[mi].get_capture () == NULL
+            && upperbound < alpha)
           {
             continue;
           }
@@ -466,9 +478,15 @@ Search_Engine :: search
 
         // This is exactly like normal futility pruning, just at
         // pre-frontier nodes with a bigger margin.
-        const Score EXT_FUTILITY_MARGIN = 6 * PAWN_VAL;
-        upperbound = meval + EXT_FUTILITY_MARGIN + eval_capture (moves[mi]);
-        if (ply > 0 && depth == 2 && ext == 0 && upperbound <= alpha && beta)
+        const Score EXT_FUTILITY_MARGIN = 5 * PAWN_VAL;
+        upperbound = meval + EXT_FUTILITY_MARGIN;
+        if (ply > 0
+            && depth == 2
+            && ext == 0
+            && !in_check
+            && !c_in_check
+            && moves[mi].get_capture () == NULL
+            && upperbound < alpha)
           {
             continue;
           }
@@ -483,7 +501,7 @@ Search_Engine :: search
         const int Reduction_Limit = 3;
         if (mi >= Full_Depth_Count && 
             depth >= Reduction_Limit &&
-            ext == 0 && 
+            ext == 0 && !c_in_check && 
             moves[mi].get_capture () == NULL_KIND)
           {
             int ds;
