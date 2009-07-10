@@ -20,7 +20,7 @@ using namespace std;
 Score 
 Eval::score () {
   Score score = 0;
-  phase = get_phase (b);
+  phase = get_phase ();
 
   // Draw detection.
   if (is_draw ()) return 0;
@@ -31,17 +31,17 @@ Eval::score () {
   // Add net piece square values.
   score += b.psquares[WHITE] - b.psquares[BLACK];
 
+  // Evaluate pawn structure.
+  score += eval_pawns (WHITE) - eval_pawns (BLACK);
+
   // Evaluate the king.
   score += eval_king (WHITE) - eval_king (BLACK);
-
-  // Reward rooks and queens on open files.
-  score += eval_files (WHITE) - eval_files (BLACK);
 
   // Evaluate bishops.
   score += eval_bishops (WHITE) - eval_bishops (BLACK);
 
-  // Evaluate pawn structure.
-  score += eval_pawns (WHITE) - eval_pawns (BLACK);
+  // Reward rooks and queens on open files.
+  score += eval_files (WHITE) - eval_files (BLACK);
 
   // Add a small random number for variety.
   score += random () % 5 - 2;
@@ -116,9 +116,9 @@ Eval::eval_bishops (const Color c) {
   // Provide a 5 point penalty for each obstructing pawn.
   s *= 5;
 
+
   // Provide a bonus for holding both bishops.
-  if (piece_counts[WHITE][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
-  if (piece_counts[BLACK][BISHOP] >= 2) s -= BISHOP_PAIR_BONUS;
+  if (piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
 
   return s;
 }
@@ -129,40 +129,48 @@ Eval::eval_bishops (const Color c) {
 
 Score 
 Eval::eval_pawns (const Color c) {
-  Score score = 0;
-  bitboard pawns = b.color_to_board (c) & b.pawns;
+  Score s = 0;
+  bitboard pawns = b.our_pawns (c);
+  bitboard stops = b.get_pawn_moves (c);
+  bitboard attacks = b.get_pawn_attacks (c);
+  bitboard forward = stops & attacks;
+  bitboard backward = stops & ~attacks;
+
+  const Score backwards_penalty[8] = { 8, 12, 14, 14, 14, 14, 12, 8 };
+  const Score isolated_penalty[8] = { 10, 15, 17, 17, 17, 17, 15, 10 };
+  const Score doubled_penalty[8] = { 10, 15, 17, 17, 17, 17, 15, 10 };
 
   while (pawns)
     {
-      int idx = bit_idx (pawns);
+      coord idx = bit_idx (pawns);
       int file = b.idx_to_file (idx);
 
-#if 0
-      // Penalize rook pawns.
-      if (file == 0 || file == 7)
-        {
-          score -= 15;
-        }
-
-      // Penalize doubled pawns.
-      if (pawn_counts[c][file] > 1)
-        {
-          score -= 20;
-        }
-#endif
+      // Normalize score. We would like the value of the 'average'
+      // pawn to stay pretty close to PAWN_VAL.
+      s += 25;
+      
+      // Penalize backwards pawns.
+      if (b.masks_0[idx] & backward) 
+        s -= backwards_penalty[file];
 
       // Penalize isolated pawns.
       if ((file == 0 && pawn_counts[c][1] == 0) ||
           (file == 7 && pawn_counts[c][6] == 0) ||
-          (pawn_counts[c][file - 1] == 0 && pawn_counts[c][file + 1] == 0))
-        {
-          score -= 5;
-        }
+          (pawn_counts[c][file - 1] + pawn_counts[c][file + 1] == 0))
+        s -= isolated_penalty[file];
 
+      // Penalize doubled pawns.
+      if (pawn_counts[c][file] > 1)
+        s -= doubled_penalty[file];
+   
       pawns = clear_lsb (pawns);
     }
 
-  return score;
+  // Apply a five point bonus for every pawn who's stop square is
+  // protected by a pawn.
+  s += 5 * pop_count (forward);
+
+  return s;
 }
 
 /////////////////////

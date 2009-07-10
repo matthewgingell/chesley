@@ -1,28 +1,14 @@
 Baseline:
 
-Chesley the Chess Engine! (svn r200:201M)
+Rank Name                                   Elo    +    - games score oppo. draws 
+   1 gnuchess.sh                             97   56   56   135   75%   -97   15% 
+   2 /homes/gingell/chesley/trunk/chesley   -97   56   56   135   25%    97   15% 
 
-Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
-Chesley is free software, distributed under the GNU General Public License.
-> bench 14
-w:1:0
-Ply    Eval    Time    Nodes   Principal Variation
-  1      50    0.00       67   Nc3 
-  2       0    0.00      293   Nc3 Nc6 
-  3      50    0.00      314   Nc3 Nc6 Nf3 
-  4       0    0.00     5408   Nc3 Nc6 Nf3 Nf6 
-  5      38    0.00     3104   Nc3 Nc6 Nf3 Nf6 d4 
-  6       0    0.05    40763   Nc3 Nc6 Nf3 Nf6 d4 d5 
-  7      35    0.03    22836   Nc3 Nc6 Nf3 Nf6 d4 d5 e3 
-  8      20    0.07    98588   e4 Nc6 Nf3 d5 exd5 
-  9      17    0.11   112248   e4 Nc6 Nf3 Nf6 d3 d5 Nc3 e5 Be3 
- 10      17    0.57   871102   e4 e6 Nc3 Ne7 Nf3 d5 Bd3 dxe4 Nxe4 f5 Bb5+ 
- 11      19    0.44   675872   e4 e6 Nc3 Nc6 Nf3 
- 12      29    5.26  8010734   d4 Nf6 Nf3 
- 13      29    2.85  4853091   Nf3 Nf6 
- 14      31   25.58 42855023   e4 e6 Nf3 
 
-pv hist: 78.04% 10.33% 4.18% 2.14% 1.46% 1.14% 0.90% 0.75% 0.60% 0.45% 
-tt hit rate 4.21%, coll rate 9.91%, 1646 knps.
+w/ backwards, isolated, norm 15.
 
-1861 knps.
+Rank Name                                   Elo    +    - games score oppo. draws 
+   1 gnuchess.sh                             59   46   46   176   66%   -59   18% 
+   2 /homes/gingell/chesley/trunk/chesley   -59   46   46   176   34%    59   18% 
+
+w/ backwards, isolated, doubled norm 25

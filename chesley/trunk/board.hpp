@@ -296,12 +296,81 @@ struct Board {
   }
 
   // Get a bitboard of pieces of some color.
-  bitboard get_pawns   (Color c) { return color_to_board (c) & pawns; }
-  bitboard get_rooks   (Color c) { return color_to_board (c) & rooks; }
-  bitboard get_knights (Color c) { return color_to_board (c) & knights; }
-  bitboard get_bishops (Color c) { return color_to_board (c) & bishops; }
-  bitboard get_queens  (Color c) { return color_to_board (c) & queens; }
-  bitboard get_kings   (Color c) { return color_to_board (c) & kings; }
+  bitboard our_pawns   (Color c) { return color_to_board (c) & pawns; }
+  bitboard our_rooks   (Color c) { return color_to_board (c) & rooks; }
+  bitboard our_knights (Color c) { return color_to_board (c) & knights; }
+  bitboard our_bishops (Color c) { return color_to_board (c) & bishops; }
+  bitboard our_queens  (Color c) { return color_to_board (c) & queens; }
+  bitboard our_kings   (Color c) { return color_to_board (c) & kings; }
+
+  // Get a bitboard of pawn moves, excluding attacks.
+  bitboard get_pawn_moves (Color c) const {
+    bitboard to;
+    switch (c) 
+      {
+      case WHITE: 
+        // Empty square on step forwards, or two empty squares from rank 2.
+        to = ((pawns & white) << 8) & unoccupied ();
+        to |= ((to & rank_mask (2)) << 8) & unoccupied (); 
+        break;
+
+      case BLACK: 
+        // Empty square on step forwards, or two empty squares from rank 2.
+        to = ((pawns & black) >> 8) & unoccupied ();
+        to |= ((to & rank_mask (5)) >> 8) & unoccupied ();
+        break;
+
+      default:
+        assert (0);
+      }
+
+    return to;
+  }
+
+  // Get a bitboard of squares attacked by pawns, including empties.
+  bitboard get_pawn_attacks (Color c) const {
+    bitboard to, from;
+
+    switch (c)
+      {
+      case WHITE:
+        // Pawns to move.
+        from = pawns & white;      
+
+        // Capture forward right, forward left.
+        to = ((pawns & white & ~file_mask (A)) << 7);
+        to |= ((pawns & white & ~file_mask (H)) << 9);
+
+        // En Passant.
+        if (flags.en_passant != 0 &&
+            ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
+             (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
+          to |= masks_0[flags.en_passant];
+
+        break;
+        
+      case BLACK:
+        // Pawns to move.
+        from = pawns & white;      
+
+        // Capture backward left, backward right, 
+        to = ((pawns & black & ~file_mask (H)) >> 7);
+        to |= ((pawns & black & ~file_mask (A)) >> 9);
+
+        // En Passant.
+        if (flags.en_passant != 0 &&
+            ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
+             (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
+          to |= masks_0[flags.en_passant];
+
+        break;
+
+      default:
+        assert (0);
+      }
+
+    return to;
+  }
 
   ///////////////////
   // Flags setters //
