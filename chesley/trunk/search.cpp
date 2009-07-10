@@ -157,7 +157,8 @@ Search_Engine :: iterative_deepening
           best_mate = max (abs (s_tmp), abs (best_mate));
         }
       
-      // Otherwise copy the principle variation back to the caller.
+      // Otherwise copy the principle variation back to the caller. If
+      // no move had been returned then there is a serious bug.
       if (pv_tmp.count == 0)
         {
           cerr << b.to_fen () << endl;
@@ -417,12 +418,11 @@ Search_Engine :: search
         // Check extensions.
         if (in_check)
           ext += 1;
-#if 0
+
         // Recapture extensions.
         if (b.last_move.get_capture() != NULL_KIND && 
             moves[mi].to == b.last_move.to)
           ext += 1;
-#endif
         
         // Pawn to seventh rank extensions.
         int rank = Board :: idx_to_rank (moves[mi].to);
@@ -654,12 +654,12 @@ Search_Engine :: order_moves
       // Apply capture bonuses.
       if (cap != NULL_KIND)
         {
-          if (eval_piece (cap) > eval_piece (kind))
-            scores[i] += 100 * eval_piece (cap);
-          else if (eval_piece (cap) == eval_piece (kind))
-            scores[i] += 50 * eval_piece (cap);
+          if (Eval::eval_piece (cap) > Eval::eval_piece (kind))
+            scores[i] += 100 * Eval::eval_piece (cap);
+          else if (Eval::eval_piece (cap) == Eval::eval_piece (kind))
+            scores[i] += 50 * Eval::eval_piece (cap);
           else
-            scores[i] += 25 * eval_piece (cap);
+            scores[i] += 25 * Eval::eval_piece (cap);
         }
 
       // Apply history table bonuses. The approach here is truly
@@ -692,7 +692,7 @@ Search_Engine :: order_moves
 
 Score
 Search_Engine :: see (const Board &b, const Move &m) {
-  Score s = eval_capture (m);
+  Score s = Eval::eval_capture (m);
 
   // Construct child position.
   Board c = b;
@@ -732,7 +732,7 @@ Search_Engine :: qsearch
   calls_to_qsearch++;
 
   // Do static evaluation at this node.
-  alpha = max (alpha, Eval (b).score (alpha, beta));
+  alpha = max (alpha, Eval (b).score ());
 
   // Recurse and minimax over children.
   if (alpha < beta)
@@ -752,7 +752,7 @@ Search_Engine :: qsearch
 #if ENABLE_SEE
           scores[i] = see (b, moves[i]);
 #else
-          scores[i] = eval_capture (moves[i]);
+          scores[i] = Eval::eval_capture (moves[i]);
 #endif
         }
       moves.sort (scores);

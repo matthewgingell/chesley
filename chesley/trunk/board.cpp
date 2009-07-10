@@ -233,8 +233,8 @@ Board::clear_piece (coord idx, Color c, Kind k) {
       hash ^= get_zobrist_piece_key (c, k, idx);
 
       // Update evaluation information.
-      material[c] -= eval_piece (k);
-      psquares[c] -= psq_value (k, c, idx);
+      material[c] -= Eval::eval_piece (k);
+      psquares[c] -= Eval::psq_value (k, c, idx);
 
       // Clear the occupancy sets.
       occupied     &= ~masks_0[idx];
@@ -260,8 +260,8 @@ Board::set_piece (Kind k, Color c, coord idx) {
   hash ^= get_zobrist_piece_key (c, k, idx);
 
   // Update evaluation information.
-  material[c] += eval_piece (k);
-  psquares[c] += psq_value (k, c, idx);
+  material[c] += Eval::eval_piece (k);
+  psquares[c] += Eval::psq_value (k, c, idx);
 
   // Update occupancy sets.
   occupied |= masks_0[idx];
