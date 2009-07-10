@@ -19,8 +19,6 @@
 
 #include "chesley.hpp"
 
-struct Eval;
-
 ////////////////////////////////////////////////
 // Material and feature evaluation constants. //
 ////////////////////////////////////////////////
@@ -167,9 +165,16 @@ struct Eval {
   }
     
   // Get the game phase.
-  static inline Phase get_phase (const Board &b) {
-    int count = (pop_count (b.rooks | b.queens | b.knights | b.bishops));
-    return (count <= 6) ? OPENING : ENDGAME;
+  inline Phase get_phase () {
+    if (major_counts [WHITE] + minor_counts [WHITE] <= 3 &&
+        major_counts [BLACK] + minor_counts [BLACK] <= 3)
+      {
+        return ENDGAME;
+      }    
+    else
+      {
+        return OPENING;
+      }
   }
 
   //////////////////////

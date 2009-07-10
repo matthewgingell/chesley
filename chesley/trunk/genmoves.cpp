@@ -491,22 +491,12 @@ Board::gen_captures (Move_Vector &moves) const
 bitboard
 Board::attack_set (Color c) const {
   bitboard color = c == WHITE ? white : black;
-  bitboard attacks = 0llu;
+  bitboard attacks;
   bitboard pieces;
   coord from;
 
   // Pawns
-  pieces = pawns & color;
-  if (c == WHITE)
-    {
-      attacks |= ((pieces & ~file_mask (A)) << 7);
-      attacks |= ((pieces & ~file_mask (H)) << 9);
-    }
-  else
-    {
-      attacks |= ((pieces & ~file_mask (A)) >> 9);
-      attacks |= ((pieces & ~file_mask (H)) >> 7);
-    }
+  attacks = get_pawn_attacks (c);
 
   // Rooks
   pieces = rooks & color;
@@ -589,20 +579,7 @@ Board::is_attacked (coord idx, Color c) const
     return true;
 
   // Are we attacked by a pawn?
-  bitboard attacks;
-  bitboard their_pawns = pawns & them;
-  if (c != WHITE)
-    {
-      attacks = (((their_pawns & ~file_mask (H)) >> 7)
-                 | ((their_pawns & ~file_mask (A)) >> 9));
-    }
-  else
-    {
-      attacks = (((their_pawns & ~file_mask (A)) << 7)
-                 | ((their_pawns & ~file_mask (H)) << 9));
-    }
-
-  if (attacks & masks_0[idx]) return true;
+  if (get_pawn_attacks (c) & masks_0[idx]) return true;
 
   return false;
 }
