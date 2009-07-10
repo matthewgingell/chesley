@@ -9,175 +9,196 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
-
 #include "chesley.hpp"
 
 using namespace std;
 
-//////////////////////////////////////////////////////////////////////
-//                                                                  //
-// centrality_table:                                                //
-//                                                                  //
-// This is a table reflects the relative value of locations on the  //
-// chess board based on their proximity to the center.              //
-//                                                                  //
-//////////////////////////////////////////////////////////////////////
+////////////////////////////////////
+// Top level evaluation function. //
+////////////////////////////////////
 
-const int8 Eval::centrality_table[64] =
-  {
-   1, 1, 1, 1, 1, 1, 1, 1,
-   1, 2, 2, 2, 2, 2, 2, 1,
-   1, 2, 4, 4, 4, 4, 2, 1,
-   1, 2, 4, 8, 8, 4, 2, 1,
-   1, 2, 4, 8, 8, 4, 2, 1,
-   1, 2, 4, 4, 4, 4, 2, 1,
-   1, 2, 2, 2, 2, 2, 2, 1,
-   1, 1, 1, 1, 1, 1, 1, 1
-  };
+Score 
+Eval::score () {
+  Score score = 0;
+  phase = get_phase (b);
 
-/////////////////////////////////////////////////////////////////////////
-//                                                                     //
-//  piece_square_table:                                                //
-//                                                                     //
-//  This is a table of bonuses for each piece-location pair. The table //
-//  is written in 'reverse' for readability and a transformation is    //
-//  required for fetching values for black and white.                  //
-//                                                                     //
-/////////////////////////////////////////////////////////////////////////
+  // Draw detection.
+  if (is_draw ()) return 0;
+  
+  // Generate a simple material score.
+  score += b.material[WHITE] - b.material[BLACK];
 
-const int8 Eval::xfrm[2][64] = 
-{
-  // Transformation for white.
-  {
-    56,  57,  58,  59,  60,  61,  62,  63,
-    48,  49,  50,  51,  52,  53,  54,  55,
-    40,  41,  42,  43,  44,  45,  46,  47,
-    32,  33,  34,  35,  36,  37,  38,  39,
-    24,  25,  26,  27,  28,  29,  30,  31,
-    16,  17,  18,  19,  20,  21,  22,  23,
-     8,   9,  10,  11,  12,  13,  14,  15,
-     0,   1,   2,   3,   4,   5,   6,   7
-  },
+  // Add net piece square values.
+  score += b.psquares[WHITE] - b.psquares[BLACK];
 
-  // Transformation for black.
-  {
-     0,   1,   2,   3,   4,   5,   6,   7,
-     8,   9,  10,  11,  12,  13,  14,  15,
-    16,  17,  18,  19,  20,  21,  22,  23,
-    24,  25,  26,  27,  28,  29,  30,  31,
-    32,  33,  34,  35,  36,  37,  38,  39,
-    40,  41,  42,  43,  44,  45,  46,  47,
-    48,  49,  50,  51,  52,  53,  54,  55,
-    56,  57,  58,  59,  60,  61,  62,  63,
-  }
-};
+  // Evaluate the king.
+  score += eval_king (WHITE) - eval_king (BLACK);
 
-const int8 Eval::piece_square_table[6][64] =
-{
-  // Pawns
-  {
-     0,   0,   0,   0,   0,   0,   0,   0,
-    70,  70,  70,  70,  70,  70,  70,  70,
-    10,  10,  20,  30,  30,  20,  10,  10,
-     5,   5,  10,  16,  16,  10,   5,   5,
-     3,   3,   3,  13,  13,   3,   3,   3,
-     1,   1,   1,  10,  10,   1,   1,   1,
-     0,   0,   0, -25, -25,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0
-  },
+  // Reward rooks and queens on open files.
+  score += eval_files (WHITE) - eval_files (BLACK);
 
-  // Rooks
-  {
-     0,   0,   0,   0,   0,   0,   0,   0,
-    50,  50,  50,  50,  50,  50,  50,  50,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0,
-     0,   0,   0,   0,   0,   0,   0,   0
-  },
+  // Evaluate bishops.
+  score += eval_bishops (WHITE) - eval_bishops (BLACK);
 
-  // Knights
-  {
-   -50, -40, -30, -30, -30, -30, -40, -50,
-   -40, -20,   0,   0,   0,   0, -20, -40,
-   -30,   0,  10,  15,  15,  10,   0, -30,
-   -30,   5,  15,  20,  20,  15,   5, -30,
-   -30,   0,  15,  20,  20,  15,   0, -30,
-   -30,   5,  10,  15,  15,  10,   5, -30,
-   -40, -20,   0,   5,   5,   0, -20, -40,
-   -50, -40, -30, -30, -30, -30, -40, -50
-  },
+  // Evaluate pawn structure.
+  score += eval_pawns (WHITE) - eval_pawns (BLACK);
 
-  // Bishops
-  {
-   -20, -10, -10, -10, -10, -10, -10, -20,
-   -10,   0,   0,   0,   0,   0,   0, -10,
-   -10,   0,   5,  10,  10,   5,   0, -10,
-   -10,   5,   5,  10,  10,   5,   5, -10,
-   -10,   0,  10,  10,  10,  10,   0, -10,
-   -10,  10,  10,  10,  10,  10,  10, -10,
-   -10,   5,   0,   0,   0,   0,   5, -10,
-   -20, -10, -10, -10, -10, -10, -10, -20
-  },
+  // Add a small random number for variety.
+  score += random () % 5 - 2;
+  
+  // Set the appropriate sign and return the score.
+  return sign (b.to_move ()) * score;
+}
 
-  // Queens
-  {
-   -20, -10, -10,  -5, -5, -10, -10, -20,
-   -10,   0,   0,   0,  0,   0,   0, -10,
-   -10,   0,   5,   5,  5,   5,   0, -10,
-    -5,   0,   5,   5,  5,   5,   0,  -5,
-     0,   0,   5,   5,  5,   5,   0,  -5,
-   -10,   0,   5,   5,  5,   5,   0, -10,
-   -10,   0,   0,   0,  0,   0,   0, -10,
-   -20, -10, -10,  -5, -5, -10, -10, -20
-  }
-};
+////////////////////////////////////////////////
+// Determine whether this position is a draw. //
+////////////////////////////////////////////////
 
-const int8 
-Eval::king_square_table[3][64] =
-{
-  // Kings in the opening.
-  {
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -20, -20, -20, -20, -20, -20, -20, -20,
-     0,  20,  40, -20,   0, -20,  40,  20
-  },
+// A very conservative evaluation of mating material.
+bool Eval::is_draw () {
+  return (piece_counts[WHITE][PAWN] == 0 && 
+          piece_counts[BLACK][PAWN] == 0 &&
+          major_counts[WHITE] == 0       && 
+          major_counts[BLACK] == 0       &&
+          minor_counts[WHITE] <= 1       &&
+          minor_counts[BLACK] <= 1);
+}
 
-  // Kings in the midgame.
-  {
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -40, -40, -40, -40, -40, -40, -40, -40,
-   -20, -20, -20, -20, -20, -20, -20, -20,
-     0,  20,  40, -20,   0, -20,  40,  20
-  },
+////////////////////////////////////////////////////////////
+// Evaluate score adjustments for pieces moving on files. //
+////////////////////////////////////////////////////////////
 
-  // Kings in the endgame.
-  {
-     0,  10,  20,  30,  30,  20,  10,   0,
-    10,  20,  30,  40,  40,  30,  20,  10,
-    20,  30,  40,  50,  50,  40,  30,  20,
-    30,  40,  50,  60,  60,  50,  40,  30,
-    30,  40,  50,  60,  60,  50,  40,  30,
-    20,  30,  40,  50,  50,  40,  30,  20,
-    10,  20,  30,  40,  40,  30,  20,  10,
-     0,  10,  20,  30,  30,  20,  10,   0
-  }
-};
+Score 
+Eval::eval_files (const Color c) {
+  Score score = 0;
+  bitboard pieces = b.color_to_board (c) & (b.queens | b.rooks);
 
-// Evaluate a positional strength based on the preceding table.
+  while (pieces)
+    {
+      int idx = bit_idx (pieces);
+      int file = b.idx_to_file (idx);
+      int pawn_count = pawn_counts[c][file];
+      if (pawn_count == 1) score += 25;
+      else if (pawn_count == 0) score += 50;
+      pieces = clear_lsb (pieces);
+    }
+
+  return score;
+}
+
+///////////////////////
+// Evaluate bishops. //
+///////////////////////
+
+Score 
+Eval::eval_bishops (const Color c) {
+  Score s = 0;
+  bitboard all = b.color_to_board (c);
+  bitboard pieces = all & b.bishops;
+  bitboard pawns = all & b.pawns;
+
+  // Provide a bonus when a bishop is not obstructed by pawns of
+  // its own color.
+  while (pieces)
+    {
+      int idx = bit_idx (pieces);
+      if (test_bit (Board::dark_squares, idx))
+        {
+          s -= pop_count (pawns & Board::dark_squares);
+        }
+      else
+        {
+          s -= pop_count (pawns & Board::light_squares);
+        }
+      pieces = clear_lsb (pieces);
+    }
+
+  // Provide a 5 point penalty for each obstructing pawn.
+  s *= 5;
+
+  // Provide a bonus for holding both bishops.
+  if (piece_counts[WHITE][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
+  if (piece_counts[BLACK][BISHOP] >= 2) s -= BISHOP_PAIR_BONUS;
+
+  return s;
+}
+  
+/////////////////////
+// Evaluate pawns. //
+/////////////////////
+
+Score 
+Eval::eval_pawns (const Color c) {
+  Score score = 0;
+  bitboard pawns = b.color_to_board (c) & b.pawns;
+
+  while (pawns)
+    {
+      int idx = bit_idx (pawns);
+      int file = b.idx_to_file (idx);
+
+#if 0
+      // Penalize rook pawns.
+      if (file == 0 || file == 7)
+        {
+          score -= 15;
+        }
+
+      // Penalize doubled pawns.
+      if (pawn_counts[c][file] > 1)
+        {
+          score -= 20;
+        }
+#endif
+
+      // Penalize isolated pawns.
+      if ((file == 0 && pawn_counts[c][1] == 0) ||
+          (file == 7 && pawn_counts[c][6] == 0) ||
+          (pawn_counts[c][file - 1] == 0 && pawn_counts[c][file + 1] == 0))
+        {
+          score -= 5;
+        }
+
+      pawns = clear_lsb (pawns);
+    }
+
+  return score;
+}
+
+/////////////////////
+// Evaluate kings. //
+/////////////////////
+
+Score 
+Eval::eval_king (const Color c) {
+  Score s = 0;
+  coord idx = bit_idx (b.kings & b.color_to_board (c));
+
+  // Provide a bonus for having castling or being able to castle.
+  if (c == WHITE)
+    {
+      if (b.flags.w_has_k_castled) s += 50;
+      else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) s += 10;
+    }
+  else
+    {
+      if (b.flags.b_has_k_castled) s += 50;
+      else if (b.flags.b_can_k_castle || b.flags.b_can_q_castle) s += 10;
+    }
+
+  // Add the phase specific king location score.
+  s += king_square_table[phase][xfrm[c][idx]];
+
+  return s;
+}
+
+
+/////////////////////////////////////////////////////////
+// Sum piece table values over white and black pieces. //
+/////////////////////////////////////////////////////////
+
 Score
-sum_piece_squares (const Board &b) {
+Eval::sum_piece_squares (const Board &b) {
   Score bonus = 0;
   for (Color c = WHITE; c <= BLACK; c++)
     {
@@ -197,4 +218,36 @@ sum_piece_squares (const Board &b) {
         }
     }
   return bonus;
+}
+
+/////////////////////////////////////////////////////////////////////////
+// Initialize material count table used in the rest of the evaluation. //
+/////////////////////////////////////////////////////////////////////////
+
+void 
+Eval::count_material () {
+  for (Color c = WHITE; c <= BLACK; c++)
+    {
+      // Count pieces.
+      bitboard all_pieces = b.color_to_board (c);
+      for (Kind k = PAWN; k < KING; k++)
+        {
+          int count = pop_count (all_pieces & b.kind_to_board (k));
+          piece_counts[c][k] = count;
+        }
+
+      // Count pawns by file.
+      for (int file = 0; file < 8; file++)
+        {
+          bitboard this_file = all_pieces & b.file_mask (file) & b.pawns;
+          pawn_counts[c][file] = pop_count (this_file);
+        }
+    }
+
+  // Count majors and minors.
+  for (Color c = WHITE; c <= BLACK; c++)
+    {
+      major_counts[c] = piece_counts[c][ROOK] + piece_counts[c][QUEEN];
+      minor_counts[c] = piece_counts[c][KNIGHT] + piece_counts[c][BISHOP];
+    }
 }
