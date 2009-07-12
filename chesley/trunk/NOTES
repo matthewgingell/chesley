@@ -1,14 +1,4 @@
-Baseline:
+Pawn test positions:
 
-Rank Name                                   Elo    +    - games score oppo. draws 
-   1 gnuchess.sh                             97   56   56   135   75%   -97   15% 
-   2 /homes/gingell/chesley/trunk/chesley   -97   56   56   135   25%    97   15% 
-
-
-w/ backwards, isolated, norm 15.
-
-Rank Name                                   Elo    +    - games score oppo. draws 
-   1 gnuchess.sh                             59   46   46   176   66%   -59   18% 
-   2 /homes/gingell/chesley/trunk/chesley   -59   46   46   176   34%    59   18% 
-
-w/ backwards, isolated, doubled norm 25
+setboard 8/6p1/7p/2p2P2/P7/1P6/8/8 w - - 0 1
+setboard 8/6p1/2p4p/8/P7/1P6/5P2/8 w - - 0 1

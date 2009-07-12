@@ -29,6 +29,7 @@
 
 bool Board::have_precomputed_tables = false;
 
+// Move generation tables.
 bitboard *Board::KNIGHT_ATTACKS_TBL;
 bitboard *Board::KING_ATTACKS_TBL;
 bitboard *Board::RANK_ATTACKS_TBL;
@@ -36,6 +37,7 @@ bitboard *Board::FILE_ATTACKS_TBL;
 bitboard *Board::DIAG_45_ATTACKS_TBL;
 bitboard *Board::DIAG_135_ATTACKS_TBL;
 
+// Rotated bitboard tables.
 bitboard *Board::masks_0;
 bitboard *Board::masks_45;
 bitboard *Board::masks_90;
@@ -53,6 +55,7 @@ byte *Board::diag_shifts_135;
 byte *Board::diag_bitpos_135;
 byte *Board::diag_widths_135;
 
+// Zobrist hashing tables.
 uint64 *Board::zobrist_piece_keys;
 uint64 *Board::zobrist_enpassant_keys;
 uint64  Board::zobrist_key_white_to_move;
@@ -60,6 +63,13 @@ uint64  Board::zobrist_w_castle_q_key;
 uint64  Board::zobrist_w_castle_k_key;
 uint64  Board::zobrist_b_castle_q_key;
 uint64  Board::zobrist_b_castle_k_key;
+
+// Tables used during evaluation.
+bitboard *Board::pawn_attack_spans[2];
+
+/////////////////////
+// Initialization. //
+/////////////////////
 
 // Bit masks for rotated coordinates.
 bitboard *init_masks_0 ();
@@ -91,6 +101,9 @@ bitboard *init_135d_attacks_tbl ();
 // Zobrist keys.
 static void init_zobrist_keys ();
 
+// Evaluation tables.
+static void init_pawn_attack_spans ();
+
 // Precompute all tables.
 void
 Board::precompute_tables () {
@@ -119,6 +132,7 @@ Board::precompute_tables () {
   Board::DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
 
   init_zobrist_keys ();
+  init_pawn_attack_spans ();
 
   have_precomputed_tables = true;
 }
@@ -788,3 +802,49 @@ init_zobrist_keys () {
   Board::zobrist_b_castle_q_key = random64 ();
   Board::zobrist_b_castle_k_key = random64 ();
 }
+
+//////////////////////////////////////////////////////
+// Generate tables used during position evaluation. //
+//////////////////////////////////////////////////////
+
+// Build a table indexed by [color][square] of the two squares
+// diagonally ahead of a pawn and all those squares in front of
+// them. This is used for detecting pawn sentries.
+
+static void 
+init_pawn_attack_spans () {
+  // Allocate table.
+  Board::pawn_attack_spans[WHITE] = new bitboard[64];
+  Board::pawn_attack_spans[BLACK] = new bitboard[64];
+
+  for (coord idx = 0; idx < 64; idx++)
+    {
+      int rank = Board::idx_to_rank (idx);
+      int file = Board::idx_to_file (idx);
+
+      // Entry for white.
+      Board::pawn_attack_spans[WHITE][idx] = 0;
+      for (int r = rank + 1; r < 8; r++)
+        {
+          if (file > 0) 
+            Board::pawn_attack_spans[WHITE][idx] |= 
+              Board::masks_0[Board::to_idx(r, file - 1)];
+          if (file < 7) 
+            Board::pawn_attack_spans[WHITE][idx] |= 
+              Board::masks_0[Board::to_idx(r, file + 1)];
+        }
+      
+      // Entry for black.
+      Board::pawn_attack_spans[BLACK][idx] = 0;
+      for (int r = rank - 1; r >= 0; r--)
+        {
+          if (file > 0) 
+            Board::pawn_attack_spans[BLACK][idx] |= 
+              Board::masks_0[Board::to_idx (r, file - 1)];
+          if (file < 7) 
+            Board::pawn_attack_spans[BLACK][idx] |= 
+              Board::masks_0[Board::to_idx(r, file + 1)];
+        }
+    }
+}
+
