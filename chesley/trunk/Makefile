@@ -19,7 +19,7 @@ SRCS = $(wildcard *.cpp)
 
 VSN = -DSVN_REVISION=\"$(shell svnversion)\"
 
-CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
+CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
 
 ########################################################################
 #                                                                      #
@@ -35,6 +35,8 @@ CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN)
 ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS -DENABLE_TRANS_TABLE	\
 -DENABLE_LMR -DENABLE_FUTILITY # -DENABLE_SEE
+
+DEBUG = # -DTRACE_EVAL
 
 ################
 # Main binary. #
@@ -71,10 +73,11 @@ playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard  -fcp ./chesley -scp ./other_binaries/pepitox -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -fcp ./olithink -scp gnuchess -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -fcp ./chesley -scp ./other_binaries/olithink -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/GreKo -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #

@@ -13,41 +13,64 @@
 
 using namespace std;
 
+/////////////////////////
+// Evaluation weights. //
+/////////////////////////
+
+static const Score BISHOP_PAIR_BONUS = 50;
+
+const Score  isolated_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score   doubled_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+
 ////////////////////////////////////
 // Top level evaluation function. //
 ////////////////////////////////////
 
 Score 
 Eval::score () {
-  Score score = 0;
+
+#ifdef TRACE_EVAL
+  cerr << "Evaluating position " << b.to_fen () << endl;
+  cerr << b << endl << endl;
+#endif // TRACE_EVAL
+
+  Score s = 0;
   phase = get_phase ();
 
   // Draw detection.
   if (is_draw ()) return 0;
   
   // Generate a simple material score.
-  score += b.material[WHITE] - b.material[BLACK];
+  s += b.material[WHITE] - b.material[BLACK];
 
   // Add net piece square values.
-  score += b.psquares[WHITE] - b.psquares[BLACK];
+  s += b.psquares[WHITE] - b.psquares[BLACK];
 
   // Evaluate pawn structure.
-  score += eval_pawns (WHITE) - eval_pawns (BLACK);
+  s += eval_pawns (WHITE) - eval_pawns (BLACK);
 
-  // Evaluate the king.
-  score += eval_king (WHITE) - eval_king (BLACK);
-
-  // Evaluate bishops.
-  score += eval_bishops (WHITE) - eval_bishops (BLACK);
-
-  // Reward rooks and queens on open files.
-  score += eval_files (WHITE) - eval_files (BLACK);
-
-  // Add a small random number for variety.
-  score += random () % 5 - 2;
+  // Evaluate knights.
+  //  s += eval_knights (WHITE) - eval_knights (BLACK);
   
-  // Set the appropriate sign and return the score.
-  return sign (b.to_move ()) * score;
+  // Evaluate bishops.
+  s += eval_bishops (WHITE) - eval_bishops (BLACK);
+  
+  // Reward rooks and queens on open files.
+  s += eval_files (WHITE) - eval_files (BLACK);
+  
+  // Evaluate the king.
+  s += eval_king (WHITE) - eval_king (BLACK);
+  
+  // Add a small random number for variety.
+  s += random () % 5 - 2;
+
+#ifdef TRACE_EVAL
+  cerr << "Score: " << s << endl;
+#endif // TRACE_EVAL
+  
+  // Set the appropriate sign and return the s.
+  return sign (b.to_move ()) * s;
 }
 
 ////////////////////////////////////////////////
@@ -68,22 +91,53 @@ bool Eval::is_draw () {
 // Evaluate score adjustments for pieces moving on files. //
 ////////////////////////////////////////////////////////////
 
-Score 
-Eval::eval_files (const Color c) {
-  Score score = 0;
-  bitboard pieces = b.color_to_board (c) & (b.queens | b.rooks);
+ Score 
+ Eval::eval_files (const Color c) {
+   Score score = 0;
+   bitboard pieces = b.color_to_board (c) & (b.queens | b.rooks);
+ 
+   while (pieces)
+     {
+       int idx = bit_idx (pieces);
+       int file = b.idx_to_file (idx);
+       int pawn_count = pawn_counts[c][file];
+       if (pawn_count == 1) score += 25;
+       else if (pawn_count == 0) score += 50;
+       pieces = clear_lsb (pieces);
+     }
+   return score;
+ }
 
+///////////////////////
+// Evaluate knights  //
+///////////////////////
+
+Score 
+Eval::eval_knights (const Color c) {
+#if 0
+  Score s = 0;
+  bitboard all = b.color_to_board (c);
+  bitboard pieces = all & b.knights & b.get_pawn_attacks (c);
+
+  // Reward knight outposts.
   while (pieces)
     {
-      int idx = bit_idx (pieces);
+      coord idx = bit_idx (pieces);
       int file = b.idx_to_file (idx);
-      int pawn_count = pawn_counts[c][file];
-      if (pawn_count == 1) score += 25;
-      else if (pawn_count == 0) score += 50;
-      pieces = clear_lsb (pieces);
+            
+      if (pawn_counts[WHITE][file] == 0 && 
+          pawn_counts[BLACK][file])
+        {
+          s += 25;
+        }
+
+        pieces = clear_lsb (pieces);
     }
 
-  return score;
+  return s;
+#endif
+
+  return 0;
 }
 
 ///////////////////////
@@ -114,8 +168,7 @@ Eval::eval_bishops (const Color c) {
     }
 
   // Provide a 5 point penalty for each obstructing pawn.
-  s *= 5;
-
+  //  s *= 5;
 
   // Provide a bonus for holding both bishops.
   if (piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
@@ -127,49 +180,119 @@ Eval::eval_bishops (const Color c) {
 // Evaluate pawns. //
 /////////////////////
 
+// Return the set of squares directly in front of a set of pawns.
+bitboard pawn_forward_rank (bitboard pawns, Color c) {
+  return (c == WHITE) ? (pawns << 8) : (pawns >> 8);
+}
+
+// Return the set of squares directly behind of a set of pawns.
+bitboard pawn_backward_rank (bitboard pawns, Color c) {
+  return (c == WHITE) ? (pawns >> 8) : (pawns << 8);
+}
+
+// Return the set of squares attacked by a set of pawns, excluding the
+// En Passant square.
+bitboard pawn_attacks (bitboard pawns, Color c) {
+  return (c == WHITE) ? 
+    // White pawns.
+    (((pawns & ~Board::file_mask (A)) << 7) | 
+     ((pawns & ~Board::file_mask (H)) << 9)) :
+    // Black pawns.
+    (((pawns & ~Board::file_mask (H)) >> 7) |
+     ((pawns & ~Board::file_mask (A)) >> 9));
+}
+
+// The union of every front span for each pawn of color c.
+bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
+  bitboard all = 0;
+  while (pawns) {
+    coord idx = bit_idx (pawns);
+    all |= Board::pawn_attack_spans[c][idx];
+    pawns = clear_lsb (pawns);
+  }
+  return all;
+}
+
+
 Score 
 Eval::eval_pawns (const Color c) {
+  // All the following block quotes regarding pawn structure are taken
+  // from "Pawn Power in Chess" by Hans Kmoch.
+
   Score s = 0;
-  bitboard pawns = b.our_pawns (c);
-  bitboard stops = b.get_pawn_moves (c);
-  bitboard attacks = b.get_pawn_attacks (c);
-  bitboard forward = stops & attacks;
-  bitboard backward = stops & ~attacks;
+  bitboard our_pawns = b.get_pawns (c);
+  bitboard their_pawns = b.get_pawns (!c);
 
-  const Score backwards_penalty[8] = { 8, 12, 14, 14, 14, 14, 12, 8 };
-  const Score isolated_penalty[8] = { 10, 15, 17, 17, 17, 17, 15, 10 };
-  const Score doubled_penalty[8] = { 10, 15, 17, 17, 17, 17, 15, 10 };
+  ////////////////////////////////////////////////////////////////////////
+  //                                                                    //
+  // Compute the set of half-free pawns.                                //
+  //                                                                    //
+  // "Originally every pawn is unfree oweing to mechanical              //
+  //  obstruction. Removal of its counter pawn makes a pawn half-free." //
+  //                                                                    //
+  ////////////////////////////////////////////////////////////////////////
+  
+  bitboard half_free = our_pawns;
+  for (int i = 0; i < 8; i++)
+    if (pawn_counts[!c][i] > 0) 
+      half_free &= ~Board::file_mask (i);
 
-  while (pawns)
+  //////////////////////////////////////////////////////////////////////
+  //                                                                  //
+  //  Compute the set of backward pawns.                              //
+  //                                                                  //
+  // "A half-free pawn, placed on the second or third rank, whose     //
+  //  stopsquare lacks pawn protection but is controlled by a sentry, //
+  //  is called a backwards pawn."                                    //
+  //                                                                  //
+  //////////////////////////////////////////////////////////////////////
+
+  bitboard backwards;
+
+  // Half-free pawns on the second or third rank.
+  backwards = (c == WHITE) ?
+    (half_free & (Board::rank_mask (1) | Board::rank_mask (2))) :
+    (half_free & (Board::rank_mask (6) | Board::rank_mask (5)));
+
+  // Lacking protection on the stop square.
+  backwards = pawn_forward_rank (backwards, c);
+  backwards &= ~pawn_attacks (our_pawns, c);
+
+  // Threatened by a sentry.
+  backwards &= pawn_all_attack_spans (their_pawns, !c);
+  backwards = pawn_backward_rank (backwards, c);
+
+#ifdef TRACE_EVAL
+  cerr << "Backwards pawns for: " << c << endl;
+  print_board (backwards);
+#endif // TRACE_EVAL
+  
+  ////////////////////////////////////////////////////////////////////
+  // Iterate over the set of pawns assessing penalties and bonuses. //
+  ////////////////////////////////////////////////////////////////////
+
+  while (our_pawns)
     {
-      coord idx = bit_idx (pawns);
+      coord idx = bit_idx (our_pawns);
       int file = b.idx_to_file (idx);
-
-      // Normalize score. We would like the value of the 'average'
-      // pawn to stay pretty close to PAWN_VAL.
-      s += 25;
       
-      // Penalize backwards pawns.
-      if (b.masks_0[idx] & backward) 
-        s -= backwards_penalty[file];
-
       // Penalize isolated pawns.
       if ((file == 0 && pawn_counts[c][1] == 0) ||
           (file == 7 && pawn_counts[c][6] == 0) ||
           (pawn_counts[c][file - 1] + pawn_counts[c][file + 1] == 0))
         s -= isolated_penalty[file];
 
+      // Penalize backwards pawns.
+      if (test_bit (backwards, idx)) 
+        s -= backwards_penalty[file];
+      
       // Penalize doubled pawns.
-      if (pawn_counts[c][file] > 1)
+      if (pawn_counts[c][file] > 1) 
         s -= doubled_penalty[file];
-   
-      pawns = clear_lsb (pawns);
+      
+      our_pawns = clear_lsb (our_pawns);
     }
-
-  // Apply a five point bonus for every pawn who's stop square is
-  // protected by a pawn.
-  s += 5 * pop_count (forward);
-
+  
   return s;
 }
 

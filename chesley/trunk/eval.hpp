@@ -28,10 +28,15 @@ static const Score ROOK_VAL   = 500;
 static const Score KNIGHT_VAL = 300;
 static const Score BISHOP_VAL = 325;
 static const Score QUEEN_VAL  = 975;
+
 static const Score MATE_VAL   = 500  * 1000;
 static const Score INF        = 1000 * 1000;
 
 static const Score BISHOP_PAIR_BONUS = 50;
+
+const Score  isolated_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score   doubled_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
 
 /////////////////////////
 // The evaluator type. //
@@ -84,6 +89,7 @@ struct Eval {
   // Evaluate by piece kind.
   Score eval_pawns (const Color c);
   Score eval_king  (const Color c);
+  Score eval_knights (const Color c);
   Score eval_bishops (const Color c);
   Score eval_files (const Color c);
 
@@ -95,7 +101,7 @@ struct Eval {
 
   // Sum piece table values over white and black pieces. This is only
   // provided for debuging purposes as piece square sums are computed
-  // incrementally and score in the Board data structure.
+  // incrementally and saved in the Board data structure.
   Score sum_piece_squares (const Board &b);
 
   ////////////////////////////////

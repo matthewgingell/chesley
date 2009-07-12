@@ -100,6 +100,8 @@ struct Board {
   static uint64  zobrist_b_castle_q_key;
   static uint64  zobrist_b_castle_k_key;
 
+  static bitboard *pawn_attack_spans[2];
+
   /////////////////////////////////////////////////////
   // Bitboards representing the state of the board.  //
   /////////////////////////////////////////////////////
@@ -296,12 +298,12 @@ struct Board {
   }
 
   // Get a bitboard of pieces of some color.
-  bitboard our_pawns   (Color c) { return color_to_board (c) & pawns; }
-  bitboard our_rooks   (Color c) { return color_to_board (c) & rooks; }
-  bitboard our_knights (Color c) { return color_to_board (c) & knights; }
-  bitboard our_bishops (Color c) { return color_to_board (c) & bishops; }
-  bitboard our_queens  (Color c) { return color_to_board (c) & queens; }
-  bitboard our_kings   (Color c) { return color_to_board (c) & kings; }
+  bitboard get_pawns   (Color c) { return color_to_board (c) & pawns; }
+  bitboard get_rooks   (Color c) { return color_to_board (c) & rooks; }
+  bitboard get_knights (Color c) { return color_to_board (c) & knights; }
+  bitboard get_bishops (Color c) { return color_to_board (c) & bishops; }
+  bitboard get_queens  (Color c) { return color_to_board (c) & queens; }
+  bitboard get_kings   (Color c) { return color_to_board (c) & kings; }
 
   // Get a bitboard of pawn moves, excluding attacks.
   bitboard get_pawn_moves (Color c) const {
@@ -326,6 +328,7 @@ struct Board {
 
     return to;
   }
+
 
   // Get a bitboard of squares attacked by pawns, including empties.
   bitboard get_pawn_attacks (Color c) const {
@@ -510,6 +513,11 @@ struct Board {
   static int
   idx_to_file (coord idx) {
     return idx % 8;
+  }
+  
+  // Return an index for a rank and file.
+  static coord to_idx (int rank, int file) {
+    return 8 * rank + file;
   }
 
   // Return a bitboard of to_moves pieces.

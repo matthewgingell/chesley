@@ -68,6 +68,9 @@ inline void operator-- (Color &c, int) { c = (Color) (c - 1); }
 inline void operator++ (Color &c) { c = (Color) (c + 1); }
 inline void operator-- (Color &c) { c = (Color) (c - 1); }
 
+inline Color operator! (Color c) { return invert (c); }
+inline Color operator~ (Color c) { return invert (c); }
+
 std::ostream & operator<< (std::ostream &os, Color c);
 
 //////////////////
