@@ -329,7 +329,6 @@ struct Board {
     return to;
   }
 
-
   // Get a bitboard of squares attacked by pawns, including empties.
   bitboard get_pawn_attacks (Color c) const {
     bitboard to, from;
@@ -563,6 +562,42 @@ struct Board {
   /////////////////////////////////////////
   // Move and child position generation. //
   /////////////////////////////////////////
+
+  bitboard rank_attacks (coord idx) const { 
+    return RANK_ATTACKS_TBL[idx * 256 + occ_0 (idx)];
+  }
+
+  bitboard file_attacks (coord idx) const { 
+    return FILE_ATTACKS_TBL[idx * 256 + occ_90 (idx)];
+  }
+
+  bitboard diag_45_attacks (coord idx) const { 
+    return DIAG_45_ATTACKS_TBL[idx * 256 + occ_45 (idx)];
+  }
+
+  bitboard diag_135_attacks (coord idx) const { 
+    return DIAG_135_ATTACKS_TBL[idx * 256 + occ_135 (idx)];
+  }
+
+  bitboard knight_attacks (coord idx) const { 
+    return KNIGHT_ATTACKS_TBL[idx];
+  }
+
+  bitboard bishop_attacks (coord idx) const { 
+    return diag_45_attacks (idx) | diag_135_attacks (idx);
+  }
+
+  bitboard rook_attacks (coord idx) const { 
+    return rank_attacks (idx) | file_attacks (idx);
+  }
+
+  bitboard queen_attacks (coord idx) const { 
+    return bishop_attacks (idx) | rook_attacks (idx);
+  }
+
+  bitboard king_attacks (coord idx) const { 
+    return KING_ATTACKS_TBL[idx];
+  }  
 
   void gen_moves (Move_Vector &moves) const;
   void gen_captures (Move_Vector &moves) const;

@@ -76,7 +76,7 @@ Search_Engine :: new_search
         {
           controls.deadline = mclock () +
             (controls.time_remaining) / 
-            (controls.moves_remaining + 1);
+            (controls.moves_remaining + 5);
         }
       else
         {

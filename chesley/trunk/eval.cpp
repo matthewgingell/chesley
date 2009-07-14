@@ -9,6 +9,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <iostream>
+#include "board.hpp"
 #include "chesley.hpp"
 
 using namespace std;
@@ -17,18 +18,29 @@ using namespace std;
 // Evaluation weights. //
 /////////////////////////
 
-static const Score BISHOP_PAIR_BONUS = 50;
-
-const Score  isolated_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score   doubled_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score isolated_penalty[8]  = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score doubled_penalty[8]   = { 5, 5, 5, 5, 5, 5, 5, 5 };
 const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+
+static const Score ROOK_MOBILITY_BONUS   = 4;
+static const Score KNIGHT_MOBILITY_BONUS = 6;
+static const Score BISHOP_MOBILITY_BONUS = 8;
+static const Score QUEEN_MOBILITY_BONUS  = 4;
+
+static const Score ROOK_OPEN_BONUS = 40;
+static const Score ROOK_HALF_BONUS = 20;
+static const Score QUEEN_OPEN_BONUS = 20;
+static const Score QUEEN_HALF_BONUS = 10;
+
+static const Score BISHOP_TRAPPED_A7H7 = 150;
+static const Score BISHOP_TRAPPED_A6H6 =  75;
+static const Score BISHOP_PAIR_BONUS   =  50;
 
 ////////////////////////////////////
 // Top level evaluation function. //
 ////////////////////////////////////
 
-Score 
-Eval::score () {
+Score Eval::score () {
 
 #ifdef TRACE_EVAL
   cerr << "Evaluating position " << b.to_fen () << endl;
@@ -47,20 +59,16 @@ Eval::score () {
   // Add net piece square values.
   s += b.psquares[WHITE] - b.psquares[BLACK];
 
-  // Evaluate pawn structure.
-  s += eval_pawns (WHITE) - eval_pawns (BLACK);
+  // Mobility
+  s += eval_mobility (WHITE) - eval_mobility (BLACK);
 
-  // Evaluate knights.
-  //  s += eval_knights (WHITE) - eval_knights (BLACK);
-  
-  // Evaluate bishops.
+  // Evaluate by kind of piece.
+  s += eval_pawns   (WHITE) - eval_pawns   (BLACK);
+  s += eval_rooks   (WHITE) - eval_rooks   (BLACK);
+  s += eval_knights (WHITE) - eval_knights (BLACK);
   s += eval_bishops (WHITE) - eval_bishops (BLACK);
-  
-  // Reward rooks and queens on open files.
-  s += eval_files (WHITE) - eval_files (BLACK);
-  
-  // Evaluate the king.
-  s += eval_king (WHITE) - eval_king (BLACK);
+  s += eval_queens  (WHITE) - eval_queens  (BLACK);
+  s += eval_king    (WHITE) - eval_king    (BLACK);
   
   // Add a small random number for variety.
   s += random () % 5 - 2;
@@ -91,29 +99,61 @@ bool Eval::is_draw () {
 // Evaluate score adjustments for pieces moving on files. //
 ////////////////////////////////////////////////////////////
 
- Score 
- Eval::eval_files (const Color c) {
-   Score score = 0;
-   bitboard pieces = b.color_to_board (c) & (b.queens | b.rooks);
- 
-   while (pieces)
+Score Eval::eval_rooks (const Color c) {
+  Score score = 0;
+  bitboard pieces = b.get_rooks (c);
+  while (pieces)
      {
-       int idx = bit_idx (pieces);
+       coord idx = bit_idx (pieces);
        int file = b.idx_to_file (idx);
        int pawn_count = pawn_counts[c][file];
-       if (pawn_count == 1) score += 25;
-       else if (pawn_count == 0) score += 50;
+
+       // Reward rooks on open and semi-open files.
+       if (pawn_count == 0) 
+         { 
+           score += ROOK_OPEN_BONUS;
+         }
+       else if (pawn_count == 1) 
+         { 
+           score += ROOK_HALF_BONUS;
+         }
+
        pieces = clear_lsb (pieces);
      }
+
    return score;
- }
+}
+
+Score Eval::eval_queens (const Color c) {
+  Score s = 0;
+  bitboard pieces = b.get_queens (c);
+  while (pieces)
+     {
+       coord idx = bit_idx (pieces);
+       int file = b.idx_to_file (idx);
+       int pawn_count = pawn_counts[c][file];
+       
+       // Reward queens on open and semi-open files.
+       if (pawn_count == 0) 
+         { 
+           s += QUEEN_OPEN_BONUS;
+         }
+       else if (pawn_count == 1) 
+         { 
+           s += QUEEN_HALF_BONUS;
+         }
+
+       pieces = clear_lsb (pieces);
+     }
+
+   return s;
+}
 
 ///////////////////////
 // Evaluate knights  //
 ///////////////////////
 
-Score 
-Eval::eval_knights (const Color c) {
+Score Eval::eval_knights (const Color c) {
 #if 0
   Score s = 0;
   bitboard all = b.color_to_board (c);
@@ -144,38 +184,98 @@ Eval::eval_knights (const Color c) {
 // Evaluate bishops. //
 ///////////////////////
 
-Score 
-Eval::eval_bishops (const Color c) {
+Score Eval::eval_bishops (const Color c) {
   Score s = 0;
-  bitboard all = b.color_to_board (c);
-  bitboard pieces = all & b.bishops;
-  bitboard pawns = all & b.pawns;
+  bitboard our_bishops = b.get_bishops (c);
+  bitboard their_pawns = b.get_pawns (!c);
 
-  // Provide a bonus when a bishop is not obstructed by pawns of
-  // its own color.
-  while (pieces)
+  // Iterate over bishops.
+  while (our_bishops) 
     {
-      int idx = bit_idx (pieces);
-      if (test_bit (Board::dark_squares, idx))
+      coord idx = bit_idx (our_bishops);
+
+      if (c == WHITE)
         {
-          s -= pop_count (pawns & Board::dark_squares);
+          // Penality trapped bishops on A7 or H7.
+          if ((idx == A7 && test_bit (their_pawns, B6)) ||
+              (idx == H7 && test_bit (their_pawns, G6)))
+            s -= BISHOP_TRAPPED_A7H7;
+
+          // Penality trapped bishops on A6 or H6.
+          if ((idx == A6 && test_bit (their_pawns, B5)) ||
+              (idx == H6 && test_bit (their_pawns, G5)))
+            s -= BISHOP_TRAPPED_A6H6;
         }
       else
         {
-          s -= pop_count (pawns & Board::light_squares);
+          // Penality trapped bishops on A2 or H2.
+          if ((idx == A2 && test_bit (their_pawns, B3)) ||
+              (idx == H2 && test_bit (their_pawns, G3)))
+            s -= BISHOP_TRAPPED_A7H7;
+          
+          // Penality trapped bishops on A3 or H3.
+          if ((idx == A3 && test_bit (their_pawns, B4)) ||
+              (idx == H3 && test_bit (their_pawns, G4)))
+            s -= BISHOP_TRAPPED_A6H6;
         }
-      pieces = clear_lsb (pieces);
+      our_bishops = clear_lsb (our_bishops);
     }
-
-  // Provide a 5 point penalty for each obstructing pawn.
-  //  s *= 5;
 
   // Provide a bonus for holding both bishops.
   if (piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
 
   return s;
 }
-  
+
+/////////////////////////////////////
+// Evaluate mobiilty by piece kind //
+/////////////////////////////////////
+
+Score 
+Eval::eval_mobility (const Color c) {
+  Score s = 0;
+  bitboard moves;
+  bitboard pieces;
+
+  // Rooks
+  pieces = b.get_rooks (c);
+  while (pieces) {
+    coord idx = bit_idx (pieces);
+    moves = b.rook_attacks (idx);
+    s += pop_count (moves) * ROOK_MOBILITY_BONUS;
+    pieces = clear_lsb (pieces);
+  }
+
+  // Knights
+  pieces = b.get_knights (c);
+  while (pieces) {
+    coord idx = bit_idx (pieces);
+    moves = b.knight_attacks (idx);
+    s += pop_count (moves) * KNIGHT_MOBILITY_BONUS;
+    pieces = clear_lsb (pieces);
+  }
+
+  // Bishops
+  pieces = b.get_bishops (c);
+  while (pieces) {
+    coord idx = bit_idx (pieces);
+    moves = b.bishop_attacks (idx);
+    s += pop_count (moves) * BISHOP_MOBILITY_BONUS;
+    pieces = clear_lsb (pieces);
+  }
+
+  // Queens
+  pieces = b.get_queens (c);
+  while (pieces) {
+    coord idx = bit_idx (pieces);
+    moves = b.queen_attacks (idx);
+    s += pop_count (moves) * QUEEN_MOBILITY_BONUS;
+    pieces = clear_lsb (pieces);
+  }
+
+  return s;
+}
+
 /////////////////////
 // Evaluate pawns. //
 /////////////////////
@@ -214,8 +314,7 @@ bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
 }
 
 
-Score 
-Eval::eval_pawns (const Color c) {
+Score Eval::eval_pawns (const Color c) {
   // All the following block quotes regarding pawn structure are taken
   // from "Pawn Power in Chess" by Hans Kmoch.
 
@@ -300,21 +399,32 @@ Eval::eval_pawns (const Color c) {
 // Evaluate kings. //
 /////////////////////
 
-Score 
-Eval::eval_king (const Color c) {
+Score Eval::eval_king (const Color c) {
   Score s = 0;
   coord idx = bit_idx (b.kings & b.color_to_board (c));
 
   // Provide a bonus for having castling or being able to castle.
   if (c == WHITE)
     {
-      if (b.flags.w_has_k_castled) s += 50;
-      else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) s += 10;
+      if (b.flags.w_has_k_castled) 
+        {
+          s += 50;
+        }
+      else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) 
+        {
+          s += 10;
+        }
     }
   else
     {
-      if (b.flags.b_has_k_castled) s += 50;
-      else if (b.flags.b_can_k_castle || b.flags.b_can_q_castle) s += 10;
+      if (b.flags.b_has_k_castled) 
+        {
+          s += 50;
+        }
+      else if (b.flags.b_can_k_castle || b.flags.b_can_q_castle) 
+        {
+          s += 10;
+        }
     }
 
   // Add the phase specific king location score.
@@ -328,8 +438,7 @@ Eval::eval_king (const Color c) {
 // Sum piece table values over white and black pieces. //
 /////////////////////////////////////////////////////////
 
-Score
-Eval::sum_piece_squares (const Board &b) {
+Score Eval::sum_piece_squares (const Board &b) {
   Score bonus = 0;
   for (Color c = WHITE; c <= BLACK; c++)
     {
@@ -355,8 +464,7 @@ Eval::sum_piece_squares (const Board &b) {
 // Initialize material count table used in the rest of the evaluation. //
 /////////////////////////////////////////////////////////////////////////
 
-void 
-Eval::count_material () {
+void Eval::count_material () {
   for (Color c = WHITE; c <= BLACK; c++)
     {
       // Count pieces.
