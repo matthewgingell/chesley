@@ -32,12 +32,6 @@ static const Score QUEEN_VAL  = 975;
 static const Score MATE_VAL   = 500  * 1000;
 static const Score INF        = 1000 * 1000;
 
-static const Score BISHOP_PAIR_BONUS = 50;
-
-const Score  isolated_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score   doubled_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
-
 /////////////////////////
 // The evaluator type. //
 /////////////////////////
@@ -86,12 +80,16 @@ struct Eval {
   // Top level evaluation function.
   Score score ();
 
+  // Evaluate mobiilty by piece kind.
+  Score eval_mobility (const Color c);
+
   // Evaluate by piece kind.
-  Score eval_pawns (const Color c);
-  Score eval_king  (const Color c);
+  Score eval_pawns   (const Color c);
+  Score eval_rooks   (const Color c);
   Score eval_knights (const Color c);
   Score eval_bishops (const Color c);
-  Score eval_files (const Color c);
+  Score eval_queens  (const Color c);
+  Score eval_king    (const Color c);
 
   // Draw detection.
   bool is_draw ();

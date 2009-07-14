@@ -23,28 +23,6 @@
 
 using namespace std;
 
-//////////////////////////////////
-// Attack table look up macros. //
-//////////////////////////////////
-
-#define RANK_ATTACKS(idx) \
-  (RANK_ATTACKS_TBL     [idx * 256 + occ_0 (idx)])
-
-#define FILE_ATTACKS(idx) \
-  (FILE_ATTACKS_TBL     [idx * 256 + occ_90 (idx)])
-
-#define DIAG_45_ATTACKS(idx) \
-  (DIAG_45_ATTACKS_TBL  [idx * 256 + occ_45 (idx)])
-
-#define DIAG_135_ATTACKS(idx) \
-  (DIAG_135_ATTACKS_TBL [idx * 256 + occ_135 (idx)])
-
-#define KNIGHT_ATTACKS(idx) (KNIGHT_ATTACKS_TBL[idx])
-#define BISHOP_ATTACKS(idx) (DIAG_45_ATTACKS(idx) | DIAG_135_ATTACKS(idx))
-#define ROOK_ATTACKS(idx)   (RANK_ATTACKS(idx) | FILE_ATTACKS(idx))
-#define QUEEN_ATTACKS(idx)  (BISHOP_ATTACKS(idx) | ROOK_ATTACKS(idx))
-#define KING_ATTACKS(idx)   (KING_ATTACKS_TBL[idx])
-
 // Collect all possible moves.
 void
 Board::gen_moves (Move_Vector &moves) const
@@ -161,7 +139,7 @@ Board::gen_moves (Move_Vector &moves) const
       coord from = bit_idx (our_rooks);
 
       // Collect each destination in the moves list.
-      bitboard to = ROOK_ATTACKS(from) & ~our_pieces ();
+      bitboard to = rook_attacks (from) & ~our_pieces ();
       while (to)
         {
           coord to_idx = bit_idx (to);
@@ -184,7 +162,7 @@ Board::gen_moves (Move_Vector &moves) const
       coord from = bit_idx (our_knights);
 
       // Collect each destination in the moves list.
-      bitboard to = KNIGHT_ATTACKS(from) & ~our_pieces ();
+      bitboard to = knight_attacks (from) & ~our_pieces ();
       while (to)
         {
           coord to_idx = bit_idx (to);
@@ -206,7 +184,7 @@ Board::gen_moves (Move_Vector &moves) const
       coord from = bit_idx (our_bishops);
 
       // Collect each destination in the moves list.
-      bitboard to = BISHOP_ATTACKS (from) & ~our_pieces ();
+      bitboard to = bishop_attacks (from) & ~our_pieces ();
       while (to)
         {
           coord to_idx = bit_idx (to);
@@ -228,7 +206,7 @@ Board::gen_moves (Move_Vector &moves) const
       coord from = bit_idx (our_queens);
 
       // Collect each destination in the moves list.
-      bitboard to = QUEEN_ATTACKS (from) & ~our_pieces ();
+      bitboard to = queen_attacks (from) & ~our_pieces ();
       while (to)
         {
           coord to_idx = bit_idx (to);
@@ -253,7 +231,7 @@ Board::gen_moves (Move_Vector &moves) const
       coord from = bit_idx (our_king);
 
       // Collect each destination in the moves list.
-      bitboard to = KING_ATTACKS (from) & ~our_pieces ();
+      bitboard to = king_attacks (from) & ~our_pieces ();
       while (to)
         {
           coord to_idx = bit_idx (to);
@@ -382,7 +360,7 @@ Board::gen_captures (Move_Vector &moves) const
       coord from = bit_idx (our_rooks);
 
       // Collect each destination in the moves list.
-      bitboard to = ROOK_ATTACKS (from) & ~our_pieces ();
+      bitboard to = rook_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
@@ -406,7 +384,7 @@ Board::gen_captures (Move_Vector &moves) const
       coord from = bit_idx (our_knights);
 
       // Collect each destination in the moves list.
-      bitboard to = KNIGHT_ATTACKS (from) & ~our_pieces ();
+      bitboard to = knight_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
@@ -430,7 +408,7 @@ Board::gen_captures (Move_Vector &moves) const
       coord from = bit_idx (our_bishops);
 
       // Collect each destination in the moves list.
-      bitboard to = BISHOP_ATTACKS (from) & ~our_pieces ();
+      bitboard to = bishop_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
@@ -454,7 +432,7 @@ Board::gen_captures (Move_Vector &moves) const
       coord from = bit_idx (our_queens);
 
       // Collect each destination in the moves list.
-      bitboard to = QUEEN_ATTACKS (from);
+      bitboard to = queen_attacks (from);
       to &= other_pieces ();
       while (to)
         {
@@ -476,7 +454,7 @@ Board::gen_captures (Move_Vector &moves) const
       coord from = bit_idx (our_king);
 
       // Collect each destination in the moves list.
-      bitboard to = KING_ATTACKS (from) & ~our_pieces ();
+      bitboard to = king_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
@@ -503,7 +481,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= ROOK_ATTACKS (from);
+      attacks |= rook_attacks (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -512,7 +490,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= KNIGHT_ATTACKS (from);
+      attacks |= knight_attacks (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -521,7 +499,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= BISHOP_ATTACKS (from);
+      attacks |= bishop_attacks (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -530,7 +508,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= QUEEN_ATTACKS (from);
+      attacks |= queen_attacks (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -539,7 +517,7 @@ Board::attack_set (Color c) const {
   while (pieces)
     {
       from = bit_idx (pieces);
-      attacks |= KING_ATTACKS (from);
+      attacks |= king_attacks (from);
       pieces = clear_lsb (pieces);
     }
 
@@ -572,10 +550,10 @@ Board::is_attacked (coord idx, Color c) const
   bitboard them = color_to_board (c);
 
   // Are we attack by a non-pawn?
-  if ((ROOK_ATTACKS   (idx) & them & (queens | rooks))   ||
-      (BISHOP_ATTACKS (idx) & them & (queens | bishops)) ||
-      (KNIGHT_ATTACKS (idx) & them & (knights))          ||
-      (KING_ATTACKS   (idx) & them & (kings)))
+  if ((rook_attacks   (idx) & them & (queens | rooks))   ||
+      (bishop_attacks (idx) & them & (queens | bishops)) ||
+      (knight_attacks (idx) & them & (knights))          ||
+      (king_attacks   (idx) & them & (kings)))
     return true;
 
   // Are we attacked by a pawn?
@@ -613,23 +591,23 @@ Board::least_valuable_attacker (coord sqr) const {
     }
 
   // Knights.
-  from = KNIGHT_ATTACKS (sqr) & (knights & us);
+  from = knight_attacks (sqr) & (knights & us);
   if (from) return Move (bit_idx (from), sqr, c, KNIGHT, get_kind (sqr));
 
   // Bishops.
-  from = BISHOP_ATTACKS (sqr) & (bishops & us);
+  from = bishop_attacks (sqr) & (bishops & us);
   if (from) return Move (bit_idx (from), sqr, c, BISHOP, get_kind (sqr));
 
   // Rooks.
-  from = ROOK_ATTACKS (sqr) & (rooks & us);
+  from = rook_attacks (sqr) & (rooks & us);
   if (from) return Move (bit_idx (from), sqr, c, ROOK, get_kind (sqr));
 
   // Queens
-  from = QUEEN_ATTACKS (sqr) & (queens & us);
+  from = queen_attacks (sqr) & (queens & us);
   if (from) return Move (bit_idx (from), sqr, c, QUEEN, get_kind (sqr));
 
   // Kings
-  from = KING_ATTACKS_TBL[sqr] & (kings & us);
+  from = king_attacks (sqr) & (kings & us);
   if (from) return Move (bit_idx (from), sqr, c, KING, get_kind (sqr));
 
   // Return a null move if no piece is attacking this square.
