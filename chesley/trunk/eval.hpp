@@ -23,14 +23,36 @@
 // Material and feature evaluation constants. //
 ////////////////////////////////////////////////
 
+static const Score MATE_VAL   = 500  * 1000;
+static const Score INF        = 1000 * 1000;
+
 static const Score PAWN_VAL   = 100;
 static const Score ROOK_VAL   = 500;
 static const Score KNIGHT_VAL = 300;
 static const Score BISHOP_VAL = 325;
 static const Score QUEEN_VAL  = 975;
 
-static const Score MATE_VAL   = 500  * 1000;
-static const Score INF        = 1000 * 1000;
+static const Score CASTLE_KS_BONUS = 50;
+static const Score CASTLE_QS_BONUS = 25;
+static const Score CAN_CASTLE_BONUS = 10;
+
+const Score isolated_penalty[8]  = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score doubled_penalty[8]   = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+
+static const Score ROOK_MOBILITY_BONUS   = 4;
+static const Score KNIGHT_MOBILITY_BONUS = 6;
+static const Score BISHOP_MOBILITY_BONUS = 8;
+static const Score QUEEN_MOBILITY_BONUS  = 4;
+
+static const Score ROOK_OPEN_BONUS  = 40;
+static const Score ROOK_HALF_BONUS  = 20;
+static const Score QUEEN_OPEN_BONUS = 20;
+static const Score QUEEN_HALF_BONUS = 10;
+
+static const Score BISHOP_TRAPPED_A7H7 = 150;
+static const Score BISHOP_TRAPPED_A6H6 =  75;
+static const Score BISHOP_PAIR_BONUS   =  50;
 
 /////////////////////////
 // The evaluator type. //

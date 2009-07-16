@@ -14,28 +14,6 @@
 
 using namespace std;
 
-/////////////////////////
-// Evaluation weights. //
-/////////////////////////
-
-const Score isolated_penalty[8]  = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score doubled_penalty[8]   = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
-
-static const Score ROOK_MOBILITY_BONUS   = 4;
-static const Score KNIGHT_MOBILITY_BONUS = 6;
-static const Score BISHOP_MOBILITY_BONUS = 8;
-static const Score QUEEN_MOBILITY_BONUS  = 4;
-
-static const Score ROOK_OPEN_BONUS = 40;
-static const Score ROOK_HALF_BONUS = 20;
-static const Score QUEEN_OPEN_BONUS = 20;
-static const Score QUEEN_HALF_BONUS = 10;
-
-static const Score BISHOP_TRAPPED_A7H7 = 150;
-static const Score BISHOP_TRAPPED_A6H6 =  75;
-static const Score BISHOP_PAIR_BONUS   =  50;
-
 ////////////////////////////////////
 // Top level evaluation function. //
 ////////////////////////////////////
@@ -384,7 +362,7 @@ Score Eval::eval_pawns (const Color c) {
       // Penalize backwards pawns.
       if (test_bit (backwards, idx)) 
         s -= backwards_penalty[file];
-      
+
       // Penalize doubled pawns.
       if (pawn_counts[c][file] > 1) 
         s -= doubled_penalty[file];
@@ -403,30 +381,38 @@ Score Eval::eval_king (const Color c) {
   Score s = 0;
   coord idx = bit_idx (b.kings & b.color_to_board (c));
 
-  // Provide a bonus for having castling or being able to castle.
+  // Provide a bonus for having castled or being able to castle.
   if (c == WHITE)
     {
       if (b.flags.w_has_k_castled) 
         {
-          s += 50;
+          s += CASTLE_KS_BONUS;
         }
-      else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle) 
+      else if (b.flags.w_has_q_castled) 
         {
-          s += 10;
+          s += CASTLE_QS_BONUS;
+        }
+      else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle)
+        {
+          s+= CAN_CASTLE_BONUS;
         }
     }
   else
     {
       if (b.flags.b_has_k_castled) 
         {
-          s += 50;
+          s += CASTLE_KS_BONUS;
         }
-      else if (b.flags.b_can_k_castle || b.flags.b_can_q_castle) 
+      else if (b.flags.b_has_q_castled) 
         {
-          s += 10;
+          s += CASTLE_QS_BONUS;
+        }
+      else if (b.flags.b_can_k_castle || b.flags.b_can_q_castle)
+        {
+          s += CAN_CASTLE_BONUS;
         }
     }
-
+  
   // Add the phase specific king location score.
   s += king_square_table[phase][xfrm[c][idx]];
 
