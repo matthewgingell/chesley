@@ -24,7 +24,7 @@ using namespace std;
 
 // Utility functions.
 bool is_mate (Score s) { 
-  return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH;
+  return abs (s) > MATE_VAL - MAX_DEPTH;
 }
 
 // Compute the principal variation and return its first move.
