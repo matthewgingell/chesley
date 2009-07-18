@@ -25,7 +25,7 @@ Score Eval::score () {
   cerr << b << endl << endl;
 #endif // TRACE_EVAL
 
-  Score s = 0;
+  Score s = TEMPO_BONUS;
   phase = get_phase ();
 
   // Draw detection.
@@ -49,7 +49,9 @@ Score Eval::score () {
   s += eval_king    (WHITE) - eval_king    (BLACK);
   
   // Add a small random number for variety.
+#ifndef __WIN32__
   s += random () % 5 - 2;
+#endif // __WIN32__
 
 #ifdef TRACE_EVAL
   cerr << "Score: " << s << endl;
@@ -84,6 +86,7 @@ Score Eval::eval_rooks (const Color c) {
      {
        coord idx = bit_idx (pieces);
        int file = b.idx_to_file (idx);
+       int rank = b.idx_to_rank (idx);
        int pawn_count = pawn_counts[c][file];
 
        // Reward rooks on open and semi-open files.
@@ -94,6 +97,16 @@ Score Eval::eval_rooks (const Color c) {
        else if (pawn_count == 1) 
          { 
            score += ROOK_HALF_BONUS;
+         }
+
+       // Reward rook on the 7th file.
+       if (c == WHITE && rank == 6)
+         {
+           score += ROOK_ON_7TH_BONUS;
+         }
+       else if (c == BLACK && rank == 1)
+         {
+           score += ROOK_ON_7TH_BONUS;
          }
 
        pieces = clear_lsb (pieces);
@@ -291,7 +304,6 @@ bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
   return all;
 }
 
-
 Score Eval::eval_pawns (const Color c) {
   // All the following block quotes regarding pawn structure are taken
   // from "Pawn Power in Chess" by Hans Kmoch.
@@ -348,15 +360,15 @@ Score Eval::eval_pawns (const Color c) {
   // Iterate over the set of pawns assessing penalties and bonuses. //
   ////////////////////////////////////////////////////////////////////
 
-  while (our_pawns)
+  bitboard p = our_pawns;
+  while (p)
     {
-      coord idx = bit_idx (our_pawns);
+      coord idx = bit_idx (p);
+      int rank = b.idx_to_rank (idx);
       int file = b.idx_to_file (idx);
       
       // Penalize isolated pawns.
-      if ((file == 0 && pawn_counts[c][1] == 0) ||
-          (file == 7 && pawn_counts[c][6] == 0) ||
-          (pawn_counts[c][file - 1] + pawn_counts[c][file + 1] == 0))
+      if (!(Board::adjacent_files_mask(idx) & our_pawns))
         s -= isolated_penalty[file];
 
       // Penalize backwards pawns.
@@ -366,8 +378,18 @@ Score Eval::eval_pawns (const Color c) {
       // Penalize doubled pawns.
       if (pawn_counts[c][file] > 1) 
         s -= doubled_penalty[file];
-      
-      our_pawns = clear_lsb (our_pawns);
+
+      // Reward passed pawns.
+      bitboard front = 
+        (Board::this_file_mask (idx) | 
+         Board::adjacent_files_mask (idx)) 
+        & Board::in_front_of_mask(idx, c);
+      if (!(front & their_pawns))
+        s += passed_pawn_bonus[c][rank];
+
+      // Further reward passed pawn backed by rook?
+
+      p = clear_lsb (p);
     }
   
   return s;
@@ -379,6 +401,11 @@ Score Eval::eval_pawns (const Color c) {
 
 Score Eval::eval_king (const Color c) {
   Score s = 0;
+
+  // Handle the case of no king in a test position.
+  if ((b.kings & b.color_to_board (c)) == 0)
+    return 0;
+
   coord idx = bit_idx (b.kings & b.color_to_board (c));
 
   // Provide a bonus for having castled or being able to castle.

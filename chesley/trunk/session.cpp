@@ -79,6 +79,7 @@ Session::init_session () {
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
 
+#ifndef __WIN32__
   // Setup periodic timer.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
@@ -87,6 +88,7 @@ Session::init_session () {
   timer.it_interval.tv_usec = 100 * 1000;
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
+#endif // __WIN32__
 }
 
 void
@@ -206,17 +208,6 @@ Session :: get_status () {
   // Check for a triple repetition.
   if (se.is_triple_rep (board))
     return GAME_DRAW;
-
-#if 0
-  // Check for loss on time.
-  if (se.controls.time_remaining == 0) 
-    {
-      if (player == WHITE)
-        return GAME_WIN_BLACK;
-      else
-        return GAME_WIN_WHITE;
-    }
-#endif
 
   // Check whether there are any moves legal moves for the current
   // player from this position
