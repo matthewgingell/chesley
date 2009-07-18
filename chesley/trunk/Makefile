@@ -8,11 +8,11 @@
 
 SHELL = /bin/sh
 
-CXX=/opt/local/bin/i386-mingw32-g++
+#CXX=/opt/local/bin/i386-mingw32-g++
 #CXX = /opt/local/bin/g++-mp-4.4
-#CXX = g++
-OPT = -O3
-#OPT = -m64
+#OPT = -O3
+CXX = g++
+OPT = -O3 -m64
 INC = -Ideps
 LIBS =
 WARN = -Wall -Wextra
