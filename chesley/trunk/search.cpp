@@ -76,7 +76,7 @@ Search_Engine :: new_search
         {
           controls.deadline = mclock () +
             (controls.time_remaining) / 
-            (controls.moves_remaining + 5);
+            (controls.moves_remaining + 2);
         }
       else
         {
@@ -466,7 +466,7 @@ Search_Engine :: search
             && ext == 0 
             && !in_check
             && !c_in_check
-            && moves[mi].get_capture () == NULL
+            && moves[mi].get_capture () == NULL_KIND
             && upperbound < alpha)
           {
             continue;
@@ -485,7 +485,7 @@ Search_Engine :: search
             && ext == 0
             && !in_check
             && !c_in_check
-            && moves[mi].get_capture () == NULL
+            && moves[mi].get_capture () == NULL_KIND
             && upperbound < alpha)
           {
             continue;

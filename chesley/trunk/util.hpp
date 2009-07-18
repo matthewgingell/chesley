@@ -2,7 +2,8 @@
 //                                                                            //
 // util.hpp                                                                   //
 //                                                                            //
-// Various small utility functions.                                           //
+// Various small utility functions. This file is indended to encapsulate      //
+// all the platform dependant functionality used by Chesley.                  //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
@@ -17,10 +18,13 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <sys/resource.h>
-#include <sys/select.h>
 #include <sys/time.h>
 #include <vector>
+
+#ifndef __WIN32__
+#include <sys/resource.h>
+#include <sys/select.h>
+#endif // __WIN32__
 
 #include "common.hpp"
 
@@ -320,6 +324,7 @@ operator<< (std::ostream &os, const string_vector &in) {
 // to read from it.
 static bool
 fdready (int fd) {
+#ifndef __WIN32__
   fd_set readfds;
   struct timeval timeout;
 
@@ -333,6 +338,9 @@ fdready (int fd) {
 
   // Poll the file descriptor.
   return select (fd + 1, &readfds, NULL, NULL, &timeout);
+#else // __WIN32__
+  return true;
+#endif // __WIN32__
 }
 
 // Get a line, remove the trailing new line if any, and return a
@@ -374,11 +382,15 @@ mclock () {
 // Return the amount of CPU time used in milliseconds.
 static uint64
 cpu_time () {
+#ifndef __WIN32__
   struct rusage ru;
   getrusage (RUSAGE_SELF, &ru);
   return
     ((uint64) ru.ru_utime.tv_sec) * 1000
     + ((uint64) ru.ru_utime.tv_usec) / 1000;
+#else // __WIN32__
+  return 0;
+#endif  // __WIN32__
 }
 
 ////////////////////////////
@@ -478,13 +490,20 @@ insertion_sort (V &items) {
 // Seed the random number generator
 static void
 seed_random () {
+#ifndef __WIN32__
   srandom (mclock ());
+#endif // __WIN32__
 }
 
 // Return a 64-bit random number.
 static uint64
 random64 () {
+#ifndef __WIN32__
   return ((uint64) random()) | (((uint64) random()) << 32);
+#else  // __WIN32__
+  return 0;
+#endif // __WIN32__
+
 }
 
 /////////////////////////////
@@ -498,6 +517,5 @@ inline void swap (elt &l, elt &r) {
   memcpy (&l,   &r, sizeof (elt));
   memcpy (&r, &tmp, sizeof (elt));
 }
-
 
 #endif // __UTIL__

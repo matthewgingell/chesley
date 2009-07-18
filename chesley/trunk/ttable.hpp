@@ -37,8 +37,8 @@ struct TTable
 
   // Clear the entire table.
   void clear () {
-    hits = misses = collisions = writes = 0;
     memset (table, 0, sz * sizeof (Entry));
+    hits = misses = collisions = writes = 0;
   }
 
   // Set an entry by key.

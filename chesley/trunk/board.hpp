@@ -100,7 +100,10 @@ struct Board {
   static uint64  zobrist_b_castle_q_key;
   static uint64  zobrist_b_castle_k_key;
 
+  // Bitboard masks for detection various features.
   static bitboard *pawn_attack_spans[2];
+  static bitboard *in_front_of[2];
+  static bitboard *adjacent_files;
 
   /////////////////////////////////////////////////////
   // Bitboards representing the state of the board.  //
@@ -496,10 +499,28 @@ struct Board {
     return 0x00000000000000FFllu << rank * 8;
   }
 
+  // Return a bitboard of all squares in front on this position.
+  static bitboard
+  in_front_of_mask (coord idx, Color c) {
+    return in_front_of[c][idx];
+  }
+
   // Return a bitboard with every bit of the Nth file set.
   static bitboard
   file_mask (int file) {
     return 0x0101010101010101llu << file;
+  }
+
+  // Return the files adjacent to this one.
+  static bitboard
+  this_file_mask (coord idx) {
+    return 0x0101010101010101llu << idx_to_file (idx);
+  }
+
+  // Return the files adjacent to this one.
+  static bitboard
+  adjacent_files_mask (coord idx) {
+    return adjacent_files[idx];
   }
 
   // Return the rank 0 .. 7 containing a coordinate.

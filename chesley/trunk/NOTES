@@ -1,4 +1,10 @@
-Pawn test positions:
+With pawn eval:
 
-setboard 8/6p1/7p/2p2P2/P7/1P6/8/8 w - - 0 1
-setboard 8/6p1/2p4p/8/P7/1P6/5P2/8 w - - 0 1
+ 14      56   23.07 30301764   e4 e5 Nc3 Nc6 Nf3 Nf6 d4 exd4 Nxd4 Bb4 Bg5 O-O Bc4 h6 Bh4 
+pv hist: 76.94% 11.21% 4.45% 2.32% 1.42% 1.09% 0.83% 0.72% 0.57% 0.45% 
+tt hit rate 5.07%, coll rate 9.25%, 1321 knps.
+
+Without:
+
+pv hist: 77.77% 10.87% 4.43% 2.22% 1.33% 0.96% 0.80% 0.65% 0.54% 0.43% 
+tt hit rate 5.11%, coll rate 7.11%, 1516 knps.

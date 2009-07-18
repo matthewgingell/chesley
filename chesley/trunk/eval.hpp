@@ -23,8 +23,8 @@
 // Material and feature evaluation constants. //
 ////////////////////////////////////////////////
 
-static const Score MATE_VAL   = 500  * 1000;
-static const Score INF        = 1000 * 1000;
+static const Score MATE_VAL = 500  * 1000;
+static const Score INF      = 1000 * 1000;
 
 static const Score PAWN_VAL   = 100;
 static const Score ROOK_VAL   = 500;
@@ -32,23 +32,30 @@ static const Score KNIGHT_VAL = 300;
 static const Score BISHOP_VAL = 325;
 static const Score QUEEN_VAL  = 975;
 
-static const Score CASTLE_KS_BONUS = 50;
+static const Score CASTLE_KS_BONUS = 65;
 static const Score CASTLE_QS_BONUS = 25;
 static const Score CAN_CASTLE_BONUS = 10;
 
+static const Score TEMPO_BONUS = 10;
+
 const Score isolated_penalty[8]  = { 5, 5, 5, 5, 5, 5, 5, 5 };
 const Score doubled_penalty[8]   = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score backwards_penalty[8] = { 5, 5, 5, 5, 5, 5, 5, 5 };
+const Score backwards_penalty[8] = { 4, 4, 4, 4, 4, 4, 4, 4 };
 
+const Score passed_pawn_bonus[2][8] = 
+  {{ 0, 10, 10, 25, 75, 125, 175, 0 },
+   { 0, 175, 125, 75, 25, 10, 10, 0}};
+                                       
 static const Score ROOK_MOBILITY_BONUS   = 4;
 static const Score KNIGHT_MOBILITY_BONUS = 6;
 static const Score BISHOP_MOBILITY_BONUS = 8;
 static const Score QUEEN_MOBILITY_BONUS  = 4;
 
-static const Score ROOK_OPEN_BONUS  = 40;
-static const Score ROOK_HALF_BONUS  = 20;
+static const Score ROOK_OPEN_BONUS = 40;
+static const Score ROOK_HALF_BONUS = 20;
 static const Score QUEEN_OPEN_BONUS = 20;
 static const Score QUEEN_HALF_BONUS = 10;
+static const Score ROOK_ON_7TH_BONUS = 50;
 
 static const Score BISHOP_TRAPPED_A7H7 = 150;
 static const Score BISHOP_TRAPPED_A6H6 =  75;
@@ -209,6 +216,7 @@ struct Eval {
     
   Board b;
   Phase phase;
+
   int piece_counts[2][5];
   int major_counts[2];
   int minor_counts[2];

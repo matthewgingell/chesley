@@ -66,6 +66,8 @@ uint64  Board::zobrist_b_castle_k_key;
 
 // Tables used during evaluation.
 bitboard *Board::pawn_attack_spans[2];
+bitboard *Board::in_front_of[2];
+bitboard *Board::adjacent_files;
 
 /////////////////////
 // Initialization. //
@@ -102,7 +104,9 @@ bitboard *init_135d_attacks_tbl ();
 static void init_zobrist_keys ();
 
 // Evaluation tables.
+static void init_in_front_of ();
 static void init_pawn_attack_spans ();
+static void init_adjacent_files ();
 
 // Precompute all tables.
 void
@@ -132,7 +136,10 @@ Board::precompute_tables () {
   Board::DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
 
   init_zobrist_keys ();
+
   init_pawn_attack_spans ();
+  init_in_front_of ();
+  init_adjacent_files ();
 
   have_precomputed_tables = true;
 }
@@ -844,6 +851,60 @@ init_pawn_attack_spans () {
           if (file < 7) 
             Board::pawn_attack_spans[BLACK][idx] |= 
               Board::masks_0[Board::to_idx(r, file + 1)];
+        }
+    }
+}
+
+// Build a table indexed by [color][square] of the every square in
+// front of a piece.
+static void 
+init_in_front_of () {
+  // Allocate table.
+  Board::in_front_of[WHITE] = new bitboard[64];
+  Board::in_front_of[BLACK] = new bitboard[64];
+  for (coord idx = 0; idx < 64; idx++)
+    {
+      int rank = Board::idx_to_rank (idx);
+
+      // Entry for white.
+      Board::in_front_of[WHITE][idx] = 0;
+      for (int r = rank + 1; r < 8; r++)
+        for (int f = 0; f < 8; f++)
+        {
+          Board::in_front_of [WHITE][idx] |= 
+            Board::masks_0[Board::to_idx (r, f)];
+        }
+      
+      // Entry for black.
+      Board::in_front_of[BLACK][idx] = 0;
+      for (int r = rank - 1; r >= 0; r--)
+        for (int f = 0; f < 8; f++)
+        {
+          Board::in_front_of [BLACK][idx] |= 
+            Board::masks_0[Board::to_idx (r, f)];
+        }
+    }
+}
+
+// Build a table indexed by [square] of every square on an adjacent
+// file.
+static void 
+init_adjacent_files () {
+  // Allocate table.
+  Board::adjacent_files = new bitboard[64];
+
+  for (coord idx = 0; idx < 64; idx++)
+    {
+      int f = Board::idx_to_file (idx);
+      Board::adjacent_files[idx] = 0;
+      for (int r = 0; r < 8; r++)
+        {
+          if (f < 7) 
+            Board::adjacent_files[idx] |= 
+              Board::masks_0[Board::to_idx (r, f + 1)];
+          if (f > 0) 
+            Board::adjacent_files[idx] |= 
+              Board::masks_0[Board::to_idx (r, f - 1)];
         }
     }
 }
