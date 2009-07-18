@@ -16,7 +16,6 @@
 #include <cstring>
 #include <signal.h>
 #include <string>
-#include <unistd.h>
 
 #include "chesley.hpp"
 
@@ -71,15 +70,17 @@ Session::init_session () {
   out = stdout;
   setvbuf (in, NULL, _IONBF, 0);
   setvbuf (out, NULL, _IONBF, 0);
-  tty = isatty (fileno (in));
 
+#ifndef _WIN32
+  tty = isatty (fileno (in));
+#endif
   // Set interface mode.
   ui_mode = tty ? INTERACTIVE : BATCH;
   protocol = NATIVE;
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
 
-#ifndef __WIN32__
+#ifndef _WIN32
   // Setup periodic timer.
   struct itimerval timer;
   timer.it_value.tv_sec = 0;
@@ -88,7 +89,7 @@ Session::init_session () {
   timer.it_interval.tv_usec = 100 * 1000;
   setitimer(ITIMER_REAL, &timer, NULL);
   signal (SIGALRM, handle_alarm);
-#endif // __WIN32__
+#endif // _WIN32
 }
 
 void

@@ -22,10 +22,6 @@
 
 using namespace std;
 
-// Constants.
-const int32 Search_Engine :: hist_nbuckets;
-const int32 Search_Engine :: MAX_DEPTH;
-
 // Utility functions.
 bool is_mate (Score s) { 
   return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH;
@@ -359,7 +355,7 @@ Search_Engine :: search
 #ifdef ENABLE_QSEARCH
           alpha = qsearch (b, -1, ply, alpha, beta);
 #else
-          alpha = Eval (b).score (alpha, beta);
+          alpha = Eval (b).score ();
 #endif /* ENABLE_QSEARCH */
         }
     }
@@ -745,8 +741,8 @@ Search_Engine :: qsearch
       /////////////////////////////////
 
       b.gen_captures (moves);
-      Score scores[moves.count];
-      memset (scores, 0, sizeof (scores));
+	  Score *scores = (Score *) alloca (moves.count * sizeof (Move));
+      memset (scores, 0, moves.count * sizeof (Move));
       for (int i = 0; i < moves.count; i++)
         {
 #if ENABLE_SEE

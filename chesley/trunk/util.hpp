@@ -18,15 +18,21 @@
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <sys/time.h>
 #include <vector>
 
-#ifndef __WIN32__
+#ifndef _WIN32
+#include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/select.h>
-#endif // __WIN32__
+#endif // _WIN32
 
 #include "common.hpp"
+
+#ifdef _WIN32
+#include <windows.h>
+#define usleep(x) Sleep((x)/1000)
+#endif // _WIN32
+
 
 extern char *arg0;
 
@@ -34,9 +40,15 @@ extern char *arg0;
 // Macro definitions. //
 ////////////////////////
 
+#ifdef __GNUC__
 #define IS_CONST __attribute__ ((const))
 #define IS_UNUSED  __attribute__ ((unused))
 #define ALIGNED(A)  __attribute__ ((aligned (A)))
+#else
+#define IS_CONST
+#define IS_UNUSED
+#define ALIGHT(A)
+#endif // __GNUC_
 
 static int32 sign (int x) IS_UNUSED;
 static int32 sign (int x) { return x / abs (x); }
@@ -75,11 +87,11 @@ static string_vector tokenize (const std::string &s) IS_UNUSED;
 
 // Return a slice of the string_vector, from 'from' to 'to' inclusive.
 static string_vector slice
-(const string_vector &in, int first, int last) IS_UNUSED;
+(const string_vector &in, size_t first, size_t last) IS_UNUSED;
 
 // Return a slice of the string_vector, from 'from' then end.
 static string_vector slice
-(const string_vector &in, int first) IS_UNUSED;
+(const string_vector &in, size_t first) IS_UNUSED;
 
 // Return the first element of a string_vector.
 static std::string first (const string_vector &in) IS_UNUSED;
@@ -163,7 +175,7 @@ spaces (int n) {
 // Down case a string of spaces.
 static std::string
 downcase (std::string &s) {
-  for (uint32 i = 0; i < s.length (); i++)
+  for (size_t i = 0; i < s.length (); i++)
     {
       s[i] = tolower (s[i]);
     }
@@ -173,7 +185,7 @@ downcase (std::string &s) {
 
 // Upcase a string.
 static std::string upcase (std::string &s) {
-  for (uint32 i = 0; i < s.length (); i++)
+  for (size_t i = 0; i < s.length (); i++)
     {
       s[i] = toupper (s[i]);
     }
@@ -183,7 +195,7 @@ static std::string upcase (std::string &s) {
 // Test whether is string is a number.
 static bool
 is_number (const std::string &s) {
-  for (uint32 i = 0; i < s.length (); i++)
+  for (size_t i = 0; i < s.length (); i++)
     {
       if (!isdigit (s[i]))
         {
@@ -208,7 +220,7 @@ to_int (const char &c) {
 // Copy a string.
 static char *
 newstr (const char *s) {
-  int sz = strlen (s) + 1;
+  size_t sz = strlen (s) + 1;
   char *rv = (char *) malloc (sz + 1);
   memcpy (rv, s, sz + 1);
   return rv;
@@ -269,15 +281,15 @@ tokenize (const std::string &s) {
 
 // Return a slice of the string_vector, from 'from' to 'to' inclusive.
 static string_vector
-slice (const string_vector &in, int first, int last) {
+slice (const string_vector &in, size_t first, size_t last) {
   string_vector out;
-  for (int i = first; i <= last; i++) out.push_back (in[i]);
+  for (size_t i = first; i <= last; i++) out.push_back (in[i]);
   return out;
 }
 
 // Return a slice of the string_vector, from 'from' then end.
 static string_vector
-slice (const string_vector &in, int first) {
+slice (const string_vector &in, size_t first) {
   return slice (in, first, in.size () - 1);
 }
 
@@ -324,7 +336,7 @@ operator<< (std::ostream &os, const string_vector &in) {
 // to read from it.
 static bool
 fdready (int fd) {
-#ifndef __WIN32__
+#ifndef _WIN32
   fd_set readfds;
   struct timeval timeout;
 
@@ -338,9 +350,9 @@ fdready (int fd) {
 
   // Poll the file descriptor.
   return select (fd + 1, &readfds, NULL, NULL, &timeout);
-#else // __WIN32__
+#else // _WIN32
   return true;
-#endif // __WIN32__
+#endif // _WIN32
 }
 
 // Get a line, remove the trailing new line if any, and return a
@@ -355,7 +367,7 @@ static char *get_line (FILE *in) {
     }
   else
     {
-      int last = strlen (buf) - 1;
+      size_t last = strlen (buf) - 1;
       if (buf[last] == '\n')
         {
           buf[last] = '\0';
@@ -372,25 +384,29 @@ static char *get_line (FILE *in) {
 // Return the time in milliseconds since the epoch.
 static uint64
 mclock () {
+#ifndef _WIN32
   struct timeval tv;
   gettimeofday(&tv, NULL);
   return
     ((uint64) tv.tv_sec) * 1000 +
     ((uint64) tv.tv_usec) / 1000;
+#else 
+	return 0;
+#endif // _WIN32
 }
 
 // Return the amount of CPU time used in milliseconds.
 static uint64
 cpu_time () {
-#ifndef __WIN32__
+#ifndef _WIN32
   struct rusage ru;
   getrusage (RUSAGE_SELF, &ru);
   return
     ((uint64) ru.ru_utime.tv_sec) * 1000
     + ((uint64) ru.ru_utime.tv_usec) / 1000;
-#else // __WIN32__
+#else // _WIN32
   return 0;
-#endif  // __WIN32__
+#endif  // _WIN32
 }
 
 ////////////////////////////
@@ -490,19 +506,19 @@ insertion_sort (V &items) {
 // Seed the random number generator
 static void
 seed_random () {
-#ifndef __WIN32__
+#ifndef _WIN32
   srandom (mclock ());
-#endif // __WIN32__
+#endif // _WIN32
 }
 
 // Return a 64-bit random number.
 static uint64
 random64 () {
-#ifndef __WIN32__
+#ifndef _WIN32
   return ((uint64) random()) | (((uint64) random()) << 32);
-#else  // __WIN32__
+#else  // _WIN32
   return 0;
-#endif // __WIN32__
+#endif // _WIN32
 
 }
 
