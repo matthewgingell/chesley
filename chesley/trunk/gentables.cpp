@@ -166,7 +166,7 @@ bitboard *
 init_masks_0 () {
   bitboard *masks = new bits64[64];
   for (int i = 0; i < 64; i++)
-      masks[i] = 1llu << i;
+      masks[i] = 1ULL << i;
   return masks;
 }
 
@@ -324,12 +324,12 @@ init_masks_45 () {
   // Lower diagonal.
   for (int i = 0; i <= 56; i += 8)
       for (int j = i; j >= (i / 8); j -= 7)
-        masks[j] = 1llu << idx_00++;
+        masks[j] = 1ULL << idx_00++;
 
   // Upper diagonal.
   for (int i = 57; i < 64; i++)
     for (int j = i; j >= 15 + 8 * (i - 57); j -= 7)
-      masks[j] = 1llu << idx_00++;
+      masks[j] = 1ULL << idx_00++;
 
   return masks;
 }
@@ -356,7 +356,7 @@ init_masks_90 () {
   int idx_00 = 0;
   for (int i = 56; i < 64; i++)
     for (int j = i;  j >= i % 56; j -= 8)
-      masks[j] = 1llu << idx_00++;
+      masks[j] = 1ULL << idx_00++;
 
   return masks;
 }
@@ -505,12 +505,12 @@ init_masks_135 () {
   // Lower diagonal.
   for (int i = 56; i <= 63; i++)
     for (int j = i; j >= 56 - (i % 56) * 8; j -= 9)
-      masks[j] = 1llu << idx_00++;
+      masks[j] = 1ULL << idx_00++;
 
   // Upper diagonal.
   for (int i = 55; i > 0; i -= 8)
     for (int j = i; j >= i % 9; j -= 9)
-      masks[j] = 1llu << idx_00++;
+      masks[j] = 1ULL << idx_00++;
 
   return masks;
 }
@@ -552,7 +552,7 @@ init_rank_attacks_tbl () {
       // For each possible rank state vector
       for (uint32 occ = 0; occ < 256; occ++)
         {
-          destinations = 0llu;
+          destinations = 0ULL;
 
           // Compute moves to the left of from.
           int k = 0;
@@ -598,7 +598,7 @@ init_file_attacks_tbl () {
           int bitnum;
           int bit_offset;
 
-          destinations = 0llu;
+          destinations = 0ULL;
 
           // Compute moves up the board.
           bitnum = from_bit;
@@ -708,7 +708,7 @@ init_45d_attacks_tbl () {
       // For each pattern
       for (int pat = 0; pat < 256; pat++)
         {
-          destinations = 0llu;
+          destinations = 0ULL;
 
           // Down and to the right.
           b = from_bit;
@@ -755,7 +755,7 @@ init_135d_attacks_tbl () {
       // For each pattern
       for (int pat = 0; pat < 256; pat++)
         {
-          destinations = 0llu;
+          destinations = 0ULL;
 
           // Down and to the left.
           b = from_bit;

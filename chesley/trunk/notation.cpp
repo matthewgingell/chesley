@@ -700,4 +700,5 @@ Board
 Board::from_ascii (const string &str IS_UNUSED) {
   // Warning: this is method isn't implemented.
   assert (0);
+  return Board ();
 }

@@ -16,7 +16,6 @@
 #define _Session_
 
 #include <cstdio>
-#include <unistd.h>
 
 #include "chesley.hpp"
 

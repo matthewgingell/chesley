@@ -60,8 +60,8 @@ struct Board {
 
   static const std::string INITIAL_POSITIONS;
 
-  static const bitboard light_squares = 0x55AA55AA55AA55AAllu;
-  static const bitboard dark_squares = 0xAA55AA55AA55AA55llu;
+  static const bitboard light_squares = 0x55AA55AA55AA55AAULL;
+  static const bitboard dark_squares = 0xAA55AA55AA55AA55ULL;
 
   //////////////////////////////////////
   // Precomputed tables and constants //
@@ -496,7 +496,7 @@ struct Board {
   // Return a bitboard with every bit of the Nth rank set.
   static bitboard
   rank_mask (int rank) {
-    return 0x00000000000000FFllu << rank * 8;
+    return 0x00000000000000FFULL << rank * 8;
   }
 
   // Return a bitboard of all squares in front on this position.
@@ -508,13 +508,13 @@ struct Board {
   // Return a bitboard with every bit of the Nth file set.
   static bitboard
   file_mask (int file) {
-    return 0x0101010101010101llu << file;
+    return 0x0101010101010101ULL << file;
   }
 
   // Return the files adjacent to this one.
   static bitboard
   this_file_mask (coord idx) {
-    return 0x0101010101010101llu << idx_to_file (idx);
+    return 0x0101010101010101ULL << idx_to_file (idx);
   }
 
   // Return the files adjacent to this one.

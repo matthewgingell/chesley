@@ -49,9 +49,9 @@ Score Eval::score () {
   s += eval_king    (WHITE) - eval_king    (BLACK);
   
   // Add a small random number for variety.
-#ifndef __WIN32__
+#ifndef _WIN32
   s += random () % 5 - 2;
-#endif // __WIN32__
+#endif // _WIN32
 
 #ifdef TRACE_EVAL
   cerr << "Score: " << s << endl;

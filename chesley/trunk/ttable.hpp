@@ -14,7 +14,6 @@
 
 #include <cassert>
 #include <stdlib.h>
-#include <unistd.h>
 #include "common.hpp"
 #include "move.hpp"
 
