@@ -125,15 +125,15 @@ Search_Engine :: iterative_deepening
       Score s_tmp;
 
       // Initialize statistics for this iteration.
-      calls_to_search = calls_to_qsearch = 0;
+      stats.calls_to_search = stats.calls_to_qsearch = 0;
       start_time = mclock ();
 
       // Search this position using an aspiration window.
       s_tmp = aspiration_search (b, i, pv_tmp, s, 25);
 
       // Collect statistics.
-      calls_at_ply[i] = calls_to_search + calls_to_qsearch;
-      time_at_ply[i] = mclock () - start_time;
+      stats.calls_at_ply[i] = stats.calls_to_search + stats.calls_to_qsearch;
+      stats.time_at_ply[i] = mclock () - start_time;
 
       // Break out of the loop if the search was interrupted and we've
       // found at least one move.
@@ -329,11 +329,11 @@ Search_Engine :: search
   bool in_check = b.in_check ((b.to_move ()));
 
   // Update statistics.
-  calls_to_search++;
+  stats.calls_to_search++;
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((calls_to_qsearch + calls_to_search) % 16 * 1024 == 0)
+  if ((stats.calls_to_qsearch + stats.calls_to_search) % 16 * 1024 == 0)
     poll ();
 
   // Abort if we have been interrupted.
@@ -365,6 +365,7 @@ Search_Engine :: search
   // Otherwise recurse over the children of this node.
   else {
 #ifdef ENABLE_NULL_MOVE
+
     //////////////////////////
     // Null move heuristic. //
     //////////////////////////
@@ -380,8 +381,11 @@ Search_Engine :: search
         c.set_color (invert (c.to_move ()));
         int val = -search_with_memory
           (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
-        if (val >= beta) return val;
-        c.set_color (invert (b.to_move ()));
+        if (val >= beta) 
+          { 
+            stats.null_count++;
+            return val;
+          }
       }
 #endif // ENABLE_NULL_MOVE
     
@@ -426,6 +430,9 @@ Search_Engine :: search
         int rank = Board :: idx_to_rank (moves[mi].to);
         if ((rank == 1 || rank == 6) && moves[mi].get_kind () == PAWN)
           ext+= 1;
+
+        stats.ext_count += ext;
+
 #endif // ENABLE_EXTENSIONS
 
 #ifdef ENABLE_FUTILITY
@@ -447,6 +454,7 @@ Search_Engine :: search
             !c_in_check &&
             upperbound <= alpha)
           {
+            stats.razor_count++;
             depth = 1;
           }
         
@@ -467,6 +475,7 @@ Search_Engine :: search
             && moves[mi].get_capture () == NULL_KIND
             && upperbound < alpha)
           {
+            stats.futility_count++;
             continue;
           }
 
@@ -486,6 +495,7 @@ Search_Engine :: search
             && moves[mi].get_capture () == NULL_KIND
             && upperbound < alpha)
           {
+            stats.ext_futility_count++;
             continue;
           }
 #endif // ENABLE_FUTILITY
@@ -502,13 +512,17 @@ Search_Engine :: search
             ext == 0 && !c_in_check && 
             moves[mi].get_capture () == NULL_KIND)
           {
-            int ds;
+            Score ds;
             Move_Vector dummy;
             ds = -search_with_memory
               (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
 
             // If we fail low, we are done with this move.
-            if (ds <= alpha) continue;
+            if (ds <= alpha) 
+              {
+                stats.lmr_count++;
+                continue;
+              }
           }
 #endif // ENABLE_LMR
 
@@ -557,7 +571,7 @@ Search_Engine :: search
       }
 
     // Collect statistics.
-    hist_pv[min (mi, hist_nbuckets)]++;
+    stats.hist_pv[min (mi, hist_nbuckets)]++;
 
     // If we couldn't find a move that applied, then the game is over.
     if (legal_move_count == 0)
@@ -719,7 +733,7 @@ Search_Engine :: qsearch
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((calls_to_qsearch + calls_to_search) % (16 * 1024) == 0)
+  if ((stats.calls_to_qsearch + stats.calls_to_search) % (16 * 1024) == 0)
     poll ();
 
   // Abort if we have been interrupted.
@@ -727,7 +741,7 @@ Search_Engine :: qsearch
     return 12345;
 
   // Update statistics.
-  calls_to_qsearch++;
+  stats.calls_to_qsearch++;
 
   // Do static evaluation at this node.
   alpha = max (alpha, Eval (b).score ());
@@ -1114,7 +1128,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
 
   // Node count.
   cout << setw (9);
-  cout << calls_to_search + calls_to_qsearch;
+  cout << stats.calls_to_search + stats.calls_to_qsearch;
   cout << "   ";
   
   // Principle variation.
@@ -1136,10 +1150,10 @@ Search_Engine :: post_after () {
   cout << endl;
   double sum = 0;
   for (int i = 0; i < hist_nbuckets; i++)
-    sum += hist_pv[i];
+    sum += stats.hist_pv[i];
   cout << "pv hist: ";
   for (int i = 0; i < hist_nbuckets; i++)
-    cout << (hist_pv[i] / sum) * 100 << "% ";
+    cout << (stats.hist_pv[i] / sum) * 100 << "% ";
   cout << endl;
 
   // Display statistics on transposition table hit rate.
@@ -1148,12 +1162,20 @@ Search_Engine :: post_after () {
   double coll_rate = (double) tt.collisions / tt.writes;
   cout << "coll rate " << coll_rate * 100 << "%, ";
 
+  // Display performance of heuristics.
+  cout << "null: " << stats.null_count;
+  cout << ", ext: " << stats.ext_count;
+  cout << ", rzr: " << stats.razor_count << endl;
+  cout << "fut: " << stats.futility_count;
+  cout << ", xft: " << stats.ext_futility_count;
+  cout << ", lmr: " << stats.lmr_count << endl;
+
   // Display nodes per second.
   uint64 total_nodes = 0;
   uint64 total_time = 0;
   for (int i = 1; i < MAX_DEPTH; i++) {
-    total_nodes += calls_at_ply[i];
-    total_time  += time_at_ply[i];
+    total_nodes += stats.calls_at_ply[i];
+    total_time  += stats.time_at_ply[i];
   }
 
   if (total_time > 0) 
