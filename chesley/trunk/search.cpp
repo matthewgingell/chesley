@@ -669,7 +669,7 @@ Search_Engine :: order_moves
       // However, nothing else I've tried works as well, so for now
       // I'm leaving this very odd and unsound code here.
       uint64 hh_val = hh_table[depth][moves[i].from][moves[i].to];
-      scores[i] += hh_val;
+      scores[i] += (Score) hh_val;
     }
          
   moves.sort (scores);  

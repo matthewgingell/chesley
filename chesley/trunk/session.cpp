@@ -275,7 +275,7 @@ Session::find_a_move () {
   // is being done with the results it returns.
   if (((uint64) se.controls.time_remaining) > elapsed)
     {
-      se.controls.time_remaining -= elapsed;
+      se.controls.time_remaining -= (int32) elapsed;
     }
   else
     {
