@@ -514,12 +514,7 @@ seed_random () {
 // Return a 64-bit random number.
 static uint64
 random64 () {
-#ifndef _WIN32
-  return ((uint64) random()) | (((uint64) random()) << 32);
-#else  // _WIN32
-  return 0;
-#endif // _WIN32
-
+  return ((uint64) rand()) | (((uint64) rand()) << 32);
 }
 
 /////////////////////////////
