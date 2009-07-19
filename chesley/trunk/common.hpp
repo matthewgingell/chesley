@@ -28,7 +28,9 @@ typedef uint64_t uint64;
 typedef uint8_t  byte;
 #else
 typedef signed char int8;
+typedef signed short int16;
 typedef signed int int32;
+typedef signed __int64 int64;
 typedef unsigned char uint8; 
 typedef unsigned short uint16;
 typedef unsigned int uint32;
@@ -37,7 +39,11 @@ typedef unsigned char byte;
 #endif
 
 #ifdef _WIN32
-#define snprintf _snprintf 
+#include <windows.h>
+#include <winbase.h>
+#define snprintf _snprintf
+#define fileno _fileno
+#define usleep Sleep
 #endif // _WIN32
 
 // Type for a number representing a square on the board.
