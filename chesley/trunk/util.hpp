@@ -391,7 +391,10 @@ mclock () {
     ((uint64) tv.tv_sec) * 1000 +
     ((uint64) tv.tv_usec) / 1000;
 #else 
-	return 0;
+  LARGE_INTEGER tick, ticks_per_second;
+  QueryPerformanceFrequency (&ticks_per_second);
+  QueryPerformanceCounter (&tick);
+  return (tick.QuadPart * 1000) / ticks_per_second.QuadPart;
 #endif // _WIN32
 }
 
