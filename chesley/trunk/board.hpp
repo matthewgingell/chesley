@@ -567,7 +567,7 @@ struct Board {
 
   byte
   occ_45 (coord from) const {
-    return occupied_45 >> diag_shifts_45[from];
+    return (byte) (occupied_45 >> diag_shifts_45[from]);
   }
 
   byte
@@ -577,7 +577,7 @@ struct Board {
 
   byte
   occ_135 (coord from) const {
-    return occupied_135 >> diag_shifts_135[from];
+    return (byte) (occupied_135 >> diag_shifts_135[from]);
   }
 
   /////////////////////////////////////////

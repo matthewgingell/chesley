@@ -60,7 +60,7 @@ clear_lsb (bits64 b) {
 // Clear all but the least significant bit of b.
 inline bits64 
 clear_msbs (bits64 b) { 
-  return b & -b; 
+  return b & -((int64) b); 
 }
 
 // Return the bit index of the least significant bit. Returns -1 in

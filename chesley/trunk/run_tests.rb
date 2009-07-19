@@ -5,7 +5,7 @@
 # Matthew Gingell
 # gingell@adacore.com
 
-for test in File.open("tests/matein4.epd")
+for test in File.open("tests/perftsuite.epd")
   puts("epd #{test}")
 end
 puts("quit")

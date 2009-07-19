@@ -24,15 +24,11 @@
 #include <sys/time.h>
 #include <sys/resource.h>
 #include <sys/select.h>
+#else
+#include <windows.h>
 #endif // _WIN32
 
 #include "common.hpp"
-
-#ifdef _WIN32
-#include <windows.h>
-#define usleep(x) Sleep((x)/1000)
-#endif // _WIN32
-
 
 extern char *arg0;
 
@@ -408,7 +404,10 @@ cpu_time () {
     ((uint64) ru.ru_utime.tv_sec) * 1000
     + ((uint64) ru.ru_utime.tv_usec) / 1000;
 #else // _WIN32
-  return 0;
+  LARGE_INTEGER tick, ticks_per_second;
+  QueryPerformanceFrequency (&ticks_per_second);
+  QueryPerformanceCounter (&tick);
+  return (tick.QuadPart * 1000) / ticks_per_second.QuadPart;
 #endif  // _WIN32
 }
 
@@ -510,7 +509,9 @@ insertion_sort (V &items) {
 static void
 seed_random () {
 #ifndef _WIN32
-  srandom (mclock ());
+  srandom ((unsigned) mclock ());
+#else
+  srand ((unsigned) mclock ());
 #endif // _WIN32
 }
 
