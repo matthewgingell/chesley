@@ -90,10 +90,10 @@ struct Eval {
 
   Eval (const Board &board) {
     b = board;
-    memset (piece_counts, sizeof (piece_counts), 0);
-    memset (minor_counts, sizeof (minor_counts), 0);
-    memset (major_counts, sizeof (major_counts), 0);
-    memset (pawn_counts,  sizeof (pawn_counts), 0);
+    memset (piece_counts, 0, sizeof (piece_counts));
+    memset (minor_counts, 0, sizeof (minor_counts));
+    memset (major_counts, 0, sizeof (major_counts));
+    memset (pawn_counts,  0, sizeof (pawn_counts));
     count_material ();
   }
 
