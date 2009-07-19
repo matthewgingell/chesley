@@ -1,7 +1,22 @@
-util.hpp(515) : warning C4244: 'argument' : conversion from 'uint64' to 'unsigned int', possible loss of data
-bits64.hpp(63) : warning C4146: unary minus operator applied to unsigned type, result still unsigned
-board.hpp(570) : warning C4244: 'return' : conversion from 'const bitboard' to 'byte', possible loss of data
-board.hpp(580) : warning C4244: 'return' : conversion from 'const bitboard' to 'byte', possible loss of data
+Copyright (C) 2009 Matthew Gingell <gingell@adacore.com>
+Chesley is free software, distributed under the GNU General Public License.
+> bench 14
+w:1:0
+Ply    Eval    Time    Nodes   Principal Variation
+  1      94    0.00       71   Nc3 
+  2      10    0.00      307   Nc3 Nc6 
+  3      94    0.00      321   Nc3 Nc6 Nf3 
+  4      10    0.01     4782   Nc3 Nc6 Nf3 Nf6 
+  5      88    0.00     5157   Nc3 Nc6 Nf3 Nf6 d4 
+  6      10    0.03    47814   Nc3 Nc6 Nf3 Nf6 d4 d5 
+  7      69    0.02    22726   Nc3 Nc6 Nf3 e5 d3 d5 Be3 
+  8      27    0.18   247257   e4 d5 exd5 Nf6 Nc3 Nxd5 
+  9      40    0.24   334481   e4 Nc6 Nf3 Nf6 e5 Ng4 d4 d6 h3 
+ 10      49    0.35   472076   e4 Nc6 Nf3 e5 d4 exd4 Nxd4 Nf6 
+ 11      54    2.12  2937508   d4 d5 Nc3 Nf6 Bf4 Nc6 Nf3 Bf5 e3 e6 Bd3 
+ 12      43    1.15  1619331   d4 d5 Nc3 Nf6 Qd3 e6 Bf4 Bd6 Bxd6 Qxd6 Nf3 O-O O-O-O 
+ 13      41    9.99 13469725   e4 d5 
+ 14      43   21.19 28038504   e4 e5 Nf3 Nf6 Nc3 Nc6 d4 exd4 Nxd4 d5 Bg5 Bc5 Nxc6 bxc6 exd5 cxd5 Bd3 
 
-chesley.hpp(40) : warning C4996: 'sprintf': This function or variable may be unsafe. Consider using sprintf_s 
-instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+pv hist: 78.28% 9.81% 4.08% 2.34% 1.48% 1.21% 0.95% 0.73% 0.64% 0.49% 
+tt hit rate 4.91%, coll rate 8.36%, 1337 knps.

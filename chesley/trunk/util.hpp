@@ -153,10 +153,10 @@ insertion_sort (T &items) IS_UNUSED;
 ///////////////////
 
 // Seed the random number generator
-static void seed_random () IS_UNUSED;
+void seed_random ();
 
 // Return a 64-bit random number.
-static uint64 random64 () IS_UNUSED;
+uint64 random64 ();
 
 //////////////////////
 // String functions //
@@ -499,26 +499,6 @@ insertion_sort (V &items) {
         }
       items[j] = index;
     }
-}
-
-/////////////////////
-// Random numbers. //
-/////////////////////
-
-// Seed the random number generator
-static void
-seed_random () {
-#ifndef _WIN32
-  srandom ((unsigned) mclock ());
-#else
-  srand ((unsigned) mclock ());
-#endif // _WIN32
-}
-
-// Return a 64-bit random number.
-static uint64
-random64 () {
-  return ((uint64) rand()) | (((uint64) rand()) << 32);
 }
 
 /////////////////////////////
