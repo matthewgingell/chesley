@@ -22,6 +22,8 @@
 
 using namespace std;
 
+uint64 Search_Engine::hh_table[MAX_DEPTH][64][64];
+
 // Utility functions.
 bool is_mate (Score s) { 
   return abs (s) > MATE_VAL - MAX_DEPTH;
@@ -331,7 +333,7 @@ Search_Engine :: search
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((calls_to_qsearch + calls_to_search) % (64 * 1024) == 0)
+  if ((calls_to_qsearch + calls_to_search) % (1024) == 0)
     poll ();
 
   // Abort if we have been interrupted.
@@ -717,7 +719,7 @@ Search_Engine :: qsearch
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((calls_to_qsearch + calls_to_search) % (64 * 1024) == 0)
+  if ((calls_to_qsearch + calls_to_search) % (1024) == 0)
     poll ();
 
   // Abort if we have been interrupted.

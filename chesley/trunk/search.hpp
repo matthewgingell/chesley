@@ -265,7 +265,7 @@ struct Search_Engine {
   /////////////////
 
   // History heuristic table.
-  uint64 hh_table[MAX_DEPTH][64][64];
+  static uint64 hh_table[MAX_DEPTH][64][64];
 
   // Killer moves.
   Move killers[MAX_DEPTH][2];
