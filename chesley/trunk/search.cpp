@@ -211,6 +211,10 @@ Search_Engine :: aspiration_search
       pv.clear ();
       s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
     }
+  else
+    {
+      stats.asp_hits++;
+    }
 #else
   {
     s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
@@ -1082,10 +1086,17 @@ Search_Engine :: set_time_remaining (int msecs) {
 // Write thinking output before iterative deepening starts.
 void
 Search_Engine :: post_before (const Board &b) {
-  cout << (b.to_move () == WHITE ? "w" : "b")
-       << ":" << b.full_move_clock << ":" << b.half_move_clock << endl
-       << "Ply    Eval    Time    Nodes   Principal Variation"
-       << endl;
+  cout << (b.to_move () == WHITE ? "w" : "b");
+  cout << ":" << b.full_move_clock << ":" << b.half_move_clock << endl;
+  if (Session::protocol == XBOARD)
+    {
+      cout << "Ply    Eval    Time    Nodes   Principal Variation";
+    }
+  else
+    {
+      cout << "Ply    Eval    Time    Nodes   QNodes   Principal Variation";
+    }
+  cout << endl;
 }
 
 // Write thinking for each depth during iterative deepening.
@@ -1127,8 +1138,18 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
     }
 
   // Node count.
-  cout << setw (9);
-  cout << stats.calls_to_search + stats.calls_to_qsearch;
+  if (Session::protocol == XBOARD) 
+    {
+      cout << setw (9);
+      cout << stats.calls_to_search + stats.calls_to_qsearch;
+    }
+  else
+    {
+      cout << setw (9);      
+      cout << stats.calls_to_search;
+      cout << setw (9);
+      cout << stats.calls_to_qsearch;
+    }
   cout << "   ";
   
   // Principle variation.
@@ -1163,12 +1184,13 @@ Search_Engine :: post_after () {
   cout << "coll rate " << coll_rate * 100 << "%, ";
 
   // Display performance of heuristics.
-  cout << "null: " << stats.null_count;
-  cout << ", ext: " << stats.ext_count;
-  cout << ", rzr: " << stats.razor_count << endl;
-  cout << "fut: " << stats.futility_count;
+  cout << "asp: "    << stats.asp_hits;
+  cout << ", null: " << stats.null_count;
+  cout << ", ext: " << stats.ext_count << endl;
+  cout << "rzr: " << stats.razor_count;
+  cout << ", fut: " << stats.futility_count;
   cout << ", xft: " << stats.ext_futility_count;
-  cout << ", lmr: " << stats.lmr_count << endl;
+  cout << ", lmr: " << stats.lmr_count;
 
   // Display nodes per second.
   uint64 total_nodes = 0;
@@ -1180,7 +1202,8 @@ Search_Engine :: post_after () {
 
   if (total_time > 0) 
     {
-      cout << total_nodes / total_time << " knps." << endl;
+      cout << ", " << setprecision (2) << 
+        (float) total_nodes / (float) total_time << " knps." << endl;
     }
   else
     {

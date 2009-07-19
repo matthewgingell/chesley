@@ -79,6 +79,7 @@ struct Search_Engine {
   void clear_statistics () {
     stats.calls_to_search = 0;
     stats.calls_to_qsearch = 0;
+    stats.asp_hits = 0;
     stats.null_count = 0;
     stats.ext_count = 0;
     stats.razor_count = 0;
@@ -217,20 +218,20 @@ struct Search_Engine {
     uint64 calls_to_search;
     uint64 calls_at_ply[MAX_DEPTH];
     uint64 time_at_ply[MAX_DEPTH];
+
+    // A histogram of times we found a PV node at an index into the
+    // moves list. This is a measure of the performance of our move
+    // ordering strategy.
+    
     uint32 hist_pv [hist_nbuckets];
+    uint64 asp_hits;
     uint64 null_count;
     uint64 ext_count;
     uint64 razor_count;
     uint64 futility_count;
     uint64 ext_futility_count;
     uint64 lmr_count;
-    uint64 pvs_count;
   } stats;
-
-  // A histogram of times we found a PV node at an index into the
-  // moves list. This is a measure of the performance of our move
-  // ordering strategy.
-
 
   ///////////////////////////////////
   // Hierarchy of search routines. //
