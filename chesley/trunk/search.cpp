@@ -763,9 +763,8 @@ Search_Engine :: qsearch
       b.gen_captures (moves);
       if (moves.count > 0)
         {
-
-          Score *scores = (Score *) alloca (moves.count * sizeof (Move));
-          memset (scores, 0, moves.count * sizeof (Move));
+          Score *scores = (Score *) alloca (moves.count * sizeof (Score));
+          memset (scores, 0, moves.count * sizeof (Score));
           for (int i = 0; i < moves.count; i++)
             {
 #if ENABLE_SEE
