@@ -20,7 +20,7 @@
 struct TTable
 {
   // Initialize the table, defaulting to one million entries.
-  TTable (size_t sz = 1 << 20) : 
+  TTable (size_t sz) : 
     sz (sz), hits (0), misses (0), writes (0), collisions (0) {
     table = (Entry *) calloc (sz, sizeof (Entry));
   }
@@ -91,6 +91,11 @@ struct TTable
       }
   }
   
+  // Clear statistics.
+  void clear_statistics () {
+    hits = misses = writes = collisions = 0;
+  }
+
   // Data.
   size_t sz;
   Entry *table;
