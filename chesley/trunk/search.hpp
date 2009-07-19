@@ -37,9 +37,6 @@ struct Search_Engine {
   // Transposition table size in entries. This should be a power of 2.
   static const uint32 TT_SIZE = 4 * 1024 * 1024;
 
-  // Default timeout to use if none has been set.
-  static const uint32 DEFAULT_TIMEOUT = 1 * 1000;
-
   //////////////////////////////////////
   // Constructors and initialization. //
   //////////////////////////////////////
@@ -56,7 +53,7 @@ struct Search_Engine {
     controls.moves_ptc = -1;
     controls.time_ptc = -1;
     controls.increment = -1;
-    controls.fixed_time = DEFAULT_TIMEOUT;
+    controls.fixed_time = -1;
     controls.fixed_depth = -1;
     controls.time_remaining = -1;
     controls.moves_remaining = -1;

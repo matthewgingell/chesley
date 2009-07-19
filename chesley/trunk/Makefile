@@ -8,11 +8,10 @@
 
 SHELL = /bin/sh
 
-#CXX=/opt/local/bin/i386-mingw32-g++
-#CXX = /opt/local/bin/g++-mp-4.4
-#OPT = -O3
-CXX = g++
+CXX = /opt/local/bin/g++-mp-4.4
 OPT = -O3 -m64
+#CXX = g++
+#OPT = -g -O0 -m64 -fstack-check
 INC = -Ideps
 LIBS =
 WARN = -Wall -Wextra
@@ -22,7 +21,7 @@ SRCS = $(wildcard *.cpp)
 
 VSN = -DSVN_REVISION=\"$(shell svnversion)\"
 
-CXXFLAGS = -g $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
+CXXFLAGS = $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
 
 ########################################################################
 #                                                                      #

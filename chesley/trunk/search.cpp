@@ -54,7 +54,7 @@ Search_Engine :: new_search
 {  
   // Clear history and killer tables. 
   memset (killers, 0, sizeof (killers));
-  memset (hh_table, 0, sizeof (killers));
+  memset (hh_table, 0, sizeof (hh_table));
   
   // Clear statistics.
   clear_statistics ();
@@ -741,28 +741,32 @@ Search_Engine :: qsearch
       /////////////////////////////////
 
       b.gen_captures (moves);
-	  Score *scores = (Score *) alloca (moves.count * sizeof (Move));
-      memset (scores, 0, moves.count * sizeof (Move));
-      for (int i = 0; i < moves.count; i++)
+      if (moves.count > 0)
         {
-#if ENABLE_SEE
-          scores[i] = see (b, moves[i]);
-#else
-          scores[i] = Eval::eval_capture (moves[i]);
-#endif
-        }
-      moves.sort (scores);
 
-      // Minimax over captures.
-      for (int i = 0; i < moves.count; i++)
-        {
-          c = b;
-          if (c.apply (moves[i]))
+          Score *scores = (Score *) alloca (moves.count * sizeof (Move));
+          memset (scores, 0, moves.count * sizeof (Move));
+          for (int i = 0; i < moves.count; i++)
             {
-              alpha = max
-                (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
-              if (alpha >= beta)
-                break;
+#if ENABLE_SEE
+              scores[i] = see (b, moves[i]);
+#else
+              scores[i] = Eval::eval_capture (moves[i]);
+#endif
+            }
+          moves.sort (scores);
+
+          // Minimax over captures.
+          for (int i = 0; i < moves.count; i++)
+            {
+              c = b;
+              if (c.apply (moves[i]))
+                {
+                  alpha = max
+                    (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
+                  if (alpha >= beta)
+                    break;
+                }
             }
         }
     }
