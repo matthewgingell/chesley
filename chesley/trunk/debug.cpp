@@ -64,6 +64,7 @@ Session::play_self (const string_vector &tokens IS_UNUSED)
   Status s;
   board = Board::startpos ();
   running = true;
+  se.set_fixed_time (1000);
   while ((s = get_status ()) == GAME_IN_PROGRESS)
     {
       cout << board << endl << endl;
