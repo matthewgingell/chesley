@@ -359,7 +359,7 @@ fdready (int fd) {
 // malloc'd string.
 static char *get_line (FILE *in) {
   const int BUFSIZE = 4096;
-  char buf[BUFSIZE];
+  static char buf[BUFSIZE];
 
   if (!fgets (buf, BUFSIZE, in))
     {
