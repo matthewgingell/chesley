@@ -9,7 +9,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3 -m64
+OPT = -O3 -m64 -DNDEBUG
 #CXX = g++
 #OPT = -g -O0 -m64 -fstack-check
 INC = -Ideps
@@ -76,9 +76,9 @@ playother: chesley
 #	xboard -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard  -st 0:01  -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -fcp ./chesley -scp ./other_binaries/olithink -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -fcp ./chesley -scp ./other_binaries/olithink -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/GreKo -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################

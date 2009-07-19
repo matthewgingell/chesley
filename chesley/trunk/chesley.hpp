@@ -36,7 +36,7 @@
 inline
 char *get_prologue () {
   static char buf[2048];
-  sprintf (buf, "%s (svn r%s)\n\n%s\n%s",
+  snprintf (buf, sizeof (buf), "%s (svn r%s)\n\n%s\n%s",
            ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }

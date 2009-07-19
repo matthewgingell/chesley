@@ -13,6 +13,8 @@
 #ifndef __COMMON__
 #define __COMMON__
 
+#include <cstdio>
+
 #ifndef _WIN32
 #include <stdint.h>
 typedef int8_t   int8;
@@ -33,6 +35,10 @@ typedef unsigned int uint32;
 typedef unsigned __int64 uint64;
 typedef unsigned char byte;
 #endif
+
+#ifdef _WIN32
+#define snprintf _snprintf 
+#endif // _WIN32
 
 // Type for a number representing a square on the board.
 typedef uint32 coord;

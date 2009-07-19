@@ -74,7 +74,7 @@ Search_Engine :: new_search
         {
           controls.deadline = mclock () +
             (controls.time_remaining) / 
-            (controls.moves_remaining + 2);
+            (controls.moves_remaining + 5);
         }
       else
         {
@@ -333,7 +333,7 @@ Search_Engine :: search
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((calls_to_qsearch + calls_to_search) % (1024) == 0)
+  if ((calls_to_qsearch + calls_to_search) % 16 * 1024 == 0)
     poll ();
 
   // Abort if we have been interrupted.
@@ -719,7 +719,7 @@ Search_Engine :: qsearch
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((calls_to_qsearch + calls_to_search) % (1024) == 0)
+  if ((calls_to_qsearch + calls_to_search) % (16 * 1024) == 0)
     poll ();
 
   // Abort if we have been interrupted.
