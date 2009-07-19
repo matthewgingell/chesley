@@ -9,7 +9,7 @@
 SHELL = /bin/sh
 
 CXX = /opt/local/bin/g++-mp-4.4
-OPT = -O3 -m64 -DNDEBUG
+OPT = -O3 -m64
 #CXX = g++
 #OPT = -g -O0 -m64 -fstack-check
 INC = -Ideps

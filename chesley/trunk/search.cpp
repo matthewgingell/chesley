@@ -575,7 +575,7 @@ Search_Engine :: search
       }
 
     // Collect statistics.
-    stats.hist_pv[min (mi, hist_nbuckets)]++;
+    stats.hist_pv[min (mi, hist_nbuckets - 1)]++;
 
     // If we couldn't find a move that applied, then the game is over.
     if (legal_move_count == 0)

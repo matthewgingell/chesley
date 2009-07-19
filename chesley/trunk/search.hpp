@@ -48,6 +48,9 @@ struct Search_Engine {
   // Reset all search engine state to defaults.
   void reset () {
 
+    // Clear search statistics.
+    clear_statistics ();
+
     // Time management parameters.
     controls.mode = EXACT;
     controls.moves_ptc = -1;
@@ -67,9 +70,6 @@ struct Search_Engine {
     // Output generation.
     post = true;
 
-    // Search statistics.
-    clear_statistics ();
-
     // Initialize history and killer tables. 
     memset (hh_table, 0, sizeof (hh_table));
     memset (killers, 0, sizeof (killers));
@@ -77,8 +77,9 @@ struct Search_Engine {
 
   // Clear accumulated search statistics.
   void clear_statistics () {
-    stats.calls_to_search = 0;
+    tt.clear_statistics ();
     stats.calls_to_qsearch = 0;
+    stats.calls_to_search = 0;
     stats.asp_hits = 0;
     stats.null_count = 0;
     stats.ext_count = 0;
@@ -86,8 +87,9 @@ struct Search_Engine {
     stats.futility_count = 0;
     stats.ext_futility_count = 0;
     stats.lmr_count = 0;
-    memset (stats.hist_pv, 0, sizeof (stats.hist_pv));
     memset (stats.calls_at_ply, 0, sizeof (stats.calls_at_ply));
+    memset (stats.time_at_ply, 0, sizeof (stats.time_at_ply));
+    memset (stats.hist_pv, 0, sizeof (stats.hist_pv));
   }
 
   //////////////////////////////////////////
