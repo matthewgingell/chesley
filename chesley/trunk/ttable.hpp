@@ -72,6 +72,9 @@ struct TTable
     else
       {
         misses++;
+        m = NULL_MOVE;
+        s = 0;
+        d = 0;
         return NULL_SKIND;
       }
   }
@@ -94,6 +97,11 @@ struct TTable
   // Clear statistics.
   void clear_statistics () {
     hits = misses = writes = collisions = 0;
+  }
+
+  // Return true is nothing is stored in a table slot.
+  bool free_entry (const Board &b) {
+    return (table[b.hash % sz].key == 0);
   }
 
   // Data.
