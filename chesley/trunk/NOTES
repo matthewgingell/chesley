@@ -4,7 +4,10 @@ r3kb1r/pp2pppp/3q4/3Pn3/6b1/2N1BN2/PP3PPP/R2QKB1R w KQkq - bm Nxe5; id "ECM.015"
 r1b1k3/5p1p/p1p5/3np3/1b2N3/4B3/PPP1BPrP/2KR3R w q - bm Rxd5; id "ECM.017";
 r3rbk1/1pq2ppp/2ppbnn1/p3p3/P1PPN3/BP1BPN1P/2Q2PP1/R2R2K1 w - - bm Nxd6; id "ECM.018";
 
-> setboard 2k4r/1pp2ppp/p1p1bn2/4N3/1q1rP3/2N1Q3/PPP2PPP/R4RK1 w - - bm Nd5; id "ECM.014";
+
+setboard 2k4r/1pp2ppp/p1p1bn2/4N3/1q1rP3/2N1Q3/PPP2PPP/R4RK1 w - - bm Nd5; id "ECM.014";
+
+No store without a move:
 
 Ply    Eval    Time    Nodes   QNodes   Principal Variation
   1     -38    0.00      138      476   a3 
@@ -13,29 +16,34 @@ Ply    Eval    Time    Nodes   QNodes   Principal Variation
   4     -15    0.01     4126    13470   Nd3 Qb6 e5 Nd5 
   5     -21    0.01     3868    12532   Nd3 Qb6 e5 Nd5 Nxd5 
   6     -22    0.04    12514    34767   Nd3 Qb6 e5 Ng4 Qg5 g6 
-  7       3    0.30   106713   303387   Nb5 
-  8      -8    0.41   140012   389215   Nb5 Qxb5 Qxd4 Rd8 c4 Qa5 Qc3 Qxc3 
-  9     -17    1.20   431022  1129450   a3 Qb6 Nf3 Rdd8 Qxb6 cxb6 e5 Nd5 Nxd5 Rxd5 Rfd1 
- 10      -6    3.63  1220130  3501822   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 Nd3 Rd8 
- 11      -1    3.83  1385924  3605778   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 Nf3 Rd8 Rxd8+ Kxd8 Ng5 Bc4 b3 h6 bxc4 
- 12       0    7.33  2927059  6741621   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 f4 Ng4 Nxg4 Bxg4 Rd3 Rd8 Rxd8+ Kxd8 f5 g6 h3 
+  7       3    0.31   106713   303387   Nb5 
+  8      -8    0.41   140002   389194   Nb5 Qxb5 Qxd4 Rd8 c4 Qa5 Qc3 Qxc3 
+  9     -17    1.21   432710  1135116   a3 Qb6 Nf3 Rdd8 Qxb6 cxb6 e5 Nd5 Nxd5 Rxd5 Rfd1 
+ 10      -6    3.66  1217471  3493575   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 Nd3 Rd8 
+ 11      -1    3.78  1363297  3551247   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 Nf3 Rd8 Rxd8+ Kxd8 Ng5 Bc4 b3 h6 bxc4 
+ 12       0    7.16  2846575  6588221   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 f4 Ng4 Nxg4 Bxg4 Rd3 Rd8 Rxd8+ Kxd8 f5 g6 h3 
 
-> setboard r3kb1r/pp2pppp/3q4/3Pn3/6b1/2N1BN2/PP3PPP/R2QKB1R w KQkq - bm Nxe5; id "ECM.015";
+pv hist: 51.70% 3.94% 1.81% 0.97% 0.68% 0.52% 0.43% 0.39% 0.31% 39.24% 
+tt hit rate 4.92%, coll rate 3.40%, asp: 10, null: 1600746, ext: 198457
+rzr: 12647, fut: 2959199, xft: 617115, lmr: 861861, 1304.34 knps.
 
+Do store with move.
+
+w:0:0
 Ply    Eval    Time    Nodes   QNodes   Principal Variation
-  1     458    0.00       60      446   Bb5+ 
-  2     524    0.00      422     1190   Bb5+ Bd7 O-O 
-  3     526    0.00      876     2038   Bb5+ Bd7 Bxd7+ Nxd7 O-O Nc5 
-  4     542    0.01     2574     8624   Bb5+ Bd7 Bxd7+ Nxd7 O-O O-O-O Bxa7 
-  5     546    0.02     8492    19916   Bb5+ Nd7 O-O O-O-O Ne4 Qb4 
-  6     929    0.10    36551    82663   Nxe5 Qxe5 Qxg4 e6 dxe6 fxe6 Bb5+ Ke7 Qf3 
-  7     954    0.05    18477    35697   Nxe5 
-  8     929    0.11    49126    80850   Nxe5 
-  9     954    0.14    64972   101035   Nxe5 
- 10     988    1.03   487078   793772   Nxe5 Bxd1 Bb5+ Kd8 Nxf7+ Kc7 Nxd6 Bh5 Nde4 a6 Be2 Bxe2 
- 11    1005    1.50   640069  1171795   Nxe5 Qxe5 Qxg4 Kd8 Qa4 Qd6 Bb5 
- 12    1022    3.70  1632917  2772674   Nxe5 Qxe5 Qxg4 f5 Qa4+ 
+  1     -38    0.00       63      364   a3 
+  2     -41    0.00      277     1146   a3 Qd6 
+  3     -34    0.00      497     1798   a3 Qd6 f4 
+  4     -15    0.01     3765    11580   Nd3 Qb6 e5 Nd5 
+  5     -21    0.01     3650    11644   Nd3 Qb6 e5 Nd5 Nxd5 
+  6     -22    0.04    12421    33867   Nd3 Qb6 e5 Ng4 Qg5 g6 
+  7      -6    0.30    97004   277942   Nd3 Qb6 
+  8      -8    0.59   183284   549713   Nb5 Qxb5 Qxd4 Rd8 c4 Qa5 Qc3 Qxc3 
+  9     -16    1.50   479190  1343726   f4 Rhd8 
+ 10       2    4.01  1318772  3577394   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 f4 Ng4 Nxg4 Bxg4 Rd6 Rd8 e5 
+ 11       0    3.51  1272133  3002114   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 f4 Ng4 Nxg4 Bxg4 Rd3 Rd8 f5 Kc7 
+ 12      -1   10.48  4104127  8887475   Rad1 Rxd1 Rxd1 Qb6 Qxb6 cxb6 f4 Ng4 Nxg4 Bxg4 Rd4 Rd8 Rxd8+ Kxd8 Kf2 Be6 f5 
 
-pv hist: 81.42% 6.22% 3.53% 2.43% 1.99% 1.48% 0.98% 0.77% 0.65% 0.53% 
-tt hit rate 5.50%, coll rate 1.57%, asp: 146633, null: 806749, ext: 146558
-rzr: 10597, fut: 2175143, xft: 316317, lmr: 490916, 1200.71 knps.
+pv hist: 53.43% 4.57% 2.15% 1.09% 0.77% 0.56% 0.48% 0.39% 0.32% 36.23% 
+tt hit rate 29.13%, coll rate 39.80%, asp: 10, null: 1852452, ext: 306422
+rzr: 16412, fut: 3977536, xft: 793337, lmr: 1224342, 1230.34 knps.

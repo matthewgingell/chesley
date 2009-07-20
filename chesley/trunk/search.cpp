@@ -61,6 +61,9 @@ Search_Engine :: new_search
   // Clear statistics.
   clear_statistics ();
 
+  // Clear the transposition table.
+  tt.clear ();
+
   // Setup the clock.
   controls.interrupt_search = false;
   if (controls.mode == EXACT || controls.fixed_time >= 0)
@@ -246,17 +249,12 @@ Search_Engine :: search_with_memory
   Score s;
   Score original_alpha = alpha;
   Score original_beta = beta;
-
+  
   // Try to find this node in the transposition table.
   bool have_exact = tt_try (b, depth, ply, m, s, alpha, beta);
   
   if (have_exact)
     {
-      if (ply == 0)
-        {
-          assert (m != NULL_MOVE);
-        }
-
       if (m != NULL_MOVE)
         {
           pv.push (m);
@@ -270,7 +268,7 @@ Search_Engine :: search_with_memory
 
   // It may be the case that fetching alpha from the hash causes us to
   // fail high immediately.
-  if (alpha >= beta)
+  if (alpha >= beta && (ply > 0 || m != NULL_MOVE))
     {
       if (m != NULL_MOVE)
         {
@@ -291,9 +289,11 @@ Search_Engine :: search_with_memory
   // narrowing [alpha, beta] from the transposition table.
   if (ply == 0 && (s <= alpha || s >= beta))
     {
+      alpha = original_alpha;
+      beta = original_beta;
       pv.clear ();
       s = search 
-        (b, depth, ply, pv, original_alpha, original_beta, do_null_move);
+        (b, depth, ply, pv, alpha, beta, do_null_move);
     }
 
   // Pop the repetition stack.
@@ -879,7 +879,8 @@ Search_Engine :: tt_update
   assert (alpha <= beta);
 
   // This rule seems to work well in practice.
-  if (pv.count == 0) return;
+  if (pv.count == 0 && !tt.free_entry (b))
+    return;
 
   // Determine the kind of value we are recording.
   SKind skind;
@@ -905,7 +906,6 @@ Search_Engine :: tt_update
       s = sign (s) * (MATE_VAL - mate_ply_from_here);
     }
 
-  // Use an 'always replace' scheme.
   Move m;
   if (pv.count > 0) 
     {
@@ -916,7 +916,7 @@ Search_Engine :: tt_update
       m = NULL_MOVE;
     }
 
-  // Store this entry.
+  // Update the entry.
   tt.set (b, skind, m, s, depth);
 #endif // ENABLE_TRANS_TABLE
 }
