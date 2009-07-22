@@ -222,10 +222,5 @@ struct Eval {
   int minor_counts[2];
   int pawn_counts[2][8];
 };
-  
-//////////////////////////
-// Piece-Square tables. //
-//////////////////////////
-
 
 #endif // _EVAL_

@@ -19,7 +19,7 @@
 
 struct TTable
 {
-  // Initialize the table, defaulting to one million entries.
+  // Initialize the table.
   TTable (size_t sz) : 
     sz (sz), hits (0), misses (0), writes (0), collisions (0) {
     table = (Entry *) calloc (sz, sizeof (Entry));
