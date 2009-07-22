@@ -11,8 +11,12 @@
 #include <iostream>
 #include "board.hpp"
 #include "chesley.hpp"
+#include "phash.hpp"
 
 using namespace std;
+
+// The pawn evaluation cache.
+PHash ph (1024 * 1024);
 
 ////////////////////////////////////
 // Top level evaluation function. //
@@ -307,10 +311,20 @@ bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
 Score Eval::eval_pawns (const Color c) {
   // All the following block quotes regarding pawn structure are taken
   // from "Pawn Power in Chess" by Hans Kmoch.
-
-  Score s = 0;
-  bitboard our_pawns = b.get_pawns (c);
+  
+  Score s;
+  const bitboard our_pawns = b.get_pawns (c);
   bitboard their_pawns = b.get_pawns (!c);
+
+  // Try to find this entry in the cache.
+  if (ph.lookup (b.phash, s))
+    {
+      return s;
+    }
+  else
+    {
+      s = 0;
+    }
 
   ////////////////////////////////////////////////////////////////////////
   //                                                                    //
@@ -392,6 +406,9 @@ Score Eval::eval_pawns (const Color c) {
       p = clear_lsb (p);
     }
   
+  // Save this score in the pawn eval cache.
+  ph.set (b.phash, s);
+
   return s;
 }
 

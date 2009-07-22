@@ -125,8 +125,9 @@ Board::common_init (Board &b) {
   // Initialize en_passant status.
   b.flags.en_passant = 0;
 
-  // Set up initial hash value.
+  // Set up initial hash values.
   b.hash = 0x0;
+  b.phash = 0x0;
 
   // White is to move.
   b.hash ^= zobrist_key_white_to_move;
@@ -231,6 +232,7 @@ Board::clear_piece (coord idx, Color c, Kind k) {
 
       // Update hash key.
       hash ^= get_zobrist_piece_key (c, k, idx);
+      if (k == PAWN) phash ^= get_zobrist_piece_key (c, k, idx);
 
       // Update evaluation information.
       material[c] -= Eval::eval_piece (k);
@@ -258,6 +260,7 @@ Board::set_piece (Kind k, Color c, coord idx) {
 
   // Update hash key.
   hash ^= get_zobrist_piece_key (c, k, idx);
+  if (k == PAWN) phash ^= get_zobrist_piece_key (c, k, idx);
 
   // Update evaluation information.
   material[c] += Eval::eval_piece (k);

@@ -188,6 +188,7 @@ struct Board {
 
   // Incrementally updated hash key for this position.
   uint64 hash;
+  uint64 phash;
 
   // Fetch the key for a piece.
   static uint64 get_zobrist_piece_key (Color c, Kind k, coord idx) {

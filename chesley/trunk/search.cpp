@@ -20,8 +20,11 @@
 #include "chesley.hpp"
 #include "search.hpp"
 #include "session.hpp"
+#include "phash.hpp"
 
 using namespace std;
+
+extern PHash ph;
 
 uint64 Search_Engine::hh_table[MAX_DEPTH + 1][64][64];
 
@@ -622,8 +625,7 @@ Search_Engine :: search
 void
 Search_Engine :: order_moves
 (const Board &b, int depth, Move_Vector &moves) {
-  Score scores[256];
-  memset (scores, 0, sizeof (scores));
+  Score scores[moves.count];
   Move best_guess = NULL_MOVE;
 
   // Look up the hash move.
@@ -760,7 +762,7 @@ Search_Engine :: qsearch
       b.gen_captures (moves);
       if (moves.count > 0)
         {
-          Score scores [256];
+          Score scores [moves.count];
           memset (scores, 0, sizeof (scores));
           for (int i = 0; i < moves.count; i++)
             {
@@ -1191,11 +1193,17 @@ Search_Engine :: post_after () {
   double coll_rate = (double) tt.collisions / tt.writes;
   cout << "coll rate " << coll_rate * 100 << "%, ";
 
+  hit_rate = (double) ph.hits / (ph.hits + ph.misses);
+  cout << "ph hit " << hit_rate * 100 << "%, ";
+  coll_rate = (double) ph.collisions / ph.writes;
+  cout << "ph coll " << coll_rate * 100 << "%, ";
+
+
   // Display performance of heuristics.
-  cout << "asp: "    << stats.asp_hits;
-  cout << ", null: " << stats.null_count;
-  cout << ", ext: " << stats.ext_count << endl;
-  cout << "rzr: " << stats.razor_count;
+  cout << "asp: "    << stats.asp_hits << endl;
+  cout << "null: " << stats.null_count;
+  cout << ", ext: " << stats.ext_count;
+  cout << " rzr: " << stats.razor_count;
   cout << ", fut: " << stats.futility_count;
   cout << ", xft: " << stats.ext_futility_count;
   cout << ", lmr: " << stats.lmr_count;
@@ -1210,7 +1218,7 @@ Search_Engine :: post_after () {
 
   if (total_time > 0) 
     {
-      cout << ", " << setprecision (2) << 
+      cout << endl << setprecision (2) << 
         (float) total_nodes / (float) total_time << " knps." << endl;
     }
   else
