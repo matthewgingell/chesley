@@ -12,6 +12,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <stdlib.h>
 #include <cassert>
 #include <iomanip>
 #include <iostream>
@@ -22,7 +23,7 @@
 
 using namespace std;
 
-uint64 Search_Engine::hh_table[MAX_DEPTH][64][64];
+uint64 Search_Engine::hh_table[MAX_DEPTH + 1][64][64];
 
 // Utility functions.
 bool is_mate (Score s) { 
@@ -331,6 +332,7 @@ Search_Engine :: search
 
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
+  int original_depth = depth;
 
   // Update statistics.
   stats.calls_to_search++;
@@ -408,11 +410,13 @@ Search_Engine :: search
       {
         int cs;
         Board c = b;
-        bool c_in_check = c.in_check (c.to_move());
         Move_Vector cpv;
 
         // Skip this move if it's illegal.
         if (!c.apply (moves[mi])) continue;
+
+        // Determine whether this moves checks.
+        bool c_in_check = c.in_check (c.to_move());
 
         legal_move_count++;
         int ext = 0;
@@ -433,10 +437,9 @@ Search_Engine :: search
         // Pawn to seventh rank extensions.
         int rank = Board :: idx_to_rank (moves[mi].to);
         if ((rank == 1 || rank == 6) && moves[mi].get_kind () == PAWN)
-          ext+= 1;
+          ext += 1;
 
         stats.ext_count += ext;
-
 #endif // ENABLE_EXTENSIONS
 
 #ifdef ENABLE_FUTILITY
@@ -444,63 +447,54 @@ Search_Engine :: search
         // A. Heinz and his discussion of pruning in Deep Thought at
         // http://people.csail.mit.edu/heinz/dt.
 
-        /////////////////////////////////////////
-        // Razoring at pre-pre frontier nodes. //
-        /////////////////////////////////////////
-
-        // If this position looks extremely bad at depth two, proceed
-        // with a reduced depth search.
-        const Score RAZORING_MARGIN = 10 * PAWN_VAL;
-        Score upperbound = meval + RAZORING_MARGIN;
-        if (ply > 0 && 
-            depth == 2 && 
-            ext == 0 && 
-            !c_in_check &&
-            upperbound <= alpha)
+        Score upperbound;
+        if (ply > 0 && ext == 0 && !in_check && !c_in_check && !have_pv_move)
           {
-            stats.razor_count++;
-            depth = 1;
-          }
-        
-        ////////////////////////
-        // Futility pruning.  //
-        ////////////////////////
+            /////////////////////////////////////////
+            // Razoring at pre-pre frontier nodes. //
+            /////////////////////////////////////////
+            
+            // If this position looks extremely bad at depth two,
+            // proceed with a reduced depth search.
+            const Score RAZORING_MARGIN = 8 * PAWN_VAL;
+            upperbound = meval + RAZORING_MARGIN;
+            if (depth == 3 && upperbound <= alpha)
+              {
+                stats.razor_count++;
+                depth = 2;
+              }
 
-        // At frontier nodes we estimate the most this move could
-        // reasonably improve the score of the position, and if it
-        // still isn't better than alpha we skip it.
-        const Score FUTILITY_MARGIN = 3 * PAWN_VAL;
-        upperbound = meval + FUTILITY_MARGIN;
-        if (ply > 0 
-            && depth == 1
-            && ext == 0 
-            && !in_check
-            && !c_in_check
-            && moves[mi].get_capture () == NULL_KIND
-            && upperbound < alpha)
-          {
-            stats.futility_count++;
-            continue;
-          }
+            if (moves[mi].get_capture () == NULL_KIND)
+              {
+                ////////////////////////
+                // Futility pruning.  //
+                ////////////////////////
 
-        ////////////////////////////////
-        // Extended futility pruning. //
-        ////////////////////////////////
+                // At frontier nodes we estimate the most this move
+                // could reasonably improve the score of the position,
+                // and if it still isn't better than alpha we skip it.
+                const Score FUTILITY_MARGIN = 3 * PAWN_VAL;
+                upperbound = meval + FUTILITY_MARGIN;
+                if (depth == 1 && upperbound < alpha)
+                  {
+                    stats.futility_count++;
+                    continue;
+                  }
 
-        // This is exactly like normal futility pruning, just at
-        // pre-frontier nodes with a bigger margin.
-        const Score EXT_FUTILITY_MARGIN = 5 * PAWN_VAL;
-        upperbound = meval + EXT_FUTILITY_MARGIN;
-        if (ply > 0
-            && depth == 2
-            && ext == 0
-            && !in_check
-            && !c_in_check
-            && moves[mi].get_capture () == NULL_KIND
-            && upperbound < alpha)
-          {
-            stats.ext_futility_count++;
-            continue;
+                ////////////////////////////////
+                // Extended futility pruning. //
+                ////////////////////////////////
+
+                // This is exactly like normal futility pruning, just
+                // at pre-frontier nodes with a bigger margin.
+                const Score EXT_FUTILITY_MARGIN = 5 * PAWN_VAL;
+                upperbound = meval + EXT_FUTILITY_MARGIN;
+                if (depth == 2 && upperbound < alpha)
+                  {
+                    stats.ext_futility_count++;
+                    continue;
+                  }
+              }
           }
 #endif // ENABLE_FUTILITY
 
@@ -511,9 +505,8 @@ Search_Engine :: search
 
         const int Full_Depth_Count = 4;
         const int Reduction_Limit = 3;
-        if (mi >= Full_Depth_Count && 
-            depth >= Reduction_Limit &&
-            ext == 0 && !c_in_check && 
+        if (mi >= Full_Depth_Count && depth >= Reduction_Limit &&
+            ext == 0 && !in_check && !c_in_check && !have_pv_move &&
             moves[mi].get_capture () == NULL_KIND)
           {
             Score ds;
@@ -574,9 +567,6 @@ Search_Engine :: search
           }
       }
 
-    // Collect statistics.
-    stats.hist_pv[min (mi, hist_nbuckets - 1)]++;
-
     // If we couldn't find a move that applied, then the game is over.
     if (legal_move_count == 0)
       {
@@ -592,28 +582,32 @@ Search_Engine :: search
     else
       {
         // If we found a move, this is either a PV or a fail high move.
-        if (pv.count > 0)
+        if (pv.count > 0 && depth <= MAX_DEPTH)
           {
+            // Collect statistics.
+            stats.hist_pv[min (mi, hist_nbuckets - 1)]++;
+
             coord from = pv[0].from;
             coord to = pv[0].to;
 
-            hh_table[depth][from][to] += 1;
+            hh_table[original_depth][from][to] += 1;
 
             if (pv[0].get_capture () == NULL_KIND)
               {
-                if (killers[depth][0] != NULL_MOVE)
+                if (killers[original_depth][0] != NULL_MOVE)
                   {
-                    coord kto = killers[depth][0].to;
-                    coord kfrom = killers[depth][0].from;
-                    if (hh_table[depth][from][to] > hh_table[depth][kfrom][kto])
+                    coord kto = killers[original_depth][0].to;
+                    coord kfrom = killers[original_depth][0].from;
+                    if (hh_table[original_depth][from][to] > 
+                        hh_table[original_depth][kfrom][kto])
                       {
-                        killers[depth][1] = killers[depth][0];
-                        killers[depth][0] = pv[0];
+                        killers[original_depth][1] = killers[original_depth][0];
+                        killers[original_depth][0] = pv[0];
                       }
                   }
                 else
                   {
-                    killers[depth][0] = pv[0];
+                    killers[original_depth][0] = pv[0];
                   }
               }
           }
@@ -686,8 +680,11 @@ Search_Engine :: order_moves
       // absolute frequency into anything bounded or sensible.
       // However, nothing else I've tried works as well, so for now
       // I'm leaving this very odd and unsound code here.
-      uint64 hh_val = hh_table[depth][moves[i].from][moves[i].to];
-      scores[i] += (Score) hh_val;
+      if (depth <= MAX_DEPTH) 
+        {
+          uint64 hh_val = hh_table[depth][moves[i].from][moves[i].to];
+          scores[i] += (Score) hh_val;
+        }
     }
          
   moves.sort (scores);  
@@ -763,8 +760,8 @@ Search_Engine :: qsearch
       b.gen_captures (moves);
       if (moves.count > 0)
         {
-          Score *scores = (Score *) alloca (moves.count * sizeof (Score));
-          memset (scores, 0, moves.count * sizeof (Score));
+          Score scores [256];
+          memset (scores, 0, sizeof (scores));
           for (int i = 0; i < moves.count; i++)
             {
 #if ENABLE_SEE
@@ -776,10 +773,11 @@ Search_Engine :: qsearch
           moves.sort (scores);
 
           // Minimax over captures.
-          for (int i = 0; i < moves.count; i++)
+          int mi = 0;
+          for (mi = 0; mi < moves.count; mi++)
             {
               c = b;
-              if (c.apply (moves[i]))
+              if (c.apply (moves[mi]))
                 {
                   alpha = max
                     (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
@@ -787,6 +785,9 @@ Search_Engine :: qsearch
                     break;
                 }
             }
+
+          // Collect statistics.
+          stats.hist_qpv[min (mi, hist_nbuckets - 1)]++;
         }
     }
 
@@ -1176,6 +1177,14 @@ Search_Engine :: post_after () {
     cout << (stats.hist_pv[i] / sum) * 100 << "% ";
   cout << endl;
 
+  sum = 0;
+  for (int i = 0; i < hist_nbuckets; i++)
+    sum += stats.hist_qpv[i];
+  cout << "qpv hist: ";
+  for (int i = 0; i < hist_nbuckets; i++)
+    cout << (stats.hist_qpv[i] / sum) * 100 << "% ";
+  cout << endl;
+
   // Display statistics on transposition table hit rate.
   double hit_rate = (double) tt.hits / (tt.hits + tt.misses);
   cout << "tt hit rate " << hit_rate * 100 << "%, ";
@@ -1194,7 +1203,7 @@ Search_Engine :: post_after () {
   // Display nodes per second.
   uint64 total_nodes = 0;
   uint64 total_time = 0;
-  for (int i = 1; i < MAX_DEPTH; i++) {
+  for (int i = 1; i <= MAX_DEPTH; i++) {
     total_nodes += stats.calls_at_ply[i];
     total_time  += stats.time_at_ply[i];
   }

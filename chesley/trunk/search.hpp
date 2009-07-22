@@ -90,6 +90,7 @@ struct Search_Engine {
     memset (stats.calls_at_ply, 0, sizeof (stats.calls_at_ply));
     memset (stats.time_at_ply, 0, sizeof (stats.time_at_ply));
     memset (stats.hist_pv, 0, sizeof (stats.hist_pv));
+    memset (stats.hist_qpv, 0, sizeof (stats.hist_qpv));
   }
 
   //////////////////////////////////////////
@@ -218,14 +219,15 @@ struct Search_Engine {
   struct {
     uint64 calls_to_qsearch;
     uint64 calls_to_search;
-    uint64 calls_at_ply[MAX_DEPTH];
-    uint64 time_at_ply[MAX_DEPTH];
+    uint64 calls_at_ply[MAX_DEPTH + 1];
+    uint64 time_at_ply[MAX_DEPTH + 1];
 
     // A histogram of times we found a PV node at an index into the
     // moves list. This is a measure of the performance of our move
     // ordering strategy.
     
     uint32 hist_pv [hist_nbuckets];
+    uint32 hist_qpv [hist_nbuckets];
     uint64 asp_hits;
     uint64 null_count;
     uint64 ext_count;
@@ -284,10 +286,10 @@ struct Search_Engine {
   /////////////////
 
   // History heuristic table.
-  static uint64 hh_table[MAX_DEPTH][64][64];
+  static uint64 hh_table[MAX_DEPTH + 1][64][64];
 
   // Killer moves.
-  Move killers[MAX_DEPTH][2];
+  Move killers[MAX_DEPTH + 1][2];
 };
 
 #endif // _SEARCH_
