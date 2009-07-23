@@ -501,7 +501,11 @@ Session::execute (char *line) {
         uint64 start = cpu_time();
         uint64 count = board.perft (depth);
         uint64 elapsed = cpu_time() - start;
-        fprintf (out, "moves = %llu\n", count);
+#ifdef _WIN32
+        fprintf (out, "moves = %I64u\n", count);
+#else
+        fprintf (out, "moves = %ull\n", count);
+#endif // _WIN32
         fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
       }
       break;

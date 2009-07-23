@@ -330,9 +330,9 @@ operator<< (std::ostream &os, const string_vector &in) {
 
 // Check a file descriptor and return true is there is data available
 // to read from it.
+#ifndef _WIN32
 static bool
 fdready (int fd) {
-#ifndef _WIN32
   fd_set readfds;
   struct timeval timeout;
 
@@ -346,10 +346,13 @@ fdready (int fd) {
 
   // Poll the file descriptor.
   return select (fd + 1, &readfds, NULL, NULL, &timeout);
-#else // _WIN32
-  return true;
-#endif // _WIN32
 }
+#else
+static bool
+fdready (int fd IS_UNUSED) {
+  return 0;
+}
+#endif  // _WIN32
 
 // Get a line, remove the trailing new line if any, and return a
 // malloc'd string.
