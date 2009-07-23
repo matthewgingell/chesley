@@ -778,7 +778,7 @@ Search_Engine :: qsearch
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
-              if (scores[mi] < 0) break;
+              //              if (scores[mi] < 0) break;
 
               c = b;
               if (c.apply (moves[mi]))
