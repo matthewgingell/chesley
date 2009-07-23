@@ -36,7 +36,7 @@ CXXFLAGS = $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
 
 ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 -DENABLE_NULL_MOVE -DENABLE_EXTENSIONS -DENABLE_TRANS_TABLE	\
--DENABLE_FUTILITY -DENABLE_LMR # -DENABLE_SEE
+-DENABLE_FUTILITY -DENABLE_LMR -DENABLE_SEE
 
 DEBUG = # -DTRACE_EVAL
 
@@ -73,13 +73,13 @@ playold: chesley
 
 playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard  -tc 1 -inc 0 -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard  -tc 1 -inc 0 -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard  -st 0:01  -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 0:30 -inc 0 -fcp ./chesley -scp ./other_binaries/tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -fcp ./chesley -scp ./other_binaries/olithink -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/GreKo -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/GreKo -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 
 #######################
 # Regression testing. #
