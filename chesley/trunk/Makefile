@@ -6,8 +6,8 @@
 # GNU Public License.                                                #
 ######################################################################
 
-#CXX = /opt/local/bin/g++-mp-4.4
-CXX = /Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-g++
+CXX = /opt/local/bin/g++-mp-4.4
+#CXX = /Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-g++
 
 OPT = -g -O3 -m64
 
