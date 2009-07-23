@@ -73,7 +73,10 @@ Session::init_session () {
 
 #ifndef _WIN32
   tty = isatty (fileno (in));
-#endif
+#else
+  tty = true;
+#endif // _WIN32
+
   // Set interface mode.
   ui_mode = tty ? INTERACTIVE : BATCH;
   protocol = NATIVE;

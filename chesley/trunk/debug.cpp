@@ -49,7 +49,11 @@ Session::perft (const string_vector &tokens)
   uint64 start = cpu_time();
   uint64 count = board.perft (depth);
   uint64 elapsed = cpu_time() - start;
+#ifdef _WIN32
+  fprintf (out, "moves = %I64u\n", count);
+#else
   fprintf (out, "moves = %ull\n", count);
+#endif
   fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
   return true;
 }
@@ -211,8 +215,11 @@ Session::epd (const string_vector &args)
                   uint64 expecting = to_int (operand);
                   uint64 p = b.perft (depth);
                   bool pass = (p == expecting);
+#ifdef _WIN32
+                  fprintf (out, "%s %I64u\n", pass ? "PASS" : "FAIL", p);
+#else
                   fprintf (out, "%s %ull\n", pass ? "PASS" : "FAIL", p);
-
+#endif // _WIN32
                   if (!pass)
                     fprintf  (out,
                               "Position %s fails at depth %i.\n",
