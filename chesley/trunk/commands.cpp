@@ -504,7 +504,7 @@ Session::execute (char *line) {
 #ifdef _WIN32
         fprintf (out, "moves = %I64u\n", count);
 #else
-        fprintf (out, "moves = %ull\n", count);
+        fprintf (out, "moves = %llun", count);
 #endif // _WIN32
         fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
       }
