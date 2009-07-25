@@ -26,6 +26,7 @@ enum time_mode { CONVENTIONAL, ICS, EXACT };
 
 // Maximum search depth. 
 static const int32 MAX_DEPTH = 100;
+static const int32 MAX_PLY = 100;
 static const int hist_nbuckets = 10;
 
 struct Search_Engine {
@@ -219,8 +220,8 @@ struct Search_Engine {
   struct {
     uint64 calls_to_qsearch;
     uint64 calls_to_search;
-    uint64 calls_at_ply[MAX_DEPTH + 1];
-    uint64 time_at_ply[MAX_DEPTH + 1];
+    uint64 calls_at_ply[MAX_PLY];
+    uint64 time_at_ply[MAX_PLY];
 
     // A histogram of times we found a PV node at an index into the
     // moves list. This is a measure of the performance of our move
@@ -279,17 +280,21 @@ struct Search_Engine {
   inline Score see (const Board &b, const Move &capture);
 
   // Heuristically order a list of moves by value.
-  inline void order_moves (const Board &b, int depth, Move_Vector &moves);
+  inline void order_moves (const Board &b, int ply, int depth, Move_Vector &moves);
 
   /////////////////
   // Heuristics. //
   /////////////////
 
+  void collect_fail_high (int ply, const Move &m);
+  void collect_pv_node (int ply, const Move &m);
+  void update_killers (int ply, const Move &m);
+
   // History heuristic table.
-  static uint64 hh_table[MAX_DEPTH + 1][64][64];
+  static uint64 hh_table[MAX_PLY][64][64];
 
   // Killer moves.
-  Move killers[MAX_DEPTH + 1][2];
+  Move killers[MAX_PLY][2];
 };
 
 #endif // _SEARCH_

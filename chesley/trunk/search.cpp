@@ -26,7 +26,7 @@ using namespace std;
 
 extern PHash ph;
 
-uint64 Search_Engine::hh_table[MAX_DEPTH + 1][64][64];
+uint64 Search_Engine::hh_table[MAX_PLY][64][64];
 
 // Utility functions.
 bool is_mate (Score s) { 
@@ -333,9 +333,10 @@ Search_Engine :: search
   assert (pv.count == 0);
   assert (alpha < beta);
 
+  int original_alpha = alpha;
+  int original_beta = beta;
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
-  int original_depth = depth;
 
   // Update statistics.
   stats.calls_to_search++;
@@ -400,7 +401,7 @@ Search_Engine :: search
     
     // Generate moves.
     Move_Vector moves (b);
-    order_moves (b, depth, moves);
+    order_moves (b, ply, depth, moves);
 
     ////////////////////////////
     // Minimax over children. //
@@ -564,6 +565,7 @@ Search_Engine :: search
               {
                 // In the fail high case, only copy back the move and
                 // then exit the loop.
+                collect_fail_high (ply, moves[mi]);
                 pv = Move_Vector (moves[mi]);
                 break;
               }
@@ -588,31 +590,9 @@ Search_Engine :: search
         if (pv.count > 0 && depth <= MAX_DEPTH)
           {
             // Collect statistics.
+            if (alpha > original_alpha && alpha < original_beta)
+              collect_pv_node (ply, pv[0]);
             stats.hist_pv[min (mi, hist_nbuckets - 1)]++;
-
-            coord from = pv[0].from;
-            coord to = pv[0].to;
-
-            hh_table[original_depth][from][to] += 1;
-
-            if (pv[0].get_capture () == NULL_KIND)
-              {
-                if (killers[original_depth][0] != NULL_MOVE)
-                  {
-                    coord kto = killers[original_depth][0].to;
-                    coord kfrom = killers[original_depth][0].from;
-                    if (hh_table[original_depth][from][to] > 
-                        hh_table[original_depth][kfrom][kto])
-                      {
-                        killers[original_depth][1] = killers[original_depth][0];
-                        killers[original_depth][0] = pv[0];
-                      }
-                  }
-                else
-                  {
-                    killers[original_depth][0] = pv[0];
-                  }
-              }
           }
       }
   }
@@ -620,11 +600,37 @@ Search_Engine :: search
   return alpha;
 }
 
+// Maintain ordering statistics.
+void 
+Search_Engine::collect_fail_high (int ply, const Move &m) {
+  hh_table[ply][m.from][m.to] += 1;
+  update_killers (ply, m);
+}
+
+void 
+Search_Engine::collect_pv_node (int ply, const Move &m) {
+  hh_table[ply][m.from][m.to] += 5;
+  update_killers (ply, m);
+}
+
+void 
+Search_Engine::update_killers (int ply, const Move &m) {
+  if (m.get_capture () == NULL_KIND) {
+    Move k = killers[ply][0];
+    uint64 count = hh_table[ply][m.from][m.to];
+    if (count > hh_table[ply][k.from][k.to])
+      {
+        killers[ply][1] = killers[ply][0];
+        killers[ply][0] = m;
+      }
+  }
+}
+
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void
 Search_Engine :: order_moves
-(const Board &b, int depth, Move_Vector &moves) {
+(const Board &b, int ply, int depth, Move_Vector &moves) {
   Score scores[moves.count];
   Move best_guess = NULL_MOVE;
 
@@ -652,41 +658,19 @@ Search_Engine :: order_moves
           scores[i] = +INF;
           continue;
         }
-
-      // Add killer move bonuses.
-      if (moves[i] == killers[depth][0])
-        scores[i] += 250;
-      else if (moves[i] == killers[depth][1])
-        scores[i] += 100;
       
       // Followed by promotions to queen.
       if (moves[i].promote == QUEEN)
         scores[i] += 10 * 1000;
-      
-      // Apply capture bonuses.
-      if (cap != NULL_KIND)
-        {
-          if (Eval::eval_piece (cap) > Eval::eval_piece (kind))
-            scores[i] += 100 * Eval::eval_piece (cap);
-          else if (Eval::eval_piece (cap) == Eval::eval_piece (kind))
-            scores[i] += 50 * Eval::eval_piece (cap);
-          else
-            scores[i] += 25 * Eval::eval_piece (cap);
-        }
 
-      // Apply history table bonuses. The approach here is truly
-      // bizarre: We add the unscaled value from the history table
-      // directly to the value to sort on. This value is a count of
-      // cutoffs which varies by orders of magnitude depending on
-      // search depth, and nothing at all is done to scale the
-      // absolute frequency into anything bounded or sensible.
-      // However, nothing else I've tried works as well, so for now
-      // I'm leaving this very odd and unsound code here.
-      if (depth <= MAX_DEPTH) 
-        {
-          uint64 hh_val = hh_table[depth][moves[i].from][moves[i].to];
-          scores[i] += (Score) hh_val;
-        }
+      // Apply capture bonuses.
+      scores[i] += 50 * (1000 + see (b, moves[i]));
+
+      // Add killer move bonuses.
+      if (moves[i] == killers[ply][0])
+        scores[i] += 50 * 100;
+      else if (moves[i] == killers[ply][1])
+        scores[i] += 25 * 100;
     }
          
   moves.sort (scores);  
