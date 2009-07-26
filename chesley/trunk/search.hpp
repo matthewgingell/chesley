@@ -88,8 +88,8 @@ struct Search_Engine {
     stats.futility_count = 0;
     stats.ext_futility_count = 0;
     stats.lmr_count = 0;
-    memset (stats.calls_at_ply, 0, sizeof (stats.calls_at_ply));
-    memset (stats.time_at_ply, 0, sizeof (stats.time_at_ply));
+    memset (stats.calls_for_depth, 0, sizeof (stats.calls_for_depth));
+    memset (stats.time_for_depth, 0, sizeof (stats.time_for_depth));
     memset (stats.hist_pv, 0, sizeof (stats.hist_pv));
     memset (stats.hist_qpv, 0, sizeof (stats.hist_qpv));
   }
@@ -220,8 +220,8 @@ struct Search_Engine {
   struct {
     uint64 calls_to_qsearch;
     uint64 calls_to_search;
-    uint64 calls_at_ply[MAX_PLY];
-    uint64 time_at_ply[MAX_PLY];
+    uint64 calls_for_depth[MAX_DEPTH];
+    uint64 time_for_depth[MAX_DEPTH];
 
     // A histogram of times we found a PV node at an index into the
     // moves list. This is a measure of the performance of our move
