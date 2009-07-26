@@ -651,7 +651,11 @@ Search_Engine :: order_moves
       // Sort the best guess move first.
       if (moves[i] == best_guess)
         scores[i] = +INF;
-      
+     
+      // Apply promotion bonus.
+      if (moves[i].promote == QUEEN)
+        scores[i] += QUEEN_VAL - PAWN_VAL;
+ 
       // Apply capture bonuses.
       if (moves[i].get_capture () != NULL_KIND)
         scores[i] += PAWN_VAL + see (b, moves[i]);
