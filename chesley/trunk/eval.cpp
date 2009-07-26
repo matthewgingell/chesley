@@ -29,7 +29,7 @@ Score Eval::score () {
   cerr << b << endl << endl;
 #endif // TRACE_EVAL
 
-  Score s = TEMPO_BONUS;
+  Score s = sign (b.to_move ()) * TEMPO_BONUS;
   phase = get_phase ();
 
   // Draw detection.
@@ -405,7 +405,7 @@ Score Eval::eval_pawns (const Color c) {
 
       p = clear_lsb (p);
     }
-  
+
   // Save this score in the pawn eval cache.
   ph.set (b.phash, s);
 

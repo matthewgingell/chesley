@@ -227,8 +227,8 @@ struct Search_Engine {
     // moves list. This is a measure of the performance of our move
     // ordering strategy.
     
-    uint32 hist_pv [hist_nbuckets];
-    uint32 hist_qpv [hist_nbuckets];
+    uint64 hist_pv [hist_nbuckets];
+    uint64 hist_qpv [hist_nbuckets];
     uint64 asp_hits;
     uint64 null_count;
     uint64 ext_count;
@@ -280,7 +280,8 @@ struct Search_Engine {
   inline Score see (const Board &b, const Move &capture);
 
   // Heuristically order a list of moves by value.
-  inline void order_moves (const Board &b, int ply, int depth, Move_Vector &moves);
+  inline void order_moves (const Board &b, int ply, int depth, Move_Vector &moves, 
+                           Score alpha = -INF, Score beta = INF);
 
   /////////////////
   // Heuristics. //
@@ -291,7 +292,7 @@ struct Search_Engine {
   void update_killers (int ply, const Move &m);
 
   // History heuristic table.
-  static uint64 hh_table[MAX_PLY][64][64];
+  static uint64 hh_table[MAX_PLY][2][64][64];
 
   // Killer moves.
   Move killers[MAX_PLY][2];
