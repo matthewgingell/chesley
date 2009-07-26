@@ -633,16 +633,19 @@ Search_Engine :: order_moves
 (const Board &b, int ply, int depth, 
  Move_Vector &moves, Score alpha, Score beta) {
   Score scores[moves.count];
+  memset (scores, 0, sizeof(scores));
   Move best_guess = tt_move (b);
 
-  if (best_guess == NULL_MOVE && depth > 1)
+  // Internal iterative deepening.
+  const int R = 2;
+  if (best_guess == NULL_MOVE && depth > R)
     {
       Move_Vector pv;
-      search_with_memory (b, depth - 1, 0, pv, alpha, beta);
+      search_with_memory (b, depth - R, 0, pv, alpha, beta);
       if (pv.count > 0) best_guess = pv[0];
     }
-
-  memset (scores, 0, sizeof(scores));
+  
+  // Score each move.
   for (int i = 0; i < moves.count; i++)
     {
       // Sort the best guess move first.
@@ -651,7 +654,7 @@ Search_Engine :: order_moves
       
       // Apply capture bonuses.
       if (moves[i].get_capture () != NULL_KIND)
-        scores[i] += 100 + see (b, moves[i]);
+        scores[i] += PAWN_VAL + see (b, moves[i]);
       
       // Apply psq bonuses.
       scores[i] += Eval::psq_value (b, moves[i]);
