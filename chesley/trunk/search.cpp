@@ -139,8 +139,8 @@ Search_Engine :: iterative_deepening
       s_tmp = aspiration_search (b, i, pv_tmp, s, 15);
 
       // Collect statistics.
-      stats.calls_at_ply[i] = stats.calls_to_search + stats.calls_to_qsearch;
-      stats.time_at_ply[i] = mclock () - start_time;
+      stats.calls_for_depth[i] = stats.calls_to_search + stats.calls_to_qsearch;
+      stats.time_for_depth[i] = mclock () - start_time;
 
       // Break out of the loop if the search was interrupted and we've
       // found at least one move.
@@ -150,7 +150,7 @@ Search_Engine :: iterative_deepening
         }
 
       // Because of techniques like grafting the results of searches
-      // from the transposition table on to shallow searches, etc., we
+      // from the transposition table to shallow searches, etc., we
       // never know if we've found the quickest mate possible. Here we
       // keep looking for better mates until time expires.
       if (found_mate && abs (s_tmp) <= best_mate)
@@ -1180,9 +1180,9 @@ Search_Engine :: post_after () {
   // Display nodes per second.
   uint64 total_nodes = 0;
   uint64 total_time = 0;
-  for (int i = 1; i <= MAX_DEPTH; i++) {
-    total_nodes += stats.calls_at_ply[i];
-    total_time  += stats.time_at_ply[i];
+  for (int i = 0; i < MAX_DEPTH; i++) {
+    total_nodes += stats.calls_for_depth[i];
+    total_time += stats.time_for_depth[i];
   }
 
   if (total_time > 0) 
