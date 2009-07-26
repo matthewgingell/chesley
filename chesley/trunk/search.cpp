@@ -26,7 +26,7 @@ using namespace std;
 
 extern PHash ph;
 
-uint64 Search_Engine::hh_table[MAX_PLY][64][64];
+uint64 Search_Engine::hh_table[MAX_PLY][2][64][64];
 
 // Utility functions.
 bool is_mate (Score s) { 
@@ -136,7 +136,7 @@ Search_Engine :: iterative_deepening
       start_time = mclock ();
 
       // Search this position using an aspiration window.
-      s_tmp = aspiration_search (b, i, pv_tmp, s, 25);
+      s_tmp = aspiration_search (b, i, pv_tmp, s, 15);
 
       // Collect statistics.
       stats.calls_at_ply[i] = stats.calls_to_search + stats.calls_to_qsearch;
@@ -401,7 +401,7 @@ Search_Engine :: search
     
     // Generate moves.
     Move_Vector moves (b);
-    order_moves (b, ply, depth, moves);
+    order_moves (b, ply, depth, moves, alpha, beta);
 
     ////////////////////////////
     // Minimax over children. //
@@ -603,13 +603,13 @@ Search_Engine :: search
 // Maintain ordering statistics.
 void 
 Search_Engine::collect_fail_high (int ply, const Move &m) {
-  hh_table[ply][m.from][m.to] += 1;
+  hh_table[ply][m.get_color ()][m.from][m.to] += 1;
   update_killers (ply, m);
 }
 
 void 
 Search_Engine::collect_pv_node (int ply, const Move &m) {
-  hh_table[ply][m.from][m.to] += 5;
+  hh_table[ply][m.get_color ()][m.from][m.to] += 1;
   update_killers (ply, m);
 }
 
@@ -617,8 +617,8 @@ void
 Search_Engine::update_killers (int ply, const Move &m) {
   if (m.get_capture () == NULL_KIND) {
     Move k = killers[ply][0];
-    uint64 count = hh_table[ply][m.from][m.to];
-    if (count > hh_table[ply][k.from][k.to])
+    uint64 count = hh_table[ply][m.color][m.from][m.to];
+    if (count > hh_table[ply][m.color][k.from][k.to])
       {
         killers[ply][1] = killers[ply][0];
         killers[ply][0] = m;
@@ -630,49 +630,37 @@ Search_Engine::update_killers (int ply, const Move &m) {
 // cutoffs.
 void
 Search_Engine :: order_moves
-(const Board &b, int ply, int depth, Move_Vector &moves) {
+(const Board &b, int ply, int depth, 
+ Move_Vector &moves, Score alpha, Score beta) {
   Score scores[moves.count];
-  Move best_guess = NULL_MOVE;
+  Move best_guess = tt_move (b);
 
-  // Look up the hash move.
-  best_guess = tt_move (b);
-
-  // If we don't have a hash move, try internal iterative deepening.
-  if (best_guess == NULL_MOVE && depth > 5)
+  if (best_guess == NULL_MOVE && depth > 1)
     {
       Move_Vector pv;
-      search_with_memory (b, depth - 2, 0, pv);
+      search_with_memory (b, depth - 1, 0, pv, alpha, beta);
       if (pv.count > 0) best_guess = pv[0];
     }
-    
-  // Compute ordering scores.
-  memset (scores, 0, sizeof (scores));
+
+  memset (scores, 0, sizeof(scores));
   for (int i = 0; i < moves.count; i++)
     {
-      Kind kind = moves[i].get_kind ();
-      Kind cap = moves[i].get_capture ();
-      
       // Sort the best guess move first.
       if (moves[i] == best_guess)
-        {
-          scores[i] = +INF;
-          continue;
-        }
+        scores[i] = +INF;
       
-      // Followed by promotions to queen.
-      if (moves[i].promote == QUEEN)
-        scores[i] += 10 * 1000;
-
       // Apply capture bonuses.
-      scores[i] += 50 * (1000 + see (b, moves[i]));
+      if (moves[i].get_capture () != NULL_KIND)
+        scores[i] += 100 + see (b, moves[i]);
+      
+      // Apply psq bonuses.
+      scores[i] += Eval::psq_value (b, moves[i]);
 
-      // Add killer move bonuses.
-      if (moves[i] == killers[ply][0])
-        scores[i] += 50 * 100;
-      else if (moves[i] == killers[ply][1])
-        scores[i] += 25 * 100;
+      // Apply killer move bonuses.
+      if (moves[i] == killers[ply][0]) scores[i] += 100;
+      if (moves[i] == killers[ply][1]) scores[i] += 75;
     }
-         
+
   moves.sort (scores);  
 }
   
@@ -750,11 +738,7 @@ Search_Engine :: qsearch
           memset (scores, 0, sizeof (scores));
           for (int i = 0; i < moves.count; i++)
             {
-#if ENABLE_SEE
               scores[i] = see (b, moves[i]);
-#else
-              scores[i] = Eval::eval_capture (moves[i]);
-#endif
             }
           moves.sort (scores);
 
@@ -762,8 +746,7 @@ Search_Engine :: qsearch
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
-              //              if (scores[mi] < 0) break;
-
+              if (scores[mi] < 0) break;
               c = b;
               if (c.apply (moves[mi]))
                 {
