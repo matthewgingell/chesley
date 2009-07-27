@@ -458,7 +458,7 @@ Search_Engine :: search
             // Razoring at pre-pre frontier nodes. //
             /////////////////////////////////////////
             
-            // If this position looks extremely bad at depth two,
+            // If this position looks extremely bad at depth three,
             // proceed with a reduced depth search.
             const Score RAZORING_MARGIN = 8 * PAWN_VAL;
             upperbound = meval + RAZORING_MARGIN;
