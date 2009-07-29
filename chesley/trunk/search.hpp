@@ -71,9 +71,8 @@ struct Search_Engine {
     // Output generation.
     post = true;
 
-    // Initialize history and killer tables. 
+    // Initialize history the history table.
     memset (hh_table, 0, sizeof (hh_table));
-    memset (killers, 0, sizeof (killers));
   }
 
   // Clear accumulated search statistics.
@@ -287,15 +286,10 @@ struct Search_Engine {
   // Heuristics. //
   /////////////////
 
-  void collect_fail_high (int ply, const Move &m);
-  void collect_pv_node (int ply, const Move &m);
-  void update_killers (int ply, const Move &m);
+  uint64 hh_table[64][64];
+  uint64 hh_max;
 
-  // History heuristic table.
-  static uint64 hh_table[MAX_PLY][2][64][64];
-
-  // Killer moves.
-  Move killers[MAX_PLY][2];
+  void collect_move (int depth, const Move &m);
 };
 
 #endif // _SEARCH_

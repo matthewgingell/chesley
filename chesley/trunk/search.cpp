@@ -26,8 +26,6 @@ using namespace std;
 
 extern PHash ph;
 
-uint64 Search_Engine::hh_table[MAX_PLY][2][64][64];
-
 // Utility functions.
 bool is_mate (Score s) { 
   return abs (s) > MATE_VAL - MAX_DEPTH;
@@ -58,9 +56,9 @@ Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
-  // Clear history and killer tables. 
-  memset (killers, 0, sizeof (killers));
+  // Clear history tables.
   memset (hh_table, 0, sizeof (hh_table));
+  hh_max = 0;
   
   // Clear statistics.
   clear_statistics ();
@@ -564,7 +562,7 @@ Search_Engine :: search
               {
                 // In the fail high case, only copy back the move and
                 // then exit the loop.
-                collect_fail_high (ply, moves[mi]);
+                collect_move (depth, moves[mi]);
                 pv = Move_Vector (moves[mi]);
                 break;
               }
@@ -590,7 +588,7 @@ Search_Engine :: search
           {
             // Collect statistics.
             if (alpha > original_alpha && alpha < original_beta)
-              collect_pv_node (ply, pv[0]);
+              collect_move (depth, pv[0]);
             stats.hist_pv[min (mi, hist_nbuckets - 1)]++;
           }
       }
@@ -599,30 +597,11 @@ Search_Engine :: search
   return alpha;
 }
 
-// Maintain ordering statistics.
+// Collect a move in the history table.
 void 
-Search_Engine::collect_fail_high (int ply, const Move &m) {
-  hh_table[ply][m.get_color ()][m.from][m.to] += 1;
-  update_killers (ply, m);
-}
-
-void 
-Search_Engine::collect_pv_node (int ply, const Move &m) {
-  hh_table[ply][m.get_color ()][m.from][m.to] += 1;
-  update_killers (ply, m);
-}
-
-void 
-Search_Engine::update_killers (int ply, const Move &m) {
-  if (m.get_capture () == NULL_KIND) {
-    Move k = killers[ply][0];
-    uint64 count = hh_table[ply][m.color][m.from][m.to];
-    if (count > hh_table[ply][m.color][k.from][k.to])
-      {
-        killers[ply][1] = killers[ply][0];
-        killers[ply][0] = m;
-      }
-  }
+Search_Engine::collect_move (int depth, const Move &m) {
+  uint64 val = hh_table [m.from][m.to] += 1 << depth;
+  hh_max = max (val, hh_max);
 }
 
 // Attempt to order moves to improve our odds of getting earlier
@@ -659,20 +638,15 @@ Search_Engine :: order_moves
       // Apply capture bonuses.
       if (m.get_capture () != NULL_KIND) 
         {
-#ifdef ENABLE_SEE
           scores[i] += PAWN_VAL + see (b, m);
-#else
-          scores[i] += 
-            Eval::eval_capture (m) - Eval::eval_piece (m.kind) / 10;
-#endif // ENABLE_SEE
         }
       
       // Apply psq bonuses.
       scores[i] += Eval::psq_value (b, m);
 
-      // Apply killer move bonuses.
-      if (m == killers[ply][0]) scores[i] += 100;
-      if (m == killers[ply][1]) scores[i] += 75;
+      // Apply history bonus.
+      uint64 hval = hh_table[m.from][m.to];
+      if (hh_max) scores[i] += (PAWN_VAL * hval) / hh_max;
     }
 
   moves.sort (scores);  
@@ -693,6 +667,7 @@ Search_Engine :: order_moves
 
 Score
 Search_Engine :: see (const Board &b, const Move &m) {
+#ifdef ENABLE_SEE
   Score s = Eval::eval_capture (m);
 
   // Construct child position.
@@ -710,6 +685,10 @@ Search_Engine :: see (const Board &b, const Move &m) {
     }
 
   return s;
+#else 
+  return Eval::eval_capture (m)  - 
+    Eval::eval_piece (n) / 10;
+#endif // ENABLE_SEE
 }
 
 // Quiescence search.
@@ -752,12 +731,7 @@ Search_Engine :: qsearch
           memset (scores, 0, sizeof (scores));
           for (int i = 0; i < moves.count; i++)
             {
-#ifdef ENABLE_SEE
               scores[i] = see (b, moves[i]);
-#else
-              scores[i] = Eval::eval_capture (moves[i])  - 
-                Eval::eval_piece (moves[i].kind) / 10;
-#endif // ENABLE_SEE
             }
           moves.sort (scores);
 
