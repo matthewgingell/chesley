@@ -56,9 +56,13 @@ Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
-  // Clear history tables.
+  // Clear history table.
   memset (hh_table, 0, sizeof (hh_table));
   hh_max = 0;
+
+  // Clear mates table.
+  memset (mates_table, 0, sizeof (mates_table));
+  mates_max = 0;
   
   // Clear statistics.
   clear_statistics ();
@@ -304,7 +308,11 @@ Search_Engine :: search_with_memory
   if (!controls.interrupt_search)
     {
       tt_update (b, depth, ply, pv, s, alpha, beta);
-      if (pv.count > 0) collect_move (depth, pv[0]);
+      if (pv.count > 0) 
+        {
+          collect_move (depth, pv[0]);
+          if (s > 0 && is_mate (s)) collect_mate (depth, pv[0]);
+        }
     }
 
   // Don't return a PV in fail high cases.
@@ -602,6 +610,13 @@ Search_Engine::collect_move (int depth, const Move &m) {
   hh_max = max (val, hh_max);
 }
 
+// Collect a mate in the mates table.
+void 
+Search_Engine::collect_mate (int depth, const Move &m) {
+  uint64 val = mates_table [m.from][m.to] += 100 - depth;
+  mates_max = max (val, mates_max);
+}
+
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void
@@ -628,6 +643,10 @@ Search_Engine :: order_moves
       // Sort the best guess move first.
       if (m == best_guess)
         scores[i] = +INF;
+
+      // Apply mate bonus.
+      uint64 mval = mates_table[m.from][m.to];
+      if (mates_max) scores[i] += (ROOK_VAL * mval) / mates_max;
      
       // Apply promotion bonus.
       if (m.promote == QUEEN)
@@ -635,9 +654,7 @@ Search_Engine :: order_moves
  
       // Apply capture bonuses.
       if (m.get_capture () != NULL_KIND) 
-        {
-          scores[i] += PAWN_VAL + see (b, m);
-        }
+        scores[i] += PAWN_VAL + see (b, m);
       
       // Apply psq bonuses.
       scores[i] += Eval::psq_value (b, m);
