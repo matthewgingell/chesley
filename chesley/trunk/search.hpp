@@ -71,8 +71,13 @@ struct Search_Engine {
     // Output generation.
     post = true;
 
-    // Initialize history the history table.
+    // Initialize the history table.
     memset (hh_table, 0, sizeof (hh_table));
+    hh_max = 0;
+
+    // Initialize the mates table.
+    memset (mates_table, 0, sizeof (mates_table));
+    mates_max = 0;
   }
 
   // Clear accumulated search statistics.
@@ -289,7 +294,11 @@ struct Search_Engine {
   uint64 hh_table[64][64];
   uint64 hh_max;
 
+  uint64 mates_table[64][64];
+  uint64 mates_max;
+
   void collect_move (int depth, const Move &m);
+  void collect_mate (int depth, const Move &m);
 };
 
 #endif // _SEARCH_
