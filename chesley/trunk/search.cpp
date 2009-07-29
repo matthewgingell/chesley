@@ -300,9 +300,12 @@ Search_Engine :: search_with_memory
   // Pop the repetition stack.
   rt_pop (b);
 
-  // Update the transposition table.
+  // Update the transposition and history tables.
   if (!controls.interrupt_search)
-    tt_update (b, depth, ply, pv, s, alpha, beta);
+    {
+      tt_update (b, depth, ply, pv, s, alpha, beta);
+      if (pv.count > 0) collect_move (depth, pv[0]);
+    }
 
   // Don't return a PV in fail high cases.
   if (s >= beta)
@@ -330,8 +333,6 @@ Search_Engine :: search
   assert (pv.count == 0);
   assert (alpha < beta);
 
-  int original_alpha = alpha;
-  int original_beta = beta;
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
 
@@ -562,7 +563,6 @@ Search_Engine :: search
               {
                 // In the fail high case, only copy back the move and
                 // then exit the loop.
-                collect_move (depth, moves[mi]);
                 pv = Move_Vector (moves[mi]);
                 break;
               }
@@ -587,8 +587,6 @@ Search_Engine :: search
         if (pv.count > 0 && depth <= MAX_DEPTH)
           {
             // Collect statistics.
-            if (alpha > original_alpha && alpha < original_beta)
-              collect_move (depth, pv[0]);
             stats.hist_pv[min (mi, hist_nbuckets - 1)]++;
           }
       }
