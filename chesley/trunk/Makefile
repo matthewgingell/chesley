@@ -96,7 +96,7 @@ check: chesley
 #############
 
 clean :
-	rm -rf chesley *.inc a.out *.o *.dSYM *~ TAGS *.gcda a.out	\
-	      Saturn* game.00* log.* logfile.* book.lrn position.bin	\
-	      position.lrn *.d /cores/core.* *.fen \#*\# *.log log.0*	\
-	      game.0* *mshark *.s
+	rm -rf chesley *.exe *.inc a.out *.o *.dSYM *~ TAGS *.gcda	\
+	      a.out Saturn* game.00* log.* logfile.* book.lrn		\
+	      position.bin position.lrn *.d /cores/core.* *.fen \#*\#	\
+	      *.log log.0* game.0* *mshark *.s
