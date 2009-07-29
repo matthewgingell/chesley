@@ -702,7 +702,7 @@ Search_Engine :: see (const Board &b, const Move &m) {
   return s;
 #else 
   return Eval::eval_capture (m)  - 
-    Eval::eval_piece (n) / 10;
+    Eval::eval_piece (m.kind) / 10;
 #endif // ENABLE_SEE
 }
 
