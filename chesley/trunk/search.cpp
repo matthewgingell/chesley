@@ -226,7 +226,7 @@ Search_Engine :: aspiration_search
   {
     s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
   }
-#endif  /* ENABLE_ASPIRATION_WINDOW */
+#endif  // ENABLE_ASPIRATION_WINDOW
 
   return s;
 }
@@ -296,8 +296,7 @@ Search_Engine :: search_with_memory
       alpha = original_alpha;
       beta = original_beta;
       pv.clear ();
-      s = search 
-        (b, depth, ply, pv, alpha, beta, do_null_move);
+      s = search (b, depth, ply, pv, alpha, beta, do_null_move);
     }
 
   // Pop the repetition stack.
@@ -368,7 +367,7 @@ Search_Engine :: search
           alpha = qsearch (b, -1, ply, alpha, beta);
 #else
           alpha = Eval (b).score ();
-#endif /* ENABLE_QSEARCH */
+#endif // ENABLE_QSEARCH
         }
     }
 
@@ -390,7 +389,7 @@ Search_Engine :: search
         Board c = b;
         c.set_color (invert (c.to_move ()));
         int val = -search_with_memory
-          (c, depth - R - 1, ply + 1, dummy, -beta, -beta + 1, false);
+          (c, depth - R - 1, ply, dummy, -beta, -beta + 1, false);
         if (val >= beta) 
           { 
             stats.null_count++;
@@ -641,31 +640,40 @@ Search_Engine :: order_moves
   if (best_guess == NULL_MOVE && depth > R)
     {
       Move_Vector pv;
-      search_with_memory (b, depth - R, 0, pv, alpha, beta);
+      search_with_memory (b, depth - R, 0, pv, -INF, +INF, false);
       if (pv.count > 0) best_guess = pv[0];
     }
   
   // Score each move.
   for (int i = 0; i < moves.count; i++)
     {
+      const Move m = moves[i];
+
       // Sort the best guess move first.
-      if (moves[i] == best_guess)
+      if (m == best_guess)
         scores[i] = +INF;
      
       // Apply promotion bonus.
-      if (moves[i].promote == QUEEN)
+      if (m.promote == QUEEN)
         scores[i] += QUEEN_VAL - PAWN_VAL;
  
       // Apply capture bonuses.
-      if (moves[i].get_capture () != NULL_KIND)
-        scores[i] += PAWN_VAL + see (b, moves[i]);
+      if (m.get_capture () != NULL_KIND) 
+        {
+#ifdef ENABLE_SEE
+          scores[i] += PAWN_VAL + see (b, m);
+#else
+          scores[i] += PAWN_VAL + Eval::eval_capture (m) - 
+            Eval::eval_piece (m.kind) / 10;
+#endif // ENABLE_SEE
+        }
       
       // Apply psq bonuses.
-      scores[i] += Eval::psq_value (b, moves[i]);
+      scores[i] += Eval::psq_value (b, m);
 
       // Apply killer move bonuses.
-      if (moves[i] == killers[ply][0]) scores[i] += 100;
-      if (moves[i] == killers[ply][1]) scores[i] += 75;
+      if (m == killers[ply][0]) scores[i] += 100;
+      if (m == killers[ply][1]) scores[i] += 75;
     }
 
   moves.sort (scores);  
@@ -745,7 +753,12 @@ Search_Engine :: qsearch
           memset (scores, 0, sizeof (scores));
           for (int i = 0; i < moves.count; i++)
             {
+#ifdef ENABLE_SEE
               scores[i] = see (b, moves[i]);
+#else
+              scores[i] = Eval::eval_capture (moves[i])  - 
+                Eval::eval_piece (moves[i].kind) / 10;
+#endif // ENABLE_SEE
             }
           moves.sort (scores);
 
