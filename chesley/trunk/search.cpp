@@ -400,7 +400,7 @@ Search_Engine :: search
     
     // Generate moves.
     Move_Vector moves (b);
-    order_moves (b, ply, depth, moves, alpha, beta);
+    order_moves (b, ply, depth, moves);
 
     ////////////////////////////
     // Minimax over children. //
@@ -629,8 +629,7 @@ Search_Engine::update_killers (int ply, const Move &m) {
 // cutoffs.
 void
 Search_Engine :: order_moves
-(const Board &b, int ply, int depth, 
- Move_Vector &moves, Score alpha, Score beta) {
+(const Board &b, int ply, int depth, Move_Vector &moves) {
   Score scores[moves.count];
   memset (scores, 0, sizeof(scores));
   Move best_guess = tt_move (b);
@@ -663,8 +662,8 @@ Search_Engine :: order_moves
 #ifdef ENABLE_SEE
           scores[i] += PAWN_VAL + see (b, m);
 #else
-          scores[i] += PAWN_VAL + Eval::eval_capture (m) - 
-            Eval::eval_piece (m.kind) / 10;
+          scores[i] += 
+            Eval::eval_capture (m) - Eval::eval_piece (m.kind) / 10;
 #endif // ENABLE_SEE
         }
       
