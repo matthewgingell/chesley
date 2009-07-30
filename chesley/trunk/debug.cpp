@@ -232,7 +232,7 @@ Session::epd (const string_vector &args)
         {
           Move best = b.from_san (first (tokens));
           cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
-          se.set_fixed_time (1 * 1000);
+          se.set_fixed_time (10 * 1000);
           se.post = true;
           running = true;
           Move m = se.choose_move (b, 100);

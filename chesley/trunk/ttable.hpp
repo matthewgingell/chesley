@@ -27,11 +27,11 @@ struct TTable
 
   // An entry in the hash table.
   struct Entry {
-    hash_t key;
-    Move   move;
-    Score  score;
-    int    depth;
-    SKind  skind;
+    hash_t key;    // :64
+    Move   move;   // :32
+    Score  score;  // :16
+    int    depth   : 8;
+    SKind  skind   : 8;
   };
 
   // Clear the entire table.

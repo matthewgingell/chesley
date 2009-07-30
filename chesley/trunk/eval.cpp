@@ -53,7 +53,7 @@ Score Eval::score () {
   s += eval_king    (WHITE) - eval_king    (BLACK);
   
   // Add a small random number for variety.
-#if 0
+#if 1
   s += rand() % 5 - 2;
 #endif
 
