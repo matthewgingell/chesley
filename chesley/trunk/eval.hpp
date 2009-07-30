@@ -23,8 +23,8 @@
 // Material and feature evaluation constants. //
 ////////////////////////////////////////////////
 
-static const Score MATE_VAL = 500  * 1000;
-static const Score INF      = 1000 * 1000;
+static const Score MATE_VAL = 20 * 1000;
+static const Score INF      = 30 * 1000;
 
 static const Score PAWN_VAL   = 100;
 static const Score ROOK_VAL   = 500;

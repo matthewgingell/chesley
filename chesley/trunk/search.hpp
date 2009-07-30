@@ -110,7 +110,7 @@ struct Search_Engine {
   // position.
   inline bool tt_try
   (const Board &b, int32 depth, int32 ply,
-   Move &m, Score &s, int32 &alpha, int32 &beta);
+   Move &m, Score &s, Score &alpha, Score &beta);
 
   // Update the transposition table with the results of a call to
   // search.

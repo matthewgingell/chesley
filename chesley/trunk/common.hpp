@@ -119,7 +119,7 @@ std::ostream & operator<< (std::ostream &os, Kind k);
 ////////////////////////////
 
 // Score type for a chess position.
-typedef int32 Score;
+typedef int16 Score;
 
 enum SKind {
   NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 

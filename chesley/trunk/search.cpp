@@ -67,9 +67,6 @@ Search_Engine :: new_search
   // Clear statistics.
   clear_statistics ();
 
-  // Clear the transposition table.
-  tt.clear ();
-
   // Setup the clock.
   controls.interrupt_search = false;
   if (controls.mode == EXACT || controls.fixed_time >= 0)
@@ -138,7 +135,7 @@ Search_Engine :: iterative_deepening
       start_time = mclock ();
 
       // Search this position using an aspiration window.
-      s_tmp = aspiration_search (b, i, pv_tmp, s, 15);
+      s_tmp = aspiration_search (b, i, pv_tmp, s, 10);
 
       // Collect statistics.
       stats.calls_for_depth[i] = stats.calls_to_search + stats.calls_to_qsearch;
@@ -339,10 +336,11 @@ Search_Engine :: search
  bool do_null_move)
 {
   assert (pv.count == 0);
-  assert (alpha < beta);
 
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
+
+  if (alpha >= beta) return alpha;
 
   // Update statistics.
   stats.calls_to_search++;
@@ -626,6 +624,7 @@ Search_Engine :: order_moves
   memset (scores, 0, sizeof(scores));
   Move best_guess = tt_move (b);
 
+#if 0
   // Internal iterative deepening.
   const int R = 2;
   if (best_guess == NULL_MOVE && depth > R)
@@ -634,28 +633,28 @@ Search_Engine :: order_moves
       search_with_memory (b, depth - R, 0, pv, -INF, +INF, false);
       if (pv.count > 0) best_guess = pv[0];
     }
-  
+#endif
+
   // Score each move.
   for (int i = 0; i < moves.count; i++)
     {
       const Move m = moves[i];
 
       // Sort the best guess move first.
-      if (m == best_guess)
-        scores[i] = +INF;
+      if (m == best_guess) scores[i] = +INF;
 
       // Apply mate bonus.
       uint64 mval = mates_table[m.from][m.to];
       if (mates_max) scores[i] += (ROOK_VAL * mval) / mates_max;
-     
-      // Apply promotion bonus.
-      if (m.promote == QUEEN)
-        scores[i] += QUEEN_VAL - PAWN_VAL;
  
       // Apply capture bonuses.
       if (m.get_capture () != NULL_KIND) 
-        scores[i] += PAWN_VAL + see (b, m);
-      
+        scores[i] += see (b, m) + PAWN_VAL;
+    
+      // Apply promotion bonus.
+      if (m.promote == QUEEN)
+        scores[i] += QUEEN_VAL - PAWN_VAL;
+       
       // Apply psq bonuses.
       scores[i] += Eval::psq_value (b, m);
 
@@ -696,7 +695,7 @@ Search_Engine :: see (const Board &b, const Move &m) {
   if (lvc != NULL_MOVE)
     {
       assert (lvc.to == m.to);
-      s -= max (see (c, lvc), 0);
+      s -= max (see (c, lvc), Score (0));
     }
 
   return s;
@@ -759,7 +758,8 @@ Search_Engine :: qsearch
               if (c.apply (moves[mi]))
                 {
                   alpha = max
-                    (alpha, -qsearch (c, depth - 1, ply + 1, -beta, -alpha));
+                    (alpha, 
+                     Score (-qsearch (c, depth - 1, ply + 1, -beta, -alpha)));
                   if (alpha >= beta)
                     break;
                 }
@@ -787,7 +787,7 @@ Search_Engine :: qsearch
 inline bool
 Search_Engine :: tt_try
 (const Board &b, int32 depth, int32 ply,
- Move &m, Score &s, int32 &alpha, int32 &beta)
+ Move &m, Score &s, Score &alpha, Score &beta)
 {
 #if ENABLE_TRANS_TABLE
   SKind hash_skind = NULL_SKIND;
