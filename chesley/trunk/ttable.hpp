@@ -90,8 +90,8 @@ struct TTable
     else
       {
         misses++;
-        return NULL_MOVE;
       }
+    return NULL_MOVE;
   }
   
   // Clear statistics.

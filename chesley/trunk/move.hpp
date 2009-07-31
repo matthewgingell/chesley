@@ -61,18 +61,19 @@ struct Move {
     return is_castle_qs () || is_castle_ks ();
   }
 
-  // Is this a queen-side castle.
-  inline bool is_castle_qs () const {
-    return (kind == KING &&
-            ((color == WHITE && from == E1 && to == C1) ||
-             (color == BLACK && from == E8 && to == C8)));
-  }
-
   // Is this a king-side castle.
   inline bool is_castle_ks () const {
     return (kind == KING &&
             ((color == WHITE && from == E1 && to == G1) ||
              (color == BLACK && from == E8 && to == G8)));
+  }
+
+
+  // Is this a queen-side castle.
+  inline bool is_castle_qs () const {
+    return (kind == KING &&
+            ((color == WHITE && from == E1 && to == C1) ||
+             (color == BLACK && from == E8 && to == C8)));
   }
 
   // State

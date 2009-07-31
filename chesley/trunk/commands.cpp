@@ -16,6 +16,7 @@
 #include <string>
 
 #include "chesley.hpp"
+#include "pgn.hpp"
 
 using namespace std;
 
@@ -68,6 +69,7 @@ enum Command
     CMD_BENCH, 
     CMD_DIV, 
     CMD_DUMPPAWNS, 
+    CMD_DUMPPGN,
     CMD_EPD, 
     CMD_HASH, 
     CMD_PERFT, 
@@ -201,6 +203,10 @@ static const struct {
     "Dump a vector of pawns."
   },
 
+  { CMD_DUMPPGN,    DEBUG_CMD,     "DUMPPGN", "",
+    "Read and dump a PGN file."
+  },
+
   { CMD_EPD,        DEBUG_CMD,     "EPD",       "<epd>",
     "Evaluate an EPD string."},
 
@@ -310,8 +316,7 @@ static Command match_command (string s) {
         {
           return commands[i].code;
         }
-    }
-  
+    }  
   return CMD_NULL;
 }
 
@@ -486,6 +491,31 @@ Session::execute (char *line) {
     case CMD_DUMPPAWNS: 
       // Dump pawn structure to a file.
       dump_pawns (tokens);
+      break;
+
+    case CMD_DUMPPGN: 
+      {
+        PGN pgn;
+        Game g;
+        pgn.open ("all.pgn");
+        while (true)
+          {
+            cout << "Reading a game..." << endl;
+            g = pgn.read_game ();
+            if (pgn.status == PGN::END_OF_FILE)
+              {
+                cout << "Null game." << endl;
+                break;
+              }
+            else
+              {
+                cout << g.metadata["Event"] << endl;
+              }
+            cout << "Finished a game." << endl << endl;
+          }
+        pgn.close ();
+
+      }
       break;
 
     case CMD_EPD: 

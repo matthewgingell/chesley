@@ -302,26 +302,26 @@ Board::from_san (const string &s) const {
   uint32 to = -1;
   int dis_rank = -1, dis_file = -1;
 
-  // Handle the case of castling kingside.
-  if (s == "O-O")
+  // Handle the case of castling queenside.
+  if (s.substr (0, 5) == "O-O-O")
     {
       return (to_move () == WHITE) ? 
         Move (E1, C1, WHITE, KING, NULL_KIND, NULL_KIND) :
-        Move (E8, G8, BLACK, KING, NULL_KIND, NULL_KIND);
+        Move (E8, C8, BLACK, KING, NULL_KIND, NULL_KIND);
     }
 
-  // Handle the case of castling queenside.
-  if (s == "O-O-O")
+  // Handle the case of castling kingside.
+  if (s.substr (0, 3) == "O-O")
     {
       return (to_move () == WHITE) ? 
         Move (E1, G1, WHITE, KING, NULL_KIND, NULL_KIND) :
-        Move (E8, C8, BLACK, NULL_KIND, NULL_KIND);
+        Move (E8, G8, BLACK, KING, NULL_KIND, NULL_KIND);
     }
 
   // Otherwise, we expect an upper case piece code or a lower case
   // coordinate if the piece being moved is a pawn.
   if (i == s.end ())
-    throw string ("from_san: failed parsing ") + s;
+    from_san_fail (s);
 
   if (isupper (*i))
     k = to_kind (*i++);
@@ -329,7 +329,7 @@ Board::from_san (const string &s) const {
     k = PAWN;
 
   if (i == s.end () || k == NULL_KIND)
-    throw string ("from_san: failed parsing ") + s;
+    from_san_fail (s);
 
   // We now expect to read a coordinate which may be the origin or the
   // destination of this move, or a letter or number indicating the
@@ -364,10 +364,10 @@ Board::from_san (const string &s) const {
     {
       i++;
       if (i == s.end ())
-        throw string ("from_san: failed parsing ") + s;
+        from_san_fail (s);
       promote = to_kind (*i++);
       if (promote == NULL_KIND)
-        throw string ("from_san: failed parsing ") + s;
+        from_san_fail (s);
     }
 
   // Parse check or checkmate notation.
@@ -378,7 +378,7 @@ Board::from_san (const string &s) const {
   // this move and we may have a rank and/or file disambiguating the
   // origin.
   if (to > 64 || k == NULL_KIND)
-    throw string ("from_san: failed parsing ") + s;
+    from_san_fail (s);
 
   // We now iterate through the legal moves at this position looking
   // for the one we've just read.
@@ -386,6 +386,13 @@ Board::from_san (const string &s) const {
   Move_Vector moves (*this);
   for (int i = 0; i < moves.count; i++)
     {
+      // Only test legal moves.
+      Board c = *this;
+      if (!c.apply (moves[i]))
+        {
+          continue;
+        }
+
       // Test whether this move is a candidate for the parsed move.
       if (k == moves[i].get_kind () && to == moves[i].to)
         {
@@ -415,9 +422,17 @@ Board::from_san (const string &s) const {
   if (m == NULL_MOVE ||
       m.promote != promote ||
       (m.get_capture () == NULL_KIND && is_capture))
-    throw string ("from_san: failed parsing ") + s;
+    from_san_fail (s);
 
   return m;
+}
+
+// Handle a failure read a SAN move.
+void
+Board::from_san_fail (const string &s) const {
+  cerr << "Error parsing a SAN string: " << s << endl;
+  cerr << *this << endl;
+  throw string ("from_san: failed parsing ") + s;
 }
 
 // Construct a board object from a Forsyth-Edwards Notation position

@@ -310,9 +310,6 @@ Board::apply (const Move &m) {
   // Increment the whole move clock after each move by black.
   if (color == BLACK) full_move_clock++;
 
-  // There is no legal move with a half move clock greater than 50.
-  if (half_move_clock > 50) return false;
-
   // Update history.
   last_move = m;
 
