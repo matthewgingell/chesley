@@ -72,6 +72,9 @@ static int to_int (const char &c) IS_UNUSED;
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
 
+// Trim leading and trailing whitespace.
+static std::string trim (const std::string &s) IS_UNUSED;
+
 ////////////////////////////
 // String vector functions //
 ////////////////////////////
@@ -121,6 +124,9 @@ static bool fdready (int fd) IS_UNUSED;
 // Get a line, remove the trailing new line if any, and return a
 // malloc'd string.
 static char *get_line (FILE *in) IS_UNUSED;
+
+// Advance over whitespace characters and return the number skipped.
+static int skip_whitespace (FILE *in) IS_UNUSED;
 
 //////////////////////
 // Time and timers. //
@@ -219,6 +225,18 @@ newstr (const char *s) {
   size_t sz = strlen (s) + 1;
   char *rv = (char *) malloc (sz + 1);
   memcpy (rv, s, sz + 1);
+  return rv;
+}
+
+// Trim leading and trailing whitespace.
+static std::string 
+trim (const std::string &s) {
+  std::string rv = s;
+  size_t first = rv.find_first_not_of (" \n\t\r");
+  size_t last = rv.find_last_not_of (" \n\t\r");
+  if (first != std::string::npos) rv.erase (0, first);
+  if (last != std::string::npos && last < rv.length () - 1) 
+    rv.erase (last + 1);
   return rv;
 }
 
@@ -374,6 +392,28 @@ static char *get_line (FILE *in) {
     }
 
   return newstr (buf);
+}
+
+// Advance over whitespace characters and return the number skipped.
+static int 
+skip_whitespace (FILE *in) {
+  int count = 0;
+  char c;  
+  while ((c = fgetc (in)))
+    {
+      if (c == EOF) 
+        {
+          break;
+        }
+      else if (!isspace (c)) 
+        {
+          ungetc (c, in);          
+          break;
+        }
+      count++;
+    }
+
+  return count;
 }
 
 //////////////////////

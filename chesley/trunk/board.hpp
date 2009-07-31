@@ -238,6 +238,7 @@ struct Board {
 
   // Produce a move from a SAN string.
   Move from_san (const std::string &s) const;
+  void from_san_fail (const std::string &) const;
 
   ///////////
   // Tests //

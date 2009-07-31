@@ -248,28 +248,28 @@ Board::gen_moves (Move_Vector &moves) const
     {
       byte row = occ_0 (E1);
 
-      if (flags.w_can_q_castle && !(row & 0xE))
-        {
-          moves.push (E1, C1, c, KING, NULL_KIND);
-        }
-
       if (flags.w_can_k_castle && !(row & 0x60))
         {
           moves.push (E1, G1, c, KING, NULL_KIND);
+        }
+
+      if (flags.w_can_q_castle && !(row & 0xE))
+        {
+          moves.push (E1, C1, c, KING, NULL_KIND);
         }
     }
   else
     {
       byte row = occ_0 (E8);
 
-      if (flags.b_can_q_castle && !(row & 0xE))
-        {
-          moves.push (E8, C8, c, KING, NULL_KIND);
-        }
-
       if (flags.b_can_k_castle && !(row & 0x60))
         {
           moves.push (E8, G8, c, KING, NULL_KIND);
+        }
+
+      if (flags.b_can_q_castle && !(row & 0xE))
+        {
+          moves.push (E8, C8, c, KING, NULL_KIND);
         }
     }
 }
