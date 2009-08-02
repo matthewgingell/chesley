@@ -121,7 +121,7 @@ struct Board {
   bitboard queens;
   bitboard kings;
 
-  // Rotated bitboards, for file and diagonal attacks.
+  // Rotated bitboards for file and diagonal attacks.
   bitboard occupied;
   bitboard occupied_45;
   bitboard occupied_90;
@@ -212,7 +212,7 @@ struct Board {
   std::string to_fen () const;
 
   ///////////////////////////////////////////////////
-  // Reading and writing Moves against this board. //
+  // Reading and writing moves against this board. //
   ///////////////////////////////////////////////////
 
   // Produce an algebraic letter-number pair for an integer square

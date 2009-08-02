@@ -737,11 +737,14 @@ Session::level (const string_vector &ctokens) {
 bool 
 Session::display_time_controls (const string_vector &ctokens IS_UNUSED) {
   fprintf (out, "mode:            ");
-  switch (se.controls.mode) {
-  case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
-  case ICS:          fprintf (out, "ICS"); break;
-  case EXACT:        fprintf (out, "EXACT"); break;
-  }
+
+  switch (se.controls.mode) 
+    {
+    case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
+    case ICS:          fprintf (out, "ICS"); break;
+    case EXACT:        fprintf (out, "EXACT"); break;
+    }
+
   fprintf (out, "\n");
   fprintf (out, "moves_ptc:       %i\n", se.controls.moves_ptc);
   fprintf (out, "time_ptc:        %i\n", se.controls.time_ptc);
