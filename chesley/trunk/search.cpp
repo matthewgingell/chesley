@@ -135,7 +135,8 @@ Search_Engine :: iterative_deepening
       start_time = mclock ();
 
       // Search this position using an aspiration window.
-      s_tmp = aspiration_search (b, i, pv_tmp, s, 10);
+      int width = max (10, 100 - 10 * i);
+      s_tmp = aspiration_search (b, i, pv_tmp, s, width);
 
       // Collect statistics.
       stats.calls_for_depth[i] = stats.calls_to_search + stats.calls_to_qsearch;
@@ -153,7 +154,9 @@ Search_Engine :: iterative_deepening
       // never know if we've found the quickest mate possible. Here we
       // keep looking for better mates until time expires.
       if (found_mate && abs (s_tmp) <= best_mate)
-        continue;
+        {
+          continue;
+        }
 
       if (is_mate (s_tmp))
         {
@@ -313,8 +316,7 @@ Search_Engine :: search_with_memory
     }
 
   // Don't return a PV in fail high cases.
-  if (s >= beta)
-    pv.clear ();
+  if (s >= beta) pv.clear ();
 
   return s;
 }
@@ -413,7 +415,6 @@ Search_Engine :: search
 
     int mi = 0;
     bool have_pv_move = false;
-    Score meval = Eval (b).net_material ();
     for (mi = 0; mi < moves.count; mi++)
       {
         int cs;
@@ -422,6 +423,9 @@ Search_Engine :: search
 
         // Skip this move if it's illegal.
         if (!c.apply (moves[mi])) continue;
+
+        // Determine the material balance following this move.
+        Score meval = Eval (b).net_material ();
 
         // Determine whether this moves checks.
         bool c_in_check = c.in_check (c.to_move());
@@ -449,6 +453,37 @@ Search_Engine :: search
 
         stats.ext_count += ext;
 #endif // ENABLE_EXTENSIONS
+
+#ifdef ENABLE_LMR
+
+        ///////////////////////////
+        // Late move reductions. //
+        ///////////////////////////
+
+        const int Full_Depth_Count = 4;
+        const int Reduction_Limit = 3;
+        const int Reduction_Margin = 5 * PAWN_VAL;
+        if (mi >= Full_Depth_Count && 
+            depth >= Reduction_Limit &&
+            meval <= alpha + Reduction_Margin &&
+            ext == 0 && 
+            !in_check && !c_in_check && 
+            !have_pv_move &&
+            moves[mi].get_capture () == NULL_KIND)
+          {
+            Score ds;
+            Move_Vector dummy;
+            ds = -search_with_memory
+              (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
+
+            // If we fail low, we are done with this move.
+            if (ds <= alpha) 
+              {
+                stats.lmr_count++;
+                continue;
+              }
+          }
+#endif // ENABLE_LMR
 
 #ifdef ENABLE_FUTILITY
         // The approach taken to futility pruning here come from Ernst
@@ -505,31 +540,6 @@ Search_Engine :: search
               }
           }
 #endif // ENABLE_FUTILITY
-
-#ifdef ENABLE_LMR
-        ///////////////////////////
-        // Late move reductions. //
-        ///////////////////////////
-
-        const int Full_Depth_Count = 4;
-        const int Reduction_Limit = 3;
-        if (mi >= Full_Depth_Count && depth >= Reduction_Limit &&
-            ext == 0 && !in_check && !c_in_check && !have_pv_move &&
-            moves[mi].get_capture () == NULL_KIND)
-          {
-            Score ds;
-            Move_Vector dummy;
-            ds = -search_with_memory
-              (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
-
-            // If we fail low, we are done with this move.
-            if (ds <= alpha) 
-              {
-                stats.lmr_count++;
-                continue;
-              }
-          }
-#endif // ENABLE_LMR
 
 #if ENABLE_PVS
         /////////////////////////////////
@@ -1069,11 +1079,11 @@ Search_Engine :: post_before (const Board &b) {
   cout << ":" << b.full_move_clock << ":" << b.half_move_clock << endl;
   if (Session::protocol == XBOARD)
     {
-      cout << "Ply    Eval    Time    Nodes   Principal Variation";
+      cout << "Ply    Eval    Time     Nodes   Principal Variation";
     }
   else
     {
-      cout << "Ply    Eval    Time    Nodes   QNodes   Principal Variation";
+      cout << "Ply    Eval    Time     Nodes    QNodes   Principal Variation";
     }
   cout << endl;
 }
@@ -1097,7 +1107,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
     {
       cout << setw (2) << (s > 0 ? "+" : "-");
       cout << setw (4) << "Mate";
-      cout << setw (2) << MATE_VAL - abs(s);
+      cout << setw (2) << (int) (MATE_VAL - abs(s));
     }
   else
     {
@@ -1119,14 +1129,14 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   // Node count.
   if (Session::protocol == XBOARD) 
     {
-      cout << setw (9);
+      cout << setw (10);
       cout << stats.calls_to_search + stats.calls_to_qsearch;
     }
   else
     {
-      cout << setw (9);      
+      cout << setw (10);      
       cout << stats.calls_to_search;
-      cout << setw (9);
+      cout << setw (10);
       cout << stats.calls_to_qsearch;
     }
   cout << "   ";
@@ -1153,7 +1163,7 @@ Search_Engine :: post_after () {
     sum += stats.hist_pv[i];
   cout << "pv hist: ";
   for (int i = 0; i < hist_nbuckets; i++)
-    cout << (stats.hist_pv[i] / sum) * 100 << "% ";
+    cout << setprecision (2) << (stats.hist_pv[i] / sum) * 100 << "% ";
   cout << endl;
 
   sum = 0;
@@ -1161,7 +1171,7 @@ Search_Engine :: post_after () {
     sum += stats.hist_qpv[i];
   cout << "qpv hist: ";
   for (int i = 0; i < hist_nbuckets; i++)
-    cout << (stats.hist_qpv[i] / sum) * 100 << "% ";
+    cout << setprecision (2) <<  (stats.hist_qpv[i] / sum) * 100 << "% ";
   cout << endl;
 
   // Display statistics on transposition table hit rate.
@@ -1175,12 +1185,11 @@ Search_Engine :: post_after () {
   coll_rate = (double) ph.collisions / ph.writes;
   cout << "ph coll " << coll_rate * 100 << "%, ";
 
-
   // Display performance of heuristics.
-  cout << "asp: "    << stats.asp_hits << endl;
-  cout << "null: " << stats.null_count;
+  cout << "asp: "   << stats.asp_hits << endl;
+  cout << "null: "  << stats.null_count;
   cout << ", ext: " << stats.ext_count;
-  cout << " rzr: " << stats.razor_count;
+  cout << " rzr: "  << stats.razor_count;
   cout << ", fut: " << stats.futility_count;
   cout << ", xft: " << stats.ext_futility_count;
   cout << ", lmr: " << stats.lmr_count;
