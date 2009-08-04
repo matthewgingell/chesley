@@ -17,6 +17,7 @@
 
 #include "chesley.hpp"
 #include "pgn.hpp"
+#include "stats.hpp"
 
 using namespace std;
 
@@ -28,7 +29,7 @@ using namespace std;
 
 enum Command_Kind  
   {
-    USER_CMD, DEBUG_CMD, XBOARD_CMD
+    USER_CMD, DEBUG_CMD, STATS_CMD, XBOARD_CMD
   };
 
 enum Command
@@ -74,6 +75,13 @@ enum Command
     CMD_HASH, 
     CMD_PERFT, 
     CMD_TESTHASHING,
+
+    ////////////////////////////
+    // Statistics collection. //
+    ////////////////////////////
+
+    CMD_EVAL_VS_WINP,
+    CMD_GENPSQ,
 
     //////////////////////
     // XBoard commands. //
@@ -219,6 +227,16 @@ static const struct {
   { CMD_TESTHASHING,DEBUG_CMD, "TESTHASHING", "",
     "Run a test on hash code generation."},
 
+  ////////////////////////////
+  // Statistics collection. //
+  ////////////////////////////
+  
+  { CMD_EVAL_VS_WINP, STATS_CMD, "EVALVWINP", "",
+    "Output winning statistics against static evaluation score."},
+
+  { CMD_GENPSQ, STATS_CMD, "GENPSQ", "",
+    "Generate piece square tables from a .pgn file."},
+  
   //////////////////////
   // XBoard commands. //
   //////////////////////
@@ -501,6 +519,7 @@ Session::execute (char *line) {
         while (true)
           {
             cout << "Reading a game..." << endl;
+            cout << g.metadata["Event"];
             g = pgn.read_game ();
             if (pgn.status == PGN::END_OF_FILE)
               {
@@ -509,12 +528,11 @@ Session::execute (char *line) {
               }
             else
               {
-                cout << g.metadata["Event"] << endl;
+                //                cout << g.metadata["Event"] << endl;
               }
             cout << "Finished a game." << endl << endl;
           }
         pgn.close ();
-
       }
       break;
 
@@ -550,7 +568,21 @@ Session::execute (char *line) {
       // codes generated from scratch to depth 5.
       test_hashing (5);
       break;
-      
+
+    ////////////////////////////
+    // Statistics collection. //
+    ////////////////////////////
+
+    case CMD_EVAL_VS_WINP:
+      // Output winning statistics against static evaluation score.
+      collect_eval_vs_winp  ("all.pgn");
+      break;
+
+    case CMD_GENPSQ:
+      // Generate piece square tables from a .pgn file.
+      gen_psq_tables ("all.pgn");
+      break;
+
     //////////////////////
     // XBoard commands. //
     //////////////////////
