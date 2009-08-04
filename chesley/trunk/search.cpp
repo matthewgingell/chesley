@@ -493,10 +493,11 @@ Search_Engine :: search
         Score upperbound;
         if (ply > 0 && ext == 0 && !in_check && !c_in_check && !have_pv_move)
           {
+#ifdef ENABLE_RAZORING            
             /////////////////////////////////////////
             // Razoring at pre-pre frontier nodes. //
             /////////////////////////////////////////
-            
+
             // If this position looks extremely bad at depth three,
             // proceed with a reduced depth search.
             const Score RAZORING_MARGIN = 8 * PAWN_VAL;
@@ -506,6 +507,7 @@ Search_Engine :: search
                 stats.razor_count++;
                 depth = 2;
               }
+#endif // ENABLE_RAZORING
 
             if (moves[mi].get_capture () == NULL_KIND)
               {

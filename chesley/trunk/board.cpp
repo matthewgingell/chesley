@@ -14,7 +14,6 @@
 #include <sstream>
 
 #include "chesley.hpp"
-#include "eval.hpp"
 
 using namespace std;
 
@@ -54,7 +53,8 @@ to_kind (char k) {
       case 'Q': return QUEEN;
       case 'K': return KING;
     }
-  assert (0);
+  // assert (0);
+  throw string ("Failure in to_kind");
   return NULL_KIND;
 }
 
@@ -507,7 +507,9 @@ std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
   return os << "[Move from "
-            << (coord) (m.from) << " => " << (coord) (m.to) << "]";
+            << (coord) (m.from) << " => " << (coord) (m.to) << "] " 
+            << m.color << " " << m.kind << " " << m.capture << " "
+            << m.promote << " " << m.en_passant << endl;
 }
 
 //////////////

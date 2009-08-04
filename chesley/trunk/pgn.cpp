@@ -275,7 +275,7 @@ PGN::read_moves (Game &g) {
           goto EOL;
         }
 
-      // Recognize a mover number or a game terminator.
+      // Recognize a move number or a game terminator.
       else if (isdigit (c))
         {
           char next = fgetc (fp);
@@ -364,7 +364,23 @@ PGN::read_moves (Game &g) {
 
  EOL:
 
-  cout << eog << endl;
+  // Set the game outcome.
+  if (eog == "1-0")
+    {
+      g.winner = WHITE;
+    }
+  else if (eog == "0-1")
+    {
+      g.winner = BLACK;
+    }
+  else if (eog == "1/2-1/2")
+    {
+      g.winner = NULL_COLOR;
+    } 
+  else
+    {
+      throw string ("Bad result string: " + eog);
+    }
 
   return;
 }

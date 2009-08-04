@@ -22,6 +22,8 @@
 #include "move.hpp"
 
 struct Game {
+  // Either black white or null.
+  Color winner; 
   std::vector <Move> moves;
   std::map <std::string, std::string> metadata;
 };

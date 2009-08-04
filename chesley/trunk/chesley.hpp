@@ -17,10 +17,16 @@
 
 #include "bits64.hpp"
 #include "board.hpp"
+#include "chesley.hpp"
+#include "common.hpp"
 #include "eval.hpp"
+#include "move.hpp"
+#include "pgn.hpp"
+#include "phash.hpp"
 #include "search.hpp"
 #include "session.hpp"
-#include "common.hpp"
+#include "stats.hpp"
+#include "ttable.hpp"
 #include "util.hpp"
 
 #define ENGINE_ID_STR        "Chesley the Chess Engine!"
@@ -40,4 +46,9 @@ char *get_prologue () {
            ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }
+
+#ifdef ENABLE_LMR
+#undef ENABLE_LMR
+#endif // ENABLE_LMR
+
 #endif // __CHESLEY__
