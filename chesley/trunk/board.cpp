@@ -33,6 +33,7 @@ to_char (Kind k) {
     case BISHOP:    return 'B';
     case QUEEN:     return 'Q';
     case KING:      return 'K';
+    default:        assert (0);
     }
   assert (0);
 

@@ -39,7 +39,7 @@ Score Eval::score () {
   s += b.material[WHITE] - b.material[BLACK];
 
   // Add net piece square values.
-  s += b.psquares[WHITE] - b.psquares[BLACK];
+  s += (b.psquares[WHITE] - b.psquares[BLACK]);
 
   // Mobility
   s += eval_mobility (WHITE) - eval_mobility (BLACK);

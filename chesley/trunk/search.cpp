@@ -349,7 +349,7 @@ Search_Engine :: search
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((stats.calls_to_qsearch + stats.calls_to_search) % 16 * 1024 == 0)
+  if ((stats.calls_to_qsearch + stats.calls_to_search) % 64 * 1024 == 0)
     poll ();
 
   // Abort if we have been interrupted.
@@ -407,7 +407,7 @@ Search_Engine :: search
     
     // Generate moves.
     Move_Vector moves (b);
-    order_moves (b, ply, depth, moves);
+    order_moves (b, moves);
 
     ////////////////////////////
     // Minimax over children. //
@@ -631,21 +631,10 @@ Search_Engine::collect_mate (int depth, const Move &m) {
 // cutoffs.
 void
 Search_Engine :: order_moves
-(const Board &b, int ply, int depth, Move_Vector &moves) {
+(const Board &b, Move_Vector &moves) {
   Score scores[moves.count];
   memset (scores, 0, sizeof(scores));
   Move best_guess = tt_move (b);
-
-#if 0
-  // Internal iterative deepening.
-  const int R = 2;
-  if (best_guess == NULL_MOVE && depth > R)
-    {
-      Move_Vector pv;
-      search_with_memory (b, depth - R, 0, pv, -INF, +INF, false);
-      if (pv.count > 0) best_guess = pv[0];
-    }
-#endif
 
   // Score each move.
   for (int i = 0; i < moves.count; i++)
@@ -727,7 +716,7 @@ Search_Engine :: qsearch
 
   // Call poll every 64K moves. This is on the order of 100Hz on a
   // fast machine.
-  if ((stats.calls_to_qsearch + stats.calls_to_search) % (16 * 1024) == 0)
+  if ((stats.calls_to_qsearch + stats.calls_to_search) % (64 * 1024) == 0)
     poll ();
 
   // Abort if we have been interrupted.

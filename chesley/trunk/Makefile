@@ -6,8 +6,8 @@
 # GNU Public License.                                                #
 ######################################################################
 
-#CXX = g++
-CXX = /opt/local/bin/g++-mp-4.5
+CXX = g++
+#CXX = /opt/local/bin/g++-mp-4.4
 #CXX = /Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-g++
 
 OPT = -g -O3 -m64
@@ -75,8 +75,8 @@ playold: chesley
 
 playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard  -tc 1 -inc 0 -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard  -st 0:01  -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+	xboard  -tc 1 -inc 0 -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard  -st 0:01  -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 0:30 -inc 0 -fcp ./chesley -scp ./other_binaries/tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 1 -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
