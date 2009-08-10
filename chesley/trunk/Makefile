@@ -6,11 +6,12 @@
 # GNU Public License.                                                #
 ######################################################################
 
-CXX = g++
+CXX=g++
+#CXX = /opt/local/bin/i386-mingw32-g++ 
 #CXX = /opt/local/bin/g++-mp-4.4
 #CXX = /Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-g++
 
-OPT = -g -O3 -m64
+OPT = -g -O3
 #OPT = -g3
 
 SHELL = /bin/sh

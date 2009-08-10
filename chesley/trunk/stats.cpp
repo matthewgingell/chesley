@@ -81,7 +81,7 @@ struct Table {
 
     // Compute frequency of frequencies.
     for (i = elements.begin (); i != elements.end (); i++)
-      Zr.inc (i -> second);
+      Zr.inc ((int64) i -> second);
 
     // Smooth the zeros in Z.
     Zr.smooth_zeros ();
