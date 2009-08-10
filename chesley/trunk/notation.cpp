@@ -299,7 +299,7 @@ Board::from_san (const string &s) const {
   Kind promote = NULL_KIND;
   bool is_capture = false;
   int file = -1, rank = -1;
-  uint32 to = -1;
+  int32 to = -1;
   int dis_rank = -1, dis_file = -1;
 
   // Handle the case of castling queenside.

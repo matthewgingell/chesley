@@ -41,9 +41,19 @@ typedef unsigned char byte;
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
+
+#ifndef snprintf
 #define snprintf _snprintf
+#endif // snprintf
+
+#ifndef fileno
 #define fileno _fileno
+#endif // fileno
+
+#ifndef usleep
 #define usleep Sleep
+#endif // usleep
+
 #endif // _WIN32
 
 // Type for a number representing a square on the board.
