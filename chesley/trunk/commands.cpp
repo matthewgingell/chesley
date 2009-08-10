@@ -80,7 +80,7 @@ enum Command
     // Statistics collection. //
     ////////////////////////////
 
-    CMD_EVAL_VS_WINP,
+    CMD_GENMSTATS,
     CMD_GENPSQ,
 
     //////////////////////
@@ -231,8 +231,8 @@ static const struct {
   // Statistics collection. //
   ////////////////////////////
   
-  { CMD_EVAL_VS_WINP, STATS_CMD, "EVALVWINP", "",
-    "Output winning statistics against static evaluation score."},
+  { CMD_GENMSTATS, STATS_CMD, "GENMSTATS", "",
+    "Generate statistics about material balance." },
 
   { CMD_GENPSQ, STATS_CMD, "GENPSQ", "",
     "Generate piece square tables from a .pgn file."},
@@ -573,14 +573,15 @@ Session::execute (char *line) {
     // Statistics collection. //
     ////////////////////////////
 
-    case CMD_EVAL_VS_WINP:
-      // Output winning statistics against static evaluation score.
-      collect_eval_vs_winp  ("all.pgn");
+    case CMD_GENMSTATS:
+      // Generate statistics about material balance.
+      gen_material_stats ("big.pgn");
       break;
 
     case CMD_GENPSQ:
       // Generate piece square tables from a .pgn file.
-      gen_psq_tables ("all.pgn");
+      if (tokens.size () >= 2)
+        gen_psq_tables (tokens[1]);
       break;
 
     //////////////////////

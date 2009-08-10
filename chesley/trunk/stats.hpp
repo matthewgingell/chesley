@@ -13,12 +13,13 @@
 #ifndef _STATS_
 #define _STATS_
 
-// Output four columns: The first is Chesley's eval, followed by win
-// count, loss count, and draw count.
-void collect_eval_vs_winp  (const char *filename);
+#include <string>
+
+// Generate statistics about material balance.
+void gen_material_stats (const std::string filename); 
 
 // Generate piece square tables from a .pgn file.
-void gen_psq_tables (const char *filename);
+void gen_psq_tables (const std::string filename);
 
 #endif // _STATS_
 

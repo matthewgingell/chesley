@@ -10,138 +10,254 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cmath>
 #include <iomanip>
 #include <iostream>
-#include <Cmath>
+#include <map>
 
 #include "chesley.hpp"
 
 using namespace std;
 
-int flip_left_right[64] =
-{
-   7,  6,  5,  4,  3,  2,  1,  0,
-  15, 14, 13, 12, 11, 10,  9,  8,
-  23, 22, 21, 20, 19, 18, 17, 16,
-  31, 30, 29, 28, 27, 26, 25, 24,
-  39, 38, 37, 36, 35, 34, 33, 32,
-  47, 46, 45, 44, 43, 42, 41, 40,
-  55, 54, 53, 52, 51, 50, 49, 48,
-  63, 62, 61, 60, 59, 58, 57, 56
+/////////////////////////////////////////////////////////////////////////
+//                                                                     //
+// struct Table                                                        //
+//                                                                     //
+// Simulate an infinite array of real numbers initialized to zero with //
+// a domain over the positive and negative integers.                   //
+//                                                                     //
+/////////////////////////////////////////////////////////////////////////
+
+struct Table;
+ostream & operator<< (ostream &os, const Table &o);
+typedef map <int64, double> sarray;
+
+struct Table {
+
+  // Update or insert an element.
+  void set (int64 index, double value) {
+    if (value == 0) return;
+    sarray :: iterator i = elements.find (index);
+    if (i != elements.end()) i -> second = value;
+    else elements.insert (pair <int64, double> (index, value));
+  }
+  
+  // Fetch an element.
+  double get (int64 index) {
+    sarray :: iterator i = elements.find (index);
+    if (i == elements.end ()) return 0;
+    else return i -> second;
+  }
+
+  // Increment an element.
+  void inc (int64 index) {
+    double old = get (index);
+    set (index, old + 1);
+  }
+
+  // Index of first non-zero element.
+  int64 first () {
+    sarray :: iterator i = elements.begin ();
+    if (i == elements.end ()) return -1;
+    else return i -> first;
+  }
+
+  // Index of last non-zero element.
+  int64 last () {
+    sarray :: reverse_iterator i = elements.rbegin ();
+    if (i == elements.rend ()) return 1;
+    else return i -> first;
+  }
+
+  // Count the number of elements in the table.
+  int64 count () {
+    return elements.size ();
+  }
+
+  // Apply Good-Turing smoothing to the vector.
+  void smooth () {
+    Table Zr;
+    sarray :: iterator i;
+
+    // Compute frequency of frequencies.
+    for (i = elements.begin (); i != elements.end (); i++)
+      Zr.inc (i -> second);
+
+    // Smooth the zeros in Z.
+    Zr.smooth_zeros ();
+
+    // Compute the coefficients of a log-log regression of the
+    // freqency of frequencies.
+    double a, b;
+    Zr.regress (a, b);
+
+    // Smooth the values.
+    for (i = elements.begin (); i != elements.end (); i++)
+      {
+        double t = i -> second;
+        i -> second = t * pow (1 + 1 / t, b + 1);
+      }
+  }
+
+  // Average every element with the zeros which surround it.
+  void smooth_zeros () {
+    sarray z;
+    sarray :: const_iterator r, t, q;
+    uint64 width;
+
+    if (elements.size () <= 1) 
+      return;
+    
+    q = r = t = elements.begin ();
+    t++;
+      
+    // Handle the first element.
+    width = (t -> first) - (r -> first);
+    z[r -> first] = r -> second / width;
+    
+    r++; t++;
+    while (true)
+      {
+        // Handle the last element.
+        if (t == elements.end ()) 
+          {
+            width = (r -> first) - (q -> first);
+            z[r -> first] = r -> second / width;
+            break;
+          }
+
+        // Handle the inner elements.
+        width = (t -> first) - (q -> first);
+        z[r -> first] = 2 * r -> second / width;
+
+        q++; r++; t++;
+      }
+
+    elements = z;
+  }
+
+  // Compute coefficients for a log-log linear regression.
+  void regress (double &a, double &b) {
+    sarray :: const_iterator i;
+    int count = 0;
+    
+    // Compute the average values.
+    double mean_x = 0, mean_y = 0;
+    for (i = elements.begin (); i != elements.end (); i++)
+      {
+        count++;
+        mean_x += log (i -> first);
+        mean_y += log (i -> second);
+      }
+
+    mean_x /= count; 
+    mean_y /= count;
+
+    // Compute sigma_xy and sigma_x.
+    double sigma_xy = 0, sigma_xx = 0;
+    for (i = elements.begin (); i != elements.end (); i++)
+      {
+        double x = i -> first, y = i -> second;
+        sigma_xy += (log (x) - mean_x) * (log (y) - mean_y);
+        sigma_xx += (log (x) - mean_x) * (log (x) - mean_x);
+      }
+
+    b = sigma_xy / sigma_xx;
+    a = mean_y - b * mean_x;
+  }
+
+  sarray elements;
 };
 
-int flip_white_black[64] =
+// Output a struct Table to a stream.
+ostream & operator<< (ostream &os, const Table &t) {
+  sarray :: const_iterator i;
+  for (i = t.elements.begin (); i != t.elements.end (); i++)
+    {
+      os << setiosflags (ios::fixed);
+      os << setprecision (4);
+      os << setw (9) << i -> first;
+      os << setw (9) << i -> second;
+      os << endl;
+    }
+  return os;
+}
+
+/////////////////////////////////////////////////////////////////
+// Count up the number of wins, loses, and draws over a set of //
+// games.                                                      //
+/////////////////////////////////////////////////////////////////
+
+void 
+gen_material_stats (const string filename) 
 {
-   0,   1,   2,   3,   4,   5,   6,   7,
-   8,   9,  10,  11,  12,  13,  14,  15,
-  16,  17,  18,  19,  20,  21,  22,  23,
-  24,  25,  26,  27,  28,  29,  30,  31,
-  32,  33,  34,  35,  36,  37,  38,  39,
-  40,  41,  42,  43,  44,  45,  46,  47,
-  48,  49,  50,  51,  52,  53,  54,  55,
-  56,  57,  58,  59,  60,  61,  62,  63
-};
-
-// Output four columns: The first is Chesley's eval, followed by win
-// count, loss count, and draw count.
-void collect_eval_vs_winp  (const char *filename) {
-  const int min_score = -1000;
-  const int max_score = +1000;
-  const int range = max_score - min_score + 1;
-
-  int count = 0;
-  int wins[range];
-  int losses[range];
-  int draws[range];
-  memset (wins, 0, sizeof (wins));
-  memset (losses, 0, sizeof (losses));
-  memset (draws, 0, sizeof (draws));
+  Table wins, losses, draws;
+  
   PGN pgn;
-  pgn.open (filename);
-
+  pgn.open (filename.c_str());
   while (true)
     {
-      count++;
-
-#if 0
-      if (count == 100)
-        break;
-#endif
-
-      if (count % 1000 == 0)
-        {
-          cerr << "reading #" << count << "..." << endl;
-        }
-
       Game g = pgn.read_game ();
-      Score last_score = 0;
-      Score stable_count = 0;
-      if (pgn.status != PGN::END_OF_FILE)
+      if (pgn.status == PGN::END_OF_FILE) break;
+      if (g.winner == NULL_COLOR) continue;
+      
+      Board b = Board::startpos ();
+      int stable_count = 0;
+      for (uint32 i = 0; i < g.moves.size (); i++)
         {
-          Board b = Board::startpos ();
-          for (uint32 i = 0; i < g.moves.size (); i++)
+          if (g.moves[i].get_capture () == NULL_KIND)
             {
-              b.apply (g.moves[i]);
-              int score;
+              stable_count++;
+            }
+          else
+            {
+              stable_count = 0;
+            }
 
-              score = (b.material[WHITE] - b.material[BLACK]) / 1;
-              if (score == last_score)
+          if (stable_count >= 5)
+            {
+              // Collect material balance information.
+              Score mdif = b.material[WHITE] - b.material[BLACK];
+
+              if (g.winner == WHITE) 
                 {
-                  stable_count += 1;
+                  wins.inc (mdif);
+                  losses.inc (-mdif);
                 }
-              else
+              else if (g.winner == BLACK) 
                 {
-                  stable_count = 0;
+                  wins.inc (-mdif);
+                  losses.inc (mdif);
                 }
-
-              last_score = score;
-
-              if (stable_count <= 5)
+              else if (g.winner == NULL_COLOR)
                 {
-                  continue;
-                }
-
-              score = min (score, max_score);
-              score = max (score, min_score);
-
-              int index = score - min_score;
-
-              if (g.winner == WHITE)
-                {
-                  wins[index]++;
-                }
-              else if (g.winner == BLACK)
-                {
-                  losses[index]++;
-                }
-              else
-                {
-                  draws[index]++;
+                  draws.inc (mdif);
+                  draws.inc (-mdif);
                 }
             }
-        }
-      else
-        {
-          break;
+
+          if (!b.apply (g.moves[i])) break;
         }
     }
 
-  for (int i = -1000; i <= 1000; i++)
+  wins.smooth ();
+  losses.smooth ();
+  draws.smooth ();
+  for (int i = -200; i <= 200; i++)
     {
-      int idx = i - min_score;
-      double count = wins[idx] + losses[idx] + losses[idx];
-      double winp = (double) wins[idx] / count;
+      double nwins = wins.get (i);
+      double npositions = wins.get (i) + losses.get (i) + draws.get (i);
 
-      if (count > 10)
+      if (npositions > 0 && nwins > 0)
         {
-          cout << setw (15) << i;
-          cout << setw (15) << count;
-          cout << setw (15) << winp;
+          cout << setiosflags (ios::fixed);
+          cout << setprecision (4);
+          cout << setw (10) << i;
+          cout << setw (10) << nwins / npositions;
           cout << endl;
         }
     }
 
-  cerr << "done." << endl;
   pgn.close ();
 }
 
@@ -175,343 +291,189 @@ void collect_eval_vs_winp  (const char *filename) {
 //                                                                           //
 ///////////////////////////////////////////////////////////////////////////////
 
-void gen_psq_tables (const char *filename) {
-  uint32 games_count = 0;
-  double won_positions_count = 0;
-  double drawn_positions_count = 0;
-  double lost_positions_count = 0;
-  double positions_count = 0;
-  double f_knight_count [64];
-  double f_knight_given_win_count [64];
-  double f_knight_given_loss_count [64];
-  double f_knight_given_draw_count [64];
+const double b0 = 0;
+const double b1 = 0.01182;
+                               
+double probability_to_material (double p) {
+  return log ((p / (1 - p)) - b0) / b1;
+}
 
-  memset (f_knight_count, 0, sizeof (f_knight_count));
-  memset (f_knight_given_win_count, 0, sizeof (f_knight_count));
-  memset (f_knight_given_loss_count, 0, sizeof (f_knight_count));
-  memset (f_knight_given_draw_count, 0, sizeof (f_knight_count));
+struct psq_generator {
 
+  psq_generator (const char *filename) {
+    npos = nwins = nlosses = ndraws = 0;
+    ZERO (ff);
+    ZERO (ffw);
+    ZERO (ffd);
+    ZERO (ffl);
+    pgn.open (filename);
+  }
+  
+  void output () {
+    collect_positions ();
+    cout << "const int Eval::piece_square_table[6][64] =" << endl;
+    cout << "{" << endl;
+    for (Kind k = PAWN; k <= KING; k++)
+      {
+        output_feature (k);
+        if (k != KING) cout << "," << endl;
+        cout << endl;
+      }
+    cout << "};" << endl;
+  }
+  
+private:
+
+  // Collect data over every position in a PGN stream.
+  void collect_positions () {
+    Game g;
+    while (true) 
+      {
+        g = pgn.read_game ();
+        if (pgn.status == PGN::END_OF_FILE) break;
+
+        Board b = Board::startpos ();
+        for (uint32 i = 0; i < g.moves.size (); i++)
+          {
+            collect_features (b, g);
+            if (!b.apply (g.moves[i])) break;
+          }
+      }
+  }
+
+  // Collect features of a position.
+  void collect_features (const Board &b, Game g) {
+
+    //    if (abs(b.material[WHITE] - b.material[BLACK]) > 0)
+    //      return;
+   
+    // Assume left-right symmetry.
+    npos += 2;
+    if (g.winner == WHITE) nwins += 2;
+    if (g.winner == BLACK) nlosses += 2;
+    if (g.winner == NULL_COLOR) ndraws += 2;
+
+    for (Kind k = PAWN; k <= KING; k++)
+      {
+        bitboard pieces = b.kind_to_board (k) & b.white;
+        while (pieces)
+          {
+            coord idx = bit_idx (pieces);
+            coord flip = flip_left_right[idx];
+            ff[k][idx]++;
+            ff[k][flip]++;
+            if (g.winner == WHITE) 
+              {
+                ffw[k][idx]++;
+                ffw[k][flip]++;
+              }
+            else if (g.winner == BLACK) 
+              {
+                ffl[k][idx]++;
+                ffl[k][flip]++;
+              }
+            else if (g.winner == NULL_COLOR) 
+              {
+                ffd[k][idx]++;
+                ffd[k][flip]++;
+              }
+
+            pieces = clear_lsb (pieces);
+          }
+
+        // Assume black-white symmetry.
+        npos += 2;
+        if (g.winner == BLACK) nwins += 2;
+        if (g.winner == WHITE) nlosses += 2;
+        if (g.winner == NULL_COLOR) ndraws += 2;
+
+        pieces = b.kind_to_board (k) & b.black;
+        while (pieces)
+          {
+            coord idx = flip_white_black[bit_idx (pieces)];
+            coord flip = flip_left_right[idx];
+            ff[k][idx]++;
+            ff[k][flip]++;
+            if (g.winner == BLACK) 
+              {
+                ffw[k][idx]++;
+                ffw[k][flip]++;
+              }
+            else if (g.winner == WHITE) 
+            {
+              ffl[k][idx]++;
+              ffl[k][flip]++;
+            }
+            else if (g.winner == NULL_COLOR) 
+              {
+                ffd[k][idx]++;
+                ffd[k][flip]++;
+              }
+            
+            pieces = clear_lsb (pieces);
+          }
+      }
+
+  }
+  
+  void output_feature (Kind k)
+  {
+    cout << "  // " << k << endl;
+    cout << "  { " << endl;
+    for (int rank = 7; rank >= 0; rank--)
+      {
+        cout << "  ";
+        for (int file = 0; file <= 7; file++)
+          {
+            int idx = Board::to_idx (rank, file);
+
+            // Apply Bayes law to find the material value of this
+            // position as a probability of winning.
+            double pfw = ffw[k][idx] / nwins;
+            double pw = .5;
+            double pf = ff[k][idx] / (npos);
+            double pwf = pfw * pw / pf;
+            double mwf = probability_to_material (pwf);
+            if (isnan (mwf)) mwf = 0;
+
+            // Apply Bayes law to find the material value of this
+            // position as a probability of drawing.
+            double pfd = ffd[k][idx] / ndraws;
+            double pd = .5;
+            double pdf = pfd * pd / pf;
+            double mdf = probability_to_material (pdf);
+            if (isnan (mdf)) mdf = 0;
+
+            // The material value is a weighted average of the values
+            // for win and draw.
+            double m = (2 * mwf + mdf) / 3;
+
+            // Output this table entry.
+            cout << setiosflags (ios::fixed);
+            cout << setprecision (0);
+            cout << setw (5);
+            if (isnan (m)) m = 0;
+            cout << m;
+            if (rank != 0 || file != 7) cout << ",";
+          }
+        cout << endl;
+      }
+    cout << "  }";
+  }
+
+  // Stream of games.
   PGN pgn;
-  pgn.open (filename);
-  while (true)
-    {
-      // Count the number of games in the stream.
-      games_count++;
 
-      // Output progress.
-      if (games_count % 1000 == 0)
-        cerr << "reading #" << games_count << "..." << endl;
+  // Absolute frequencies of features.
+  double npos, nwins, nlosses, ndraws;
+  double ff[KIND_COUNT][64];
+  double ffw[KIND_COUNT][64];
+  double ffl[KIND_COUNT][64];
+  double ffd[KIND_COUNT][64];
+};
 
-      // Read a game.
-      Game g = pgn.read_game ();
-      if (pgn.status == PGN::END_OF_FILE) break;
-
-      // Play out a game.
-      Board b = Board::startpos ();
-      for (uint32 i = 0; i < g.moves.size (); i++)
-        {
-          // We are only interested in positions with a small material
-          // difference.
-          // if (abs (b.material[WHITE] - b.material[BLACK]) > 2 * PAWN_VAL)
-          // continue;
-
-          // Iterate over features and insert this position and it's
-          // left-right mirror image for white.
-          positions_count += 2;
-          if (g.winner == WHITE) won_positions_count += 2;
-          if (g.winner == BLACK) lost_positions_count += 2;
-          if (g.winner == NULL_COLOR) drawn_positions_count += 2;
-          
-          for (int idx = 0; idx < 64; idx++)
-            {
-              // Insert the position for white.
-              if (test_bit (b.get_knights (WHITE), idx))
-                {
-                  f_knight_count[idx]++;
-                  f_knight_count[flip_left_right[idx]]++;
-                  if (g.winner == WHITE)
-                    {
-                      f_knight_given_win_count[idx]++;
-                      f_knight_given_win_count[flip_left_right[idx]]++;
-                    }
-                  else if (g.winner == BLACK)
-                    {
-                      f_knight_given_loss_count[idx]++;
-                      f_knight_given_loss_count[flip_left_right[idx]]++;
-                    }
-                  else if (g.winner == NULL_COLOR)
-                    {
-                      f_knight_given_draw_count[idx]++;
-                      f_knight_given_draw_count[flip_left_right[idx]]++;
-                    }
-                }
-            }
-
-          // Iterate over features and insert this position and it's
-          // left-right mirror image for black.
-          positions_count += 2;
-          if (g.winner == BLACK) won_positions_count += 2;
-          if (g.winner == WHITE) lost_positions_count += 2;
-          if (g.winner == NULL_COLOR) drawn_positions_count += 2;
-
-          for (int idx = 0; idx < 64; idx++)
-            {
-              int bidx = flip_white_black [idx];
-              if (test_bit (b.get_knights (BLACK), bidx))
-                {
-                  f_knight_count[bidx]++;
-                  f_knight_count[flip_left_right[bidx]]++;
-                  if (g.winner == BLACK)
-                    {
-                      f_knight_given_win_count[bidx]++;
-                      f_knight_given_win_count[flip_left_right[bidx]]++;
-                    }
-                  else if (g.winner == WHITE)
-                    {
-                      f_knight_given_loss_count[bidx]++;
-                      f_knight_given_loss_count[flip_left_right[bidx]]++;
-                    }
-                  else if (g.winner == NULL_COLOR)
-                    {
-                      f_knight_given_draw_count[bidx]++;
-                      f_knight_given_draw_count[flip_left_right[bidx]]++;
-                    }
-                }
-            }
-          b.apply (g.moves[i]);
-        }
-    }
-
-  // Output statistics
-  cerr << "positions_count: " << positions_count << endl;
-  cerr << endl;
-  cerr << "won_positions_count: " << won_positions_count << endl;
-  cerr << "p(w) = ";
-  double pw = won_positions_count / positions_count;
-  cerr << pw;
-  cerr << endl;
-  cerr << endl;
-  cerr << "lost_positions_count: " << lost_positions_count << endl;
-  cerr << "p(l) = ";
-  double pl = lost_positions_count / positions_count;
-  cerr << pl;
-  cerr << endl;
-  cerr << endl;
-  cerr << "drawn_positions_count: " << drawn_positions_count << endl;
-  cerr << "p(d) = ";
-  double pd = drawn_positions_count / positions_count;
-  cerr << pd;
-  cerr << endl;
-  cerr << endl;
-
-  double pf[64];
-  cerr << "p(f):" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          if (positions_count > 0)
-            {
-              pf[idx] = f_knight_count[idx] / positions_count;
-            }
-          else
-            {
-              pf[idx] = 0;
-            }
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (4);
-          cerr << pf[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-
-  double pfw[64];
-  cerr << "p(f|w):" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          if (won_positions_count > 0)
-            {
-              pfw[idx] = f_knight_given_win_count[idx] / won_positions_count;
-            }
-          else
-            {
-              pfw[idx] = 0;
-            }
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (4);
-          cerr << pfw[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-  
-  double pfd[64];
-  cerr << "p(f|d):" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          if (drawn_positions_count > 0)
-            {
-              pfd[idx] = 
-                f_knight_given_draw_count[idx] / drawn_positions_count;
-            }
-          else
-            {
-              pfd[idx] = 0;
-            }
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (4);
-          cerr << pfd[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-
-  //
-  // By Bayes Law:
-  //
-  // p (w|f) = p(f|w) * p(w)
-  //           -------------
-  //                p(f)
-
-  double pwf[64];
-  cerr << "p(w|f):" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          if (pf[idx] == 0)
-            {
-              pwf[idx] = 0;
-            }
-          else
-            {
-              pwf[idx] = pfw[idx] * pw / pf[idx];
-            }
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (2);
-          cerr << pwf[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-
-  double pdf[64];
-  cerr << "p(d|f):" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          if (pf[idx] == 0)
-            {
-              pdf[idx] = 0;
-            }
-          else
-            {
-              pdf[idx] = pfd[idx] * pd / pf[idx];
-            }
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (2);
-          cerr << pdf[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-
-  double pwdf[64];
-  cerr << "p (win or draw | f):" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          pwdf[idx] = pwf[idx] + pdf[idx];
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (2);
-          cerr << pwdf[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-  
-  double cpawns[64];
-  cerr << "p (win or draw | f) in centipawns:" << endl;
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-          cpawns[idx] = round (400 * log10 (pwdf[idx] / (1 - pwdf[idx])));
-          cerr << setiosflags (ios::fixed);
-          cerr << setprecision (0);
-          cerr << setw (5);
-          cerr << cpawns[idx];
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
-
-  cerr << "Weighted average of wins and draws in centipawns:" << endl;
-  cerr << setiosflags (ios::fixed);
-  cerr << setprecision (0);
-  for (int row = 7; row >= 0; row--)
-    {
-      for (int file = 0; file < 8; file++)
-        {
-          int idx = Board::to_idx (row, file);
-
-          // Compute the probability p(w|f) excluding draws.
-          double won_or_lost_count = 
-            won_positions_count + lost_positions_count;
-          double pfw = f_knight_given_win_count[idx] / won_positions_count;
-          double pw = won_positions_count / won_or_lost_count;
-          double pf = (f_knight_given_win_count[idx] + 
-                       f_knight_given_loss_count[idx]) / won_or_lost_count;
-          double pwf = pfw * pw / pf;
-
-          // Compute the probability p(d|f) excluding wins.
-          double drawn_or_lost_count = drawn_positions_count + lost_positions_count;
-          double pfd = f_knight_given_draw_count[idx] / drawn_positions_count;
-          double pd = drawn_positions_count / drawn_or_lost_count;
-          double pf2 = (f_knight_given_draw_count[idx] + 
-                        f_knight_given_loss_count[idx]) / drawn_or_lost_count;
-          double pdf = pfd * pd / pf2;
-
-          // Compute a weighted average.
-          double wa = (2 * pwf + 1 * pdf) / 3;
-
-          // Estimate a material value.
-          double mv = round (400 * log10 (wa / (1 - wa)));
-
-          cerr << setw (5);
-          cerr << mv;
-          cerr << ", ";
-        }
-      cerr << endl;
-    }
-
-  cerr << endl;
+void gen_psq_tables (const string filename) {
+  psq_generator psqg (filename.c_str());
+  psqg.output ();
+  return;
 }

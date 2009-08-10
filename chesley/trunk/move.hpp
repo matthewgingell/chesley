@@ -34,7 +34,6 @@ struct Move {
     : from (from), to (to), color (color), kind (kind), 
       capture (capture), promote (promote), en_passant (en_passant) {}
 
-  
   // Kind of color of the piece being moved.
   inline Color get_color () const { 
     return color; 

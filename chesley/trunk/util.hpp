@@ -46,6 +46,8 @@ extern char *arg0;
 #define ALIGHT(A)
 #endif // __GNUC_
 
+#define ZERO(object) memset (object, 0, sizeof (object));
+
 static int32 sign (int x) IS_UNUSED;
 static int32 sign (int x) { return x / abs (x); }
 
