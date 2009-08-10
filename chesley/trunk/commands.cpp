@@ -575,7 +575,8 @@ Session::execute (char *line) {
 
     case CMD_GENMSTATS:
       // Generate statistics about material balance.
-      gen_material_stats ("big.pgn");
+      if (tokens.size () >= 2)
+        gen_material_stats (tokens[1]);
       break;
 
     case CMD_GENPSQ:
