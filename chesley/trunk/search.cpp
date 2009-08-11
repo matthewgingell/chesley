@@ -169,6 +169,8 @@ Search_Engine :: iterative_deepening
       if (pv_tmp.count == 0)
         {
           cerr << b.to_fen () << endl;
+          cerr << stats.calls_to_search << endl;
+          cerr << stats.calls_to_qsearch << endl;
           cerr << i << endl;
           cerr << s << endl;
           cerr << s_tmp << endl;
@@ -358,7 +360,9 @@ Search_Engine :: search
 
   // Check 50 move and triple repetition rules.
   if (b.half_move_clock == 50 || is_rep (b))
-    return 0;
+    {
+      return 0;
+    }
 
   // Return the result of a quiescence search at depth 0.
   if (depth <= 0)
@@ -941,9 +945,7 @@ Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
 void
 Search_Engine :: rt_push (const Board &b) {
   Rep_Table :: iterator i = rt.find (b.hash);
-
   assert (rt.size () < 1000);
-
   if (i == rt.end ())
     {
       rt[b.hash] = 1;

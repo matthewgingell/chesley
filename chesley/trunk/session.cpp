@@ -25,6 +25,9 @@ using namespace std;
 // Static session variables. //
 ///////////////////////////////
 
+// Hack
+bool xboard = false;
+
 // I/O State.
 FILE *Session::in;
 FILE *Session::out;
@@ -82,17 +85,6 @@ Session::init_session () {
   protocol = NATIVE;
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
-
-#ifndef _WIN32
-  // Setup periodic timer.
-  struct itimerval timer;
-  timer.it_value.tv_sec = 0;
-  timer.it_value.tv_usec = 100 * 1000;
-  timer.it_interval.tv_sec = 0;
-  timer.it_interval.tv_usec = 100 * 1000;
-  setitimer(ITIMER_REAL, &timer, NULL);
-  signal (SIGALRM, handle_alarm);
-#endif // _WIN32
 }
 
 void
@@ -176,7 +168,12 @@ Session::work ()
   // and send a move.
   else
     {
+      // Search for a move.
       Move m = find_a_move ();
+
+      // Next time we do a search, we want to repetition table to
+      // reflect we have already played a move from the position b.
+      se.rt_push (board);
 
       // We should never get back a null move from the search engine.
       assert (m != NULL_MOVE);
@@ -186,9 +183,6 @@ Session::work ()
 
       // We should never get back a move that doesn't apply.
       assert (applied);
-
-      // Add this move to the triple repetition table.
-      se.rt_push (board);
 
       // Send the move to the client.
       fprintf (out, "move %s\n", board.to_calg (m).c_str ());
