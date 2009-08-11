@@ -143,8 +143,7 @@ Board::common_init (Board &b) {
   b.hash ^= zobrist_enpassant_keys[0];
 
   // Initialize clocks.
-  b.half_move_clock =
-    b.full_move_clock = 0;
+  b.half_move_clock = b.full_move_clock = 0;
 
   // Initialize history.
   b.last_move = NULL_MOVE;

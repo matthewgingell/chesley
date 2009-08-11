@@ -393,7 +393,7 @@ Board::from_san (const string &s) const {
           continue;
         }
 
-      // Test whether this move is a candidate for the parsed move.
+      // Test whether this move is a candidate for the parsed move. 
       if (k == moves[i].get_kind () && to == moves[i].to)
         {
           if (dis_file == -1 && dis_rank == -1)

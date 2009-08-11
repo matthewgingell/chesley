@@ -50,10 +50,6 @@ typedef unsigned char byte;
 #define fileno _fileno
 #endif // fileno
 
-#ifndef usleep
-#define usleep Sleep
-#endif // usleep
-
 #endif // _WIN32
 
 // Type for a number representing a square on the board.

@@ -140,6 +140,10 @@ static uint64 mclock () IS_UNUSED;
 // Return the amount of CPU time used in milliseconds.
 static uint64 cpu_time () IS_UNUSED;
 
+#ifdef _WIN32
+#define usleep(usecs) (Sleep (usecs / 1000))
+#endif // _WIN32
+
 ////////////////////////////
 // Generic sorting inline //
 ////////////////////////////
@@ -348,6 +352,8 @@ operator<< (std::ostream &os, const string_vector &in) {
 // I/O functions. //
 ////////////////////
 
+extern bool xboard;
+
 // Check a file descriptor and return true is there is data available
 // to read from it.
 #ifndef _WIN32
@@ -367,10 +373,48 @@ fdready (int fd) {
   // Poll the file descriptor.
   return select (fd + 1, &readfds, NULL, NULL, &timeout);
 }
-#else
+#else // _WIN32
+
+#include <conio.h>
+
+// Asynchronous IO code for Windows taken directly from Olithink,
+// Oliver Brausch 2008.
 static bool
 fdready (int fd IS_UNUSED) {
-  return 0;
+  static int      init = 0, pipe;
+  static HANDLE   inh;
+  DWORD           dw;
+
+  if (xboard) // Xboard sends input commands over the internal pipe
+    {
+      if (!init)
+        {
+          init = 1;
+          inh = GetStdHandle(STD_INPUT_HANDLE);
+          pipe = !GetConsoleMode(inh, &dw);
+          if (!pipe)
+            {
+              SetConsoleMode(inh,
+                             dw & ~(ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT));
+              FlushConsoleInputBuffer(inh);
+            }
+        }
+      if (pipe)
+        {
+          if (!PeekNamedPipe(inh, NULL, 0, NULL, &dw, NULL))
+            return 1;
+          return dw;
+        }
+      else
+        {
+          GetNumberOfConsoleInputEvents(inh, &dw);
+          return dw <= 1 ? 0 : dw;
+        }
+    }
+  else // not XBoard, so use _kbhit() for getting user input
+    {
+      return _kbhit();
+    }
 }
 #endif  // _WIN32
 

@@ -710,6 +710,7 @@ Session::execute (char *line) {
 
     case CMD_XBOARD: 
       // Set Xboard mode.
+      xboard = true;
       return set_xboard_mode (tokens);
       break;
 
