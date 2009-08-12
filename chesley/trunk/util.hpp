@@ -504,50 +504,6 @@ cpu_time () {
 // Generic sorting inline //
 ////////////////////////////
 
-// Inline quicksort. Client type must 1) define a function count, 2)
-// define a function value and 3) be accessible with operator[].
-template <typename T>
-inline int
-partition (T &items, int left, int right, int pivot_index) {
-  int pivot_value = value (items[pivot_index]);
-  int store_index = left;
-
-  assert (left >= 0);
-  assert (right < count (items));
-
-  std::swap (items[pivot_index], items[right]);
-
-  for (int i = left; i < right; i++)
-    {
-      if (value (items[i]) <= pivot_value)
-        {
-          std::swap (items [i], items[store_index]);
-          store_index++;
-        }
-    }
-
-  std::swap (items[store_index], items[right]);
-  return store_index;
-}
-
-template <typename T>
-inline void
-quick_sort_in_place (T &items, int left, int right) {
-  if (right > left)
-    {
-      int pivot_index = left;
-      int new_pivot_index = partition (items, left, right, pivot_index);
-      quick_sort_in_place (items, left, new_pivot_index - 1);
-      quick_sort_in_place (items, new_pivot_index + 1, right);
-    }
-}
-
-template <typename T>
-inline void
-quick_sort (T &items) {
-  quick_sort_in_place (items, 0, count (items) - 1);
-}
-
 // Bubble sort. Client type must 1) define a function count, 2) define
 // a function value and 3) be accessible with operator[].
 template <typename T>

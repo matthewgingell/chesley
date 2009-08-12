@@ -25,8 +25,6 @@ using namespace std;
 const int Search_Engine :: hist_nbuckets;
 const int32 Search_Engine::MAX_DEPTH;
 
-
-
 // Utility functions.
 bool is_mate (Score s) { 
   return abs (s) > MATE_VAL - Search_Engine::MAX_DEPTH; 

@@ -61,6 +61,4 @@ struct PGN {
   FILE *fp;
 };
 
-
-
 #endif // _PGN_

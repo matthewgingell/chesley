@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include "common.hpp"
 
-
 struct PHash
 {
   // Initialize the table.
