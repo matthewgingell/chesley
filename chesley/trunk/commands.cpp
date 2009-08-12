@@ -409,6 +409,7 @@ Session::execute (char *line) {
       {
         Move m = board.from_calg (tokens[1]);
         bool applied = board.apply (m);
+        se.rt_push (board);
             
         // The client should never pass us a move that doesn't
         // apply.
