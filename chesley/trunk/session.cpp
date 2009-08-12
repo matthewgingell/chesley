@@ -171,15 +171,12 @@ Session::work ()
       // Search for a move.
       Move m = find_a_move ();
 
-      // Next time we do a search, we want to repetition table to
-      // reflect we have already played a move from the position b.
-      se.rt_push (board);
-
       // We should never get back a null move from the search engine.
       assert (m != NULL_MOVE);
 
       // Apply the move.
       bool applied = board.apply (m);
+      se.rt_push (board);
 
       // We should never get back a move that doesn't apply.
       assert (applied);

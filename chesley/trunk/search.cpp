@@ -36,6 +36,7 @@ Move
 Search_Engine :: choose_move (Board &b, int depth)
 {
   Move_Vector pv;
+  assert (!is_triple_rep (b));
   depth = min (depth, MAX_DEPTH);
   new_search (b, depth, pv);
   assert (pv.count > 0);
@@ -272,7 +273,7 @@ Search_Engine :: search_with_memory
     }
 
   // Push this position on the repetition stack and recurse.
-  rt_push (b);
+  if (ply > 0) rt_push (b);
 
   // It may be the case that fetching alpha from the hash causes us to
   // fail high immediately.
@@ -285,7 +286,7 @@ Search_Engine :: search_with_memory
 
       // Don't clobber the existing entry for this position. Just
       // return immediately.
-      rt_pop (b);
+      if (ply > 0) rt_pop (b);
       return alpha;
     }
   else
@@ -304,7 +305,7 @@ Search_Engine :: search_with_memory
     }
 
   // Pop the repetition stack.
-  rt_pop (b);
+  if (ply > 0) rt_pop (b);
 
   // Update the transposition and history tables.
   if (!controls.interrupt_search)
@@ -359,7 +360,7 @@ Search_Engine :: search
     return 12345;
 
   // Check 50 move and triple repetition rules.
-  if (b.half_move_clock == 50 || is_rep (b))
+  if (b.half_move_clock == 50 || is_triple_rep (b))
     {
       return 0;
     }
@@ -810,7 +811,7 @@ Search_Engine :: tt_try
   else
     {
       if (hash_depth >= depth &&
-          b.half_move_clock < 45  && 
+          b.half_move_clock < 45 && 
           rep_count (b) == 0)
         {
           // Mate scores need to be treated specially when fetched
