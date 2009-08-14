@@ -27,10 +27,10 @@ static const Score MATE_VAL = 20 * 1000;
 static const Score INF      = 30 * 1000;
 
 static const Score PAWN_VAL   = 100;
-static const Score ROOK_VAL   = 500;
-static const Score KNIGHT_VAL = 300;
-static const Score BISHOP_VAL = 325;
-static const Score QUEEN_VAL  = 975;
+static const Score KNIGHT_VAL = 400;
+static const Score BISHOP_VAL = 400;
+static const Score ROOK_VAL   = 600;
+static const Score QUEEN_VAL  = 1200;
 
 static const Score CASTLE_KS_BONUS = 65;
 static const Score CASTLE_QS_BONUS = 25;
@@ -166,8 +166,14 @@ struct Eval {
       }
   }
 
-  // Get the value of a piece being captured.
+  // Approximate the value of a capture. 
   static inline Score eval_capture (const Move &m) {
+    return eval_piece (m.get_capture ()) - 
+      eval_piece (m.get_kind ()) / 10;
+  }
+
+  // Get the value of a piece being captured.
+  static inline Score eval_victim (const Move &m) {
     return eval_piece (m.get_capture ());
   }
 

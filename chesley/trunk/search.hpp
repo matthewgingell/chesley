@@ -16,10 +16,11 @@
 #define _SEARCH_
 
 #include <cstring>
-#include <boost/unordered_map.hpp>
 #include "board.hpp"
 #include "eval.hpp"
 #include "ttable.hpp"
+#include "util.hpp"
+#include <boost/unordered_map.hpp>
 
 // Supported time keeping modes.
 enum time_mode { CONVENTIONAL, ICS, EXACT };
@@ -72,12 +73,13 @@ struct Search_Engine {
     post = true;
 
     // Initialize the history table.
-    memset (hh_table, 0, sizeof (hh_table));
+    ZERO (hh_table);
     hh_max = 0;
 
     // Initialize the mates table.
-    memset (mates_table, 0, sizeof (mates_table));
+    ZERO (mates_table)
     mates_max = 0;
+
   }
 
   // Clear accumulated search statistics.
@@ -92,10 +94,10 @@ struct Search_Engine {
     stats.futility_count = 0;
     stats.ext_futility_count = 0;
     stats.lmr_count = 0;
-    memset (stats.calls_for_depth, 0, sizeof (stats.calls_for_depth));
-    memset (stats.time_for_depth, 0, sizeof (stats.time_for_depth));
-    memset (stats.hist_pv, 0, sizeof (stats.hist_pv));
-    memset (stats.hist_qpv, 0, sizeof (stats.hist_qpv));
+    ZERO (stats.calls_for_depth);
+    ZERO (stats.time_for_depth);
+    ZERO (stats.hist_pv);
+    ZERO (stats.hist_qpv);
   }
 
   //////////////////////////////////////////
@@ -283,8 +285,8 @@ struct Search_Engine {
   // Static exchange evaluation.
   inline Score see (const Board &b, const Move &capture);
 
-  // Heuristically order a list of moves by value.
-  inline void order_moves (const Board &b, Move_Vector &moves);
+  // Heuristically order a list of moves by estimated value.
+  inline void order_moves (const Board &b, int ply, Move_Vector &moves);
   
   /////////////////
   // Heuristics. //
@@ -296,8 +298,7 @@ struct Search_Engine {
   uint64 mates_table[64][64];
   uint64 mates_max;
 
-  void collect_move (int depth, const Move &m);
-  void collect_mate (int depth, const Move &m);
+  void collect_move (int depth, int ply, const Move &m, Score s);
 };
 
 #endif // _SEARCH_
