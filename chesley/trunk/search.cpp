@@ -18,9 +18,6 @@
 #include <iostream>
 
 #include "chesley.hpp"
-#include "search.hpp"
-#include "session.hpp"
-#include "phash.hpp"
 
 using namespace std;
 
@@ -58,11 +55,11 @@ Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
   // Clear history table.
-  memset (hh_table, 0, sizeof (hh_table));
+  ZERO (hh_table)
   hh_max = 0;
 
   // Clear mates table.
-  memset (mates_table, 0, sizeof (mates_table));
+  ZERO (mates_table);
   mates_max = 0;
   
   // Clear statistics.
@@ -122,7 +119,7 @@ Search_Engine :: iterative_deepening
   bool found_mate = false;
   Score best_mate = 0;
   
-  // Print header for posting thinking.
+  // Print header for post thinking.
   if (post) post_before (b);
 
   // Search progressively deeper ply until we are interrupted.
@@ -313,8 +310,7 @@ Search_Engine :: search_with_memory
       tt_update (b, depth, ply, pv, s, alpha, beta);
       if (pv.count > 0) 
         {
-          collect_move (depth, pv[0]);
-          if (s > 0 && is_mate (s)) collect_mate (depth, pv[0]);
+          collect_move (depth, ply, pv[0], s);
         }
     }
 
@@ -412,7 +408,7 @@ Search_Engine :: search
     
     // Generate moves.
     Move_Vector moves (b);
-    order_moves (b, moves);
+    order_moves (b, ply, moves);
 
     ////////////////////////////
     // Minimax over children. //
@@ -429,8 +425,9 @@ Search_Engine :: search
         // Skip this move if it's illegal.
         if (!c.apply (moves[mi])) continue;
 
-        // Determine the material balance following this move.
-        Score meval = Eval (b).net_material ();
+        // Determine the estimated evaluation for this move.
+        Score estimate = 
+          Eval (b).net_material () + Eval::eval_capture (moves[mi]);
 
         // Determine whether this moves checks.
         bool c_in_check = c.in_check (c.to_move());
@@ -460,21 +457,17 @@ Search_Engine :: search
 #endif // ENABLE_EXTENSIONS
 
 #ifdef ENABLE_LMR
-
         ///////////////////////////
         // Late move reductions. //
         ///////////////////////////
 
         const int Full_Depth_Count = 4;
-        const int Reduction_Limit = 3;
-        const int Reduction_Margin = 5 * PAWN_VAL;
+        const int Reduction_Limit = 4;
+        const int Reduction_Margin = 8 * PAWN_VAL;
         if (mi >= Full_Depth_Count && 
             depth >= Reduction_Limit &&
-            meval <= alpha + Reduction_Margin &&
-            ext == 0 && 
-            !in_check && !c_in_check && 
-            !have_pv_move &&
-            moves[mi].get_capture () == NULL_KIND)
+            estimate <= alpha + Reduction_Margin &&
+            ext == 0 && !in_check && !c_in_check && !have_pv_move)
           {
             Score ds;
             Move_Vector dummy;
@@ -495,6 +488,10 @@ Search_Engine :: search
         // A. Heinz and his discussion of pruning in Deep Thought at
         // http://people.csail.mit.edu/heinz/dt.
 
+        const int PRE_PRE_FRONTIER = 3;
+        const int PRE_FRONTIER = 2;
+        const int FRONTIER = 1;
+
         Score upperbound;
         if (ply > 0 && ext == 0 && !in_check && !c_in_check && !have_pv_move)
           {
@@ -506,44 +503,41 @@ Search_Engine :: search
             // If this position looks extremely bad at depth three,
             // proceed with a reduced depth search.
             const Score RAZORING_MARGIN = 8 * PAWN_VAL;
-            upperbound = meval + RAZORING_MARGIN;
-            if (depth == 3 && upperbound <= alpha)
+            upperbound = estimate + RAZORING_MARGIN;
+            if (depth == PRE_PRE_FRONTIER && upperbound <= alpha)
               {
                 stats.razor_count++;
                 depth = 2;
               }
 #endif // ENABLE_RAZORING
 
-            if (moves[mi].get_capture () == NULL_KIND)
+            ////////////////////////
+            // Futility pruning.  //
+            ////////////////////////
+
+            // At frontier nodes we estimate the most this move
+            // could reasonably improve the score of the position,
+            // and if it still isn't better than alpha we skip it.
+            const Score FUTILITY_MARGIN = 3 * PAWN_VAL;
+            upperbound = estimate + FUTILITY_MARGIN;
+            if (depth == FRONTIER && upperbound < alpha)
               {
-                ////////////////////////
-                // Futility pruning.  //
-                ////////////////////////
+                stats.futility_count++;
+                continue;
+              }
 
-                // At frontier nodes we estimate the most this move
-                // could reasonably improve the score of the position,
-                // and if it still isn't better than alpha we skip it.
-                const Score FUTILITY_MARGIN = 3 * PAWN_VAL;
-                upperbound = meval + FUTILITY_MARGIN;
-                if (depth == 1 && upperbound < alpha)
-                  {
-                    stats.futility_count++;
-                    continue;
-                  }
+            ////////////////////////////////
+            // Extended futility pruning. //
+            ////////////////////////////////
 
-                ////////////////////////////////
-                // Extended futility pruning. //
-                ////////////////////////////////
-
-                // This is exactly like normal futility pruning, just
-                // at pre-frontier nodes with a bigger margin.
-                const Score EXT_FUTILITY_MARGIN = 5 * PAWN_VAL;
-                upperbound = meval + EXT_FUTILITY_MARGIN;
-                if (depth == 2 && upperbound < alpha)
-                  {
-                    stats.ext_futility_count++;
-                    continue;
-                  }
+            // This is exactly like normal futility pruning, just
+            // at pre-frontier nodes with a bigger margin.
+            const Score EXT_FUTILITY_MARGIN = 5 * PAWN_VAL;
+            upperbound = estimate + EXT_FUTILITY_MARGIN;
+            if (depth == PRE_FRONTIER && upperbound < alpha)
+              {
+                stats.ext_futility_count++;
+                continue;
               }
           }
 #endif // ENABLE_FUTILITY
@@ -618,27 +612,29 @@ Search_Engine :: search
   return alpha;
 }
 
-// Collect a move in the history table.
+// Collect a move.
 void 
-Search_Engine::collect_move (int depth, const Move &m) {
+Search_Engine::collect_move (int depth, int ply, const Move &m, Score s) {
+  // Update the history table.
   uint64 val = hh_table [m.from][m.to] += 1 << depth;
   hh_max = max (val, hh_max);
-}
 
-// Collect a mate in the mates table.
-void 
-Search_Engine::collect_mate (int depth, const Move &m) {
-  uint64 val = mates_table [m.from][m.to] += 100 - depth;
-  mates_max = max (val, mates_max);
+  // Update the mates table.
+  bool mate = (s > 0 && is_mate (s));
+  if (mate) 
+    {
+      uint64 val = mates_table [m.from][m.to] += 100 - ply;
+      mates_max = max (val, mates_max);
+    }
 }
 
 // Attempt to order moves to improve our odds of getting earlier
 // cutoffs.
 void
 Search_Engine :: order_moves
-(const Board &b, Move_Vector &moves) {
+(const Board &b, int ply, Move_Vector &moves) {
   Score scores[moves.count];
-  memset (scores, 0, sizeof(scores));
+  ZERO (scores);
   Move best_guess = tt_move (b);
 
   // Score each move.
@@ -688,7 +684,7 @@ Search_Engine :: order_moves
 Score
 Search_Engine :: see (const Board &b, const Move &m) {
 #ifdef ENABLE_SEE
-  Score s = Eval::eval_capture (m);
+  Score s = Eval::eval_victim (m);
 
   // Construct child position.
   Board c = b;
@@ -706,8 +702,7 @@ Search_Engine :: see (const Board &b, const Move &m) {
 
   return s;
 #else 
-  return Eval::eval_capture (m)  - 
-    Eval::eval_piece (m.kind) / 10;
+  return Eval::eval_capture (m)
 #endif // ENABLE_SEE
 }
 
@@ -732,8 +727,19 @@ Search_Engine :: qsearch
   stats.calls_to_qsearch++;
 
   // Do static evaluation at this node.
-  alpha = max (alpha, Eval (b).score ());
-
+  Score val = Eval (b).score ();
+  if (val > alpha)
+    {
+      alpha = val;
+    }
+#if 0
+  // Delta pruning.
+  else if (val < alpha - QUEEN_VAL)
+    {
+      return val;
+    }
+#endif
+  
   // Recurse and minimax over children.
   if (alpha < beta)
     {
@@ -748,7 +754,7 @@ Search_Engine :: qsearch
       if (moves.count > 0)
         {
           Score scores [moves.count];
-          memset (scores, 0, sizeof (scores));
+          ZERO (scores);
           for (int i = 0; i < moves.count; i++)
             {
               scores[i] = see (b, moves[i]);
@@ -865,8 +871,10 @@ Search_Engine :: tt_update
   assert (alpha <= beta);
 
   // This rule seems to work well in practice.
+#if 0
   if (pv.count == 0 && !tt.free_entry (b))
     return;
+#endif
 
   // Determine the kind of value we are recording.
   SKind skind;

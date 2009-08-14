@@ -273,7 +273,6 @@ Board::set_piece (Kind k, Color c, coord idx) {
   occupied_135 |= masks_135[idx];
 }
 
-
 // Set a piece on the board with a row and file.
 void
 Board::set_piece (Kind kind, Color color, int row, int file) {
@@ -469,7 +468,7 @@ Board::apply (const Move &m) {
   // Update color to move. //
   ///////////////////////////
 
-  set_color (invert (to_move ()));
+  set_color (~to_move ());
 
   ///////////////////////////////////////////////
   // Clear the origin and destination squares. //
