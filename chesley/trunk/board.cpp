@@ -149,8 +149,10 @@ Board::common_init (Board &b) {
   b.last_move = NULL_MOVE;
 
   // Initialize scoring information.
-  memset (b.material, 0, sizeof (b.material));
-  memset (b.psquares, 0, sizeof (b.psquares));
+  ZERO (b.material);
+  ZERO (b.psquares);
+  ZERO (b.piece_counts);
+  ZERO (b.pawn_counts);
 }
 
 // Construct a board from the standard starting position.
@@ -237,6 +239,8 @@ Board::clear_piece (coord idx, Color c, Kind k) {
       // Update evaluation information.
       material[c] -= Eval::eval_piece (k);
       psquares[c] -= Eval::psq_value (k, c, idx);
+      piece_counts[c][k]--;
+      if (k == PAWN) pawn_counts[c][idx_to_file (idx)]--;
 
       // Clear the occupancy sets.
       occupied     &= ~masks_0[idx];
@@ -265,6 +269,8 @@ Board::set_piece (Kind k, Color c, coord idx) {
   // Update evaluation information.
   material[c] += Eval::eval_piece (k);
   psquares[c] += Eval::psq_value (k, c, idx);
+  piece_counts[c][k]++;
+  if (k == PAWN) pawn_counts[c][idx_to_file (idx)]++;
 
   // Update occupancy sets.
   occupied |= masks_0[idx];
@@ -328,11 +334,11 @@ Board::apply (const Move &m) {
         {
           if (color == WHITE)
             {
-              clear_piece (flags.en_passant - 8);
+              clear_piece (flags.en_passant - 8, BLACK, PAWN);
             }
           else
             {
-              clear_piece (flags.en_passant + 8);
+              clear_piece (flags.en_passant + 8, BLACK, PAWN);
             }
         }
 
@@ -399,8 +405,8 @@ Board::apply (const Move &m) {
                 {
                   if (is_castle_qs && !(attacked & 0x1C))
                     {
-                      clear_piece (E1);
-                      clear_piece (A1);
+                      clear_piece (E1, WHITE, KING);
+                      clear_piece (A1, WHITE, ROOK);
                       set_piece (KING, WHITE, C1);
                       set_piece (ROOK, WHITE, D1);
                       set_color (invert (to_move ()));
@@ -409,8 +415,8 @@ Board::apply (const Move &m) {
                     }
                   if (is_castle_ks && !(attacked & 0x70))
                     {
-                      clear_piece (E1);
-                      clear_piece (H1);
+                      clear_piece (E1, WHITE, KING);
+                      clear_piece (H1, WHITE, ROOK);
                       set_piece (KING, WHITE, G1);
                       set_piece (ROOK, WHITE, F1);
                       set_color (invert (to_move ()));
@@ -423,8 +429,8 @@ Board::apply (const Move &m) {
                   byte attacks = get_byte (attacked, 7);
                   if (is_castle_qs && !(attacks & 0x1C))
                     {
-                      clear_piece (E8);
-                      clear_piece (A8);
+                      clear_piece (E8, BLACK, KING);
+                      clear_piece (A8, BLACK, ROOK);
                       set_piece (KING, BLACK, C8);
                       set_piece (ROOK, BLACK, D8);
                       set_color (invert (to_move ()));
@@ -433,8 +439,8 @@ Board::apply (const Move &m) {
                     }
                   if (is_castle_ks && !(attacks & 0x70))
                     {
-                      clear_piece (E8);
-                      clear_piece (H8);
+                      clear_piece (E8, BLACK, KING);
+                      clear_piece (H8, BLACK, ROOK);
                       set_piece (KING, BLACK, G8);
                       set_piece (ROOK, BLACK, F8);
                       set_color (invert (to_move ()));
@@ -474,8 +480,8 @@ Board::apply (const Move &m) {
   // Clear the origin and destination squares. //
   ///////////////////////////////////////////////
 
-  clear_piece (m.from);
-  clear_piece (m.to);
+  clear_piece (m.from, m.get_color (), m.get_kind ());
+  clear_piece (m.to, ~m.get_color (), m.get_capture ());
 
   /////////////////////////////////////////////////////
   // Set the destination square, possibly promoting. //

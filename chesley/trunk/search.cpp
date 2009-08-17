@@ -302,7 +302,8 @@ Search_Engine :: search_with_memory
 //                                                                      //
 // Search_Engine :: search ()                                           //
 //                                                                      //
-// This is the negamax implementation at the core of search hierarchy.  //
+// This is the negamax implementation at the core of the search         //
+// hierarchy.                                                           //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
 
@@ -621,6 +622,8 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
         ext += 1;
       }
 #endif
+
+#if 0
   // Pawn to seventh rank extensions.
     else 
       {
@@ -628,6 +631,7 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
         if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
           ext += 1;
       }
+#endif
 
   stats.ext_count += ext;
   return ext;
@@ -671,7 +675,7 @@ Search_Engine :: see (const Board &b, const Move &m) {
 
   return s;
 #else 
-  return Eval::eval_capture (m)
+  return Eval::eval_capture (m);
 #endif // ENABLE_SEE
 }
 
@@ -696,7 +700,6 @@ Search_Engine :: qsearch
     {
       alpha = static_eval;
     }
-
 
   // Recurse and minimax over children.
   if (alpha < beta)
@@ -726,7 +729,7 @@ Search_Engine :: qsearch
               if (scores[mi] < 0) break;
 #endif
 
-#if 1
+#if 0
               // Delta pruning. 
               if (static_eval + scores[mi] + 
                   Eval::psq_value (b, moves[mi]) + 
@@ -736,7 +739,6 @@ Search_Engine :: qsearch
                   continue;
                 }
 #endif
-              
               c = b;
               if (c.apply (moves[mi]))
                 {
@@ -986,13 +988,14 @@ Search_Engine :: new_deadline ()
       if (controls.moves_remaining > 0)
         {
           controls.deadline = mclock () +
-            (controls.time_remaining) / (controls.moves_remaining + 1);
+            (controls.time_remaining) / (controls.moves_remaining + 5);
         }
       else
         {
           // If time is limited but the move count is not, always
           // assume the game will end in 25 more moves.
-          controls.deadline = mclock () + controls.time_remaining / 25;
+          controls.deadline = 
+            mclock () + (controls.time_remaining - 1000) / 25;
         }
     }
   else

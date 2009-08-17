@@ -323,8 +323,6 @@ Board::gen_captures (Move_Vector &moves) const
             }
         }
 
-      // TODO: Gen promotions.
-
       // Collect each destination in the moves list.
       coord from_idx = bit_idx (from);
       while (to)

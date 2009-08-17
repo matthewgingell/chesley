@@ -77,6 +77,9 @@ enum File {
   A, B, C, D, E, F, G, H
 };
 
+const int RANK_COUNT = 8;
+const int FILE_COUNT = 8;
+
 /////////////////////
 // Transformations //
 /////////////////////
@@ -115,6 +118,8 @@ enum Color {
   NULL_COLOR = -1, WHITE = 0, BLACK = 1
 };
 
+const int COLOR_COUNT = 2;
+
 inline Color invert (Color c) { return (c == WHITE) ? BLACK : WHITE; }
 inline int sign (Color c) { return (c == WHITE) ? +1 : -1; }
 
@@ -135,8 +140,10 @@ std::ostream & operator<< (std::ostream &os, Color c);
 // This type is used to index tables and the ordering here should not
 // be changed.
 enum Kind {
-  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING, KIND_COUNT=6
+  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING
 };
+
+const int KIND_COUNT = 6;
 
 inline void operator++ (Kind &k, int) { k = (Kind) (k + 1); }
 inline void operator-- (Kind &k, int) { k = (Kind) (k - 1); }

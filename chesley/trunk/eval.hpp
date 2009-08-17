@@ -90,10 +90,8 @@ struct Eval {
 
   Eval (const Board &board) {
     b = board;
-    memset (piece_counts, 0, sizeof (piece_counts));
     memset (minor_counts, 0, sizeof (minor_counts));
     memset (major_counts, 0, sizeof (major_counts));
-    memset (pawn_counts,  0, sizeof (pawn_counts));
     count_material ();
   }
 
@@ -222,11 +220,8 @@ struct Eval {
     
   Board b;
   Phase phase;
-
-  int piece_counts[2][5];
   int major_counts[2];
   int minor_counts[2];
-  int pawn_counts[2][8];
 };
 
 #endif // _EVAL_

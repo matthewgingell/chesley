@@ -71,8 +71,8 @@ Score Eval::score () {
 
 // A very conservative evaluation of mating material.
 bool Eval::is_draw () {
-  return (piece_counts[WHITE][PAWN] == 0 && 
-          piece_counts[BLACK][PAWN] == 0 &&
+  return (b.piece_counts[WHITE][PAWN] == 0 && 
+          b.piece_counts[BLACK][PAWN] == 0 &&
           major_counts[WHITE] == 0       && 
           major_counts[BLACK] == 0       &&
           minor_counts[WHITE] <= 1       &&
@@ -91,7 +91,7 @@ Score Eval::eval_rooks (const Color c) {
        coord idx = bit_idx (pieces);
        int file = b.idx_to_file (idx);
        int rank = b.idx_to_rank (idx);
-       int pawn_count = pawn_counts[c][file];
+       int pawn_count = b.pawn_counts[c][file];
 
        // Reward rooks on open and semi-open files.
        if (pawn_count == 0) 
@@ -126,7 +126,7 @@ Score Eval::eval_queens (const Color c) {
      {
        coord idx = bit_idx (pieces);
        int file = b.idx_to_file (idx);
-       int pawn_count = pawn_counts[c][file];
+       int pawn_count = b.pawn_counts[c][file];
        
        // Reward queens on open and semi-open files.
        if (pawn_count == 0) 
@@ -160,8 +160,8 @@ Score Eval::eval_knights (const Color c) {
       coord idx = bit_idx (pieces);
       int file = b.idx_to_file (idx);
             
-      if (pawn_counts[WHITE][file] == 0 && 
-          pawn_counts[BLACK][file])
+      if (b.pawn_counts[WHITE][file] == 0 && 
+          b.pawn_counts[BLACK][file])
         {
           s += 25;
         }
@@ -217,7 +217,7 @@ Score Eval::eval_bishops (const Color c) {
     }
 
   // Provide a bonus for holding both bishops.
-  if (piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
+  if (b.piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
 
   return s;
 }
@@ -337,7 +337,7 @@ Score Eval::eval_pawns (const Color c) {
   
   bitboard half_free = our_pawns;
   for (int i = 0; i < 8; i++)
-    if (pawn_counts[!c][i] > 0) 
+    if (b.pawn_counts[!c][i] > 0) 
       half_free &= ~Board::file_mask (i);
 
   //////////////////////////////////////////////////////////////////////
@@ -390,7 +390,7 @@ Score Eval::eval_pawns (const Color c) {
         s -= backwards_penalty[file];
 
       // Penalize doubled pawns.
-      if (pawn_counts[c][file] > 1) 
+      if (b.pawn_counts[c][file] > 1) 
         s -= doubled_penalty[file];
 
       // Reward passed pawns.
@@ -495,28 +495,10 @@ Score Eval::sum_piece_squares (const Board &b) {
 /////////////////////////////////////////////////////////////////////////
 
 void Eval::count_material () {
-  for (Color c = WHITE; c <= BLACK; c++)
-    {
-      // Count pieces.
-      bitboard all_pieces = b.color_to_board (c);
-      for (Kind k = PAWN; k < KING; k++)
-        {
-          int count = pop_count (all_pieces & b.kind_to_board (k));
-          piece_counts[c][k] = count;
-        }
-
-      // Count pawns by file.
-      for (int file = 0; file < 8; file++)
-        {
-          bitboard this_file = all_pieces & b.file_mask (file) & b.pawns;
-          pawn_counts[c][file] = pop_count (this_file);
-        }
-    }
-
   // Count majors and minors.
   for (Color c = WHITE; c <= BLACK; c++)
     {
-      major_counts[c] = piece_counts[c][ROOK] + piece_counts[c][QUEEN];
-      minor_counts[c] = piece_counts[c][KNIGHT] + piece_counts[c][BISHOP];
+      major_counts[c] = b.piece_counts[c][ROOK] + b.piece_counts[c][QUEEN];
+      minor_counts[c] = b.piece_counts[c][KNIGHT] + b.piece_counts[c][BISHOP];
     }
 }

@@ -647,9 +647,11 @@ struct Board {
   ////////////////////////////////////////////////
   // Incrementally updated scoring information. //
   ////////////////////////////////////////////////
-
-  Score material[2];
-  Score psquares[2];
+  
+  Score material[COLOR_COUNT];
+  Score psquares[COLOR_COUNT];
+  uint8 piece_counts[COLOR_COUNT][KIND_COUNT];
+  uint8 pawn_counts[COLOR_COUNT][FILE_COUNT];
 };
 
 // Output human readable board.
