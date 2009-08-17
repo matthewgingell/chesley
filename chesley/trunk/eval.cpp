@@ -396,7 +396,7 @@ Score Eval::eval_pawns (const Color c) {
       // Reward passed pawns.
       bitboard front = 
         (Board::this_file_mask (idx) | 
-         Board::adjacent_files_mask (idx)) 
+         Board::adjacent_files_mask (idx))
         & Board::in_front_of_mask(idx, c);
       if (!(front & their_pawns))
         s += passed_pawn_bonus[c][rank];

@@ -21,7 +21,11 @@
 
 using namespace std;
 
+// Reference to the pawn hash table.
 extern PHash ph;
+
+// Exceptions.
+const int SEARCH_INTERRUPTED = 1;
 
 // Utility functions.
 bool is_mate (Score s) { 
@@ -30,7 +34,7 @@ bool is_mate (Score s) {
 
 // Compute the principal variation and return its first move.
 Move
-Search_Engine :: choose_move (Board &b, int depth)
+Search_Engine :: choose_move (const Board &b, int depth)
 {
   Move_Vector pv;
   assert (!is_triple_rep (b));
@@ -66,33 +70,7 @@ Search_Engine :: new_search
   clear_statistics ();
 
   // Setup the clock.
-  controls.interrupt_search = false;
-  if (controls.mode == EXACT || controls.fixed_time >= 0)
-    {
-      // Set an absolute fixed time limit for this move.
-      controls.deadline = mclock () + controls.fixed_time;
-    }
-  else if (controls.time_remaining >= 0)
-    {
-      if (controls.moves_remaining > 0)
-        {
-          controls.deadline = mclock () +
-            (controls.time_remaining) / 
-            (controls.moves_remaining + 5);
-        }
-      else
-        {
-          // If time is limited but the move count is not, always
-          // assume the game will end in 25 more moves. This should be
-          // improved by choosing a limit based on the game phase.
-          controls.deadline = mclock () + controls.time_remaining / 25;
-        }
-    }
-  else
-    {
-      // Some reasonable time control should always be configured.
-      assert (0);
-    }
+  new_deadline ();
 
   // If one has been configured, set a fixed maximum search depth.
   if (controls.fixed_depth > 0) depth = min (depth, controls.fixed_depth);
@@ -118,6 +96,8 @@ Search_Engine :: iterative_deepening
   Score s = 0;
   bool found_mate = false;
   Score best_mate = 0;
+
+  Rep_Table original (rt);
   
   // Print header for post thinking.
   if (post) post_before (b);
@@ -126,40 +106,43 @@ Search_Engine :: iterative_deepening
   for (int i = 1; i <= depth; i++)
     {
       Move_Vector pv_tmp;
-      Score s_tmp;
+      Score s_tmp = 0;
 
       // Initialize statistics for this iteration.
       stats.calls_to_search = stats.calls_to_qsearch = 0;
       start_time = mclock ();
 
-      // Search this position using an aspiration window.
-      int width = max (10, 100 - 10 * i);
-      s_tmp = aspiration_search (b, i, pv_tmp, s, width);
+      // Do a root search at this position.
+      try 
+        {
+          s_tmp = root_search (b, i, pv_tmp, s);
+        } 
+      catch (int e)  
+        {
+          if (e == SEARCH_INTERRUPTED) break;
+        }
+
+      // Copy back the score and PV to the caller.
+      pv = pv_tmp;
+      s = s_tmp;
 
       // Collect statistics.
       stats.calls_for_depth[i] = stats.calls_to_search + stats.calls_to_qsearch;
       stats.time_for_depth[i] = mclock () - start_time;
 
-      // Break out of the loop if the search was interrupted and we've
-      // found at least one move.
-      if (controls.interrupt_search && i > 1) 
-        {
-          break;
-        }
-
       // Because of techniques like grafting the results of searches
       // from the transposition table to shallow searches, etc., we
       // never know if we've found the quickest mate possible. Here we
       // keep looking for better mates until time expires.
-      if (found_mate && abs (s_tmp) <= best_mate)
+      if (found_mate && abs (s) <= best_mate)
         {
           continue;
         }
 
-      if (is_mate (s_tmp))
+      if (is_mate (s))
         {
           found_mate = true;
-          best_mate = max (abs (s_tmp), abs (best_mate));
+          best_mate = max (abs (s), abs (best_mate));
         }
       
       // Otherwise copy the principle variation back to the caller. If
@@ -179,9 +162,6 @@ Search_Engine :: iterative_deepening
           assert (0);
         }
 
-      pv = pv_tmp;
-      s = s_tmp;
-
       if (post) post_each (b, i, s, pv);
     }
 
@@ -191,53 +171,89 @@ Search_Engine :: iterative_deepening
   // Check that we got at least one move.
   assert (pv.count > 0);
 
+  rt = original;
   return s;
 }
 
-/////////////////////////////////////////////////////////////////////////////
-//                                                                         //
-// Search_Engine :: aspiration_search ()                                   //
-//                                                                         //
-// Try a search with a window around 'best_guess' and only do a full width //
-// search if that fails.                                                   //
-//                                                                         //
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////
+//                                                                      //
+// Search_Engine :: root_search ()                                      //
+//                                                                      //
+// Searches at the root are treated slightly differently, as we always  //
+// want a move and never a cutoff.                                      //
+//                                                                      //
+//////////////////////////////////////////////////////////////////////////
 
-Score
-Search_Engine :: aspiration_search
-(const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw)
+Score Search_Engine :: 
+root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
 {
-  assert (depth > 0);
-  Score s;
-#ifdef ENABLE_ASPIRATION_WINDOW
-  const Score lower = best_guess - hw;
-  const Score upper = best_guess + hw;
-  s = search_with_memory (b, depth, 0, pv, lower, upper, false);
+  Move_Vector cpv;
+  Score cs;
 
-  // Search from scratch if we failed.
-  if (s <= lower || s >= upper)
-    {
-      pv.clear ();
-      s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
-    }
-  else
+  // Update statistics.
+  stats.calls_to_search++;
+
+#ifdef ENABLE_ASPIRATION_WINDOW
+  // Try an aspiration search.
+  const int ASPIRATION_WINDOW = 30;
+  Score lower = guess - ASPIRATION_WINDOW / 2;
+  Score upper = guess + ASPIRATION_WINDOW / 2;
+  cs = search_with_memory (b, depth, 0, pv, lower, upper);
+  if (cs > lower && cs < upper && pv.count > 0) 
     {
       stats.asp_hits++;
+      tt.set (b, EXACT_VALUE, pv[0], cs, depth);
+      return cs;
     }
-#else
-  {
-    s = search_with_memory (b, depth, 0, pv, -INF, +INF, false);
-  }
-#endif  // ENABLE_ASPIRATION_WINDOW
+#endif // ENABLE_ASPIRATION_WINDOW
+  
+  // Generate moves.
+  Move_Vector moves (b);
+  order_moves (b, 0, moves);
+  
+  // Recurse over moves.
+  int i;
+  Score alpha = -INF, beta = INF;
+  for (i = 0; i < moves.count; i++)
+    {
+      int ext;
+      Board c = b;
+      cpv.clear();
 
-  return s;
+      // Skip this move if it's illegal.
+      if (!c.apply (moves[i])) continue;
+
+      // Decide on a depth adjustment for this search.
+      ext = depth_adjustment (b, moves[i]);
+                            
+      // Do principal variation search.
+      if (i > 0)
+        {
+          cs = -search_with_memory (c, depth - 1 + ext, 1, cpv, -alpha - 1, -alpha);
+          if (cs <= alpha) continue; else cpv.clear ();
+        }
+ 
+      // Recurse with Negamax.
+      cs = -search_with_memory (c, depth - 1 + ext, 1, cpv, -beta, -alpha);       
+      if (cs > alpha)
+        {
+          alpha = cs;
+          pv = Move_Vector (moves[i], cpv);
+          collect_move (depth, 0, moves[i], alpha);
+        }
+    }
+  
+  // Store this result in the transposition table.
+  tt.set (b, EXACT_VALUE, pv[0], alpha, depth);
+
+  return alpha;
 }
 
 //////////////////////////////////////////////////////////////////////////
 //                                                                      //
 // Search_Engine :: search_with_memory ()                               //
 //                                                                      //
-// This routine wraps search and memoizes look ups in the               //
+// This routine wraps search and memoizes results in the                //
 // transposition table.                                                 //
 //                                                                      //
 //////////////////////////////////////////////////////////////////////////
@@ -253,70 +269,32 @@ Search_Engine :: search_with_memory
   assert (pv.count == 0);
   Move m = NULL_MOVE;
   Score s;
-  Score original_alpha = alpha;
-  Score original_beta = beta;
+
+  // Update statistics.
+  stats.calls_to_search++;
+
+  // Check the clock.
+  poll ();
   
   // Try to find this node in the transposition table.
-  bool have_exact = tt_try (b, depth, ply, m, s, alpha, beta);
-  
-  if (have_exact)
+  if (tt_try (b, depth, ply, m, s, alpha, beta))
     {
-      if (m != NULL_MOVE)
-        {
-          pv.push (m);
-        }
-
+      if (m != NULL_MOVE) pv.push (m);
       return s;
     }
-
-  // Push this position on the repetition stack and recurse.
-  if (ply > 0) rt_push (b);
-
-  // It may be the case that fetching alpha from the hash causes us to
-  // fail high immediately.
-  if (alpha >= beta && (ply > 0 || m != NULL_MOVE))
-    {
-      if (m != NULL_MOVE)
-        {
-          pv.push (m);
-        }
-
-      // Don't clobber the existing entry for this position. Just
-      // return immediately.
-      if (ply > 0) rt_pop (b);
-      return alpha;
-    }
-  else
-    {
-      s = search (b, depth, ply, pv, alpha, beta, do_null_move);
-    }
-
-  // If we got back a cutoff at ply 0, we need to try again without
-  // narrowing [alpha, beta] from the transposition table.
-  if (ply == 0 && (s <= alpha || s >= beta))
-    {
-      alpha = original_alpha;
-      beta = original_beta;
-      pv.clear ();
-      s = search (b, depth, ply, pv, alpha, beta, do_null_move);
-    }
-
-  // Pop the repetition stack.
-  if (ply > 0) rt_pop (b);
-
-  // Update the transposition and history tables.
-  if (!controls.interrupt_search)
-    {
-      tt_update (b, depth, ply, pv, s, alpha, beta);
-      if (pv.count > 0) 
-        {
-          collect_move (depth, ply, pv[0], s);
-        }
-    }
-
-  // Don't return a PV in fail high cases.
-  if (s >= beta) pv.clear ();
-
+  
+  // See if we can fail high immediately.
+  if (alpha >= beta) return alpha;
+  
+  // Push this position onto the repetition stack and recurse.
+  rt_push (b);
+  s = search (b, depth, ply, pv, alpha, beta, do_null_move);
+  rt_pop (b);
+  
+  // Update the transposition table and history counters.
+  tt_update (b, depth, ply, pv, s, alpha, beta);
+  if (pv.count > 0) collect_move (depth, ply, pv[0], s);
+  
   return s;
 }
 
@@ -337,52 +315,32 @@ Search_Engine :: search
  bool do_null_move)
 {
   assert (pv.count == 0);
-
   int legal_move_count = 0;
   bool in_check = b.in_check ((b.to_move ()));
 
+  // Mate distance pruning.
+  alpha = max (alpha, (Score) (-MATE_VAL + ply));
+  beta = min (beta, (Score) (MATE_VAL - ply));
   if (alpha >= beta) return alpha;
-
-  // Update statistics.
-  stats.calls_to_search++;
-
-  // Call poll every 64K moves. This is on the order of 100Hz on a
-  // fast machine.
-  if ((stats.calls_to_qsearch + stats.calls_to_search) % 64 * 1024 == 0)
-    poll ();
-
-  // Abort if we have been interrupted.
-  if (controls.interrupt_search)
-    return 12345;
-
+  
   // Check 50 move and triple repetition rules.
-  if (b.half_move_clock == 50 || is_triple_rep (b))
-    {
-      return 0;
-    }
-
+  if (b.half_move_clock == 50 || is_triple_rep (b)) 
+    return 0;
+  
   // Return the result of a quiescence search at depth 0.
   if (depth <= 0)
     {
-      // Check whether this position is checkmate.
-      if (in_check && b.child_count () == 0)
-        {
-          return -(MATE_VAL - ply);
-        }
-      else
-        {
 #ifdef ENABLE_QSEARCH
-          alpha = qsearch (b, -1, ply, alpha, beta);
+      alpha = qsearch (b, -1, ply, alpha, beta);
 #else
-          alpha = Eval (b).score ();
+      alpha = Eval (b).score ();
 #endif // ENABLE_QSEARCH
-        }
     }
 
   // Otherwise recurse over the children of this node.
   else {
-#ifdef ENABLE_NULL_MOVE
 
+#ifdef ENABLE_NULL_MOVE
     //////////////////////////
     // Null move heuristic. //
     //////////////////////////
@@ -391,11 +349,11 @@ Search_Engine :: search
 
     // Since we don't have Zugzwang detection we just disable null
     // move if there are fewer than 12 pieces on the board.
-    if (ply > 0 && do_null_move && pop_count (b.occupied) >= 12 && !in_check)
+    if (do_null_move && !in_check && pop_count (b.occupied) >= 12)
       {
-        Move_Vector dummy;
         Board c = b;
-        c.set_color (invert (c.to_move ()));
+        Move_Vector dummy;
+        c.set_color (~c.to_move ());
         int val = -search_with_memory
           (c, depth - R - 1, ply, dummy, -beta, -beta + 1, false);
         if (val >= beta) 
@@ -406,14 +364,12 @@ Search_Engine :: search
       }
 #endif // ENABLE_NULL_MOVE
     
-    // Generate moves.
-    Move_Vector moves (b);
-    order_moves (b, ply, moves);
-
     ////////////////////////////
     // Minimax over children. //
     ////////////////////////////
 
+    Move_Vector moves (b);
+    order_moves (b, ply, moves);
     int mi = 0;
     bool have_pv_move = false;
     for (mi = 0; mi < moves.count; mi++)
@@ -425,6 +381,8 @@ Search_Engine :: search
         // Skip this move if it's illegal.
         if (!c.apply (moves[mi])) continue;
 
+        legal_move_count++;
+
         // Determine the estimated evaluation for this move.
         Score estimate = 
           Eval (b).net_material () + Eval::eval_capture (moves[mi]);
@@ -432,54 +390,25 @@ Search_Engine :: search
         // Determine whether this moves checks.
         bool c_in_check = c.in_check (c.to_move());
 
-        legal_move_count++;
-        int ext = 0;
-#ifdef ENABLE_EXTENSIONS
-        ////////////////////////
-        // Search extensions. //
-        ////////////////////////
+        // Decide on a depth adjustment for this search.
+        int ext = depth_adjustment (b, moves[mi]);
 
-        // Check extensions.
-        if (in_check)
-          ext += 1;
-
-        // Recapture extensions.
-        if (b.last_move.get_capture() != NULL_KIND && 
-            moves[mi].to == b.last_move.to)
-          ext += 1;
-        
-        // Pawn to seventh rank extensions.
-        int rank = Board :: idx_to_rank (moves[mi].to);
-        if ((rank == 1 || rank == 6) && moves[mi].get_kind () == PAWN)
-          ext += 1;
-
-        stats.ext_count += ext;
-#endif // ENABLE_EXTENSIONS
-
-#ifdef ENABLE_LMR
+#if ENABLE_LMR
         ///////////////////////////
         // Late move reductions. //
         ///////////////////////////
-
         const int Full_Depth_Count = 4;
-        const int Reduction_Limit = 4;
-        const int Reduction_Margin = 8 * PAWN_VAL;
-        if (mi >= Full_Depth_Count && 
+        const int Reduction_Limit = 5;
+        const int Reduction_Margin = ROOK_VAL;
+        if (estimate + Reduction_Margin < alpha &&
+            mi >= Full_Depth_Count && 
             depth >= Reduction_Limit &&
-            estimate <= alpha + Reduction_Margin &&
-            ext == 0 && !in_check && !c_in_check && !have_pv_move)
+            ext == 0 && !in_check && !c_in_check && 
+            moves[mi].get_kind () != PAWN && 
+            moves[mi].get_capture () == NULL_KIND)
           {
-            Score ds;
-            Move_Vector dummy;
-            ds = -search_with_memory
-              (c, depth - 2, ply + 1, dummy, -(alpha + 1), -alpha, true);
-
-            // If we fail low, we are done with this move.
-            if (ds <= alpha) 
-              {
-                stats.lmr_count++;
-                continue;
-              }
+            stats.lmr_count++;
+            ext--;
           }
 #endif // ENABLE_LMR
 
@@ -493,24 +422,10 @@ Search_Engine :: search
         const int FRONTIER = 1;
 
         Score upperbound;
-        if (ply > 0 && ext == 0 && !in_check && !c_in_check && !have_pv_move)
+        if (ext == 0 && 
+            !in_check && !c_in_check && !have_pv_move && 
+            moves[mi].promote == NULL_KIND)
           {
-#ifdef ENABLE_RAZORING            
-            /////////////////////////////////////////
-            // Razoring at pre-pre frontier nodes. //
-            /////////////////////////////////////////
-
-            // If this position looks extremely bad at depth three,
-            // proceed with a reduced depth search.
-            const Score RAZORING_MARGIN = 8 * PAWN_VAL;
-            upperbound = estimate + RAZORING_MARGIN;
-            if (depth == PRE_PRE_FRONTIER && upperbound <= alpha)
-              {
-                stats.razor_count++;
-                depth = 2;
-              }
-#endif // ENABLE_RAZORING
-
             ////////////////////////
             // Futility pruning.  //
             ////////////////////////
@@ -539,6 +454,20 @@ Search_Engine :: search
                 stats.ext_futility_count++;
                 continue;
               }
+
+            /////////////////////////////////////////
+            // Razoring at pre-pre frontier nodes. //
+            /////////////////////////////////////////
+            
+            // If this position looks extremely bad at depth three,
+            // proceed with a reduced depth search.
+            const Score RAZORING_MARGIN = 8 * PAWN_VAL;
+            upperbound = estimate + RAZORING_MARGIN;
+            if (depth == PRE_PRE_FRONTIER && upperbound <= alpha)
+              {
+                stats.razor_count++;
+                depth = PRE_FRONTIER;
+              }
           }
 #endif // ENABLE_FUTILITY
 
@@ -546,10 +475,12 @@ Search_Engine :: search
         /////////////////////////////////
         // Principle variation search. //
         /////////////////////////////////
+        
         if (have_pv_move)
           {
             cs = -search_with_memory
-              (c, depth - 1 + ext, ply + 1, cpv, -(alpha + 1), -alpha, true);
+              (c, depth - 1 + ext, ply + 1, cpv, -alpha - 1, -alpha, true);
+
             if (cs > alpha && cs < beta)
               {
                 cpv.clear ();
@@ -558,14 +489,15 @@ Search_Engine :: search
               }
           }
         else
-#endif // ENABLE_PVS
-
-          // Search this child recursively.
           {
             cs = -search_with_memory
               (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
           }
-
+#else
+        cs = -search_with_memory
+          (c, depth - 1 + ext, ply + 1, cpv, -beta, -alpha, true);
+#endif // ENABLE_PVS
+        
         // Test whether this move is better than the moves we have
         // previously analyzed.
         if (cs > alpha)
@@ -581,6 +513,7 @@ Search_Engine :: search
                 // In the fail high case, only copy back the move and
                 // then exit the loop.
                 pv = Move_Vector (moves[mi]);
+                // pv = Move_Vector (moves[mi], cpv);
                 break;
               }
           }
@@ -608,7 +541,7 @@ Search_Engine :: search
           }
       }
   }
-
+  
   return alpha;
 }
 
@@ -667,6 +600,42 @@ Search_Engine :: order_moves
 
   moves.sort (scores);  
 }
+
+// Return on a depth adjustment for a position.
+int Search_Engine::depth_adjustment (const Board &b, Move m) {
+#ifdef ENABLE_EXTENSIONS
+  int ext = 0;
+
+  // Check extension.
+  if (b.in_check (b.to_move ())) 
+    {
+      ext++;
+    }
+#if 0
+  // Recapture extensions.
+  else 
+    if (b.last_move.get_capture() != NULL_KIND && 
+        b.last_move.get_color () != m.get_color () &&
+        m.to == b.last_move.to)
+      {
+        ext += 1;
+      }
+#endif
+  // Pawn to seventh rank extensions.
+    else 
+      {
+        int rank = Board :: idx_to_rank (m.to);
+        if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
+          ext += 1;
+      }
+
+  stats.ext_count += ext;
+  return ext;
+#else
+  return 0;
+#endif // ENABLE_EXTENSIONS
+}
+
   
 //////////////////////////////////////////////////////////////////////
 //                                                                  //
@@ -714,32 +683,21 @@ Search_Engine :: qsearch
 {
   Move_Vector dummy;
 
-  // Call poll every 64K moves. This is on the order of 100Hz on a
-  // fast machine.
-  if ((stats.calls_to_qsearch + stats.calls_to_search) % (64 * 1024) == 0)
-    poll ();
-
-  // Abort if we have been interrupted.
-  if (controls.interrupt_search)
-    return 12345;
+  // Check the clock.
+  poll ();
 
   // Update statistics.
   stats.calls_to_qsearch++;
 
   // Do static evaluation at this node.
-  Score val = Eval (b).score ();
-  if (val > alpha)
+  Score static_eval = Eval (b).score ();
+
+  if (static_eval > alpha)
     {
-      alpha = val;
+      alpha = static_eval;
     }
-#if 0
-  // Delta pruning.
-  else if (val < alpha - QUEEN_VAL)
-    {
-      return val;
-    }
-#endif
-  
+
+
   // Recurse and minimax over children.
   if (alpha < beta)
     {
@@ -755,17 +713,30 @@ Search_Engine :: qsearch
         {
           Score scores [moves.count];
           ZERO (scores);
-          for (int i = 0; i < moves.count; i++)
-            {
-              scores[i] = see (b, moves[i]);
-            }
+          for (int i = 0; i < moves.count; i++) 
+            scores[i] = see (b, moves[i]);
           moves.sort (scores);
 
           // Minimax over captures.
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
+
+#if 0
               if (scores[mi] < 0) break;
+#endif
+
+#if 1
+              // Delta pruning. 
+              if (static_eval + scores[mi] + 
+                  Eval::psq_value (b, moves[mi]) + 
+                  2 * PAWN_VAL < alpha)
+                {
+                  stats.delta_count++;
+                  continue;
+                }
+#endif
+              
               c = b;
               if (c.apply (moves[mi]))
                 {
@@ -871,26 +842,14 @@ Search_Engine :: tt_update
   assert (alpha <= beta);
 
   // This rule seems to work well in practice.
-#if 0
-  if (pv.count == 0 && !tt.free_entry (b))
-    return;
-#endif
+  if (pv.count == 0 && !tt.free_entry (b)) return;
 
   // Determine the kind of value we are recording.
   SKind skind;
-  if (s >= beta) 
-    {
-      skind = LOWER_BOUND;
-    }
-  else if (s <= alpha)
-    {
-      skind = UPPER_BOUND;
-    }
-  else
-    {
-      skind = EXACT_VALUE;
-    }
-
+  if (s >= beta)  skind = LOWER_BOUND;
+  else if (s <= alpha) skind = UPPER_BOUND;
+  else skind = EXACT_VALUE;
+  
   // The case of putting a mate score in the cache has to be treated
   // specially.
   if (is_mate (s))
@@ -901,15 +860,9 @@ Search_Engine :: tt_update
     }
 
   Move m;
-  if (pv.count > 0) 
-    {
-      m = pv[0];
-    }
-  else
-    {
-      m = NULL_MOVE;
-    }
-
+  if (pv.count > 0)  m = pv[0];
+  else m = NULL_MOVE;
+  
   // Update the entry.
   tt.set (b, skind, m, s, depth);
 #endif // ENABLE_TRANS_TABLE
@@ -932,7 +885,8 @@ Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
   // we end up with a ridiculously long move list, assume that there's
   // a loop in the table and bail out.
   while ((h = tt.find (c.hash)) != tt.end () && 
-         h -> second.skind == EXACT_VALUE && h -> second.move != NULL_MOVE)
+         h -> second.skind == EXACT_VALUE && 
+         h -> second.move != NULL_MOVE)
     {
       pv.push (h -> second.move);
       c.apply (h -> second.move);
@@ -953,8 +907,8 @@ Search_Engine :: tt_extend_pv (const Board &b, Move_Vector &pv) {
 // Add an entry to the repetition table.
 void
 Search_Engine :: rt_push (const Board &b) {
-  Rep_Table :: iterator i = rt.find (b.hash);
   assert (rt.size () < 1000);
+  Rep_Table :: iterator i = rt.find (b.hash);
   if (i == rt.end ())
     {
       rt[b.hash] = 1;
@@ -1017,14 +971,48 @@ Search_Engine :: is_triple_rep (const Board &b) {
 // Routines for managing game clock resource. //
 ////////////////////////////////////////////////
 
-// Method polled periodically by the owner of the Search_Engine
-// object.
+// Setup a deadline for this search.
 void
-Search_Engine :: poll () {
-  uint64 clock = mclock ();
-  if (controls.deadline > 0 && clock >= controls.deadline)
+Search_Engine :: new_deadline ()
+{
+  controls.interrupt_search = false;
+  if (controls.mode == EXACT || controls.fixed_time >= 0)
     {
-      controls.interrupt_search = true;
+      // Set an absolute fixed time limit for this move.
+      controls.deadline = mclock () + controls.fixed_time;
+    }
+  else if (controls.time_remaining >= 0)
+    {
+      if (controls.moves_remaining > 0)
+        {
+          controls.deadline = mclock () +
+            (controls.time_remaining) / (controls.moves_remaining + 1);
+        }
+      else
+        {
+          // If time is limited but the move count is not, always
+          // assume the game will end in 25 more moves.
+          controls.deadline = mclock () + controls.time_remaining / 25;
+        }
+    }
+  else
+    {
+      // Some reasonable time control should always be configured.
+      assert (0);
+    }
+}
+
+// Method called periodically to implement time control.
+inline void
+Search_Engine :: poll () {
+  if ((stats.calls_to_qsearch + stats.calls_to_search) % 64 * 1024 == 0)
+    {
+      uint64 clock = mclock ();
+      if (controls.deadline > 0 && clock >= controls.deadline)
+        {
+          controls.interrupt_search = true;
+          throw SEARCH_INTERRUPTED;
+        }
     }
 }
 
@@ -1077,8 +1065,7 @@ Search_Engine :: set_time_remaining (int msecs) {
 // Write thinking output before iterative deepening starts.
 void
 Search_Engine :: post_before (const Board &b) {
-  cout << (b.to_move () == WHITE ? "w" : "b");
-  cout << ":" << b.full_move_clock << ":" << b.half_move_clock << endl;
+  cout << (b.to_fen ()) << endl;
   if (Session::protocol == XBOARD)
     {
       cout << "Ply    Eval    Time     Nodes   Principal Variation";
@@ -1194,7 +1181,8 @@ Search_Engine :: post_after () {
   cout << " rzr: "  << stats.razor_count;
   cout << ", fut: " << stats.futility_count;
   cout << ", xft: " << stats.ext_futility_count;
-  cout << ", lmr: " << stats.lmr_count;
+  cout << ", lmr: " << stats.lmr_count << endl;
+  cout << "dlt: "   << stats.delta_count;
 
   // Display nodes per second.
   uint64 total_nodes = 0;
@@ -1206,7 +1194,7 @@ Search_Engine :: post_after () {
 
   if (total_time > 0) 
     {
-      cout << endl << setprecision (2) << 
+      cout << setprecision (2) << ", " <<
         (float) total_nodes / (float) total_time << " knps." << endl;
     }
   else

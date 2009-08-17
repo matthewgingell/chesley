@@ -23,7 +23,7 @@ char *arg0;
 // Initialization.
 void initialize_all ()
 {
-  seed_random ();
+  //  seed_random ();
   Board :: precompute_tables ();
   Session :: init_session ();
 }

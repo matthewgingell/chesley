@@ -26,8 +26,8 @@
 enum time_mode { CONVENTIONAL, ICS, EXACT };
 
 // Maximum search depth. 
-static const int32 MAX_DEPTH = 100;
-static const int32 MAX_PLY = 100;
+static const int32 MAX_DEPTH = 256;
+static const int32 MAX_PLY = 256;
 static const int hist_nbuckets = 10;
 
 struct Search_Engine {
@@ -85,15 +85,16 @@ struct Search_Engine {
   // Clear accumulated search statistics.
   void clear_statistics () {
     tt.clear_statistics ();
+    stats.asp_hits = 0;
     stats.calls_to_qsearch = 0;
     stats.calls_to_search = 0;
-    stats.asp_hits = 0;
-    stats.null_count = 0;
+    stats.delta_count = 0;
     stats.ext_count = 0;
-    stats.razor_count = 0;
-    stats.futility_count = 0;
     stats.ext_futility_count = 0;
+    stats.futility_count = 0;
     stats.lmr_count = 0;
+    stats.null_count = 0;
+    stats.razor_count = 0;
     ZERO (stats.calls_for_depth);
     ZERO (stats.time_for_depth);
     ZERO (stats.hist_pv);
@@ -154,7 +155,7 @@ struct Search_Engine {
   ///////////////////////////////////////////////////////////////////////
 
   // Poll is called periodically either by the caller or during search.
-  void poll ();
+  inline void poll ();
 
   // Set fixed time per move in milliseconds.
   void set_fixed_depth (int depth);
@@ -236,12 +237,13 @@ struct Search_Engine {
     uint64 hist_pv [hist_nbuckets];
     uint64 hist_qpv [hist_nbuckets];
     uint64 asp_hits;
-    uint64 null_count;
+    uint64 delta_count;
     uint64 ext_count;
-    uint64 razor_count;
-    uint64 futility_count;
     uint64 ext_futility_count;
+    uint64 futility_count;
     uint64 lmr_count;
+    uint64 null_count;
+    uint64 razor_count;
   } stats;
 
   ///////////////////////////////////
@@ -249,18 +251,21 @@ struct Search_Engine {
   //////////////////////////////////
 
   // Choose a move, score it, and return it.
-  Move choose_move (Board &b, int32 depth = -1);
+  Move choose_move (const Board &b, int32 depth = -1);
+
+private:
 
   // Initialize a new search and return its value.
   Score new_search (const Board &b, int depth, Move_Vector &pv);
+  
+  // Setup a deadline for this search.
+  void new_deadline ();
 
   // Search repeatedly from depth 1 to 'depth.;
   Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
 
-  // Try a search with a with a plus or minus hw window around
-  // 'best_guess' and only do a full width search if that fails.
-  Score aspiration_search
-  (const Board &b, int depth, Move_Vector &pv, Score best_guess, Score hw);
+  // Search a root node.
+  Score root_search (const Board &b, int depth, Move_Vector &pv, Score guess = 0);
 
   // Memoized minimax search.
   Score search_with_memory
@@ -283,11 +288,14 @@ struct Search_Engine {
   (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF);
 
   // Static exchange evaluation.
-  inline Score see (const Board &b, const Move &capture);
+  Score see (const Board &b, const Move &capture);
 
   // Heuristically order a list of moves by estimated value.
-  inline void order_moves (const Board &b, int ply, Move_Vector &moves);
+  void order_moves (const Board &b, int ply, Move_Vector &moves);
   
+  // Return on a depth adjustment for a position.
+  int depth_adjustment (const Board &b, Move m);
+
   /////////////////
   // Heuristics. //
   /////////////////

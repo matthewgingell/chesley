@@ -506,9 +506,9 @@ std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
   return os << "[Move from "
-            << (coord) (m.from) << " => " << (coord) (m.to) << "] " 
+            << (coord) (m.from) << " => " << (coord) (m.to) << " "
             << m.color << " " << m.kind << " " << m.capture << " "
-            << m.promote << " " << m.en_passant << endl;
+            << m.promote << " " << m.en_passant << "]";
 }
 
 //////////////
