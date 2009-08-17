@@ -36,9 +36,9 @@ CXXFLAGS = $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
 #                                                                      #
 ########################################################################
 
-ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
--DENABLE_NULL_MOVE -DENABLE_EXTENSIONS -DENABLE_TRANS_TABLE	\
--DENABLE_FUTILITY -DENABLE_SEE -DENABLE_RAZORING
+ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW		\
+-DENABLE_NULL_MOVE -DENABLE_TRANS_TABLE -DENABLE_FUTILITY -DENABLE_SEE	\
+-DENABLE_RAZORING -DENABLE_EXTENSIONS
 
 DEBUG = # -DTRACE_EVAL
 
@@ -59,7 +59,7 @@ chesley: $(OBJS)
 ###############################
 
 XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
--sgf out.pgn
+-mg 1000 -sgf out.pgn
 
 # Launch an xboard session with Chesley.
 play: chesley
