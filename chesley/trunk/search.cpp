@@ -724,7 +724,7 @@ Search_Engine :: qsearch
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
-
+              if (moves[mi].get_capture () == KING) continue;
 #if 0
               if (scores[mi] < 0) break;
 #endif

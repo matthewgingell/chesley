@@ -297,6 +297,8 @@ Board::apply (const Move &m) {
   Kind capture = m.get_capture ();
   Color color = to_move ();
 
+  assert (capture != KING);
+
   ////////////////////
   // Update clocks. //
   ////////////////////
@@ -338,7 +340,7 @@ Board::apply (const Move &m) {
             }
           else
             {
-              clear_piece (flags.en_passant + 8, BLACK, PAWN);
+              clear_piece (flags.en_passant + 8, WHITE, PAWN);
             }
         }
 
@@ -480,8 +482,8 @@ Board::apply (const Move &m) {
   // Clear the origin and destination squares. //
   ///////////////////////////////////////////////
 
-  clear_piece (m.from, m.get_color (), m.get_kind ());
-  clear_piece (m.to, ~m.get_color (), m.get_capture ());
+  clear_piece (m.from, color, kind);
+  clear_piece (m.to, ~color, capture);
 
   /////////////////////////////////////////////////////
   // Set the destination square, possibly promoting. //
