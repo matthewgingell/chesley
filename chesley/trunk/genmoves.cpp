@@ -618,8 +618,6 @@ Board::in_check (Color c) const
 {
   coord idx = bit_idx (kings & color_to_board (c));
 
-
-
   if (idx >= 64)
     {
       cout << to_fen () << endl;
@@ -627,8 +625,8 @@ Board::in_check (Color c) const
       cout << c << endl;
       cout << (kings & color_to_board (c)) << endl;
       cout << idx << endl;
+      assert (0);
     }
-
 
   return is_attacked (idx, invert (c));
 }

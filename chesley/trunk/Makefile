@@ -11,8 +11,7 @@
 CXX = /opt/local/bin/g++-mp-4.5
 #CXX = /Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-g++
 
-#OPT = -g3 -O3 -m64
-OPT = -g3
+OPT = -g3 -O3 -m64
 
 SHELL = /bin/sh
 INC = -Ideps
