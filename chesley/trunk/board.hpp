@@ -76,6 +76,13 @@ struct Board {
   static bitboard *DIAG_45_ATTACKS_TBL;
   static bitboard *DIAG_135_ATTACKS_TBL;
 
+  static byte *KNIGHT_MOBILITY_TBL;
+  static byte *KING_MOBILITY_TBL;
+  static byte *RANK_MOBILITY_TBL;
+  static byte *FILE_MOBILITY_TBL;
+  static byte *DIAG_45_MOBILITY_TBL;
+  static byte *DIAG_135_MOBILITY_TBL;
+
   static bitboard *masks_0;
   static bitboard *masks_45;
   static bitboard *masks_90;
@@ -624,6 +631,46 @@ struct Board {
 
   void gen_moves (Move_Vector &moves) const;
   void gen_captures (Move_Vector &moves) const;
+
+  ////////////////////////
+  // Mobility counting. //
+  ////////////////////////
+
+  byte rank_mobility (coord idx) const { 
+    return RANK_MOBILITY_TBL[idx * 256 + occ_0 (idx)];
+  }
+
+  byte file_mobility (coord idx) const { 
+    return FILE_MOBILITY_TBL[idx * 256 + occ_90 (idx)];
+  }
+
+  byte diag_45_mobility (coord idx) const { 
+    return DIAG_45_MOBILITY_TBL[idx * 256 + occ_45 (idx)];
+  }
+
+  byte diag_135_mobility (coord idx) const { 
+    return DIAG_135_MOBILITY_TBL[idx * 256 + occ_135 (idx)];
+  }
+
+  byte knight_mobility (coord idx) const { 
+    return KNIGHT_MOBILITY_TBL[idx];
+  }
+
+  byte bishop_mobility (coord idx) const { 
+    return diag_45_mobility (idx) + diag_135_mobility (idx);
+  }
+
+  byte rook_mobility (coord idx) const { 
+    return rank_mobility (idx) + file_mobility (idx);
+  }
+
+  byte queen_mobility (coord idx) const { 
+    return bishop_mobility (idx) + rook_mobility (idx);
+  }
+
+  byte king_mobility (coord idx) const { 
+    return KING_MOBILITY_TBL[idx];
+  }  
 
   //////////////
   // Testing. //

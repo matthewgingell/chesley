@@ -253,8 +253,6 @@ struct Search_Engine {
   // Choose a move, score it, and return it.
   Move choose_move (const Board &b, int32 depth = -1);
 
-private:
-
   // Initialize a new search and return its value.
   Score new_search (const Board &b, int depth, Move_Vector &pv);
   
@@ -288,7 +286,7 @@ private:
   (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF);
 
   // Static exchange evaluation.
-  Score see (const Board &b, const Move &capture);
+  Score see (const Board &b, const Move &capture) const;
 
   // Heuristically order a list of moves by estimated value.
   void order_moves (const Board &b, int ply, Move_Vector &moves);
