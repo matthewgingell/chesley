@@ -231,45 +231,6 @@ Eval::eval_mobility (const Color c) {
   Score s = 0;
   bitboard pieces;
 
-#if 1
-  bitboard moves;
-
-  // Rooks
-  pieces = b.get_rooks (c);
-  while (pieces) {
-    coord idx = bit_idx (pieces);
-    moves = b.rook_attacks (idx);
-    s += pop_count (moves) * ROOK_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
-  }
-
-  // Knights
-  pieces = b.get_knights (c);
-  while (pieces) {
-    coord idx = bit_idx (pieces);
-    moves = b.knight_attacks (idx);
-    s += pop_count (moves) * KNIGHT_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
-  }
-
-  // Bishops
-  pieces = b.get_bishops (c);
-  while (pieces) {
-    coord idx = bit_idx (pieces);
-    moves = b.bishop_attacks (idx);
-    s += pop_count (moves) * BISHOP_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
-  }
-
-  // Queens
-  pieces = b.get_queens (c);
-  while (pieces) {
-    coord idx = bit_idx (pieces);
-    moves = b.queen_attacks (idx);
-    s += pop_count (moves) * QUEEN_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
-  }
-#else
   // Rooks
   pieces = b.get_rooks (c);
   while (pieces) {
@@ -301,7 +262,6 @@ Eval::eval_mobility (const Color c) {
     s += b.queen_mobility (idx) * QUEEN_MOBILITY_BONUS;
     pieces = clear_lsb (pieces);
   }
-#endif
 
   return s;
 }
