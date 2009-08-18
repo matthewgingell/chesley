@@ -514,11 +514,8 @@ Search_Engine :: search
             if (alpha < beta) 
               {
                 have_pv_move = true;
-                // if (moves[mi].get_capture () == NULL_KIND) 
-                  {
-                    killers2[ply] = killers[ply];
-                    killers[ply] = moves[mi];
-                  }
+                killers2[ply] = killers[ply];
+                killers[ply] = moves[mi];
                 pv = Move_Vector (moves[mi], cpv);
               }
             else
@@ -606,12 +603,9 @@ Search_Engine :: order_moves
       // Apply psq bonuses.
       scores[i] += Eval::psq_value (b, m);
 
-#if 1
-      // Apply killer move bonus.
-      if (m == killers[ply]) scores[i] += 5 * PAWN;
-#endif
-
 #if 0
+      // Apply killer move bonus.
+      if (m == killers[ply]) scores[i] += 2 * PAWN_VAL;
       if (m == killers2[ply]) scores[i] += 1 * PAWN_VAL;
 #endif
 
