@@ -234,13 +234,18 @@ Board::clear_piece (coord idx, Color c, Kind k) {
 
       // Update hash key.
       hash ^= get_zobrist_piece_key (c, k, idx);
-      if (k == PAWN) phash ^= get_zobrist_piece_key (c, k, idx);
 
       // Update evaluation information.
       material[c] -= Eval::eval_piece (k);
       psquares[c] -= Eval::psq_value (k, c, idx);
       piece_counts[c][k]--;
-      if (k == PAWN) pawn_counts[c][idx_to_file (idx)]--;
+
+      // Check the special case of clearing a pawn.
+      if (k == PAWN) 
+        {
+          phash ^= get_zobrist_piece_key (c, k, idx);
+          pawn_counts[c][idx_to_file (idx)]--;
+        }
 
       // Clear the occupancy sets.
       occupied     &= ~masks_0[idx];

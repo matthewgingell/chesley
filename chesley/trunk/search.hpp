@@ -236,6 +236,8 @@ struct Search_Engine {
     
     uint64 hist_pv [hist_nbuckets];
     uint64 hist_qpv [hist_nbuckets];
+    
+    // Counts of hits for various heuristics.
     uint64 asp_hits;
     uint64 delta_count;
     uint64 ext_count;

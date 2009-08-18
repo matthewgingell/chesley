@@ -544,20 +544,12 @@ Board::is_attacked (coord idx, Color c) const
 {
   // Take advantage of the symmetry that if the piece at index could
   // move like an X and capture an X, then that X is able to attack it
-
   bitboard them = color_to_board (c);
-
-  // Are we attack by a non-pawn?
-  if ((rook_attacks   (idx) & them & (queens | rooks))   ||
-      (bishop_attacks (idx) & them & (queens | bishops)) ||
-      (knight_attacks (idx) & them & (knights))          ||
-      (king_attacks   (idx) & them & (kings)))
-    return true;
-
-  // Are we attacked by a pawn?
-  if (get_pawn_attacks (c) & masks_0[idx]) return true;
-
-  return false;
+  return ((rook_attacks   (idx) & them & (queens | rooks))   ||
+          (bishop_attacks (idx) & them & (queens | bishops)) ||
+          (knight_attacks (idx) & them & (knights))          ||
+          (king_attacks   (idx) & them & (kings))            ||
+          (get_pawn_attacks (c) & masks_0[idx]));
 }
 
 // For the currently moving side, find the least valuable piece
