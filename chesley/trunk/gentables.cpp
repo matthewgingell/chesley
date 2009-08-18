@@ -827,20 +827,25 @@ init_zobrist_keys () {
 
 static void init_mobility_tables () {
   // Allocate tables.
-  Board::KNIGHT_MOBILITY_TBL =   new byte[64 * 256];
-  Board::KING_MOBILITY_TBL =     new byte[64 * 256];
+  Board::KNIGHT_MOBILITY_TBL =   new byte[64];
+  Board::KING_MOBILITY_TBL =     new byte[64];
   Board::RANK_MOBILITY_TBL =     new byte[64 * 256];
   Board::FILE_MOBILITY_TBL =     new byte[64 * 256];
   Board::DIAG_45_MOBILITY_TBL =  new byte[64 * 256]; 
   Board::DIAG_135_MOBILITY_TBL = new byte[64 * 256];
   
   // Compute a population count for each moves bitboard.
-  for (int i = 0; i < 64 * 256; i++)
+
+  for (int i = 0; i < 64; i++)
     {
       Board::KNIGHT_MOBILITY_TBL[i] = 
         pop_count (Board::KNIGHT_ATTACKS_TBL[i]);
       Board::KING_MOBILITY_TBL[i] = 
         pop_count (Board::KING_ATTACKS_TBL[i]);
+    }
+
+  for (int i = 0; i < 64 * 256; i++)
+    {
       Board::RANK_MOBILITY_TBL[i] = 
         pop_count (Board::RANK_ATTACKS_TBL[i]);
       Board::FILE_MOBILITY_TBL[i] = 
@@ -850,6 +855,8 @@ static void init_mobility_tables () {
       Board::DIAG_135_MOBILITY_TBL[i] = 
         pop_count (Board::DIAG_135_ATTACKS_TBL[i]);
     }
+
+
 }
 
 //////////////////////////////////////////////////////
@@ -949,4 +956,3 @@ init_adjacent_files () {
         }
     }
 }
-
