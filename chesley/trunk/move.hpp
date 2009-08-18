@@ -67,7 +67,6 @@ struct Move {
              (color == BLACK && from == E8 && to == G8)));
   }
 
-
   // Is this a queen-side castle.
   inline bool is_castle_qs () const {
     return (kind == KING &&
