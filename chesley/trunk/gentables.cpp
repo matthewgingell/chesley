@@ -37,6 +37,14 @@ bitboard *Board::FILE_ATTACKS_TBL;
 bitboard *Board::DIAG_45_ATTACKS_TBL;
 bitboard *Board::DIAG_135_ATTACKS_TBL;
 
+// Mobility tables.
+byte *Board::KNIGHT_MOBILITY_TBL;
+byte *Board::KING_MOBILITY_TBL;
+byte *Board::RANK_MOBILITY_TBL;
+byte *Board::FILE_MOBILITY_TBL;
+byte *Board::DIAG_45_MOBILITY_TBL;
+byte *Board::DIAG_135_MOBILITY_TBL;
+
 // Rotated bitboard tables.
 bitboard *Board::masks_0;
 bitboard *Board::masks_45;
@@ -100,6 +108,9 @@ bitboard *init_file_attacks_tbl ();
 bitboard *init_45d_attacks_tbl ();
 bitboard *init_135d_attacks_tbl ();
 
+// Mobility tables.
+static void init_mobility_tables ();
+
 // Zobrist keys.
 static void init_zobrist_keys ();
 
@@ -135,8 +146,8 @@ Board::precompute_tables () {
   Board::DIAG_45_ATTACKS_TBL = init_45d_attacks_tbl ();
   Board::DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
 
+  init_mobility_tables ();
   init_zobrist_keys ();
-
   init_pawn_attack_spans ();
   init_in_front_of ();
   init_adjacent_files ();
@@ -810,6 +821,37 @@ init_zobrist_keys () {
   Board::zobrist_b_castle_k_key = random64 ();
 }
 
+///////////////////////////////
+// Generate mobility tables. //
+///////////////////////////////
+
+static void init_mobility_tables () {
+  // Allocate tables.
+  Board::KNIGHT_MOBILITY_TBL =   new byte[64 * 256];
+  Board::KING_MOBILITY_TBL =     new byte[64 * 256];
+  Board::RANK_MOBILITY_TBL =     new byte[64 * 256];
+  Board::FILE_MOBILITY_TBL =     new byte[64 * 256];
+  Board::DIAG_45_MOBILITY_TBL =  new byte[64 * 256]; 
+  Board::DIAG_135_MOBILITY_TBL = new byte[64 * 256];
+  
+  // Compute a population count for each moves bitboard.
+  for (int i = 0; i < 64 * 256; i++)
+    {
+      Board::KNIGHT_MOBILITY_TBL[i] = 
+        pop_count (Board::KNIGHT_ATTACKS_TBL[i]);
+      Board::KING_MOBILITY_TBL[i] = 
+        pop_count (Board::KING_ATTACKS_TBL[i]);
+      Board::RANK_MOBILITY_TBL[i] = 
+        pop_count (Board::RANK_ATTACKS_TBL[i]);
+      Board::FILE_MOBILITY_TBL[i] = 
+        pop_count (Board::FILE_ATTACKS_TBL[i]);
+      Board::DIAG_45_MOBILITY_TBL[i] = 
+        pop_count (Board::DIAG_45_ATTACKS_TBL[i]);
+      Board::DIAG_135_MOBILITY_TBL[i] = 
+        pop_count (Board::DIAG_135_ATTACKS_TBL[i]);
+    }
+}
+
 //////////////////////////////////////////////////////
 // Generate tables used during position evaluation. //
 //////////////////////////////////////////////////////
@@ -817,7 +859,6 @@ init_zobrist_keys () {
 // Build a table indexed by [color][square] of the two squares
 // diagonally ahead of a pawn and all those squares in front of
 // them. This is used for detecting pawn sentries.
-
 static void 
 init_pawn_attack_spans () {
   // Allocate table.

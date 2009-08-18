@@ -21,6 +21,9 @@
 
 using namespace std;
 
+Move killers[MAX_PLY];
+Move killers2[MAX_PLY];
+
 // Reference to the pawn hash table.
 extern PHash ph;
 
@@ -65,6 +68,10 @@ Search_Engine :: new_search
   // Clear mates table.
   ZERO (mates_table);
   mates_max = 0;
+
+  // Clear the killers tables.
+  ZERO (killers);
+  ZERO (killers2);
   
   // Clear statistics.
   clear_statistics ();
@@ -507,6 +514,11 @@ Search_Engine :: search
             if (alpha < beta) 
               {
                 have_pv_move = true;
+                if (moves[mi].get_capture () == NULL_KIND) 
+                  {
+                    killers2[ply] = killers[ply];
+                    killers[ply] = moves[mi];
+                  }
                 pv = Move_Vector (moves[mi], cpv);
               }
             else
@@ -594,6 +606,12 @@ Search_Engine :: order_moves
       // Apply psq bonuses.
       scores[i] += Eval::psq_value (b, m);
 
+#if 0
+      // Apply killer move bonus.
+      if (m == killers[ply]) scores[i] += 1 * PAWN_VAL;
+      if (m == killers2[ply]) scores[i] += 1 * PAWN_VAL;
+#endif
+
       // Apply history bonus.
       uint64 hval = hh_table[m.from][m.to];
       if (hh_max) scores[i] += (PAWN_VAL * hval) / hh_max;
@@ -655,7 +673,7 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
 //////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine :: see (const Board &b, const Move &m) {
+Search_Engine :: see (const Board &b, const Move &m) const {
 #ifdef ENABLE_SEE
   Score s = Eval::eval_victim (m);
 
