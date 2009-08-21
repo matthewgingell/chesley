@@ -161,7 +161,7 @@ struct Board {
 
   Board () {}
 
-  // Must be called to initialize static members in correct order.
+  // Must be called to initialize static members in the correct order.
   static void precompute_tables ();
 
   // Common initialization.
@@ -508,7 +508,7 @@ struct Board {
     return 0x00000000000000FFULL << rank * 8;
   }
 
-  // Return a bitboard of all squares in front on this position.
+  // Return a bitboard of all squares in front on this square.
   static bitboard
   in_front_of_mask (coord idx, Color c) {
     return in_front_of[c][idx];
@@ -520,7 +520,7 @@ struct Board {
     return 0x0101010101010101ULL << file;
   }
 
-  // Return the files adjacent to this one.
+  // Return a bitboard with every bit of the Nth file set.
   static bitboard
   this_file_mask (coord idx) {
     return 0x0101010101010101ULL << idx_to_file (idx);
