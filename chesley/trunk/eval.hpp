@@ -166,8 +166,20 @@ struct Eval {
 
   // Approximate the value of a capture. 
   static inline Score eval_capture (const Move &m) {
-    return eval_piece (m.get_capture ()) - 
-      eval_piece (m.get_kind ()) / 10;
+    if (m.get_capture () != NULL_KIND)
+      {
+        return eval_piece (m.get_capture ()) - 
+          eval_piece (m.get_kind ()) / 10;
+      }
+    else
+      {
+        return 0;
+      }
+  }
+
+  // Get the value of a piece be moved.
+  static inline Score eval_piece (const Move &m) {
+    return eval_piece (m.get_kind ());
   }
 
   // Get the value of a piece being captured.

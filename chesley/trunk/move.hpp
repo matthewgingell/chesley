@@ -50,6 +50,12 @@ struct Move {
     return capture; 
   }
 
+  // Returns the piece being promoted to, or NULL_KIND if this is not
+  // a promotion.
+  inline Kind get_promote () const { 
+    return promote; 
+  }
+
   // Is this move an en passant capture.
   inline bool is_en_passant () const { 
     return en_passant; 
@@ -160,11 +166,11 @@ struct Move_Vector {
   }
 
   // Sort a move vector using insertion sort.
-  void sort (Score *keys) {
+  void sort (int32 *keys) {
     for (int i = 1; i < count; i++)
       {
         Move index_elt = move[i];
-        Score index_key = keys[i];
+        int32 index_key = keys[i];
         int j = i;
         while (j > 0 && keys[j - 1] < index_key)
           {

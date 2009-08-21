@@ -80,6 +80,10 @@ struct Search_Engine {
     ZERO (mates_table)
     mates_max = 0;
 
+    // Initialize the killer and mates moves.
+    ZERO (killers);
+    ZERO (killers2);
+    ZERO (mate_killer);
   }
 
   // Clear accumulated search statistics.
@@ -125,7 +129,7 @@ struct Search_Engine {
   typedef boost::unordered_map <hash_t, int> Rep_Table;
 
   // Fetch a move from the transposition table.
-  inline Move tt_move (const Board &b);
+  Move tt_move (const Board &b);
 
 #if 0
   // Extend the principal variation from the transposition table.
@@ -253,20 +257,24 @@ struct Search_Engine {
   //////////////////////////////////
 
   // Choose a move, score it, and return it.
-  Move choose_move (const Board &b, int32 depth = -1);
+  Move choose_move 
+  (const Board &b, int32 depth = -1);
 
   // Initialize a new search and return its value.
-  Score new_search (const Board &b, int depth, Move_Vector &pv);
+  Score new_search 
+  (const Board &b, int depth, Move_Vector &pv);
   
   // Setup a deadline for this search.
   void new_deadline ();
 
   // Search repeatedly from depth 1 to 'depth.;
-  Score iterative_deepening (const Board &b, int depth, Move_Vector &pv);
+  Score iterative_deepening 
+  (const Board &b, int depth, Move_Vector &pv);
 
   // Search a root node.
-  Score root_search (const Board &b, int depth, Move_Vector &pv, Score guess = 0);
-
+  Score root_search 
+  (const Board &b, int depth, Move_Vector &pv, Score guess = 0);
+  
   // Memoized minimax search.
   Score search_with_memory
   (const Board &b,
@@ -306,7 +314,14 @@ struct Search_Engine {
   uint64 mates_table[64][64];
   uint64 mates_max;
 
+  Move killers[MAX_PLY];
+  Move killers2[MAX_PLY];
+  Move mate_killer[MAX_PLY];
+
+  // Routines to update these heuristic tables.
   void collect_move (int depth, int ply, const Move &m, Score s);
+  void collect_fail_high 
+  (int ply, const Move &m, Score s, int mi);
 };
 
 #endif // _SEARCH_
