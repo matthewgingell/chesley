@@ -232,6 +232,7 @@ Session::epd (const string_vector &args)
         {
           Move best = b.from_san (first (tokens));
           cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
+          se.reset ();
           se.set_fixed_time (1 * 1000);
           se.post = true;
           running = true;

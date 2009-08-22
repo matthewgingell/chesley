@@ -76,9 +76,9 @@ playold: chesley
 playother: chesley
 #	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/amundsen -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard  -tc 1 -inc 0 -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-	xboard  -tc 0:20 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
+#	xboard  -tc 0:20 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 0:30 -inc 0 -fcp ./chesley -scp ./other_binaries/tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 1 -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
+	xboard -tc 1 -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 1 -mps 60 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 1 -mps 60 -fcp ./chesley -scp ./other_binaries/olithink -mg 100 -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/GreKo -mg 100 -mode TwoMachines $(XBOARD_OPTS)
