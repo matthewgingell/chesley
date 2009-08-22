@@ -835,7 +835,6 @@ static void init_mobility_tables () {
   Board::DIAG_135_MOBILITY_TBL = new byte[64 * 256];
   
   // Compute a population count for each moves bitboard.
-
   for (int i = 0; i < 64; i++)
     {
       Board::KNIGHT_MOBILITY_TBL[i] = 

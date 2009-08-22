@@ -58,19 +58,31 @@ Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
-  // Clear history table.
-  ZERO (hh_table)
-  hh_max = 0;
+  // Age the history tables.
+  hh_max /= 4;
+  mates_max /= 4;
+  for (int i = 0; i < 64; i++)
+    for (int j = 0; j < 64; j++)
+      {
+        hh_table[i][j] /= 4;
+        mates_table[i][j] /= 4;
+      }
 
-  // Clear mates table.
-  ZERO (mates_table);
-  mates_max = 0;
+  // Age the killers tables.
+  for (int i = 0; i < MAX_PLY - 2; i++)
+    {
+      killers[i] = killers[i + 2];
+      killers2[i] = killers[i + 2];
+      mate_killer[i] = mate_killer[i + 2];
+    }
 
-  // Clear the killers tables.
-  ZERO (killers);
-  ZERO (killers2);
-  ZERO (mate_killer);
-  
+  for (int i = MAX_PLY - 2; i < MAX_PLY; i++) 
+    {
+      killers[i] = NULL_MOVE;
+      killers2[i] = NULL_MOVE;
+      mate_killer[i] = NULL_MOVE;
+    }
+
   // Clear statistics.
   clear_statistics ();
 
@@ -552,7 +564,6 @@ Search_Engine :: search
   return alpha;
 }
 
-
 // Update the corresponding tables when a move fails high.
 void 
 Search_Engine::collect_fail_high 
@@ -615,6 +626,7 @@ Search_Engine :: order_moves
   const int32 EVEN_CAPTURE    =  50 * 1000;
   const int32 KILLER_1        =  25 * 1000;
   const int32 KILLER_2        =  10 * 1000;
+  const int32 CASTLING        =   9 * 1000;
 
   // Score each move.
   for (int i = 0; i < moves.count; i++)
@@ -632,6 +644,12 @@ Search_Engine :: order_moves
       if (m == mate_killer[ply]) 
         {     
           scores[i] += MATE_KILLER;
+          continue;
+        }
+
+      if (ply > 2 && m == mate_killer[ply - 2]) 
+        {     
+          scores[i] += MATE_KILLER - 1;
           continue;
         }
 
@@ -686,6 +704,13 @@ Search_Engine :: order_moves
       if (ply > 2 && m == killers2[ply - 2]) 
         {
           scores[i] += KILLER_2 - 1;
+          continue;
+        }
+
+      // Apply castling bonus.
+      if (moves[i].is_castle ())
+        {
+          scores[i] += CASTLING;
           continue;
         }
 
