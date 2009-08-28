@@ -6,7 +6,7 @@
 // heuristically. Internally, the convention is that scores favoring          //
 // white are positive and those for black are negative. However, scores       //
 // returned to the player are multiplied by the correct sign and are          //
-// appropriate for maximization.                                              //
+// appropriate for negamax.                                                   //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
@@ -74,7 +74,7 @@ struct Eval {
   // The main piece square table.
   static const int8 piece_square_table[6][64];
 
-  // A table for computing indicies from the perspective of one or the
+  // A table for computing indices from the perspective of one or the
   // other color.
   static const int8 xfrm[2][64];
 
@@ -107,7 +107,7 @@ struct Eval {
   // Top level evaluation function.
   Score score ();
 
-  // Evaluate mobiilty by piece kind.
+  // Evaluate mobility by piece kind.
   Score eval_mobility (const Color c);
 
   // Evaluate by piece kind.

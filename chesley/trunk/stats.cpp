@@ -87,7 +87,7 @@ struct Table {
     Zr.smooth_zeros ();
 
     // Compute the coefficients of a log-log regression of the
-    // freqency of frequencies.
+    // frequency of frequencies.
     double a, b;
     Zr.regress (a, b);
 

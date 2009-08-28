@@ -214,10 +214,10 @@ struct Search_Engine {
   // Write thinking output before iterative deeping starts.
   void post_before (const Board &b);
 
-  // Write thinking for each depth during iterative deeping.
+  // Write thinking for each depth during iterative deepening.
   void post_each (const Board &b, int depth, Score s, const Move_Vector &pv);
 
-  // Write thinking output after iterative deeping ends.
+  // Write thinking output after iterative deepening ends.
   void post_after ();
 
   /////////////////

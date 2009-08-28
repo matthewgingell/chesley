@@ -191,24 +191,24 @@ Score Eval::eval_bishops (const Color c) {
 
       if (c == WHITE)
         {
-          // Penality trapped bishops on A7 or H7.
+          // Penalty trapped bishops on A7 or H7.
           if ((idx == A7 && test_bit (their_pawns, B6)) ||
               (idx == H7 && test_bit (their_pawns, G6)))
             s -= BISHOP_TRAPPED_A7H7;
 
-          // Penality trapped bishops on A6 or H6.
+          // Penalty trapped bishops on A6 or H6.
           if ((idx == A6 && test_bit (their_pawns, B5)) ||
               (idx == H6 && test_bit (their_pawns, G5)))
             s -= BISHOP_TRAPPED_A6H6;
         }
       else
         {
-          // Penality trapped bishops on A2 or H2.
+          // Penalty trapped bishops on A2 or H2.
           if ((idx == A2 && test_bit (their_pawns, B3)) ||
               (idx == H2 && test_bit (their_pawns, G3)))
             s -= BISHOP_TRAPPED_A7H7;
           
-          // Penality trapped bishops on A3 or H3.
+          // Penalty trapped bishops on A3 or H3.
           if ((idx == A3 && test_bit (their_pawns, B4)) ||
               (idx == H3 && test_bit (their_pawns, G4)))
             s -= BISHOP_TRAPPED_A6H6;
@@ -223,7 +223,7 @@ Score Eval::eval_bishops (const Color c) {
 }
 
 /////////////////////////////////////
-// Evaluate mobiilty by piece kind //
+// Evaluate mobility by piece kind //
 /////////////////////////////////////
 
 Score 
@@ -325,8 +325,9 @@ Score Eval::eval_pawns (const Color c) {
   //                                                                    //
   // Compute the set of half-free pawns.                                //
   //                                                                    //
-  // "Originally every pawn is unfree oweing to mechanical              //
-  //  obstruction. Removal of its counter pawn makes a pawn half-free." //
+  // "Originally every pawn is unfree owing to mechanical               //
+  //  obstruction. Removal of its counter pawn makes a pawn             //
+  //  half-free."                                                       //
   //                                                                    //
   ////////////////////////////////////////////////////////////////////////
   
@@ -340,8 +341,8 @@ Score Eval::eval_pawns (const Color c) {
   //  Compute the set of backward pawns.                              //
   //                                                                  //
   // "A half-free pawn, placed on the second or third rank, whose     //
-  //  stopsquare lacks pawn protection but is controlled by a sentry, //
-  //  is called a backwards pawn."                                    //
+  //  stop square lacks pawn protection but is controlled by a        //
+  //  sentry, is called a backwards pawn."                            //
   //                                                                  //
   //////////////////////////////////////////////////////////////////////
 
