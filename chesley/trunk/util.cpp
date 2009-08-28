@@ -2,8 +2,8 @@
 //                                                                            //
 // util.cpp                                                                   //
 //                                                                            //
-// Various small utility functions. This file is indended to encapsulate      //
-// all the platform dependant functionality used by Chesley.                  //
+// Various small utility functions. This file is intended to encapsulate      //
+// all the platform dependent functionality used by Chesley.                  //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //

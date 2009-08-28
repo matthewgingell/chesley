@@ -406,32 +406,13 @@ Search_Engine :: search
 
         // Determine the estimated evaluation for this move.
         Score estimate = 
-          Eval (b).net_material () + Eval::eval_capture (moves[mi]);
+          Eval (b).net_material () + see (b, moves[mi]);
 
         // Determine whether this moves checks.
         bool c_in_check = c.in_check (c.to_move());
 
         // Decide on a depth adjustment for this search.
         int ext = depth_adjustment (b, moves[mi]);
-
-#if ENABLE_LMR
-        ///////////////////////////
-        // Late move reductions. //
-        ///////////////////////////
-        const int Full_Depth_Count = 4;
-        const int Reduction_Limit = 5;
-        const int Reduction_Margin = ROOK_VAL;
-        if (estimate + Reduction_Margin < alpha &&
-            mi >= Full_Depth_Count && 
-            depth >= Reduction_Limit &&
-            ext == 0 && !in_check && !c_in_check && 
-            moves[mi].get_kind () != PAWN && 
-            moves[mi].get_capture () == NULL_KIND)
-          {
-            stats.lmr_count++;
-            ext--;
-          }
-#endif // ENABLE_LMR
 
 #ifdef ENABLE_FUTILITY
         // The approach taken to futility pruning here come from Ernst
@@ -492,16 +473,46 @@ Search_Engine :: search
           }
 #endif // ENABLE_FUTILITY
 
-#if ENABLE_PVS
+#ifdef ENABLE_PVS
+
         /////////////////////////////////
         // Principle variation search. //
         /////////////////////////////////
         
-        if (have_pv_move)
+        if (mi > 0)
           {
-            cs = -search_with_memory
-              (c, depth - 1 + ext, ply + 1, cpv, -alpha - 1, -alpha, true);
+            ///////////////////////////
+            // Late move reductions. //
+            ///////////////////////////
 
+            const int Full_Depth_Count = 3;
+            const int Reduction_Limit = 5;
+            if (mi >= Full_Depth_Count && depth >= Reduction_Limit &&
+                moves[mi].get_promote () != QUEEN && 
+                ext == 0 && !in_check && !c_in_check)
+              {
+                cs = -search_with_memory
+                  (c, depth - 2, ply + 1, cpv, -alpha - 1, -alpha, true);
+                
+                if (cs > alpha) 
+                  {
+                    cpv.clear ();
+                    cs = -search_with_memory
+                      (c, depth - 1, ply + 1, cpv, -alpha - 1, -alpha, true);
+                  }
+                else
+                  {
+                    stats.lmr_count++;
+                    continue;
+                  }
+              }
+            else
+              {
+                cs = -search_with_memory
+                  (c, depth - 1 + ext, ply + 1, cpv, -alpha - 1, -alpha, true);
+              }
+
+            
             if (cs > alpha && cs < beta)
               {
                 cpv.clear ();
@@ -779,6 +790,7 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
 Score
 Search_Engine :: see (const Board &b, const Move &m) const {
 #ifdef ENABLE_SEE
+  if (m.get_capture () == NULL_KIND) return 0;
   Score s = Eval::eval_victim (m);
 
   // Construct child position.

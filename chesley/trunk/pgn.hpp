@@ -47,7 +47,7 @@ struct PGN {
   // Read a list of moves from the steam.
   void read_moves (Game &g);
 
-  // Skip a '{ ... }' comment or whitespace.
+  // Skip a '{ ... }' comment or white space.
   void skip_comment_and_whitespace ();
 
 // Skip a '( ... )' in the moves list.

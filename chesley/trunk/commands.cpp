@@ -657,6 +657,7 @@ Session::execute (char *line) {
 
     case CMD_PROTOVER:
       // Send xboard the list of features we support.
+      fprintf (out, "feature done=0\n");
       fprintf (out, "feature ping=1\n");
       fprintf (out, "feature setboard=1\n");
       fprintf (out, "feature playother=1\n");

@@ -98,7 +98,7 @@ PGN::read_game () {
   return g;
 }
 
-// Skip a '{ ... }' comment or whitespace.
+// Skip a '{ ... }' comment or white space.
 void
 PGN::skip_comment_and_whitespace () {
   char c;
@@ -119,7 +119,7 @@ PGN::skip_comment_and_whitespace () {
             }
         }
 
-      // Skip whitespace.
+      // Skip white space.
       else if (isspace (c))
         {
           continue;

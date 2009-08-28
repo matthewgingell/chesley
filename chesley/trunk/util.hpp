@@ -2,8 +2,8 @@
 //                                                                            //
 // util.hpp                                                                   //
 //                                                                            //
-// Various small utility functions. This file is indended to encapsulate      //
-// all the platform dependant functionality used by Chesley.                  //
+// Various small utility functions. This file is intended to encapsulate      //
+// all the platform dependent functionality used by Chesley.                  //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
@@ -74,7 +74,7 @@ static int to_int (const char &c) IS_UNUSED;
 // Return a malloc'd copy of a char *.
 static char *newstr (const char *s) IS_UNUSED;
 
-// Trim leading and trailing whitespace.
+// Trim leading and trailing white space.
 static std::string trim (const std::string &s) IS_UNUSED;
 
 ////////////////////////////
@@ -127,7 +127,7 @@ static bool fdready (int fd) IS_UNUSED;
 // malloc'd string.
 static char *get_line (FILE *in) IS_UNUSED;
 
-// Advance over whitespace characters and return the number skipped.
+// Advance over white space characters and return the number skipped.
 static int skip_whitespace (FILE *in) IS_UNUSED;
 
 //////////////////////
@@ -234,7 +234,7 @@ newstr (const char *s) {
   return rv;
 }
 
-// Trim leading and trailing whitespace.
+// Trim leading and trailing white space.
 static std::string 
 trim (const std::string &s) {
   std::string rv = s;
@@ -440,7 +440,7 @@ static char *get_line (FILE *in) {
   return newstr (buf);
 }
 
-// Advance over whitespace characters and return the number skipped.
+// Advance over white space characters and return the number skipped.
 static int 
 skip_whitespace (FILE *in) {
   int count = 0;
