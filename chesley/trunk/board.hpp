@@ -631,6 +631,7 @@ struct Board {
 
   void gen_moves (Move_Vector &moves) const;
   void gen_captures (Move_Vector &moves) const;
+  void gen_promotions (Move_Vector &moves) const;
 
   ////////////////////////
   // Mobility counting. //

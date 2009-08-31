@@ -274,6 +274,36 @@ Board::gen_moves (Move_Vector &moves) const
     }
 }
 
+// Generate non-capture promotions to Queen.
+void
+Board::gen_promotions (Move_Vector &moves) const
+{
+  Color c = to_move ();
+  bitboard our_pawns = pawns & our_pieces ();
+
+  // Select the pawns on the 2nd or 7th rank with an empty square
+  // ahead of them.
+  if (c == WHITE) 
+    {
+      our_pawns &= rank_mask (6);
+      our_pawns = ((our_pawns << 8) & unoccupied ()) >> 8;
+    }
+  else 
+    {
+      our_pawns &= rank_mask (1);
+      our_pawns = ((our_pawns >> 8) & unoccupied ()) << 8;
+    }
+
+  // For each pawn:
+  while (our_pawns)
+    {
+      coord from = bit_idx (our_pawns);
+      coord to = (c == WHITE) ? (from + 8) : (from - 8);
+      moves.push (from, to, c, PAWN, NULL_KIND, QUEEN);
+      our_pawns = clear_lsb (our_pawns);
+    }
+}
+
 // Generate captures
 void
 Board::gen_captures (Move_Vector &moves) const
