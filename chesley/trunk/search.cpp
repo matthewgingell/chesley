@@ -485,8 +485,9 @@ Search_Engine :: search
             // Late move reductions. //
             ///////////////////////////
 
-            const int Full_Depth_Count = 3;
-            const int Reduction_Limit = 5;
+            const int Full_Depth_Count = 4;
+            const int Reduction_Limit = 3;
+
             if (mi >= Full_Depth_Count && depth >= Reduction_Limit &&
                 moves[mi].get_promote () != QUEEN && 
                 ext == 0 && !in_check && !c_in_check)
@@ -511,7 +512,6 @@ Search_Engine :: search
                 cs = -search_with_memory
                   (c, depth - 1 + ext, ply + 1, cpv, -alpha - 1, -alpha, true);
               }
-
             
             if (cs > alpha && cs < beta)
               {
@@ -830,6 +830,16 @@ Search_Engine :: qsearch
   // Do static evaluation at this node.
   Score static_eval = Eval (b).score ();
 
+#if 0
+  // Delta pruning.
+  if (static_eval + QUEEN_VAL < alpha)
+    {
+      stats.delta_count++;
+      return alpha;
+    }
+#endif
+
+  // Decide whether to stand pat.
   if (static_eval > alpha)
     {
       alpha = static_eval;
@@ -846,12 +856,18 @@ Search_Engine :: qsearch
       /////////////////////////////////
 
       b.gen_captures (moves);
+      b.gen_promotions (moves);
+
       if (moves.count > 0)
         {
           int32 scores [moves.count];
           ZERO (scores);
           for (int i = 0; i < moves.count; i++) 
-            scores[i] = see (b, moves[i]);
+            {
+              scores[i] = see (b, moves[i]);
+              if (moves[i].get_promote () == QUEEN) 
+                scores[i] += QUEEN_VAL - PAWN_VAL;
+            }
           moves.sort (scores);
 
           // Minimax over captures.
