@@ -35,15 +35,14 @@
 #define ENGINE_LICENSE_STR   "Chesley is free software, " \
                               "distributed under the GNU General Public License."
 
-#ifndef SVN_REVISION
-#define SVN_REVISION "<unknown>"
-#endif // SVN_REVISION
+#define VERSION "1.1"
+
 
 inline
 char *get_prologue () {
   static char buf[2048];
-  snprintf (buf, sizeof (buf), "%s (svn r%s)\n\n%s\n%s",
-           ENGINE_ID_STR, SVN_REVISION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
+  snprintf (buf, sizeof (buf), "%s (Release %s)\n\n%s\n%s",
+           ENGINE_ID_STR, VERSION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }
 
