@@ -1,0 +1,65 @@
+List of Epd Testsuites in epd_testsuites.7z file
+
+====== Computer-Chess Wiki ======
+
+===== Download =====
+
+===== Epd Testsuit Details =====
+
+^Epd File ^ # Pos ^ Gamestage ^ Author ^
+| ambbm | 175 | middle | (Andreas Herrmann) |
+| brilliancy | 25 | middle | |
+| bs2830 | 27 | | |
+| bt2630 | 30 | | |
+| carlos | 32 | | |
+| carlos2 | 100 | | |
+| ccc-1 | 11 | | |
+| ccc-2 | 11 | | |
+| ccc-3 | 45 | | |
+| ccc-4 | 4 | | |
+| control | 6 | | |
+| covax | 25 | | |
+| covax2 | 15 | | |
+| covax3 | 170 | | |
+| crafty_test | 347 | | |
+| ece3 | 1797 | endgame | Encyclopedia of Chess Endgames, volume 3 (Adorjan) |
+| ecm-gcp | 183 | | (Gian-Carlo Pascutto) |
+| ecm98 | 770 | | |
+| eg | 2826 | endgame | (Andreas Herrmann) |
+| eigenmann_endgame_test | 100 | endgame | [[http://glareanverlag.wordpress.com/category/computer-schach/ | (Walter Eigenmann)]] |
+| emms | 60 | | |
+| emms1 | 72 | | |
+| endtest | 16 | endgame | |
+| fastmates | 1416 | | |
+| frequent | 2804 | opening | (Dann Corbit) |
+| gcp_positionaltest | 30 | | (Gian-Carlo Pascutto) |
+| gmg1 | 100 | middlegame | |
+| gmg2 | 48 | | |
+| gmg3 | 63 | endgame | |
+| gs2930 | 14 | | |
+| iq81 | 182 | middle | [[http://www.horizonchess.com/pmwiki.php?n=Main.Download | (Jim Monaghan)]] |
+| jenoban | 202 | endgame | |
+| kaufman | 25 | | |
+| larsen | 45 | | |
+| lct2 | 35 | | |
+| mats | 24 | | |
+| mes | 1258 | endgame | |
+| mg | 3744 | middlegame | (Andreas Herrmann) |
+| mgv40 | 40 | | |
+| mgv77 | 77 | | |
+| mlmfl | 32 | opening | [[http://users.skynet.be/mlcc/chessbazaar/mlmfl.html | (Marc LaCrosse)]] |
+| mtp-50 | 50 | middle | (Marc Moisan) |
+| nolot | 12 | | |
+| okelly | 184 | | [[http://www.horizonchess.com/pmwiki.php?n=Main.Download | (Jim Monaghan)]] |
+| op | 225 | opening | (Andreas Herrmann) |
+| perr | 14 | | |
+| pet_v1 | 50 | | |
+| silver | 40 | openings | (Albert Silver) |
+| speelman | 167 | endgame | |
+| static | 34 | | |
+| tb | 628 | endgame | (Andreas Herrmann) |
+| tony-pos | 16 | | [[http://home.interact.se/~w100107/fentest.htm | (Tony Hedlund)]] |
+| uski | 46 | endgame | |
+| wacnew | 300 | | (Fred Reinfeld) "Win At Chess", corrected version |
+| yazgac | 33 | | |
+| | | | |
