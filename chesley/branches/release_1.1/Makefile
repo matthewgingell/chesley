@@ -6,12 +6,7 @@
 # GNU Public License.                                                #
 ######################################################################
 
-#CXX=g++
-#CXX = /opt/local/bin/i386-mingw32-g++ 
-CXX = /opt/local/bin/g++-mp-4.5
-#CXX=/Developer/usr/bin/llvm-g++
-#CXX = /Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-g++
-
+CXX=g++
 OPT = -g3 -O3 -m64
 
 SHELL = /bin/sh
@@ -21,8 +16,6 @@ WARN = -Wall -Wextra
 
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
-
-VSN = -DSVN_REVISION=\"$(shell svnversion)\"
 
 CXXFLAGS = $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
 
@@ -69,28 +62,6 @@ play: chesley
 # Run an xboard game of Chesley against Chesley.
 playself: chesley
 	xboard -tc 1 -mps 100 -fcp ./chesley -scp ./chesley -mode TwoMachines $(XBOARD_OPTS)
-
-# Run an xboard game of Chesley against the binary chesley.old.
-playold: chesley
-	xboard -st 0:01 -fcp ./chesley -scp ./chesley.old -mode TwoMachines $(XBOARD_OPTS) -mg 250
-
-playother: chesley
-#	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/amundsen -xreuse -xreuse2 -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard  -tc 1 -inc 0 -fcp ./chesley -scp ./arasan -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 1 -fcp ./chesley -scp ./other_binaries/zct -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 0:30 -inc 0 -fcp ./chesley -scp ./other_binaries/tscp -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 1 -fcp ./chesley -scp ./other_binaries/gray -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 1 -mps 120 -fcp ./chesley -scp gnuchess -mg 1000 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 1 -mps 60 -fcp ./chesley -scp ./other_binaries/olithink -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -st 0:01 -fcp ./chesley -scp ./other_binaries/GreKo -mg 100 -mode TwoMachines $(XBOARD_OPTS)
-
-#######################
-# Regression testing. #
-#######################
-
-# Run the test suites.
-check: chesley
-	./run_tests.rb
 
 #############
 # Clean up. #

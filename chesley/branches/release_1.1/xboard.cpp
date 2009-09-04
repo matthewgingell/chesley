@@ -25,9 +25,9 @@ Session::set_xboard_mode (const string_vector &tokens IS_UNUSED) {
 
   // Set chatting for ICS.
   fprintf (out, "tellicsnoalias set 1 %s v%s\n",
-           ENGINE_ID_STR, SVN_REVISION);
+           ENGINE_ID_STR, VERSION);
   fprintf (out, "tellicsnoalias kibitz Chesley! v%s says hello!\n",
-           SVN_REVISION);
+           VERSION);
 
   return true;
 }
