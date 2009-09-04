@@ -6,10 +6,22 @@
 # GNU Public License.                                                #
 ######################################################################
 
+######################
+# Building for POSIX #
+######################
+
 CXX=g++
+
+########################
+# Building for Windows #
+########################
+
+#CXX=/Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-c++
+#CXX=/opt/local/bin/i386-mingw32-g++
+#EXT=.exe
+
 OPT = -g3 -O3 -m64
 
-SHELL = /bin/sh
 INC = -Ideps
 LIBS =
 WARN = -Wall -Wextra
@@ -43,7 +55,7 @@ DEBUG = # -DTRACE_EVAL
 all: chesley
 
 chesley: $(OBJS)
-	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@
+	$(CXX) $(CXXFLAGS) $(OBJS) $(LIBS) -o $@$(EXT)
 
 %.o : %.cpp *.hpp
 	$(CXX) $(CXXFLAGS) -c $<
