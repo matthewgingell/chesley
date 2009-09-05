@@ -340,7 +340,7 @@ Search_Engine :: search
   bool in_check = b.in_check ((b.to_move ()));
 
   // Check 50 move and triple repetition rules.
-  if (b.half_move_clock == 50 || is_triple_rep (b)) 
+  if (b.half_move_clock == 100 || is_triple_rep (b)) 
     return 0;
 
   // Mate distance pruning.
@@ -925,7 +925,7 @@ Search_Engine :: tt_try
   else
     {
       if (hash_depth >= depth &&
-          b.half_move_clock < 45 && 
+          b.half_move_clock < 90 && 
           rep_count (b) == 0)
         {
           // Mate scores need to be treated specially when fetched
