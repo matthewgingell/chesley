@@ -197,7 +197,7 @@ Session :: get_status () {
   Color player = board.to_move ();
 
   // Check 50 move rule.
-  if (board.half_move_clock == 50)
+  if (board.half_move_clock == 100)
     return GAME_DRAW;
 
   // Check for a triple repetition.
