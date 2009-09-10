@@ -740,7 +740,7 @@ Search_Engine :: order_moves
   moves.sort (scores);  
 }
 
-// Return on a depth adjustment for a position.
+// Return a depth adjustment for a position.
 int Search_Engine::depth_adjustment (const Board &b, Move m) {
 #ifdef ENABLE_EXTENSIONS
   int ext = 0;
