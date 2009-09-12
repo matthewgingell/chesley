@@ -479,9 +479,9 @@ Score Eval::eval_king (const Color c) {
           for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
             {
               if (test_bit (pawns, Board::to_idx (rank - 1, f))) 
-                s += PAWN_SHEILD1_BONUS1;
+                s += PAWN_SHEILD1_BONUS;
               else if (test_bit (pawns, Board::to_idx (rank - 2, f))) 
-                s += PAWN_SHEILD2_BONUS1;
+                s += PAWN_SHEILD2_BONUS;
             }
         }
     }
