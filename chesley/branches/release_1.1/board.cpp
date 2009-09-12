@@ -239,7 +239,7 @@ Board::clear_piece (coord idx, Color c, Kind k) {
       material[c] -= Eval::eval_piece (k);
       psquares[c] -= Eval::psq_value (k, c, idx);
       piece_counts[c][k]--;
-
+      
       // Check the special case of clearing a pawn.
       if (k == PAWN) 
         {

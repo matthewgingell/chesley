@@ -61,6 +61,11 @@ static const Score BISHOP_TRAPPED_A7H7 = 150;
 static const Score BISHOP_TRAPPED_A6H6 =  75;
 static const Score BISHOP_PAIR_BONUS   =  50;
 
+static const Score KNIGHT_OUTPOST_BONUS = 25;
+
+static const Score PAWN_SHEILD1_BONUS = 10;
+static const Score PAWN_SHEILD2_BONUS = 5;
+
 /////////////////////////
 // The evaluator type. //
 /////////////////////////

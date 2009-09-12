@@ -149,30 +149,27 @@ Score Eval::eval_queens (const Color c) {
 ///////////////////////
 
 Score Eval::eval_knights (const Color c) {
-#if 0
   Score s = 0;
-  bitboard all = b.color_to_board (c);
-  bitboard pieces = all & b.knights & b.get_pawn_attacks (c);
-
-  // Reward knight outposts.
+ 
+  // Compute the set of knights protected by pawms.
+  bitboard pieces = b.get_knights (c) & b.get_pawn_attacks (c);
+  
+  // Do very simple output evaluation on C5 / F5.
   while (pieces)
     {
       coord idx = bit_idx (pieces);
-      int file = b.idx_to_file (idx);
-            
-      if (b.pawn_counts[WHITE][file] == 0 && 
-          b.pawn_counts[BLACK][file])
+      if (c == WHITE)
         {
-          s += 25;
+          if (idx == C5 || idx == F5) s+= KNIGHT_OUTPOST_BONUS;
         }
-
-        pieces = clear_lsb (pieces);
+      else 
+        {
+          if (idx == C4 || idx == F4) s+= KNIGHT_OUTPOST_BONUS;
+        }
+      pieces = clear_lsb (pieces);
     }
-
+  
   return s;
-#endif
-
-  return 0;
 }
 
 ///////////////////////
@@ -455,6 +452,39 @@ Score Eval::eval_king (const Color c) {
   
   // Add the phase specific king location score.
   s += king_square_table[phase][xfrm[c][idx]];
+
+  // Very basic pawn shield evaluation.
+  if (phase < ENDGAME)
+    {
+      int rank = Board :: idx_to_rank (idx);
+      int file = Board :: idx_to_file (idx);
+      bitboard pawns = b.get_pawns (c);
+
+      if (c == WHITE && 
+          (b.flags.w_has_k_castled || b.flags.w_has_q_castled) &&
+          rank == 0) 
+        {
+          for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
+            {
+              if (test_bit (pawns, Board :: to_idx (rank + 1, f))) 
+                s += PAWN_SHEILD1_BONUS;
+              else if (test_bit (pawns, Board :: to_idx (rank + 2, f))) 
+                s += PAWN_SHEILD2_BONUS;
+            }
+        }
+      else if (c == BLACK && 
+               (b.flags.b_has_k_castled || b.flags.b_has_q_castled) &&
+               rank == 7) 
+        {
+          for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
+            {
+              if (test_bit (pawns, Board::to_idx (rank - 1, f))) 
+                s += PAWN_SHEILD1_BONUS1;
+              else if (test_bit (pawns, Board::to_idx (rank - 2, f))) 
+                s += PAWN_SHEILD2_BONUS1;
+            }
+        }
+    }
 
   return s;
 }
