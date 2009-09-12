@@ -121,10 +121,10 @@ Board::gen_moves (Move_Vector &moves) const
                               PAWN, capture);
                 }
             }
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
 
-      our_pawns = clear_lsb (our_pawns);
+      clear_bit (our_pawns, from_idx);
     }
 
   ////////////
@@ -144,10 +144,10 @@ Board::gen_moves (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), ROOK, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
 
-      our_rooks = clear_lsb (our_rooks);
+      clear_bit (our_rooks, from);
     }
 
   //////////////
@@ -167,9 +167,9 @@ Board::gen_moves (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KNIGHT, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_knights = clear_lsb (our_knights);
+      clear_bit (our_knights, from);
     }
 
   //////////////
@@ -189,9 +189,9 @@ Board::gen_moves (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), BISHOP, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_bishops = clear_lsb (our_bishops);
+      clear_bit (our_bishops, from);
     }
 
   /////////////
@@ -211,9 +211,9 @@ Board::gen_moves (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), QUEEN, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_queens = clear_lsb (our_queens);
+      clear_bit (our_queens, from);
     }
 
   ////////////
@@ -236,7 +236,7 @@ Board::gen_moves (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KING, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
     }
 
@@ -300,7 +300,7 @@ Board::gen_promotions (Move_Vector &moves) const
       coord from = bit_idx (our_pawns);
       coord to = (c == WHITE) ? (from + 8) : (from - 8);
       moves.push (from, to, c, PAWN, NULL_KIND, QUEEN);
-      our_pawns = clear_lsb (our_pawns);
+      clear_bit (our_pawns, from);
     }
 }
 
@@ -371,9 +371,9 @@ Board::gen_captures (Move_Vector &moves) const
               moves.push (from_idx, to_idx, to_move (), 
                           PAWN, capture);
             }
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_pawns = clear_lsb (our_pawns);
+      clear_bit (our_pawns, from_idx);
     }
 
   /////////////////////////////
@@ -394,10 +394,10 @@ Board::gen_captures (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), ROOK, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
 
-      our_rooks = clear_lsb (our_rooks);
+      clear_bit (our_rooks, from);
     }
 
   ///////////////////////////////
@@ -418,9 +418,9 @@ Board::gen_captures (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KNIGHT, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_knights = clear_lsb (our_knights);
+      clear_bit (our_knights, from);
     }
 
   ///////////////////////////////
@@ -442,9 +442,9 @@ Board::gen_captures (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), BISHOP, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_bishops = clear_lsb (our_bishops);
+      clear_bit (our_bishops, from);
     }
 
   //////////////////////////////
@@ -466,9 +466,9 @@ Board::gen_captures (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), QUEEN, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
-      our_queens = clear_lsb (our_queens);
+      clear_bit (our_queens, from);
     }
 
   /////////////////////////////
@@ -488,7 +488,7 @@ Board::gen_captures (Move_Vector &moves) const
         {
           coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KING, get_kind (to_idx));
-          to = clear_lsb (to);
+          clear_bit (to, to_idx);
         }
     }
 }
@@ -510,7 +510,7 @@ Board::attack_set (Color c) const {
     {
       from = bit_idx (pieces);
       attacks |= rook_attacks (from);
-      pieces = clear_lsb (pieces);
+      clear_bit (pieces, from);
     }
 
   // Knights
@@ -519,7 +519,7 @@ Board::attack_set (Color c) const {
     {
       from = bit_idx (pieces);
       attacks |= knight_attacks (from);
-      pieces = clear_lsb (pieces);
+      clear_bit (pieces, from);
     }
 
   // Bishops
@@ -528,7 +528,7 @@ Board::attack_set (Color c) const {
     {
       from = bit_idx (pieces);
       attacks |= bishop_attacks (from);
-      pieces = clear_lsb (pieces);
+      clear_bit (pieces, from);
     }
 
   // Queens
@@ -537,7 +537,7 @@ Board::attack_set (Color c) const {
     {
       from = bit_idx (pieces);
       attacks |= queen_attacks (from);
-      pieces = clear_lsb (pieces);
+      clear_bit (pieces, from);
     }
 
   // Kings
@@ -546,7 +546,7 @@ Board::attack_set (Color c) const {
     {
       from = bit_idx (pieces);
       attacks |= king_attacks (from);
-      pieces = clear_lsb (pieces);
+      clear_bit (pieces, from);
     }
 
   return attacks & ~color;

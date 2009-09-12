@@ -30,21 +30,7 @@
 struct Move_Vector;
 struct Board;
 
-////////////////////
-// Bitboard type. //
-////////////////////
-
-typedef uint64 bitboard;
-
 void print_board (bitboard b);
-
-//////////////////////
-// Castling rights. //
-//////////////////////
-
-enum Castling_Right {
-  W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE
-};
 
 /////////////////////////////
 // Chess board state type. //
@@ -303,12 +289,6 @@ struct Board {
     return get_kind (file + 8 * row);
   }
 
-  // Test whether a coordinate is in bounds.
-  static bool
-  in_bounds (int x, int y) {
-    return x >= 0 && x <= 7 && y >= 0 && y <= 7;
-  }
-
   // Get a bitboard of pieces of some color.
   bitboard get_pawns   (Color c) { return color_to_board (c) & pawns; }
   bitboard get_rooks   (Color c) { return color_to_board (c) & rooks; }
@@ -502,53 +482,6 @@ struct Board {
   // Boards //
   ////////////
 
-  // Return a bitboard with every bit of the Nth rank set.
-  static bitboard
-  rank_mask (int rank) {
-    return 0x00000000000000FFULL << rank * 8;
-  }
-
-  // Return a bitboard of all squares in front on this square.
-  static bitboard
-  in_front_of_mask (coord idx, Color c) {
-    return in_front_of[c][idx];
-  }
-
-  // Return a bitboard with every bit of the Nth file set.
-  static bitboard
-  file_mask (int file) {
-    return 0x0101010101010101ULL << file;
-  }
-
-  // Return a bitboard with every bit of the Nth file set.
-  static bitboard
-  this_file_mask (coord idx) {
-    return 0x0101010101010101ULL << idx_to_file (idx);
-  }
-
-  // Return the files adjacent to this one.
-  static bitboard
-  adjacent_files_mask (coord idx) {
-    return adjacent_files[idx];
-  }
-
-  // Return the rank 0 .. 7 containing a coordinate.
-  static int
-  idx_to_rank (coord idx) {
-    return idx / 8;
-  }
-
-  // Return the file 0 .. 7 containing a coordinate.
-  static int
-  idx_to_file (coord idx) {
-    return idx % 8;
-  }
-  
-  // Return an index for a rank and file.
-  static coord to_idx (int rank, int file) {
-    return 8 * rank + file;
-  }
-
   // Return a bitboard of to_moves pieces.
   bitboard
   our_pieces () const {
@@ -691,6 +624,22 @@ struct Board {
   // Generate a hash key from scratch. This is used to test the
   // correctness of our incrementally hash update code.
   uint64 gen_hash () const;
+
+  ////////////////////////////////////
+  // Patterns for use in evaluation //
+  ////////////////////////////////////
+  
+  // Return a bitboard of all squares in front on this square.
+  static bitboard
+  in_front_of_mask (coord idx, Color c) {
+    return Board::in_front_of[c][idx];
+  }
+
+  // Return the files adjacent to this one.
+  static bitboard
+  adjacent_files_mask (coord idx) {
+    return adjacent_files[idx];
+  }
   
   ////////////////////////////////////////////////
   // Incrementally updated scoring information. //

@@ -762,7 +762,7 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
   // Pawn to seventh rank extensions.
   else 
     {
-      int rank = Board :: idx_to_rank (m.to);
+      int rank = idx_to_rank (m.to);
       if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
         ext += 1;
     }

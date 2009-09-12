@@ -89,8 +89,8 @@ Score Eval::eval_rooks (const Color c) {
   while (pieces)
      {
        coord idx = bit_idx (pieces);
-       int file = b.idx_to_file (idx);
-       int rank = b.idx_to_rank (idx);
+       int file = idx_to_file (idx);
+       int rank = idx_to_rank (idx);
        int pawn_count = b.pawn_counts[c][file];
 
        // Reward rooks on open and semi-open files.
@@ -113,7 +113,7 @@ Score Eval::eval_rooks (const Color c) {
            score += ROOK_ON_7TH_BONUS;
          }
 
-       pieces = clear_lsb (pieces);
+       clear_bit (pieces, idx);
      }
 
    return score;
@@ -125,7 +125,7 @@ Score Eval::eval_queens (const Color c) {
   while (pieces)
      {
        coord idx = bit_idx (pieces);
-       int file = b.idx_to_file (idx);
+       int file = idx_to_file (idx);
        int pawn_count = b.pawn_counts[c][file];
        
        // Reward queens on open and semi-open files.
@@ -138,7 +138,7 @@ Score Eval::eval_queens (const Color c) {
            s += QUEEN_HALF_BONUS;
          }
 
-       pieces = clear_lsb (pieces);
+       clear_bit (pieces, idx);
      }
 
    return s;
@@ -166,7 +166,7 @@ Score Eval::eval_knights (const Color c) {
         {
           if (idx == C4 || idx == F4) s+= KNIGHT_OUTPOST_BONUS;
         }
-      pieces = clear_lsb (pieces);
+      clear_bit (pieces, idx);
     }
   
   return s;
@@ -210,7 +210,7 @@ Score Eval::eval_bishops (const Color c) {
               (idx == H3 && test_bit (their_pawns, G4)))
             s -= BISHOP_TRAPPED_A6H6;
         }
-      our_bishops = clear_lsb (our_bishops);
+      clear_bit (our_bishops, idx);
     }
 
   // Provide a bonus for holding both bishops.
@@ -233,7 +233,7 @@ Eval::eval_mobility (const Color c) {
   while (pieces) {
     coord idx = bit_idx (pieces);
     s += b.rook_mobility (idx) * ROOK_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
+    clear_bit (pieces, idx);
   }
 
   // Knights
@@ -241,7 +241,7 @@ Eval::eval_mobility (const Color c) {
   while (pieces) {
     coord idx = bit_idx (pieces);
     s += b.knight_mobility (idx) * KNIGHT_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
+    clear_bit (pieces, idx);
   }
 
   // Bishops
@@ -249,7 +249,7 @@ Eval::eval_mobility (const Color c) {
   while (pieces) {
     coord idx = bit_idx (pieces);
     s += b.bishop_mobility (idx) * BISHOP_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
+    clear_bit (pieces, idx);
   }
 
   // Queens
@@ -257,7 +257,7 @@ Eval::eval_mobility (const Color c) {
   while (pieces) {
     coord idx = bit_idx (pieces);
     s += b.queen_mobility (idx) * QUEEN_MOBILITY_BONUS;
-    pieces = clear_lsb (pieces);
+    clear_bit (pieces, idx);
   }
 
   return s;
@@ -282,11 +282,11 @@ bitboard pawn_backward_rank (bitboard pawns, Color c) {
 bitboard pawn_attacks (bitboard pawns, Color c) {
   return (c == WHITE) ? 
     // White pawns.
-    (((pawns & ~Board::file_mask (A)) << 7) | 
-     ((pawns & ~Board::file_mask (H)) << 9)) :
+    (((pawns & ~file_mask (A)) << 7) | 
+     ((pawns & ~file_mask (H)) << 9)) :
     // Black pawns.
-    (((pawns & ~Board::file_mask (H)) >> 7) |
-     ((pawns & ~Board::file_mask (A)) >> 9));
+    (((pawns & ~file_mask (H)) >> 7) |
+     ((pawns & ~file_mask (A)) >> 9));
 }
 
 // The union of every front span for each pawn of color c.
@@ -295,7 +295,7 @@ bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
   while (pawns) {
     coord idx = bit_idx (pawns);
     all |= Board::pawn_attack_spans[c][idx];
-    pawns = clear_lsb (pawns);
+    clear_bit (pawns, idx);
   }
   return all;
 }
@@ -331,7 +331,7 @@ Score Eval::eval_pawns (const Color c) {
   bitboard half_free = our_pawns;
   for (int i = 0; i < 8; i++)
     if (b.pawn_counts[!c][i] > 0) 
-      half_free &= ~Board::file_mask (i);
+      half_free &= ~file_mask (i);
 
   //////////////////////////////////////////////////////////////////////
   //                                                                  //
@@ -347,8 +347,8 @@ Score Eval::eval_pawns (const Color c) {
 
   // Half-free pawns on the second or third rank.
   backwards = (c == WHITE) ?
-    (half_free & (Board::rank_mask (1) | Board::rank_mask (2))) :
-    (half_free & (Board::rank_mask (6) | Board::rank_mask (5)));
+    (half_free & (rank_mask (1) | rank_mask (2))) :
+    (half_free & (rank_mask (6) | rank_mask (5)));
 
   // Lacking protection on the stop square.
   backwards = pawn_forward_rank (backwards, c);
@@ -371,8 +371,8 @@ Score Eval::eval_pawns (const Color c) {
   while (p)
     {
       coord idx = bit_idx (p);
-      int rank = b.idx_to_rank (idx);
-      int file = b.idx_to_file (idx);
+      int rank = idx_to_rank (idx);
+      int file = idx_to_file (idx);
       
       // Penalize isolated pawns.
       if (!(Board::adjacent_files_mask(idx) & our_pawns))
@@ -388,7 +388,7 @@ Score Eval::eval_pawns (const Color c) {
 
       // Reward passed pawns.
       bitboard front = 
-        (Board::this_file_mask (idx) | 
+        (this_file_mask (idx) | 
          Board::adjacent_files_mask (idx))
         & Board::in_front_of_mask(idx, c);
       if (!(front & their_pawns))
@@ -396,7 +396,7 @@ Score Eval::eval_pawns (const Color c) {
 
       // Further reward passed pawn backed by rook?
 
-      p = clear_lsb (p);
+      clear_bit (p, idx);
     }
 
   // Save this score in the pawn eval cache.
@@ -456,8 +456,8 @@ Score Eval::eval_king (const Color c) {
   // Very basic pawn shield evaluation.
   if (phase < ENDGAME)
     {
-      int rank = Board :: idx_to_rank (idx);
-      int file = Board :: idx_to_file (idx);
+      int rank = idx_to_rank (idx);
+      int file = idx_to_file (idx);
       bitboard pawns = b.get_pawns (c);
 
       if (c == WHITE && 
@@ -466,9 +466,9 @@ Score Eval::eval_king (const Color c) {
         {
           for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
             {
-              if (test_bit (pawns, Board :: to_idx (rank + 1, f))) 
+              if (test_bit (pawns, to_idx (rank + 1, f))) 
                 s += PAWN_SHEILD1_BONUS;
-              else if (test_bit (pawns, Board :: to_idx (rank + 2, f))) 
+              else if (test_bit (pawns, to_idx (rank + 2, f))) 
                 s += PAWN_SHEILD2_BONUS;
             }
         }
@@ -478,9 +478,9 @@ Score Eval::eval_king (const Color c) {
         {
           for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
             {
-              if (test_bit (pawns, Board::to_idx (rank - 1, f))) 
+              if (test_bit (pawns, to_idx (rank - 1, f))) 
                 s += PAWN_SHEILD1_BONUS;
-              else if (test_bit (pawns, Board::to_idx (rank - 2, f))) 
+              else if (test_bit (pawns, to_idx (rank - 2, f))) 
                 s += PAWN_SHEILD2_BONUS;
             }
         }
@@ -507,9 +507,10 @@ Score Eval::sum_piece_squares (const Board &b) {
           // Do all pieces but the king.
           while (pieces)
             {
+              coord idx = bit_idx (pieces);
               bonus += s *
-                Eval::piece_square_table[k][Eval::xfrm[c][bit_idx (pieces)]];
-              pieces = clear_lsb (pieces);
+                Eval::piece_square_table[k][Eval::xfrm[c][idx]];
+              clear_bit (pieces, idx);
             }
         }
     }

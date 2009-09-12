@@ -23,15 +23,15 @@ typedef uint64 bits64;
 // Bitwise operations on 64 bit unsigned ints. //
 /////////////////////////////////////////////////
 
-inline bits64 test_bit   (bits64, int) IS_CONST;
-inline bits64 set_bit    (bits64, int) IS_CONST;
-inline bits64 clear_bit  (bits64, int) IS_CONST;
-inline bits64 clear_lsb  (bits64)      IS_CONST;
-inline bits64 clear_msbs (bits64)      IS_CONST;
-inline uint32 bit_idx    (bits64)      IS_CONST;
-inline uint32 pop_count  (bits64)      IS_CONST;
-inline byte   get_byte   (bits64, int) IS_CONST;
-static void   print_bits (bits64)      IS_UNUSED;
+inline bits64 test_bit   (bits64, int)   IS_CONST;
+inline void   set_bit    (bits64 &, int); 
+inline void   clear_bit  (bits64 &, int);
+inline bits64 clear_lsb  (bits64)        IS_CONST;
+inline bits64 clear_msbs (bits64)        IS_CONST;
+inline uint32 bit_idx    (bits64)        IS_CONST;
+inline uint32 pop_count  (bits64)        IS_CONST;
+inline byte   get_byte   (bits64, int)   IS_CONST;
+static void   print_bits (bits64)        IS_UNUSED;
 
 // Test a bit.
 inline bits64
@@ -40,15 +40,14 @@ test_bit (bits64 b, int idx) {
 }
 
 // Set a bit.
-inline bits64 
-set_bit (bits64 b, int idx) { 
-  return b | 1ULL << idx; 
+inline void 
+set_bit (bits64 &b, int idx) { 
+  b |= (1ULL << idx); 
 }
 
-// Clear a bit.
-inline bits64 
-clear_bit (bits64 b, int idx) { 
-  return b & ~(1ULL << idx); 
+inline void 
+clear_bit (bits64 &b, int idx) { 
+  b &= ~(1ULL << idx); 
 }
 
 // Clear the least significant bit of b.
