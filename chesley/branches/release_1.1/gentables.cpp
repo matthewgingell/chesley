@@ -571,7 +571,7 @@ init_rank_attacks_tbl () {
             {
               k--;
               if (from + k < first_bit) break;
-              destinations = set_bit (destinations, from + k);
+              set_bit (destinations, from + k);
             }
           while (!test_bit (occ, from % 8 + k));
 
@@ -581,7 +581,7 @@ init_rank_attacks_tbl () {
             {
               k++;
               if (from + k > last_bit) break;
-              destinations = set_bit (destinations, from + k);
+              set_bit (destinations, from + k);
             }
           while (!test_bit (occ, from % 8 + k));
 
@@ -618,8 +618,7 @@ init_file_attacks_tbl () {
               bitnum--;
               if (bitnum < 0) break;
               bit_offset = from_bit - bitnum;
-              destinations =
-                set_bit (destinations, from + 8 * bit_offset);
+              set_bit (destinations, from + 8 * bit_offset);
             }
           while (!test_bit (file_pat, bitnum));
 
@@ -630,8 +629,7 @@ init_file_attacks_tbl () {
               bitnum++;
               if (bitnum > 7) break;
               bit_offset = from_bit - bitnum;
-              destinations =
-                set_bit (destinations, from + 8 * bit_offset);
+              set_bit (destinations, from + 8 * bit_offset);
             }
           while (!test_bit (file_pat, bitnum));
 
@@ -664,9 +662,9 @@ init_knight_attacks_tbl()
           int nx = x + moves[v][0];
           int ny = y + moves[v][1];
 
-          if (Board::in_bounds (nx, ny))
+          if (in_bounds (nx, ny))
             {
-              rv[off] = set_bit (rv[off], nx + ny * 8);
+              set_bit (rv[off], nx + ny * 8);
             }
         }
     }
@@ -694,9 +692,9 @@ init_king_attacks_tbl()
           int nx = x + moves[v][0];
           int ny = y + moves[v][1];
 
-          if (Board::in_bounds (nx, ny))
+          if (in_bounds (nx, ny))
             {
-              rv[off] = set_bit (rv[off], nx + ny * 8);
+              set_bit (rv[off], nx + ny * 8);
             }
         }
     }
@@ -727,8 +725,7 @@ init_45d_attacks_tbl () {
             {
               b++;
               if (b >= pat_len) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 7);
+              set_bit (destinations, from + (from_bit - b) * 7);
             }
           while (!test_bit(pat, b));
 
@@ -738,8 +735,7 @@ init_45d_attacks_tbl () {
             {
               b--;
               if (b < 0) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 7);
+              set_bit (destinations, from + (from_bit - b) * 7);
             }
           while (!test_bit(pat, b));
 
@@ -774,8 +770,7 @@ init_135d_attacks_tbl () {
             {
               b++;
               if (b >= pat_len) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 9);
+              set_bit (destinations, from + (from_bit - b) * 9);
             }
           while (!test_bit(pat, b));
 
@@ -785,8 +780,7 @@ init_135d_attacks_tbl () {
             {
               b--;
               if (b < 0) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 9);
+              set_bit (destinations, from + (from_bit - b) * 9);
             }
           while (!test_bit(pat, b));
 
@@ -873,8 +867,8 @@ init_pawn_attack_spans () {
 
   for (coord idx = 0; idx < 64; idx++)
     {
-      int rank = Board::idx_to_rank (idx);
-      int file = Board::idx_to_file (idx);
+      int rank = idx_to_rank (idx);
+      int file = idx_to_file (idx);
 
       // Entry for white.
       Board::pawn_attack_spans[WHITE][idx] = 0;
@@ -882,10 +876,10 @@ init_pawn_attack_spans () {
         {
           if (file > 0) 
             Board::pawn_attack_spans[WHITE][idx] |= 
-              Board::masks_0[Board::to_idx(r, file - 1)];
+              Board::masks_0[to_idx(r, file - 1)];
           if (file < 7) 
             Board::pawn_attack_spans[WHITE][idx] |= 
-              Board::masks_0[Board::to_idx(r, file + 1)];
+              Board::masks_0[to_idx(r, file + 1)];
         }
       
       // Entry for black.
@@ -894,10 +888,10 @@ init_pawn_attack_spans () {
         {
           if (file > 0) 
             Board::pawn_attack_spans[BLACK][idx] |= 
-              Board::masks_0[Board::to_idx (r, file - 1)];
+              Board::masks_0[to_idx (r, file - 1)];
           if (file < 7) 
             Board::pawn_attack_spans[BLACK][idx] |= 
-              Board::masks_0[Board::to_idx(r, file + 1)];
+              Board::masks_0[to_idx(r, file + 1)];
         }
     }
 }
@@ -911,7 +905,7 @@ init_in_front_of () {
   Board::in_front_of[BLACK] = new bitboard[64];
   for (coord idx = 0; idx < 64; idx++)
     {
-      int rank = Board::idx_to_rank (idx);
+      int rank = idx_to_rank (idx);
 
       // Entry for white.
       Board::in_front_of[WHITE][idx] = 0;
@@ -919,7 +913,7 @@ init_in_front_of () {
         for (int f = 0; f < 8; f++)
         {
           Board::in_front_of [WHITE][idx] |= 
-            Board::masks_0[Board::to_idx (r, f)];
+            Board::masks_0[to_idx (r, f)];
         }
       
       // Entry for black.
@@ -928,7 +922,7 @@ init_in_front_of () {
         for (int f = 0; f < 8; f++)
         {
           Board::in_front_of [BLACK][idx] |= 
-            Board::masks_0[Board::to_idx (r, f)];
+            Board::masks_0[to_idx (r, f)];
         }
     }
 }
@@ -942,16 +936,16 @@ init_adjacent_files () {
 
   for (coord idx = 0; idx < 64; idx++)
     {
-      int f = Board::idx_to_file (idx);
+      int f = idx_to_file (idx);
       Board::adjacent_files[idx] = 0;
       for (int r = 0; r < 8; r++)
         {
           if (f < 7) 
             Board::adjacent_files[idx] |= 
-              Board::masks_0[Board::to_idx (r, f + 1)];
+              Board::masks_0[to_idx (r, f + 1)];
           if (f > 0) 
             Board::adjacent_files[idx] |= 
-              Board::masks_0[Board::to_idx (r, f - 1)];
+              Board::masks_0[to_idx (r, f - 1)];
         }
     }
 }
