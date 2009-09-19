@@ -1,9 +1,10 @@
 Who, What, Where, Why? 
 
-Matthew Gingell, <gingell@adacore.com>. June 2009.
+Matthew Gingell, <gingell@adacore.com>. September 2009.
 
-* Chesley the Chess Engine! is a computer chess program written in
-  C++. Chesley is compatible with the xboard GUI.
+* Chesley the Chess Engine! is a computer chess program written in C++
+  supporting both Windows and POSIX. Chesley is compatible with the
+  xboard GUI.
 
 * Chesley takes its name from Chesley B. "Sully" Sullenberger, the
   pilot who successfully landed a airplane on the Hudson river around
@@ -12,10 +13,11 @@ Matthew Gingell, <gingell@adacore.com>. June 2009.
 * To install, see the Makefile in this directory. To build Chesley you
   will need a C++ compiler. You will need at the very least to set the
   variable GXX to point to the compiler you want to use.
-
- * Chesley will perform much better if your compiler and target support
-   64-bit mode. If possible, the engine should be compiled with
-   -m64. However if that doesn't work you will need to remove that flag.
+ 
+  Chesley will perform *dramatically* better if your compiler and
+  target support 64-bit executable. If possible, the engine should be
+  compiled with -m64. However if that doesn't work you will need to
+  remove that flag.
 
 * If you're interested in Chesley please take a look at my blog at:
   http://chesley.sourceforge.net. The engine is under very active
