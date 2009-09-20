@@ -886,7 +886,7 @@ Search_Engine :: qsearch
             }
 
           // Collect statistics.
-          //          stats.hist_qpv[min (mi, hist_nbuckets - 1)]++;
+          stats.hist_qpv[min (mi, hist_nbuckets - 1)]++;
         }
     }
 
