@@ -30,21 +30,7 @@
 struct Move_Vector;
 struct Board;
 
-////////////////////
-// Bitboard type. //
-////////////////////
-
-typedef uint64 bitboard;
-
 void print_board (bitboard b);
-
-//////////////////////
-// Castling rights. //
-//////////////////////
-
-enum Castling_Right {
-  W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE
-};
 
 /////////////////////////////
 // Chess board state type. //
@@ -53,64 +39,6 @@ enum Castling_Right {
 std::ostream & operator<< (std::ostream &os, const Board &b);
 
 struct Board {
-
-  ///////////////
-  // Constants //
-  ///////////////
-
-  static const std::string INITIAL_POSITIONS;
-
-  static const bitboard light_squares = 0x55AA55AA55AA55AAULL;
-  static const bitboard dark_squares = 0xAA55AA55AA55AA55ULL;
-
-  //////////////////////////////////////
-  // Precomputed tables and constants //
-  //////////////////////////////////////
-
-  static bool have_precomputed_tables;
-
-  static bitboard *KNIGHT_ATTACKS_TBL;
-  static bitboard *KING_ATTACKS_TBL;
-  static bitboard *RANK_ATTACKS_TBL;
-  static bitboard *FILE_ATTACKS_TBL;
-  static bitboard *DIAG_45_ATTACKS_TBL;
-  static bitboard *DIAG_135_ATTACKS_TBL;
-
-  static byte *KNIGHT_MOBILITY_TBL;
-  static byte *KING_MOBILITY_TBL;
-  static byte *RANK_MOBILITY_TBL;
-  static byte *FILE_MOBILITY_TBL;
-  static byte *DIAG_45_MOBILITY_TBL;
-  static byte *DIAG_135_MOBILITY_TBL;
-
-  static bitboard *masks_0;
-  static bitboard *masks_45;
-  static bitboard *masks_90;
-  static bitboard *masks_135;
-
-  static int *rot_45;
-  static int *rot_90;
-  static int *rot_135;
-
-  static byte *diag_shifts_45;
-  static byte *diag_bitpos_45;
-  static byte *diag_widths_45;
-  static byte *diag_shifts_135;
-  static byte *diag_bitpos_135;
-  static byte *diag_widths_135;
-
-  static uint64 *zobrist_piece_keys;
-  static uint64 *zobrist_enpassant_keys;
-  static uint64  zobrist_key_white_to_move;
-  static uint64  zobrist_w_castle_q_key;
-  static uint64  zobrist_w_castle_k_key;
-  static uint64  zobrist_b_castle_q_key;
-  static uint64  zobrist_b_castle_k_key;
-
-  // Bitboard masks for detection various features.
-  static bitboard *pawn_attack_spans[2];
-  static bitboard *in_front_of[2];
-  static bitboard *adjacent_files;
 
   /////////////////////////////////////////////////////
   // Bitboards representing the state of the board.  //
@@ -160,9 +88,6 @@ struct Board {
   //////////////////////////////////////
 
   Board () {}
-
-  // Must be called to initialize static members in the correct order.
-  static void precompute_tables ();
 
   // Common initialization.
   static void common_init (Board &);
@@ -303,12 +228,6 @@ struct Board {
     return get_kind (file + 8 * row);
   }
 
-  // Test whether a coordinate is in bounds.
-  static bool
-  in_bounds (int x, int y) {
-    return x >= 0 && x <= 7 && y >= 0 && y <= 7;
-  }
-
   // Get a bitboard of pieces of some color.
   bitboard get_pawns   (Color c) { return color_to_board (c) & pawns; }
   bitboard get_rooks   (Color c) { return color_to_board (c) & rooks; }
@@ -401,7 +320,7 @@ struct Board {
     assert (c != NULL_COLOR);
     if (flags.to_move != c)
       {
-        hash ^= Board::zobrist_key_white_to_move;
+        hash ^= zobrist_key_white_to_move;
         flags.to_move = c;
       }
   }
@@ -501,53 +420,6 @@ struct Board {
   ////////////
   // Boards //
   ////////////
-
-  // Return a bitboard with every bit of the Nth rank set.
-  static bitboard
-  rank_mask (int rank) {
-    return 0x00000000000000FFULL << rank * 8;
-  }
-
-  // Return a bitboard of all squares in front on this square.
-  static bitboard
-  in_front_of_mask (coord idx, Color c) {
-    return in_front_of[c][idx];
-  }
-
-  // Return a bitboard with every bit of the Nth file set.
-  static bitboard
-  file_mask (int file) {
-    return 0x0101010101010101ULL << file;
-  }
-
-  // Return a bitboard with every bit of the Nth file set.
-  static bitboard
-  this_file_mask (coord idx) {
-    return 0x0101010101010101ULL << idx_to_file (idx);
-  }
-
-  // Return the files adjacent to this one.
-  static bitboard
-  adjacent_files_mask (coord idx) {
-    return adjacent_files[idx];
-  }
-
-  // Return the rank 0 .. 7 containing a coordinate.
-  static int
-  idx_to_rank (coord idx) {
-    return idx / 8;
-  }
-
-  // Return the file 0 .. 7 containing a coordinate.
-  static int
-  idx_to_file (coord idx) {
-    return idx % 8;
-  }
-  
-  // Return an index for a rank and file.
-  static coord to_idx (int rank, int file) {
-    return 8 * rank + file;
-  }
 
   // Return a bitboard of to_moves pieces.
   bitboard

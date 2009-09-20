@@ -27,55 +27,55 @@
 // Construction of precomputed tables. //
 /////////////////////////////////////////
 
-bool Board::have_precomputed_tables = false;
+bool have_precomputed_tables = false;
 
 // Move generation tables.
-bitboard *Board::KNIGHT_ATTACKS_TBL;
-bitboard *Board::KING_ATTACKS_TBL;
-bitboard *Board::RANK_ATTACKS_TBL;
-bitboard *Board::FILE_ATTACKS_TBL;
-bitboard *Board::DIAG_45_ATTACKS_TBL;
-bitboard *Board::DIAG_135_ATTACKS_TBL;
+bitboard *KNIGHT_ATTACKS_TBL;
+bitboard *KING_ATTACKS_TBL;
+bitboard *RANK_ATTACKS_TBL;
+bitboard *FILE_ATTACKS_TBL;
+bitboard *DIAG_45_ATTACKS_TBL;
+bitboard *DIAG_135_ATTACKS_TBL;
 
 // Mobility tables.
-byte *Board::KNIGHT_MOBILITY_TBL;
-byte *Board::KING_MOBILITY_TBL;
-byte *Board::RANK_MOBILITY_TBL;
-byte *Board::FILE_MOBILITY_TBL;
-byte *Board::DIAG_45_MOBILITY_TBL;
-byte *Board::DIAG_135_MOBILITY_TBL;
+byte *KNIGHT_MOBILITY_TBL;
+byte *KING_MOBILITY_TBL;
+byte *RANK_MOBILITY_TBL;
+byte *FILE_MOBILITY_TBL;
+byte *DIAG_45_MOBILITY_TBL;
+byte *DIAG_135_MOBILITY_TBL;
 
 // Rotated bitboard tables.
-bitboard *Board::masks_0;
-bitboard *Board::masks_45;
-bitboard *Board::masks_90;
-bitboard *Board::masks_135;
+bitboard *masks_0;
+bitboard *masks_45;
+bitboard *masks_90;
+bitboard *masks_135;
 
-int *Board::rot_45;
-int *Board::rot_90;
-int *Board::rot_135;
+int *rot_45;
+int *rot_90;
+int *rot_135;
 
-byte *Board::diag_shifts_45;
-byte *Board::diag_bitpos_45;
-byte *Board::diag_widths_45;
+byte *diag_shifts_45;
+byte *diag_bitpos_45;
+byte *diag_widths_45;
 
-byte *Board::diag_shifts_135;
-byte *Board::diag_bitpos_135;
-byte *Board::diag_widths_135;
+byte *diag_shifts_135;
+byte *diag_bitpos_135;
+byte *diag_widths_135;
 
 // Zobrist hashing tables.
-uint64 *Board::zobrist_piece_keys;
-uint64 *Board::zobrist_enpassant_keys;
-uint64  Board::zobrist_key_white_to_move;
-uint64  Board::zobrist_w_castle_q_key;
-uint64  Board::zobrist_w_castle_k_key;
-uint64  Board::zobrist_b_castle_q_key;
-uint64  Board::zobrist_b_castle_k_key;
+uint64 *zobrist_piece_keys;
+uint64 *zobrist_enpassant_keys;
+uint64  zobrist_key_white_to_move;
+uint64  zobrist_w_castle_q_key;
+uint64  zobrist_w_castle_k_key;
+uint64  zobrist_b_castle_q_key;
+uint64  zobrist_b_castle_k_key;
 
 // Tables used during evaluation.
-bitboard *Board::pawn_attack_spans[2];
-bitboard *Board::in_front_of[2];
-bitboard *Board::adjacent_files;
+bitboard *pawn_attack_spans[2];
+bitboard *in_front_of[2];
+bitboard *adjacent_files;
 
 /////////////////////
 // Initialization. //
@@ -121,30 +121,30 @@ static void init_adjacent_files ();
 
 // Precompute all tables.
 void
-Board::precompute_tables () {
-  Board::masks_0 = init_masks_0 ();
-  Board::masks_45 = init_masks_45 ();
-  Board::masks_90 = init_masks_90 ();
-  Board::masks_135 = init_masks_135 ();
+precompute_tables () {
+  masks_0 = init_masks_0 ();
+  masks_45 = init_masks_45 ();
+  masks_90 = init_masks_90 ();
+  masks_135 = init_masks_135 ();
 
-  Board::rot_45 = init_rot_45 ();
-  Board::rot_90 = init_rot_90 ();
-  Board::rot_135 = init_rot_135 ();
+  rot_45 = init_rot_45 ();
+  rot_90 = init_rot_90 ();
+  rot_135 = init_rot_135 ();
 
-  Board::diag_shifts_45 = init_diag_shifts_45 ();
-  Board::diag_bitpos_45 = init_diag_bitpos_45 ();
-  Board::diag_widths_45 = init_diag_widths_45 ();
+  diag_shifts_45 = init_diag_shifts_45 ();
+  diag_bitpos_45 = init_diag_bitpos_45 ();
+  diag_widths_45 = init_diag_widths_45 ();
 
-  Board::diag_shifts_135 = init_diag_shifts_135 ();
-  Board::diag_bitpos_135 = init_diag_bitpos_135 ();
-  Board::diag_widths_135 = init_diag_widths_135 ();
+  diag_shifts_135 = init_diag_shifts_135 ();
+  diag_bitpos_135 = init_diag_bitpos_135 ();
+  diag_widths_135 = init_diag_widths_135 ();
 
-  Board::KNIGHT_ATTACKS_TBL = init_knight_attacks_tbl ();
-  Board::KING_ATTACKS_TBL = init_king_attacks_tbl ();
-  Board::RANK_ATTACKS_TBL = init_rank_attacks_tbl ();
-  Board::FILE_ATTACKS_TBL = init_file_attacks_tbl ();
-  Board::DIAG_45_ATTACKS_TBL = init_45d_attacks_tbl ();
-  Board::DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
+  KNIGHT_ATTACKS_TBL = init_knight_attacks_tbl ();
+  KING_ATTACKS_TBL = init_king_attacks_tbl ();
+  RANK_ATTACKS_TBL = init_rank_attacks_tbl ();
+  FILE_ATTACKS_TBL = init_file_attacks_tbl ();
+  DIAG_45_ATTACKS_TBL = init_45d_attacks_tbl ();
+  DIAG_135_ATTACKS_TBL = init_135d_attacks_tbl ();
 
   init_mobility_tables ();
   init_zobrist_keys ();
@@ -257,10 +257,10 @@ init_diag_shifts_45 () {
       63,
     };
 
-  assert (Board::rot_45 != 0);
+  assert (rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[Board::rot_45[i]] = unrotated[i];
+    rotated[rot_45[i]] = unrotated[i];
 
   return rotated;
 }
@@ -288,10 +288,10 @@ init_diag_bitpos_45  () {
       0,
     };
 
-  assert (Board::rot_45 != 0);
+  assert (rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated [Board::rot_45[i]] = unrotated[i];
+    rotated [rot_45[i]] = unrotated[i];
 
   return rotated;
 }
@@ -319,10 +319,10 @@ init_diag_widths_45 () {
     1
   };
 
-  assert (Board::rot_45 != 0);
+  assert (rot_45 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[Board::rot_45[i]] = unrotated[i];
+    rotated[rot_45[i]] = unrotated[i];
 
   return rotated;
 }
@@ -438,10 +438,10 @@ init_diag_shifts_135 () {
       63,
     };
 
-  assert (Board::rot_135 != 0);
+  assert (rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[Board::rot_135[i]] = unrotated[i];
+    rotated[rot_135[i]] = unrotated[i];
 
   return rotated;
 }
@@ -469,10 +469,10 @@ init_diag_bitpos_135  () {
       0,
     };
 
-  assert (Board::rot_135 != 0);
+  assert (rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated [Board::rot_135[i]] = unrotated[i];
+    rotated [rot_135[i]] = unrotated[i];
 
   return rotated;
 }
@@ -500,10 +500,10 @@ init_diag_widths_135  () {
     1
   };
 
-  assert (Board::rot_135 != 0);
+  assert (rot_135 != 0);
 
   for (int i = 0; i < 64; i++)
-    rotated[Board::rot_135[i]] = unrotated[i];
+    rotated[rot_135[i]] = unrotated[i];
 
   return rotated;
 }
@@ -571,7 +571,7 @@ init_rank_attacks_tbl () {
             {
               k--;
               if (from + k < first_bit) break;
-              destinations = set_bit (destinations, from + k);
+              set_bit (destinations, from + k);
             }
           while (!test_bit (occ, from % 8 + k));
 
@@ -581,7 +581,7 @@ init_rank_attacks_tbl () {
             {
               k++;
               if (from + k > last_bit) break;
-              destinations = set_bit (destinations, from + k);
+              set_bit (destinations, from + k);
             }
           while (!test_bit (occ, from % 8 + k));
 
@@ -618,8 +618,7 @@ init_file_attacks_tbl () {
               bitnum--;
               if (bitnum < 0) break;
               bit_offset = from_bit - bitnum;
-              destinations =
-                set_bit (destinations, from + 8 * bit_offset);
+              set_bit (destinations, from + 8 * bit_offset);
             }
           while (!test_bit (file_pat, bitnum));
 
@@ -630,8 +629,7 @@ init_file_attacks_tbl () {
               bitnum++;
               if (bitnum > 7) break;
               bit_offset = from_bit - bitnum;
-              destinations =
-                set_bit (destinations, from + 8 * bit_offset);
+              set_bit (destinations, from + 8 * bit_offset);
             }
           while (!test_bit (file_pat, bitnum));
 
@@ -664,9 +662,9 @@ init_knight_attacks_tbl()
           int nx = x + moves[v][0];
           int ny = y + moves[v][1];
 
-          if (Board::in_bounds (nx, ny))
+          if (in_bounds (nx, ny))
             {
-              rv[off] = set_bit (rv[off], nx + ny * 8);
+              set_bit (rv[off], nx + ny * 8);
             }
         }
     }
@@ -694,9 +692,9 @@ init_king_attacks_tbl()
           int nx = x + moves[v][0];
           int ny = y + moves[v][1];
 
-          if (Board::in_bounds (nx, ny))
+          if (in_bounds (nx, ny))
             {
-              rv[off] = set_bit (rv[off], nx + ny * 8);
+              set_bit (rv[off], nx + ny * 8);
             }
         }
     }
@@ -712,8 +710,8 @@ init_45d_attacks_tbl () {
   for (int from = 0; from < 64; from++)
     {
       bitboard destinations;
-      int from_bit = Board::diag_bitpos_45[from];
-      int pat_len = Board::diag_widths_45[from];
+      int from_bit = diag_bitpos_45[from];
+      int pat_len = diag_widths_45[from];
       int b;
 
       // For each pattern
@@ -727,8 +725,7 @@ init_45d_attacks_tbl () {
             {
               b++;
               if (b >= pat_len) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 7);
+              set_bit (destinations, from + (from_bit - b) * 7);
             }
           while (!test_bit(pat, b));
 
@@ -738,8 +735,7 @@ init_45d_attacks_tbl () {
             {
               b--;
               if (b < 0) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 7);
+              set_bit (destinations, from + (from_bit - b) * 7);
             }
           while (!test_bit(pat, b));
 
@@ -759,8 +755,8 @@ init_135d_attacks_tbl () {
   for (int from = 0; from < 64; from++)
     {
       bitboard destinations;
-      int from_bit = Board::diag_bitpos_135[from];
-      int pat_len = Board::diag_widths_135[from];
+      int from_bit = diag_bitpos_135[from];
+      int pat_len = diag_widths_135[from];
       int b;
 
       // For each pattern
@@ -774,8 +770,7 @@ init_135d_attacks_tbl () {
             {
               b++;
               if (b >= pat_len) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 9);
+              set_bit (destinations, from + (from_bit - b) * 9);
             }
           while (!test_bit(pat, b));
 
@@ -785,8 +780,7 @@ init_135d_attacks_tbl () {
             {
               b--;
               if (b < 0) break;
-              destinations =
-                set_bit (destinations, from + (from_bit - b) * 9);
+              set_bit (destinations, from + (from_bit - b) * 9);
             }
           while (!test_bit(pat, b));
 
@@ -804,21 +798,21 @@ init_135d_attacks_tbl () {
 // Initialize all the above keys to random bit strings.
 void
 init_zobrist_keys () {
-  Board::zobrist_key_white_to_move = random64();
+  zobrist_key_white_to_move = random64();
 
-  Board::zobrist_piece_keys = new uint64[2 * 6 * 64];
+  zobrist_piece_keys = new uint64[2 * 6 * 64];
   for (int i = 0; i < 2 * 6 * 64; i++)
-    Board::zobrist_piece_keys[i] = random64();
+    zobrist_piece_keys[i] = random64();
 
-  Board::zobrist_enpassant_keys = new uint64[64];
-  Board::zobrist_enpassant_keys[0] = 0;
+  zobrist_enpassant_keys = new uint64[64];
+  zobrist_enpassant_keys[0] = 0;
   for (int i = 1; i < 64; i++)
-    Board::zobrist_enpassant_keys[i] = random64();
+    zobrist_enpassant_keys[i] = random64();
 
-  Board::zobrist_w_castle_q_key = random64 ();
-  Board::zobrist_w_castle_k_key = random64 ();
-  Board::zobrist_b_castle_q_key = random64 ();
-  Board::zobrist_b_castle_k_key = random64 ();
+  zobrist_w_castle_q_key = random64 ();
+  zobrist_w_castle_k_key = random64 ();
+  zobrist_b_castle_q_key = random64 ();
+  zobrist_b_castle_k_key = random64 ();
 }
 
 ///////////////////////////////
@@ -827,32 +821,32 @@ init_zobrist_keys () {
 
 static void init_mobility_tables () {
   // Allocate tables.
-  Board::KNIGHT_MOBILITY_TBL =   new byte[64];
-  Board::KING_MOBILITY_TBL =     new byte[64];
-  Board::RANK_MOBILITY_TBL =     new byte[64 * 256];
-  Board::FILE_MOBILITY_TBL =     new byte[64 * 256];
-  Board::DIAG_45_MOBILITY_TBL =  new byte[64 * 256]; 
-  Board::DIAG_135_MOBILITY_TBL = new byte[64 * 256];
+  KNIGHT_MOBILITY_TBL =   new byte[64];
+  KING_MOBILITY_TBL =     new byte[64];
+  RANK_MOBILITY_TBL =     new byte[64 * 256];
+  FILE_MOBILITY_TBL =     new byte[64 * 256];
+  DIAG_45_MOBILITY_TBL =  new byte[64 * 256]; 
+  DIAG_135_MOBILITY_TBL = new byte[64 * 256];
   
   // Compute a population count for each moves bitboard.
   for (int i = 0; i < 64; i++)
     {
-      Board::KNIGHT_MOBILITY_TBL[i] = 
-        pop_count (Board::KNIGHT_ATTACKS_TBL[i]);
-      Board::KING_MOBILITY_TBL[i] = 
-        pop_count (Board::KING_ATTACKS_TBL[i]);
+      KNIGHT_MOBILITY_TBL[i] = 
+        pop_count (KNIGHT_ATTACKS_TBL[i]);
+      KING_MOBILITY_TBL[i] = 
+        pop_count (KING_ATTACKS_TBL[i]);
     }
 
   for (int i = 0; i < 64 * 256; i++)
     {
-      Board::RANK_MOBILITY_TBL[i] = 
-        pop_count (Board::RANK_ATTACKS_TBL[i]);
-      Board::FILE_MOBILITY_TBL[i] = 
-        pop_count (Board::FILE_ATTACKS_TBL[i]);
-      Board::DIAG_45_MOBILITY_TBL[i] = 
-        pop_count (Board::DIAG_45_ATTACKS_TBL[i]);
-      Board::DIAG_135_MOBILITY_TBL[i] = 
-        pop_count (Board::DIAG_135_ATTACKS_TBL[i]);
+      RANK_MOBILITY_TBL[i] = 
+        pop_count (RANK_ATTACKS_TBL[i]);
+      FILE_MOBILITY_TBL[i] = 
+        pop_count (FILE_ATTACKS_TBL[i]);
+      DIAG_45_MOBILITY_TBL[i] = 
+        pop_count (DIAG_45_ATTACKS_TBL[i]);
+      DIAG_135_MOBILITY_TBL[i] = 
+        pop_count (DIAG_135_ATTACKS_TBL[i]);
     }
 
 
@@ -868,36 +862,36 @@ static void init_mobility_tables () {
 static void 
 init_pawn_attack_spans () {
   // Allocate table.
-  Board::pawn_attack_spans[WHITE] = new bitboard[64];
-  Board::pawn_attack_spans[BLACK] = new bitboard[64];
+  pawn_attack_spans[WHITE] = new bitboard[64];
+  pawn_attack_spans[BLACK] = new bitboard[64];
 
   for (coord idx = 0; idx < 64; idx++)
     {
-      int rank = Board::idx_to_rank (idx);
-      int file = Board::idx_to_file (idx);
+      int rank = idx_to_rank (idx);
+      int file = idx_to_file (idx);
 
       // Entry for white.
-      Board::pawn_attack_spans[WHITE][idx] = 0;
+      pawn_attack_spans[WHITE][idx] = 0;
       for (int r = rank + 1; r < 8; r++)
         {
           if (file > 0) 
-            Board::pawn_attack_spans[WHITE][idx] |= 
-              Board::masks_0[Board::to_idx(r, file - 1)];
+            pawn_attack_spans[WHITE][idx] |= 
+              masks_0[to_idx(r, file - 1)];
           if (file < 7) 
-            Board::pawn_attack_spans[WHITE][idx] |= 
-              Board::masks_0[Board::to_idx(r, file + 1)];
+            pawn_attack_spans[WHITE][idx] |= 
+              masks_0[to_idx(r, file + 1)];
         }
       
       // Entry for black.
-      Board::pawn_attack_spans[BLACK][idx] = 0;
+      pawn_attack_spans[BLACK][idx] = 0;
       for (int r = rank - 1; r >= 0; r--)
         {
           if (file > 0) 
-            Board::pawn_attack_spans[BLACK][idx] |= 
-              Board::masks_0[Board::to_idx (r, file - 1)];
+            pawn_attack_spans[BLACK][idx] |= 
+              masks_0[to_idx (r, file - 1)];
           if (file < 7) 
-            Board::pawn_attack_spans[BLACK][idx] |= 
-              Board::masks_0[Board::to_idx(r, file + 1)];
+            pawn_attack_spans[BLACK][idx] |= 
+              masks_0[to_idx(r, file + 1)];
         }
     }
 }
@@ -907,28 +901,28 @@ init_pawn_attack_spans () {
 static void 
 init_in_front_of () {
   // Allocate table.
-  Board::in_front_of[WHITE] = new bitboard[64];
-  Board::in_front_of[BLACK] = new bitboard[64];
+  in_front_of[WHITE] = new bitboard[64];
+  in_front_of[BLACK] = new bitboard[64];
   for (coord idx = 0; idx < 64; idx++)
     {
-      int rank = Board::idx_to_rank (idx);
+      int rank = idx_to_rank (idx);
 
       // Entry for white.
-      Board::in_front_of[WHITE][idx] = 0;
+      in_front_of[WHITE][idx] = 0;
       for (int r = rank + 1; r < 8; r++)
         for (int f = 0; f < 8; f++)
         {
-          Board::in_front_of [WHITE][idx] |= 
-            Board::masks_0[Board::to_idx (r, f)];
+          in_front_of [WHITE][idx] |= 
+            masks_0[to_idx (r, f)];
         }
       
       // Entry for black.
-      Board::in_front_of[BLACK][idx] = 0;
+      in_front_of[BLACK][idx] = 0;
       for (int r = rank - 1; r >= 0; r--)
         for (int f = 0; f < 8; f++)
         {
-          Board::in_front_of [BLACK][idx] |= 
-            Board::masks_0[Board::to_idx (r, f)];
+          in_front_of [BLACK][idx] |= 
+            masks_0[to_idx (r, f)];
         }
     }
 }
@@ -938,20 +932,20 @@ init_in_front_of () {
 static void 
 init_adjacent_files () {
   // Allocate table.
-  Board::adjacent_files = new bitboard[64];
+  adjacent_files = new bitboard[64];
 
   for (coord idx = 0; idx < 64; idx++)
     {
-      int f = Board::idx_to_file (idx);
-      Board::adjacent_files[idx] = 0;
+      int f = idx_to_file (idx);
+      adjacent_files[idx] = 0;
       for (int r = 0; r < 8; r++)
         {
           if (f < 7) 
-            Board::adjacent_files[idx] |= 
-              Board::masks_0[Board::to_idx (r, f + 1)];
+            adjacent_files[idx] |= 
+              masks_0[to_idx (r, f + 1)];
           if (f > 0) 
-            Board::adjacent_files[idx] |= 
-              Board::masks_0[Board::to_idx (r, f - 1)];
+            adjacent_files[idx] |= 
+              masks_0[to_idx (r, f - 1)];
         }
     }
 }

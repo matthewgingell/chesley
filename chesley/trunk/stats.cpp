@@ -378,7 +378,7 @@ private:
                 ffd[k][flip]++;
               }
 
-            pieces = clear_lsb (pieces);
+            clear_bit (pieces, idx);
           }
 
         // Assume black-white symmetry.
@@ -410,7 +410,7 @@ private:
                 ffd[k][flip]++;
               }
             
-            pieces = clear_lsb (pieces);
+            clear_bit (pieces, idx);
           }
       }
 
@@ -425,7 +425,7 @@ private:
         cout << "  ";
         for (int file = 0; file <= 7; file++)
           {
-            int idx = Board::to_idx (rank, file);
+            int idx = to_idx (rank, file);
 
             // Apply Bayes law to find the material value of this
             // position as a probability of winning.
