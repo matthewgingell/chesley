@@ -58,6 +58,9 @@ typedef uint32 coord;
 // Hash type for a chess position.
 typedef uint64 hash_t;
 
+// Bitboard type
+typedef uint64 bitboard;
+
 //////////////////////////////////
 // Symbolic values for squares. //
 //////////////////////////////////
@@ -79,34 +82,6 @@ enum File {
 
 const int RANK_COUNT = 8;
 const int FILE_COUNT = 8;
-
-/////////////////////
-// Transformations //
-/////////////////////
-
-static const int flip_left_right[64] =
-  {
-     7,  6,  5,  4,  3,  2,  1,  0,
-    15, 14, 13, 12, 11, 10,  9,  8,
-    23, 22, 21, 20, 19, 18, 17, 16,
-    31, 30, 29, 28, 27, 26, 25, 24,
-    39, 38, 37, 36, 35, 34, 33, 32,
-    47, 46, 45, 44, 43, 42, 41, 40,
-    55, 54, 53, 52, 51, 50, 49, 48,
-    63, 62, 61, 60, 59, 58, 57, 56
-  };
-
-static const int flip_white_black[64] =
-  {
-    56,  57,  58,  59,  60,  61,  62,  63,
-    48,  49,  50,  51,  52,  53,  54,  55,
-    40,  41,  42,  43,  44,  45,  46,  47,
-    32,  33,  34,  35,  36,  37,  38,  39,
-    24,  25,  26,  27,  28,  29,  30,  31,
-    16,  17,  18,  19,  20,  21,  22,  23,
-     8,   9,  10,  11,  12,  13,  14,  15,
-     0,   1,   2,   3,   4,   5,   6,   7
-  };
 
 ////////////////////
 // Piece colors.  //
@@ -155,6 +130,95 @@ Kind to_kind (char k);
 
 std::ostream & operator<< (std::ostream &os, Kind k);
 
+////////////////////
+// Initialization //
+////////////////////
+
+// Must be called to initialize static members in the correct order.
+void precompute_tables ();
+
+///////////////
+// Utilities //
+///////////////
+
+inline bool in_bounds (int x, int y);
+inline bitboard rank_mask (int rank);
+inline bitboard in_front_of_mask (coord idx, Color c);
+inline bitboard file_mask (int file);
+inline bitboard this_file_mask (coord idx);
+inline int idx_to_rank (coord idx);
+inline int idx_to_file (coord idx);
+inline coord to_idx (int rank, int file);
+
+// Test whether a coordinate is in bounds.
+inline bool
+in_bounds (int x, int y) {
+  return x >= 0 && x <= 7 && y >= 0 && y <= 7;
+}
+
+// Return a bitboard with every bit of the Nth rank set.
+inline bitboard
+rank_mask (int rank) {
+  return 0x00000000000000FFULL << rank * 8;
+}
+
+// Return a bitboard with every bit of the Nth file set.
+inline bitboard
+file_mask (int file) {
+  return 0x0101010101010101ULL << file;
+}
+
+// Return a bitboard with every bit of the Nth file set.
+inline bitboard
+this_file_mask (coord idx) {
+  return 0x0101010101010101ULL << idx_to_file (idx);
+}
+
+// Return the rank 0 .. 7 containing a coordinate.
+inline int
+idx_to_rank (coord idx) {
+  return idx / 8;
+}
+
+// Return the file 0 .. 7 containing a coordinate.
+inline int
+idx_to_file (coord idx) {
+  return idx % 8;
+}
+  
+// Return an index for a rank and file.
+inline coord to_idx (int rank, int file) {
+  return 8 * rank + file;
+}
+
+/////////////////////
+// Transformations //
+/////////////////////
+
+static const int flip_left_right[64] =
+  {
+     7,  6,  5,  4,  3,  2,  1,  0,
+    15, 14, 13, 12, 11, 10,  9,  8,
+    23, 22, 21, 20, 19, 18, 17, 16,
+    31, 30, 29, 28, 27, 26, 25, 24,
+    39, 38, 37, 36, 35, 34, 33, 32,
+    47, 46, 45, 44, 43, 42, 41, 40,
+    55, 54, 53, 52, 51, 50, 49, 48,
+    63, 62, 61, 60, 59, 58, 57, 56
+  };
+
+static const int flip_white_black[64] =
+  {
+    56,  57,  58,  59,  60,  61,  62,  63,
+    48,  49,  50,  51,  52,  53,  54,  55,
+    40,  41,  42,  43,  44,  45,  46,  47,
+    32,  33,  34,  35,  36,  37,  38,  39,
+    24,  25,  26,  27,  28,  29,  30,  31,
+    16,  17,  18,  19,  20,  21,  22,  23,
+     8,   9,  10,  11,  12,  13,  14,  15,
+     0,   1,   2,   3,   4,   5,   6,   7
+  };
+
 ////////////////////////////
 // Score type and kinds.  //
 ////////////////////////////
@@ -171,5 +235,87 @@ enum SKind {
 ////////////////////////////////
 
 enum Phase { OPENING, MIDGAME, ENDGAME };
+
+
+//////////////////////
+// Castling rights. //
+//////////////////////
+
+enum Castling_Right {
+  W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE
+};
+
+///////////////
+// Constants //
+///////////////
+
+extern const std::string INITIAL_POSITIONS;
+
+static const bitboard light_squares = 0x55AA55AA55AA55AAULL;
+static const bitboard dark_squares = 0xAA55AA55AA55AA55ULL;
+
+//////////////////////////////////////
+// Precomputed tables and constants //
+//////////////////////////////////////
+
+extern bool have_precomputed_tables;
+
+extern bitboard *KNIGHT_ATTACKS_TBL;
+extern bitboard *KING_ATTACKS_TBL;
+extern bitboard *RANK_ATTACKS_TBL;
+extern bitboard *FILE_ATTACKS_TBL;
+extern bitboard *DIAG_45_ATTACKS_TBL;
+extern bitboard *DIAG_135_ATTACKS_TBL;
+
+extern byte *KNIGHT_MOBILITY_TBL;
+extern byte *KING_MOBILITY_TBL;
+extern byte *RANK_MOBILITY_TBL;
+extern byte *FILE_MOBILITY_TBL;
+extern byte *DIAG_45_MOBILITY_TBL;
+extern byte *DIAG_135_MOBILITY_TBL;
+
+extern bitboard *masks_0;
+extern bitboard *masks_45;
+extern bitboard *masks_90;
+extern bitboard *masks_135;
+
+extern int *rot_45;
+extern int *rot_90;
+extern int *rot_135;
+
+extern byte *diag_shifts_45;
+extern byte *diag_bitpos_45;
+extern byte *diag_widths_45;
+extern byte *diag_shifts_135;
+extern byte *diag_bitpos_135;
+extern byte *diag_widths_135;
+
+extern uint64 *zobrist_piece_keys;
+extern uint64 *zobrist_enpassant_keys;
+extern uint64  zobrist_key_white_to_move;
+extern uint64  zobrist_w_castle_q_key;
+extern uint64  zobrist_w_castle_k_key;
+extern uint64  zobrist_b_castle_q_key;
+extern uint64  zobrist_b_castle_k_key;
+
+// Bitboard masks for detection various features.
+extern bitboard *pawn_attack_spans[2];
+extern bitboard *in_front_of[2];
+extern bitboard *adjacent_files;
+
+////////////////////////////////////
+// Patterns for use in evaluation //
+////////////////////////////////////
+  
+// Return a bitboard of all squares in front on this square.
+inline bitboard in_front_of_mask (coord idx, Color c) { 
+  return in_front_of[c][idx]; 
+}
+
+// Return the files adjacent to this one.
+inline bitboard
+adjacent_files_mask (coord idx) {
+  return adjacent_files[idx];
+}
 
 #endif // __COMMON__

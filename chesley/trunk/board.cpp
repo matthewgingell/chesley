@@ -95,7 +95,7 @@ operator<< (std::ostream &os, Color c) {
 // Constants. //
 ////////////////
 
-const string Board::
+const string
 INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
 ///////////////////
@@ -239,7 +239,7 @@ Board::clear_piece (coord idx, Color c, Kind k) {
       material[c] -= Eval::eval_piece (k);
       psquares[c] -= Eval::psq_value (k, c, idx);
       piece_counts[c][k]--;
-
+      
       // Check the special case of clearing a pawn.
       if (k == PAWN) 
         {
