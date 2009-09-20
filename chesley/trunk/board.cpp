@@ -17,9 +17,9 @@
 
 using namespace std;
 
-////////////////
-// Kind type. //
-////////////////
+///////////////
+// Kind type //
+///////////////
 
 // Convert a kind to a character code.
 char
@@ -77,9 +77,9 @@ operator<< (std::ostream &os, Kind k) {
     return os;
 }
 
-/////////////////
-// Color type. //
-/////////////////
+////////////////
+// Color type //
+////////////////
 
 std::ostream &
 operator<< (std::ostream &os, Color c) {
@@ -91,16 +91,16 @@ operator<< (std::ostream &os, Color c) {
     }
 }
 
-////////////////
-// Constants. //
-////////////////
+///////////////
+// Constants //
+///////////////
 
 const string
 INITIAL_POSITIONS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-///////////////////
-// Constructors. //
-///////////////////
+//////////////////
+// Constructors //
+//////////////////
 
 void
 Board::common_init (Board &b) {
@@ -162,9 +162,9 @@ Board::startpos () {
     ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-//////////////////////////////
-// Setting castling rights. //
-//////////////////////////////
+/////////////////////////////
+// Setting castling rights //
+/////////////////////////////
 
 void
 Board::set_castling_right (Castling_Right cr, bool v) {
@@ -290,9 +290,9 @@ Board::set_piece (Kind kind, Color color, int row, int file) {
   set_piece (kind, color, file + 8 * row);
 }
 
-///////////////////////
-// Move application. //
-///////////////////////
+//////////////////////
+// Move application //
+//////////////////////
 
 // Apply a move to the board. Return false if this move is illegal
 // because it places or leaves the color to move in check.
@@ -304,9 +304,9 @@ Board::apply (const Move &m) {
 
   assert (capture != KING);
 
-  ////////////////////
-  // Update clocks. //
-  ////////////////////
+  ///////////////////
+  // Update clocks //
+  ///////////////////
 
   // Reset the 50 move rule clock when a pawn is moved or a capture is
   // made.
@@ -327,15 +327,15 @@ Board::apply (const Move &m) {
 
   if (kind == PAWN)
     {
-      /////////////////////////////////////////////////
-      // Zero the half move clock when a pawn moves. //
-      /////////////////////////////////////////////////
+      ////////////////////////////////////////////////
+      // Zero the half move clock when a pawn moves //
+      ////////////////////////////////////////////////
 
       half_move_clock = 0;
 
-      //////////////////////////////////////////////
-      // Handle the case of capturing En Passant. //
-      //////////////////////////////////////////////
+      /////////////////////////////////////////////
+      // Handle the case of capturing En Passant //
+      /////////////////////////////////////////////
 
       if (m.is_en_passant ())
         {
@@ -349,9 +349,9 @@ Board::apply (const Move &m) {
             }
         }
 
-      //////////////////////////////////////////
-      // Set the En Passant square correctly. //
-      //////////////////////////////////////////
+      /////////////////////////////////////////
+      // Set the En Passant square correctly //
+      /////////////////////////////////////////
 
       if (color == WHITE)
         {
@@ -385,9 +385,9 @@ Board::apply (const Move &m) {
           bool is_castle_qs = m.is_castle_qs ();
           bool is_castle_ks = m.is_castle_ks ();
 
-          /////////////////////////////
-          // Update castling status. //
-          /////////////////////////////
+          ////////////////////////////
+          // Update castling status //
+          ////////////////////////////
 
           if (color == WHITE)
             {
@@ -402,9 +402,9 @@ Board::apply (const Move &m) {
 
           if (is_castle_qs || is_castle_ks)
             {
-              ////////////////////////////
-              // Handle castling moves. //
-              ////////////////////////////
+              ///////////////////////////
+              // Handle castling moves //
+              ///////////////////////////
 
               const bitboard attacked = attack_set (invert (color));
 
@@ -461,9 +461,9 @@ Board::apply (const Move &m) {
         }
     }
 
-  /////////////////////////////////////////////////////////////////////
-  // Adjust castling rights in the case a rook is moved or captured. //
-  /////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////
+  // Adjust castling rights in the case a rook is moved or captured //
+  ////////////////////////////////////////////////////////////////////
 
   if (kind == ROOK || capture == ROOK)
     {
@@ -477,28 +477,28 @@ Board::apply (const Move &m) {
         set_castling_right (B_KING_SIDE, false);
     }
 
-  ///////////////////////////
-  // Update color to move. //
-  ///////////////////////////
+  //////////////////////////
+  // Update color to move //
+  //////////////////////////
 
   set_color (~to_move ());
 
-  ///////////////////////////////////////////////
-  // Clear the origin and destination squares. //
-  ///////////////////////////////////////////////
+  //////////////////////////////////////////////
+  // Clear the origin and destination squares //
+  //////////////////////////////////////////////
 
   clear_piece (m.from, color, kind);
   clear_piece (m.to, ~color, capture);
 
-  /////////////////////////////////////////////////////
-  // Set the destination square, possibly promoting. //
-  /////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////
+  // Set the destination square, possibly promoting //
+  ////////////////////////////////////////////////////
 
   set_piece ((m.promote == NULL_KIND ? kind : m.promote), color, m.to);
 
-  //////////////////////////////////////////////
-  // Test legality of the resulting position. //
-  //////////////////////////////////////////////
+  /////////////////////////////////////////////
+  // Test legality of the resulting position //
+  /////////////////////////////////////////////
 
   return !in_check (color);
 }
@@ -524,9 +524,9 @@ operator<< (std::ostream &os, const Move &m)
             << m.promote << " " << m.en_passant << "]";
 }
 
-//////////////
-// Testing. //
-//////////////
+/////////////
+// Testing //
+/////////////
 
 // Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
 void
@@ -582,7 +582,7 @@ Board::gen_hash () const {
       Color c = get_color (i);
       if (k != NULL_KIND && c != NULL_COLOR)
         {
-          h ^= Board::get_zobrist_piece_key (c, k, i);
+          h ^= get_zobrist_piece_key (c, k, i);
         }
     }
 

@@ -21,9 +21,9 @@
 
 using namespace std;
 
-///////////////////////////////
-// Static session variables. //
-///////////////////////////////
+//////////////////////////////
+// Static session variables //
+//////////////////////////////
 
 // Hack
 bool xboard = false;
@@ -99,9 +99,9 @@ void Session::write_prompt ()
     fprintf (out, "%s", prompt);
 }
 
-/////////////////////////////
-// Top level command loop. //
-/////////////////////////////
+////////////////////////////
+// Top level command loop //
+////////////////////////////
 
 void
 Session::cmd_loop ()
@@ -138,9 +138,9 @@ Session::cmd_loop ()
     }
 }
 
-///////////////////
-// Flow control. //
-///////////////////
+//////////////////
+// Flow control //
+//////////////////
 
 // Control is turned over to the engine to do as it wishes until
 // either the timeout expires, there is input pending from the user,
@@ -289,9 +289,9 @@ Session::find_a_move () {
   return m;
 }
 
-//////////////////
-// Status type. //
-//////////////////
+/////////////////
+// Status type //
+/////////////////
 
 std::ostream &
 operator<< (std::ostream &os, Status s) {

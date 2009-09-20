@@ -1,8 +1,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 //                                                                            //
-// common.hpp                                                                  //
+// common.hpp                                                                 //
 //                                                                            //
-// Various simple types.                                                      //
+// Various declarations common to all units.                                  //
 //                                                                            //
 // Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
@@ -13,7 +13,12 @@
 #ifndef __COMMON__
 #define __COMMON__
 
+#include <cassert>
 #include <cstdio>
+
+///////////
+// Types //
+///////////
 
 #ifndef _WIN32
 #include <stdint.h>
@@ -61,9 +66,9 @@ typedef uint64 hash_t;
 // Bitboard type
 typedef uint64 bitboard;
 
-//////////////////////////////////
-// Symbolic values for squares. //
-//////////////////////////////////
+/////////////////////////////////
+// Symbolic values for squares //
+/////////////////////////////////
 
 enum Square {
   A1, B1, C1, D1, E1, F1, G1, H1,
@@ -83,17 +88,47 @@ enum File {
 const int RANK_COUNT = 8;
 const int FILE_COUNT = 8;
 
-////////////////////
-// Piece colors.  //
-////////////////////
+// This type is used to index tables and the ordering here should not
+// be changed.
+enum Color { NULL_COLOR = -1, WHITE = 0, BLACK = 1 };
+
+const int COLOR_COUNT = 2;
 
 // This type is used to index tables and the ordering here should not
 // be changed.
-enum Color {
-  NULL_COLOR = -1, WHITE = 0, BLACK = 1
+
+enum Kind {
+  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING
 };
 
-const int COLOR_COUNT = 2;
+const int KIND_COUNT = 6;
+
+
+// Score type for a chess position.
+typedef int16 Score;
+
+enum SKind {
+  NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 
+};
+
+// Game phase type.
+enum Phase { OPENING, MIDGAME, ENDGAME };
+
+// Castling rights.
+enum Castling_Right {
+  W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE
+};
+
+////////////////////
+// Initialization //
+////////////////////
+
+// Must be called to initialize tables in the correct order.
+void precompute_tables ();
+
+///////////////
+// Utilities //
+///////////////
 
 inline Color invert (Color c) { return (c == WHITE) ? BLACK : WHITE; }
 inline int sign (Color c) { return (c == WHITE) ? +1 : -1; }
@@ -108,18 +143,6 @@ inline Color operator~ (Color c) { return invert (c); }
 
 std::ostream & operator<< (std::ostream &os, Color c);
 
-//////////////////
-// Piece kinds. //
-//////////////////
-
-// This type is used to index tables and the ordering here should not
-// be changed.
-enum Kind {
-  NULL_KIND = -1, PAWN = 0, ROOK, KNIGHT, BISHOP, QUEEN, KING
-};
-
-const int KIND_COUNT = 6;
-
 inline void operator++ (Kind &k, int) { k = (Kind) (k + 1); }
 inline void operator-- (Kind &k, int) { k = (Kind) (k - 1); }
 inline void operator++ (Kind &k) { k = (Kind) (k + 1); }
@@ -130,17 +153,6 @@ Kind to_kind (char k);
 
 std::ostream & operator<< (std::ostream &os, Kind k);
 
-////////////////////
-// Initialization //
-////////////////////
-
-// Must be called to initialize static members in the correct order.
-void precompute_tables ();
-
-///////////////
-// Utilities //
-///////////////
-
 inline bool in_bounds (int x, int y);
 inline bitboard rank_mask (int rank);
 inline bitboard in_front_of_mask (coord idx, Color c);
@@ -149,6 +161,7 @@ inline bitboard this_file_mask (coord idx);
 inline int idx_to_rank (coord idx);
 inline int idx_to_file (coord idx);
 inline coord to_idx (int rank, int file);
+inline hash_t get_zobrist_piece_key (Color c, Kind k, coord idx);
 
 // Test whether a coordinate is in bounds.
 inline bool
@@ -187,13 +200,39 @@ idx_to_file (coord idx) {
 }
   
 // Return an index for a rank and file.
-inline coord to_idx (int rank, int file) {
+inline 
+coord to_idx (int rank, int file) {
   return 8 * rank + file;
 }
 
-/////////////////////
-// Transformations //
-/////////////////////
+extern uint64 *zobrist_piece_keys;
+extern uint64 *zobrist_enpassant_keys;
+extern uint64  zobrist_key_white_to_move;
+extern uint64  zobrist_w_castle_q_key;
+extern uint64  zobrist_w_castle_k_key;
+extern uint64  zobrist_b_castle_q_key;
+extern uint64  zobrist_b_castle_k_key;
+
+// Fetch the key for a piece.
+inline hash_t 
+get_zobrist_piece_key (Color c, Kind k, coord idx) {
+  uint32 i = (c == BLACK ? 0 : 1);
+  uint32 j = (int32) k;
+  assert (c != NULL_COLOR);
+  assert (k != NULL_KIND);
+  assert (idx < 64);
+  assert ((i * (64 * 6) + j * (64) + idx) < 2 * 6 * 64);
+  return zobrist_piece_keys[i * (64 * 6) + j * (64) + idx];
+}
+
+//////////////////////////////////////
+// Precomputed tables and constants //
+//////////////////////////////////////
+
+extern const std::string INITIAL_POSITIONS;
+
+static const bitboard light_squares = 0x55AA55AA55AA55AAULL;
+static const bitboard dark_squares = 0xAA55AA55AA55AA55ULL;
 
 static const int flip_left_right[64] =
   {
@@ -218,45 +257,6 @@ static const int flip_white_black[64] =
      8,   9,  10,  11,  12,  13,  14,  15,
      0,   1,   2,   3,   4,   5,   6,   7
   };
-
-////////////////////////////
-// Score type and kinds.  //
-////////////////////////////
-
-// Score type for a chess position.
-typedef int16 Score;
-
-enum SKind {
-  NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 
-};
-
-////////////////////////////////
-// Position evaluation types. //
-////////////////////////////////
-
-enum Phase { OPENING, MIDGAME, ENDGAME };
-
-
-//////////////////////
-// Castling rights. //
-//////////////////////
-
-enum Castling_Right {
-  W_QUEEN_SIDE, W_KING_SIDE, B_QUEEN_SIDE, B_KING_SIDE
-};
-
-///////////////
-// Constants //
-///////////////
-
-extern const std::string INITIAL_POSITIONS;
-
-static const bitboard light_squares = 0x55AA55AA55AA55AAULL;
-static const bitboard dark_squares = 0xAA55AA55AA55AA55ULL;
-
-//////////////////////////////////////
-// Precomputed tables and constants //
-//////////////////////////////////////
 
 extern bool have_precomputed_tables;
 
@@ -289,14 +289,6 @@ extern byte *diag_widths_45;
 extern byte *diag_shifts_135;
 extern byte *diag_bitpos_135;
 extern byte *diag_widths_135;
-
-extern uint64 *zobrist_piece_keys;
-extern uint64 *zobrist_enpassant_keys;
-extern uint64  zobrist_key_white_to_move;
-extern uint64  zobrist_w_castle_q_key;
-extern uint64  zobrist_w_castle_k_key;
-extern uint64  zobrist_b_castle_q_key;
-extern uint64  zobrist_b_castle_k_key;
 
 // Bitboard masks for detection various features.
 extern bitboard *pawn_attack_spans[2];

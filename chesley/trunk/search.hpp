@@ -32,16 +32,16 @@ static const int hist_nbuckets = 10;
 
 struct Search_Engine {
 
-  ////////////////
-  // Constants. //
-  ////////////////
+  ///////////////
+  // Constants //
+  ///////////////
 
   // Transposition table size in entries. This should be a power of 2.
   static const uint32 TT_SIZE = 4 * 1024 * 1024;
 
-  //////////////////////////////////////
-  // Constructors and initialization. //
-  //////////////////////////////////////
+  /////////////////////////////////////
+  // Constructors and initialization //
+  /////////////////////////////////////
 
   Search_Engine () : tt (TT_SIZE) {
     reset ();
@@ -105,9 +105,9 @@ struct Search_Engine {
     ZERO (stats.hist_qpv);
   }
 
-  //////////////////////////////////////////
-  // Transposition and repetition tables. //
-  //////////////////////////////////////////
+  /////////////////////////////////////////
+  // Transposition and repetition tables //
+  /////////////////////////////////////////
 
   // Transposition table instance.
   TTable tt;
@@ -154,9 +154,9 @@ struct Search_Engine {
   // Test whether this board is a third repetition.
   bool is_triple_rep (const Board &b);
 
-  ///////////////////////////////////////////////////////////////////////
-  // Time management. Times are always expected to be in milliseconds. //
-  ///////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////
+  // Time management. Times are always expected to be in milliseconds //
+  //////////////////////////////////////////////////////////////////////
 
   // Poll is called periodically either by the caller or during search.
   inline void poll ();
@@ -204,9 +204,9 @@ struct Search_Engine {
 
   } controls;
 
-  ////////////////////////
-  // Output generation. //
-  ////////////////////////
+  ///////////////////////
+  // Output generation //
+  ///////////////////////
 
   // If true, thinking output will be written to stdout.
   bool post;
@@ -220,9 +220,9 @@ struct Search_Engine {
   // Write thinking output after iterative deepening ends.
   void post_after ();
 
-  /////////////////
-  // Statistics. //
-  /////////////////
+  ////////////////
+  // Statistics //
+  ////////////////
 
   // The start time of some operation being timed.
   uint64 start_time;
@@ -252,8 +252,8 @@ struct Search_Engine {
     uint64 razor_count;
   } stats;
 
-  ///////////////////////////////////
-  // Hierarchy of search routines. //
+  //////////////////////////////////
+  // Hierarchy of search routines //
   //////////////////////////////////
 
   // Choose a move, score it, and return it.
@@ -304,9 +304,9 @@ struct Search_Engine {
   // Return on a depth adjustment for a position.
   int depth_adjustment (const Board &b, Move m);
 
-  /////////////////
-  // Heuristics. //
-  /////////////////
+  ////////////////
+  // Heuristics //
+  ////////////////
 
   uint64 hh_table[64][64];
   uint64 hh_max;

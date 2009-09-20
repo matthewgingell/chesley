@@ -4,3 +4,7 @@
 # /cores and they are enourmous.
 
 ulimit -c unlimited
+
+# Use the system g++
+
+PATH=/usr/bin:$PATH
