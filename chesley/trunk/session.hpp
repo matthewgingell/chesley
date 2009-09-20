@@ -27,9 +27,9 @@ std::ostream & operator<< (std::ostream &os, Status s);
 
 struct Session {
 
-  ///////////////////////////////
-  // Static session variables. //
-  ///////////////////////////////
+  //////////////////////////////
+  // Static session variables //
+  //////////////////////////////
 
   // State of the chess board.
   static Board board;
@@ -40,9 +40,9 @@ struct Session {
   // Is the opponent a computer?
   static bool op_is_computer;
 
-  ///////////////////
-  // Engine state. //
-  ///////////////////
+  //////////////////
+  // Engine state //
+  //////////////////
 
   // Is session running or paused?
   static bool running;
@@ -54,26 +54,26 @@ struct Session {
   // Command prompt;
   static const char *prompt;
 
-  ///////////////////
-  // Constructors. //
-  ///////////////////
+  //////////////////
+  // Constructors //
+  //////////////////
 
   // This class is intended to be used as a singleton.
   Session () { assert (0); }
 
   static void init_session ();
 
-  //////////////
-  // Methods. //
-  //////////////
+  /////////////
+  // Methods //
+  /////////////
 
   // Enter the command loop, which will not return until the session
   // is over.
   static void cmd_loop ();
 
-  /////////////////////
-  // Interface mode. //
-  /////////////////////
+  ////////////////////
+  // Interface mode //
+  ////////////////////
 
   // User interface mode.
   static UI_Mode ui_mode;
@@ -81,15 +81,15 @@ struct Session {
   // Protocol mode.
   static Protocol protocol;
 
-  ///////////////////
-  // Search state. //
-  ///////////////////
+  //////////////////
+  // Search state //
+  //////////////////
 
   static Search_Engine se;
 
-  ////////////////////////////////////////
-  // I/O handling and command dispatch. //
-  ////////////////////////////////////////
+  ///////////////////////////////////////
+  // I/O handling and command dispatch //
+  ///////////////////////////////////////
 
   static FILE *in, *out;
   static bool tty;
@@ -112,9 +112,9 @@ struct Session {
   // Set xboard protocol mode.
   static bool set_xboard_mode (const string_vector &tokens);
 
-  ///////////////////
-  // Flow control. //
-  ///////////////////
+  //////////////////
+  // Flow control //
+  //////////////////
 
   // Control is turned over to the engine to do as it wishes until
   // either the timeout expires, there is input pending from the user,
@@ -130,9 +130,9 @@ struct Session {
   // Find a move to play.
   static Move find_a_move ();
 
-  ///////////////
-  // Commands. //
-  ///////////////
+  //////////////
+  // Commands //
+  //////////////
 
   // Process a string in Extended Position Notation.
   static bool epd (const string_vector &tokens);
@@ -146,9 +146,9 @@ struct Session {
   // Display the a help message.
   static bool display_help (const string_vector &tokens);
 
-  /////////////////////////
-  // Debugging commands. //
-  /////////////////////////
+  ////////////////////////
+  // Debugging commands //
+  ////////////////////////
 
   // Generate a benchmark.
   static bool bench (const string_vector &tokens);

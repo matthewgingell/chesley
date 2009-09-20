@@ -23,26 +23,26 @@
 #include "common.hpp"
 #include "util.hpp"
 
-////////////
-// Types. //
-////////////
+///////////
+// Types //
+///////////
 
 struct Move_Vector;
 struct Board;
 
 void print_board (bitboard b);
 
-/////////////////////////////
-// Chess board state type. //
-/////////////////////////////
+////////////////////////////
+// Chess board state type //
+////////////////////////////
 
 std::ostream & operator<< (std::ostream &os, const Board &b);
 
 struct Board {
 
-  /////////////////////////////////////////////////////
-  // Bitboards representing the state of the board.  //
-  /////////////////////////////////////////////////////
+  ///////////////////////////////////////////////////
+  // Bitboards representing the state of the board //
+  ///////////////////////////////////////////////////
 
   // Color.
   bitboard white;
@@ -83,9 +83,9 @@ struct Board {
   // History.
   Move last_move;
 
-  //////////////////////////////////////
-  // Constructors and initialization. //
-  //////////////////////////////////////
+  /////////////////////////////////////
+  // Constructors and initialization //
+  /////////////////////////////////////
 
   Board () {}
 
@@ -122,17 +122,6 @@ struct Board {
   uint64 hash;
   uint64 phash;
 
-  // Fetch the key for a piece.
-  static uint64 get_zobrist_piece_key (Color c, Kind k, coord idx) {
-    uint32 i = (c == BLACK ? 0 : 1);
-    uint32 j = (int32) k;
-    assert (c != NULL_COLOR);
-    assert (k != NULL_KIND);
-    assert (idx < 64);
-    assert ((i * (64 * 6) + j * (64) + idx) < 2 * 6 * 64);
-    return zobrist_piece_keys[i * (64 * 6) + j * (64) + idx];
-  }
-
   ////////////
   // Output //
   ////////////
@@ -143,9 +132,9 @@ struct Board {
   // Return a FEN string for this position.
   std::string to_fen () const;
 
-  ///////////////////////////////////////////////////
-  // Reading and writing moves against this board. //
-  ///////////////////////////////////////////////////
+  //////////////////////////////////////////////////
+  // Reading and writing moves against this board //
+  //////////////////////////////////////////////////
 
   // Produce an algebraic letter-number pair for an integer square
   // number.
@@ -437,9 +426,9 @@ struct Board {
   bitboard
   unoccupied () const { return ~occupied; }
 
-  /////////////////////////
-  // Occupancy patterns. //
-  /////////////////////////
+  ////////////////////////
+  // Occupancy patterns //
+  ////////////////////////
 
   byte
   occ_0 (coord from) const {
@@ -461,9 +450,9 @@ struct Board {
     return (byte) (occupied_135 >> diag_shifts_135[from]);
   }
 
-  /////////////////////////////////////////
-  // Move and child position generation. //
-  /////////////////////////////////////////
+  ////////////////////////////////////////
+  // Move and child position generation //
+  ////////////////////////////////////////
 
   bitboard rank_attacks (coord idx) const { 
     return RANK_ATTACKS_TBL[idx * 256 + occ_0 (idx)];
@@ -505,9 +494,9 @@ struct Board {
   void gen_captures (Move_Vector &moves) const;
   void gen_promotions (Move_Vector &moves) const;
 
-  ////////////////////////
-  // Mobility counting. //
-  ////////////////////////
+  ///////////////////////
+  // Mobility counting //
+  ///////////////////////
 
   byte rank_mobility (coord idx) const { 
     return RANK_MOBILITY_TBL[idx * 256 + occ_0 (idx)];
@@ -545,9 +534,9 @@ struct Board {
     return KING_MOBILITY_TBL[idx];
   }  
 
-  //////////////
-  // Testing. //
-  //////////////
+  /////////////
+  // Testing //
+  /////////////
 
   // Generate the number of moves available at ply 'd'. Used for
   // debugging the move generator.
@@ -564,9 +553,9 @@ struct Board {
   // correctness of our incrementally hash update code.
   uint64 gen_hash () const;
   
-  ////////////////////////////////////////////////
-  // Incrementally updated scoring information. //
-  ////////////////////////////////////////////////
+  ///////////////////////////////////////////////
+  // Incrementally updated scoring information //
+  ///////////////////////////////////////////////
   
   Score material[COLOR_COUNT];
   Score psquares[COLOR_COUNT];

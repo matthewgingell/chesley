@@ -362,9 +362,9 @@ Search_Engine :: search
   else {
 
 #ifdef ENABLE_NULL_MOVE
-    //////////////////////////
-    // Null move heuristic. //
-    //////////////////////////
+    /////////////////////////
+    // Null move heuristic //
+    /////////////////////////
 
     const int R = depth >= 6 ? 3 : 2;
 
@@ -385,9 +385,9 @@ Search_Engine :: search
       }
 #endif // ENABLE_NULL_MOVE
     
-    ////////////////////////////
-    // Minimax over children. //
-    ////////////////////////////
+    ///////////////////////////
+    // Minimax over children //
+    ///////////////////////////
 
     Move_Vector moves (b);
     order_moves (b, ply, moves);
@@ -443,9 +443,9 @@ Search_Engine :: search
                 continue;
               }
 
-            ////////////////////////////////
-            // Extended futility pruning. //
-            ////////////////////////////////
+            ///////////////////////////////
+            // Extended futility pruning //
+            ///////////////////////////////
 
             // This is exactly like normal futility pruning, just
             // at pre-frontier nodes with a bigger margin.
@@ -457,9 +457,9 @@ Search_Engine :: search
                 continue;
               }
 
-            /////////////////////////////////////////
-            // Razoring at pre-pre frontier nodes. //
-            /////////////////////////////////////////
+            ////////////////////////////////////////
+            // Razoring at pre-pre frontier nodes //
+            ////////////////////////////////////////
             
             // If this position looks extremely bad at depth three,
             // proceed with a reduced depth search.
@@ -475,15 +475,15 @@ Search_Engine :: search
 
 #ifdef ENABLE_PVS
 
-        /////////////////////////////////
-        // Principle variation search. //
-        /////////////////////////////////
+        ////////////////////////////////
+        // Principle variation search //
+        ////////////////////////////////
         
         if (mi > 0)
           {
-            ///////////////////////////
-            // Late move reductions. //
-            ///////////////////////////
+            //////////////////////////
+            // Late move reductions //
+            //////////////////////////
 
             const int Full_Depth_Count = 4;
             const int Reduction_Limit = 3;
@@ -851,9 +851,9 @@ Search_Engine :: qsearch
       Board c;
       Move_Vector moves;
 
-      /////////////////////////////////
-      // Generate and sort captures. //
-      /////////////////////////////////
+      ////////////////////////////////
+      // Generate and sort captures //
+      ////////////////////////////////
 
       b.gen_captures (moves);
       b.gen_promotions (moves);
@@ -886,7 +886,7 @@ Search_Engine :: qsearch
             }
 
           // Collect statistics.
-          stats.hist_qpv[min (mi, hist_nbuckets - 1)]++;
+          //          stats.hist_qpv[min (mi, hist_nbuckets - 1)]++;
         }
     }
 
@@ -1081,11 +1081,11 @@ Search_Engine :: is_triple_rep (const Board &b) {
     }
 }
 
-////////////////////////////////////////////////
-// Time control.                              //
-//                                            //
-// Routines for managing game clock resource. //
-////////////////////////////////////////////////
+///////////////////////////////////////////////
+// Time control.                             //
+//                                           //
+// Routines for managing game clock resource //
+///////////////////////////////////////////////
 
 // Setup a deadline for this search.
 void

@@ -21,11 +21,11 @@
 
 using namespace std;
 
-///////////////////////////
-//                       //
-// Command declarations. //
-//                       //
-///////////////////////////
+//////////////////////////
+//                      //
+// Command declarations //
+//                      //
+//////////////////////////
 
 enum Command_Kind  
   {
@@ -36,9 +36,9 @@ enum Command
   { 
     CMD_NULL = -1,
 
-    ////////////////////
-    // User commands. //
-    ////////////////////
+    ///////////////////
+    // User commands //
+    ///////////////////
 
     CMD_BLACK, 
     CMD_DISP,  
@@ -61,9 +61,9 @@ enum Command
     CMD_TIME, 
     CMD_WHITE, 
 
-    /////////////////////////
-    // Debugging commands. //
-    /////////////////////////
+    ////////////////////////
+    // Debugging commands //
+    ////////////////////////
 
     CMD_APPLY, 
     CMD_ATTACKS, 
@@ -76,16 +76,16 @@ enum Command
     CMD_PERFT, 
     CMD_TESTHASHING,
 
-    ////////////////////////////
-    // Statistics collection. //
-    ////////////////////////////
+    ///////////////////////////
+    // Statistics collection //
+    ///////////////////////////
 
     CMD_GENMSTATS,
     CMD_GENPSQ,
 
-    //////////////////////
-    // XBoard commands. //
-    //////////////////////
+    /////////////////////
+    // XBoard commands //
+    /////////////////////
 
     CMD_ACCEPTED,
     CMD_ANALYZE,
@@ -127,9 +127,9 @@ static const struct {
 } commands[CMD_COUNT] = {
 
 
-  ////////////////////
-  // User commands. //
-  ////////////////////
+  ///////////////////
+  // User commands //
+  ///////////////////
 
   { CMD_BLACK, USER_CMD,      "BLACK",     "",
     "Set user to play black." },
@@ -191,9 +191,9 @@ static const struct {
   { CMD_WHITE, USER_CMD,      "WHITE",     "",
     "Set user to play black." },
 
-  /////////////////////////
-  // Debugging commands. //
-  /////////////////////////
+  ////////////////////////
+  // Debugging commands //
+  ////////////////////////
 
   { CMD_APPLY,      DEBUG_CMD,     "APPLY",     "",                       
     "Apply a move." },
@@ -227,9 +227,9 @@ static const struct {
   { CMD_TESTHASHING,DEBUG_CMD, "TESTHASHING", "",
     "Run a test on hash code generation."},
 
-  ////////////////////////////
-  // Statistics collection. //
-  ////////////////////////////
+  ///////////////////////////
+  // Statistics collection //
+  ///////////////////////////
   
   { CMD_GENMSTATS, STATS_CMD, "GENMSTATS", "",
     "Generate statistics about material balance." },
@@ -237,9 +237,9 @@ static const struct {
   { CMD_GENPSQ, STATS_CMD, "GENPSQ", "",
     "Generate piece square tables from a .pgn file."},
   
-  //////////////////////
-  // XBoard commands. //
-  //////////////////////
+  /////////////////////
+  // XBoard commands //
+  /////////////////////
 
   { CMD_ACCEPTED, XBOARD_CMD, "ACCEPTED",  "",
     ""},
@@ -353,9 +353,9 @@ Session::execute (char *line) {
       fprintf (out, "Unrecognized command: %s\n", token.c_str ());
       break;
 
-    ////////////////////
-    // User commands. //
-    ////////////////////
+    ///////////////////
+    // User commands //
+    ///////////////////
 
     case CMD_BLACK: 
       // Set user to play black.
@@ -482,9 +482,9 @@ Session::execute (char *line) {
       our_color = BLACK;
       break;
 
-    /////////////////////////
-    // Debugging commands. //
-    /////////////////////////
+    ////////////////////////
+    // Debugging commands //
+    ////////////////////////
 
     case CMD_APPLY: 
       // Apply a move to the current position.
@@ -570,9 +570,9 @@ Session::execute (char *line) {
       test_hashing (5);
       break;
 
-    ////////////////////////////
-    // Statistics collection. //
-    ////////////////////////////
+    ///////////////////////////
+    // Statistics collection //
+    ///////////////////////////
 
     case CMD_GENMSTATS:
       // Generate statistics about material balance.
@@ -586,9 +586,9 @@ Session::execute (char *line) {
         gen_psq_tables (tokens[1]);
       break;
 
-    //////////////////////
-    // XBoard commands. //
-    //////////////////////
+    /////////////////////
+    // XBoard commands //
+    /////////////////////
 
     case CMD_ACCEPTED:
       // ignored.
@@ -724,9 +724,9 @@ Session::execute (char *line) {
   return true;
 }
 
-///////////////
-// Commands. //
-///////////////
+//////////////
+// Commands //
+//////////////
 
 // Set up time controls from level command.
 bool 

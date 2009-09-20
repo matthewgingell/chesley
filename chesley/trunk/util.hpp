@@ -32,9 +32,9 @@
 
 extern char *arg0;
 
-////////////////////////
-// Macro definitions. //
-////////////////////////
+///////////////////////
+// Macro definitions //
+///////////////////////
 
 #ifdef __GNUC__
 #define IS_CONST __attribute__ ((const))
@@ -130,9 +130,9 @@ static char *get_line (FILE *in) IS_UNUSED;
 // Advance over white space characters and return the number skipped.
 static int skip_whitespace (FILE *in) IS_UNUSED;
 
-//////////////////////
-// Time and timers. //
-//////////////////////
+/////////////////////
+// Time and timers //
+/////////////////////
 
 // Return the time in milliseconds since the epoch.
 static uint64 mclock () IS_UNUSED;
@@ -348,9 +348,9 @@ operator<< (std::ostream &os, const string_vector &in) {
   return os << join (in, ", ");
 }
 
-////////////////////
-// I/O functions. //
-////////////////////
+///////////////////
+// I/O functions //
+///////////////////
 
 extern bool xboard;
 
@@ -462,9 +462,9 @@ skip_whitespace (FILE *in) {
   return count;
 }
 
-//////////////////////
-// Time and timers. //
-//////////////////////
+/////////////////////
+// Time and timers //
+/////////////////////
 
 // Return the time in milliseconds since the epoch.
 static uint64
@@ -546,9 +546,9 @@ insertion_sort (V &items) {
     }
 }
 
-/////////////////////////////
-// Miscellaneous routines. //
-/////////////////////////////
+////////////////////////////
+// Miscellaneous routines //
+////////////////////////////
 
 template <typename elt>
 inline void swap (elt &l, elt &r) {

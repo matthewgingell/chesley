@@ -29,9 +29,9 @@ Board::gen_moves (Move_Vector &moves) const
 {
   Color c = to_move ();
 
-  ////////////
-  // Pawns. //
-  ////////////
+  ///////////
+  // Pawns //
+  ///////////
 
   bitboard our_pawns = pawns & our_pieces ();
 
@@ -127,9 +127,9 @@ Board::gen_moves (Move_Vector &moves) const
       clear_bit (our_pawns, from_idx);
     }
 
-  ////////////
-  // Rooks. //
-  ////////////
+  ///////////
+  // Rooks //
+  ///////////
 
   bitboard our_rooks = rooks & our_pieces ();
 
@@ -150,9 +150,9 @@ Board::gen_moves (Move_Vector &moves) const
       clear_bit (our_rooks, from);
     }
 
-  //////////////
-  // Knights. //
-  //////////////
+  /////////////
+  // Knights //
+  /////////////
 
   bitboard our_knights = knights & our_pieces ();
 
@@ -172,9 +172,9 @@ Board::gen_moves (Move_Vector &moves) const
       clear_bit (our_knights, from);
     }
 
-  //////////////
-  // Bishops. //
-  //////////////
+  /////////////
+  // Bishops //
+  /////////////
 
   bitboard our_bishops = bishops & our_pieces ();
 
@@ -194,9 +194,9 @@ Board::gen_moves (Move_Vector &moves) const
       clear_bit (our_bishops, from);
     }
 
-  /////////////
-  // Queens. //
-  /////////////
+  ////////////
+  // Queens //
+  ////////////
 
   bitboard our_queens = queens & our_pieces ();
 
@@ -216,15 +216,15 @@ Board::gen_moves (Move_Vector &moves) const
       clear_bit (our_queens, from);
     }
 
-  ////////////
-  // Kings. //
-  ////////////
+  ///////////
+  // Kings //
+  ///////////
 
   bitboard our_king = kings & our_pieces ();
 
-  ///////////////////////////
-  // Compute simple moves. //
-  ///////////////////////////
+  //////////////////////////
+  // Compute simple moves //
+  //////////////////////////
 
   if (our_king)
     {
@@ -240,9 +240,9 @@ Board::gen_moves (Move_Vector &moves) const
         }
     }
 
-  /////////////////////////////
-  // Compute castling moves. //
-  /////////////////////////////
+  ////////////////////////////
+  // Compute castling moves //
+  ////////////////////////////
 
   if (c == WHITE)
     {
@@ -310,9 +310,9 @@ Board::gen_captures (Move_Vector &moves) const
 {
   Color c = to_move ();
 
-  /////////////////////////////
-  // Generate pawn captures. //
-  /////////////////////////////
+  ////////////////////////////
+  // Generate pawn captures //
+  ////////////////////////////
 
   bitboard our_pawns = pawns & our_pieces ();
   while (our_pawns)
@@ -376,9 +376,9 @@ Board::gen_captures (Move_Vector &moves) const
       clear_bit (our_pawns, from_idx);
     }
 
-  /////////////////////////////
-  // Generate rook captures. //
-  /////////////////////////////
+  ////////////////////////////
+  // Generate rook captures //
+  ////////////////////////////
 
   bitboard our_rooks = rooks & our_pieces ();
 
@@ -400,9 +400,9 @@ Board::gen_captures (Move_Vector &moves) const
       clear_bit (our_rooks, from);
     }
 
-  ///////////////////////////////
-  // Generate knight captures. //
-  ///////////////////////////////
+  //////////////////////////////
+  // Generate knight captures //
+  //////////////////////////////
 
   bitboard our_knights = knights & our_pieces ();
 
@@ -423,9 +423,9 @@ Board::gen_captures (Move_Vector &moves) const
       clear_bit (our_knights, from);
     }
 
-  ///////////////////////////////
-  // Generate bishop captures. //
-  ///////////////////////////////
+  //////////////////////////////
+  // Generate bishop captures //
+  //////////////////////////////
 
   bitboard our_bishops = bishops & our_pieces ();
 
@@ -447,9 +447,9 @@ Board::gen_captures (Move_Vector &moves) const
       clear_bit (our_bishops, from);
     }
 
-  //////////////////////////////
-  // Generate queen captures. //
-  //////////////////////////////
+  /////////////////////////////
+  // Generate queen captures //
+  /////////////////////////////
 
   bitboard our_queens = queens & our_pieces ();
 
@@ -471,9 +471,9 @@ Board::gen_captures (Move_Vector &moves) const
       clear_bit (our_queens, from);
     }
 
-  /////////////////////////////
-  // Generate king captures. //
-  /////////////////////////////
+  ////////////////////////////
+  // Generate king captures //
+  ////////////////////////////
 
   bitboard our_king = kings & our_pieces ();
 

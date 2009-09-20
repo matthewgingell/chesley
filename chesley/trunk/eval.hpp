@@ -19,9 +19,9 @@
 
 #include "chesley.hpp"
 
-////////////////////////////////////////////////
-// Material and feature evaluation constants. //
-////////////////////////////////////////////////
+///////////////////////////////////////////////
+// Material and feature evaluation constants //
+///////////////////////////////////////////////
 
 static const Score INF      = 30 * 1000;
 static const Score MATE_VAL = 20 * 1000;
@@ -66,15 +66,15 @@ static const Score KNIGHT_OUTPOST_BONUS = 25;
 static const Score PAWN_SHEILD1_BONUS = 10;
 static const Score PAWN_SHEILD2_BONUS = 5;
 
-/////////////////////////
-// The evaluator type. //
-/////////////////////////
+////////////////////////
+// The evaluator type //
+////////////////////////
 
 struct Eval {
 
-  ////////////////////
-  // Static tables. //
-  ////////////////////
+  ///////////////////
+  // Static tables //
+  ///////////////////
   
   // The main piece square table.
   static const int8 piece_square_table[6][64];
@@ -89,9 +89,9 @@ struct Eval {
   // A table used for computing the positional value of the king.
   static const int8 king_square_table[3][64];
 
-  /////////////////////
-  // Initialization. //
-  /////////////////////
+  ////////////////////
+  // Initialization //
+  ////////////////////
 
   Eval (const Board &board) {
     b = board;
@@ -105,9 +105,9 @@ struct Eval {
     return sign (b.to_move ()) * (b.material[WHITE] - b.material[BLACK]);
   }
   
-  /////////////////////////////////
-  // Static position evaluation. //
-  /////////////////////////////////
+  ////////////////////////////////
+  // Static position evaluation //
+  ////////////////////////////////
 
   // Top level evaluation function.
   Score score ();
@@ -152,9 +152,9 @@ struct Eval {
       piece_square_table[m.get_kind()][xfrm[b.to_move()][m.from]];
   }
 
-  ///////////////////////////////
-  // Static utility functions. //
-  ///////////////////////////////
+  //////////////////////////////
+  // Static utility functions //
+  //////////////////////////////
 
   // Get the score for a piece by Kind.
   static inline Score eval_piece (Kind k) {
@@ -231,9 +231,9 @@ struct Eval {
       }
   }
 
-  //////////////////////
-  // Evaluation data. //
-  //////////////////////
+  /////////////////////
+  // Evaluation data //
+  /////////////////////
     
   Board b;
   Phase phase;
