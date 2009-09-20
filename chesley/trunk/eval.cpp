@@ -36,7 +36,7 @@ Score Eval::score () {
   if (is_draw ()) return 0;
   
   // Generate a simple material score.
-  s += b.material[WHITE] - b.material[BLACK];
+  s += b.net_material;
 
   // Add net piece square values.
   s += (b.psquares[WHITE] - b.psquares[BLACK]);

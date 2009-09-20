@@ -310,6 +310,7 @@ struct Board {
     if (flags.to_move != c)
       {
         hash ^= zobrist_key_white_to_move;
+        phash ^= zobrist_key_white_to_move;
         flags.to_move = c;
       }
   }
@@ -557,7 +558,7 @@ struct Board {
   // Incrementally updated scoring information //
   ///////////////////////////////////////////////
   
-  Score material[COLOR_COUNT];
+  Score net_material;
   Score psquares[COLOR_COUNT];
   uint8 piece_counts[COLOR_COUNT][KIND_COUNT];
   uint8 pawn_counts[COLOR_COUNT][FILE_COUNT];

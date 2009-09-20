@@ -102,7 +102,7 @@ struct Eval {
 
   // Calculate a score from a material imbalance.
   Score net_material () {
-    return sign (b.to_move ()) * (b.material[WHITE] - b.material[BLACK]);
+    return sign (b.to_move ()) * b.net_material;
   }
   
   ////////////////////////////////

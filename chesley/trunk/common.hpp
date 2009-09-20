@@ -103,7 +103,6 @@ enum Kind {
 
 const int KIND_COUNT = 6;
 
-
 // Score type for a chess position.
 typedef int16 Score;
 

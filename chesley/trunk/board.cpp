@@ -132,6 +132,7 @@ Board::common_init (Board &b) {
 
   // White is to move.
   b.hash ^= zobrist_key_white_to_move;
+  b.phash ^= zobrist_key_white_to_move;
 
   // All castling moves are possible.
   b.hash ^= zobrist_w_castle_q_key;
@@ -149,7 +150,7 @@ Board::common_init (Board &b) {
   b.last_move = NULL_MOVE;
 
   // Initialize scoring information.
-  ZERO (b.material);
+  b.net_material = 0;
   ZERO (b.psquares);
   ZERO (b.piece_counts);
   ZERO (b.pawn_counts);
@@ -236,7 +237,7 @@ Board::clear_piece (coord idx, Color c, Kind k) {
       hash ^= get_zobrist_piece_key (c, k, idx);
 
       // Update evaluation information.
-      material[c] -= Eval::eval_piece (k);
+      net_material -= sign (c) * Eval::eval_piece (k);
       psquares[c] -= Eval::psq_value (k, c, idx);
       piece_counts[c][k]--;
       
@@ -272,7 +273,7 @@ Board::set_piece (Kind k, Color c, coord idx) {
   if (k == PAWN) phash ^= get_zobrist_piece_key (c, k, idx);
 
   // Update evaluation information.
-  material[c] += Eval::eval_piece (k);
+  net_material += sign (c) * Eval::eval_piece (k);
   psquares[c] += Eval::psq_value (k, c, idx);
   piece_counts[c][k]++;
   if (k == PAWN) pawn_counts[c][idx_to_file (idx)]++;
@@ -564,7 +565,8 @@ Board::gen_hash () const {
   uint64 h = 0x0;
 
   // Set color to move.
-  if (to_move () == WHITE) h ^= zobrist_key_white_to_move;
+  if (to_move () == WHITE) 
+    h ^= zobrist_key_white_to_move;
 
   // Set castling rights.
   if (flags.w_can_q_castle) h ^= zobrist_w_castle_q_key;
