@@ -146,9 +146,6 @@ Board::common_init (Board &b) {
   // Initialize clocks.
   b.half_move_clock = b.full_move_clock = 0;
 
-  // Initialize history.
-  b.last_move = NULL_MOVE;
-
   // Initialize scoring information.
   b.net_material = 0;
   ZERO (b.psquares);
@@ -217,12 +214,12 @@ Board::clear_piece (coord idx) {
     {
       Color c = get_color (idx);
       Kind k = get_kind (idx);
-      clear_piece (idx, c, k);
+      clear_piece (k, c, idx);
     }
 }
 
 void
-Board::clear_piece (coord idx, Color c, Kind k) {
+Board::clear_piece (Kind k, Color c, coord idx) {
   if (occupied & masks_0[idx])
     {
       assert (k != NULL_KIND);
@@ -299,11 +296,32 @@ Board::set_piece (Kind kind, Color color, int row, int file) {
 // because it places or leaves the color to move in check.
 bool
 Board::apply (const Move &m) {
+  Undo dummy;
+  return apply (m, dummy);
+}
+
+bool
+Board::apply (const Move &m, Undo &u) {
   Kind kind = m.get_kind ();
   Kind capture = m.get_capture ();
   Color color = to_move ();
 
   assert (capture != KING);
+
+  ///////////////////////////
+  // Save undo information //
+  ///////////////////////////
+
+  u.en_passant      = flags.en_passant;
+  u.w_has_k_castled = flags.w_has_k_castled;
+  u.w_has_q_castled = flags.w_has_q_castled;
+  u.w_can_q_castle  = flags.w_can_q_castle;
+  u.w_can_k_castle  = flags.w_can_k_castle;
+  u.b_has_k_castled = flags.b_has_k_castled;
+  u.b_has_q_castled = flags.b_has_q_castled;
+  u.b_can_q_castle  = flags.b_can_q_castle;
+  u.b_can_k_castle  = flags.b_can_k_castle;
+  u.half_move_clock = half_move_clock;
 
   ///////////////////
   // Update clocks //
@@ -323,9 +341,6 @@ Board::apply (const Move &m) {
   // Increment the whole move clock after each move by black.
   if (color == BLACK) full_move_clock++;
 
-  // Update history.
-  last_move = m;
-
   if (kind == PAWN)
     {
       ////////////////////////////////////////////////
@@ -342,11 +357,11 @@ Board::apply (const Move &m) {
         {
           if (color == WHITE)
             {
-              clear_piece (flags.en_passant - 8, BLACK, PAWN);
+              clear_piece (PAWN, BLACK, flags.en_passant - 8);
             }
           else
             {
-              clear_piece (flags.en_passant + 8, WHITE, PAWN);
+              clear_piece (PAWN, WHITE, flags.en_passant + 8);
             }
         }
 
@@ -411,53 +426,56 @@ Board::apply (const Move &m) {
 
               if (color == WHITE)
                 {
-                  if (is_castle_qs && !(attacked & 0x1C))
+                  if (is_castle_qs)
                     {
-                      clear_piece (E1, WHITE, KING);
-                      clear_piece (A1, WHITE, ROOK);
+                      clear_piece (KING, WHITE, E1);
+                      clear_piece (ROOK, WHITE, A1);
                       set_piece (KING, WHITE, C1);
                       set_piece (ROOK, WHITE, D1);
                       set_color (invert (to_move ()));
                       flags.w_has_k_castled = 1;
-                      return true;
+                      return !(attacked & 0x1C);
                     }
-                  if (is_castle_ks && !(attacked & 0x70))
+
+                  if (is_castle_ks)
                     {
-                      clear_piece (E1, WHITE, KING);
-                      clear_piece (H1, WHITE, ROOK);
+                      clear_piece (KING, WHITE, E1);
+                      clear_piece (ROOK, WHITE, H1);
                       set_piece (KING, WHITE, G1);
                       set_piece (ROOK, WHITE, F1);
                       set_color (invert (to_move ()));
                       flags.w_has_k_castled = 1;
-                      return true;
+                      return !(attacked & 0x70);
                     }
                 }
               else
                 {
                   byte attacks = get_byte (attacked, 7);
-                  if (is_castle_qs && !(attacks & 0x1C))
+
+                  if (is_castle_qs)
                     {
-                      clear_piece (E8, BLACK, KING);
-                      clear_piece (A8, BLACK, ROOK);
+                      clear_piece (KING, BLACK, E8);
+                      clear_piece (ROOK, BLACK, A8);
                       set_piece (KING, BLACK, C8);
                       set_piece (ROOK, BLACK, D8);
                       set_color (invert (to_move ()));
                       flags.b_has_q_castled = 1;
-                      return true;
+                      return !(attacks & 0x1C);
                     }
-                  if (is_castle_ks && !(attacks & 0x70))
+
+                  if (is_castle_ks)
                     {
-                      clear_piece (E8, BLACK, KING);
-                      clear_piece (H8, BLACK, ROOK);
+                      clear_piece (KING, BLACK, E8);
+                      clear_piece (ROOK, BLACK, H8);
                       set_piece (KING, BLACK, G8);
                       set_piece (ROOK, BLACK, F8);
                       set_color (invert (to_move ()));
                       flags.b_has_k_castled = 1;
-                      return true;
+                      return !(attacks & 0x70);
                     }
                 }
 
-              return false;
+              assert (0);
             }
         }
     }
@@ -488,8 +506,8 @@ Board::apply (const Move &m) {
   // Clear the origin and destination squares //
   //////////////////////////////////////////////
 
-  clear_piece (m.from, color, kind);
-  clear_piece (m.to, ~color, capture);
+  clear_piece (kind, color, m.from);
+  if (capture != NULL_KIND) clear_piece (capture, ~color, m.to);
 
   ////////////////////////////////////////////////////
   // Set the destination square, possibly promoting //
@@ -502,6 +520,130 @@ Board::apply (const Move &m) {
   /////////////////////////////////////////////
 
   return !in_check (color);
+}
+
+void
+Board::unapply (const Move &m, const Undo &u) {
+
+  ///////////////////////////////////
+  // Restore information from undo //
+  ///////////////////////////////////
+
+  flags.en_passant      = u.en_passant;      
+  flags.w_has_k_castled = u.w_has_k_castled; 
+  flags.w_has_q_castled = u.w_has_q_castled; 
+  flags.w_can_q_castle  = u.w_can_q_castle;  
+  flags.w_can_k_castle  = u.w_can_k_castle;  
+  flags.b_has_k_castled = u.b_has_k_castled; 
+  flags.b_has_q_castled = u.b_has_q_castled; 
+  flags.b_can_q_castle  = u.b_can_q_castle;  
+  flags.b_can_k_castle  = u.b_can_k_castle;  
+  half_move_clock       = u.half_move_clock; 
+
+  // Decrement the whole move clock if black moved last.
+  if (m.get_color () == WHITE && full_move_clock > 1) full_move_clock--;
+  
+  if (m.get_kind () == PAWN)
+    {
+      // Undo en passant.
+      if (m.is_en_passant ())
+        {
+          if (m.get_color () == WHITE)
+            {
+              set_piece (PAWN, BLACK, flags.en_passant - 8);
+            }
+          else
+            {
+              set_piece (PAWN, WHITE, flags.en_passant + 8);
+            }
+        }
+    }
+
+  else if (m.get_kind () == KING)
+    {
+      bool is_castle_qs = m.is_castle_qs ();
+      bool is_castle_ks = m.is_castle_ks ();
+
+      ////////////////////
+      // Undo castling. //
+      ////////////////////
+      
+      if (is_castle_qs || is_castle_ks)
+        {
+          if (m.get_color () == WHITE)
+            {
+              if (is_castle_qs)
+                {
+                  set_piece (KING, WHITE, E1);
+                  set_piece (ROOK, WHITE, A1);
+                  clear_piece (KING, WHITE, C1);
+                  clear_piece (ROOK, WHITE, D1);
+                  set_color (invert (to_move ()));
+                  return;
+                }
+              if (is_castle_ks)
+                {
+                  set_piece (KING, WHITE, E1);
+                  set_piece (ROOK, WHITE, H1);
+                  clear_piece (KING, WHITE, G1);
+                  clear_piece (ROOK, WHITE, F1);
+                  set_color (invert (to_move ()));
+                  return;
+                }
+            }
+          else
+            {
+              if (is_castle_qs)
+                {
+                  set_piece (KING, BLACK, E8);
+                  set_piece (ROOK, BLACK, A8);
+                  clear_piece (KING, BLACK, C8);
+                  clear_piece (ROOK, BLACK, D8);
+                  set_color (invert (to_move ()));
+                  return;
+                }
+              if (is_castle_ks)
+                {
+                  set_piece (KING, BLACK, E8);
+                  set_piece (ROOK, BLACK, H8);
+                  clear_piece (KING, BLACK, G8);
+                  clear_piece (ROOK, BLACK, F8);
+                  set_color (invert (to_move ()));
+                  return;
+                }
+            }
+        }
+    }
+
+  //////////////////////////.
+  // Restore color to move //
+  ///////////////////////////
+
+  set_color (invert (to_move ()));
+
+  ////////////////////////////////////
+  // Restore the destination square //
+  ////////////////////////////////////
+
+  if (m.is_promote ())
+    {
+      clear_piece (m.get_promote (), m.get_color (), m.to);
+    }
+  else
+    {
+      clear_piece (m.get_kind (), m.get_color (), m.to);
+    }
+
+  if (m.is_capture () && !m.is_en_passant ())
+    {
+      set_piece (m.capture, ~m.get_color (), m.to);
+    }
+  
+  ///////////////////////////////
+  // Restore the origin square //
+  ///////////////////////////////
+  
+  set_piece (m.get_kind (), m.get_color (), m.from);
 }
 
 /////////////

@@ -751,14 +751,6 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
       ext++;
     }
 
-  // Recapture extensions.
-  else if (b.last_move.get_capture() != NULL_KIND && 
-           b.last_move.get_color () != m.get_color () &&
-           m.to == b.last_move.to)
-    {
-      ext += 1;
-    }
-  
   // Pawn to seventh rank extensions.
   else 
     {
@@ -795,8 +787,8 @@ Search_Engine :: see (const Board &b, const Move &m) const {
 
   // Construct child position.
   Board c = b;
-  c.clear_piece (m.from, b.to_move (), m.get_kind ());
-  c.clear_piece (m.to, invert (b.to_move ()), m.get_capture ());
+  c.clear_piece (m.get_kind (), b.to_move (), m.from);
+  c.clear_piece (m.get_capture (), ~b.to_move (), m.to);
   c.set_piece (m.get_kind (), b.to_move (), m.to);
   c.set_color (invert (b.to_move ()));
 

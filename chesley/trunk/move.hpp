@@ -29,41 +29,51 @@ struct Move {
   Move () {}
 
   // Construct a move;
-  Move (coord from, coord to, Color color, Kind kind, Kind capture, 
-        Kind promote = NULL_KIND, bool en_passant = false) 
-    : from (from), to (to), color (color), kind (kind), 
+  Move (coord from, coord to, Color color, Kind kind, Kind capture,
+        Kind promote = NULL_KIND, bool en_passant = false)
+    : from (from), to (to), color (color), kind (kind),
       capture (capture), promote (promote), en_passant (en_passant) {}
 
   // Kind of color of the piece being moved.
-  inline Color get_color () const { 
-    return color; 
+  inline Color get_color () const {
+    return color;
   }
 
   // Get the kind of the piece being moved.
-  inline Kind get_kind () const { 
-    return kind; 
+  inline Kind get_kind () const {
+    return kind;
   }
 
   // Returns the piece being captured, or NULL_KIND if this is not a
   // capture.
-  inline Kind get_capture () const { 
-    return capture; 
+  inline Kind get_capture () const {
+    return capture;
   }
 
   // Returns the piece being promoted to, or NULL_KIND if this is not
   // a promotion.
-  inline Kind get_promote () const { 
-    return promote; 
+  inline Kind get_promote () const {
+    return promote;
   }
 
   // Is this move an en passant capture.
-  inline bool is_en_passant () const { 
-    return en_passant; 
+  inline bool is_en_passant () const {
+    return en_passant;
   }
 
   // Is this a castling move?
   inline bool is_castle () const {
     return is_castle_qs () || is_castle_ks ();
+  }
+
+  // Is this a capture?
+  inline bool is_capture () const {
+    return capture != NULL_KIND;
+  }
+  
+  // Is this a promotion?
+  inline bool is_promote () const {
+    return promote != NULL_KIND;
   }
 
   // Is this a king-side castle.
@@ -97,7 +107,8 @@ struct Move {
   Kind   kind       : 4;
   Kind   capture    : 4;
   Kind   promote    : 4;
-  bool   en_passant : 6;
+  bool   en_passant : 1;
+  int    unused     : 5;
 #endif
 };
 
@@ -106,6 +117,19 @@ const Move NULL_MOVE (0, 0, NULL_COLOR, NULL_KIND, NULL_KIND);
 
 // Output for moves.
 std::ostream & operator<< (std::ostream &os, const Move &b);
+
+struct Undo {
+  unsigned en_passant      :8;
+  unsigned w_has_k_castled :1;
+  unsigned w_has_q_castled :1;
+  unsigned w_can_q_castle  :1;
+  unsigned w_can_k_castle  :1;
+  unsigned b_has_k_castled :1;
+  unsigned b_has_q_castled :1;
+  unsigned b_can_q_castle  :1;
+  unsigned b_can_k_castle  :1;
+  unsigned half_move_clock :16;
+};
 
 ////////////////////////////////
 //    The Move vector type.   //
@@ -144,12 +168,12 @@ struct Move_Vector {
 
   // Push a move on to the end of a move list.
   void push
-  (coord from, coord to, 
+  (coord from, coord to,
    Color color, Kind kind,
-   Kind capture, Kind promote = NULL_KIND, 
-   bool en_passant = false) 
+   Kind capture, Kind promote = NULL_KIND,
+   bool en_passant = false)
   {
-    move[count++] = 
+    move[count++] =
       Move (from, to, color, kind, capture, promote, en_passant);
   }
 
@@ -182,7 +206,7 @@ struct Move_Vector {
         keys[j] = index_key;
       }
   }
-  
+
   Move move[SIZE];
   uint8 count;
 };

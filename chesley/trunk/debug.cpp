@@ -33,31 +33,6 @@ Session::bench (const string_vector &tokens) {
   return true;
 }
 
-////////////////////////////////////////////
-// Compute possible moves from a position //
-////////////////////////////////////////////
-
-bool
-Session::perft (const string_vector &tokens)
-{
-  int depth = 1;
-
-  if (tokens.size () > 1 && is_number (tokens[1]))
-    depth = to_int (tokens[1]);
-
-  fprintf (out, "Computing perft to depth %i...\n", depth);
-  uint64 start = cpu_time();
-  uint64 count = board.perft (depth);
-  uint64 elapsed = cpu_time() - start;
-#ifdef _WIN32
-  fprintf (out, "moves = %I64u\n", count);
-#else
-  fprintf (out, "moves = %llu\n", count);
-#endif
-  fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
-  return true;
-}
-
 ////////////////////////////////////////////////////
 // Instruct Chesley to play a game against itself //
 ////////////////////////////////////////////////////
@@ -213,7 +188,7 @@ Session::epd (const string_vector &args)
 
                   int depth = to_int (opcode [1]);
                   uint64 expecting = to_int (operand);
-                  uint64 p = b.perft (depth);
+                  uint64 p = b.perft2 (depth);
                   bool pass = (p == expecting);
 #ifdef _WIN32
                   fprintf (out, "%s %I64u\n", pass ? "PASS" : "FAIL", p);

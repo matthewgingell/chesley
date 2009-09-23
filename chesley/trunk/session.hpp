@@ -153,9 +153,6 @@ struct Session {
   // Generate a benchmark.
   static bool bench (const string_vector &tokens);
 
-  // Compute possible moves from a position.
-  static bool perft (const string_vector &tokens);
-
   // Play a game with engine taking both sides.
   static bool play_self (const string_vector &tokens);
 
