@@ -80,9 +80,6 @@ struct Board {
   uint16 half_move_clock; // Used for 50-move rule.
   uint16 full_move_clock; // Clock after each black move.
 
-  // History.
-  Move last_move;
-
   /////////////////////////////////////
   // Constructors and initialization //
   /////////////////////////////////////
@@ -398,7 +395,7 @@ struct Board {
 
   // Clear a piece on the board.
   void clear_piece (coord idx);
-  void clear_piece (coord idx, Color c, Kind k);
+  void clear_piece (Kind kind, Color c, coord idx);
 
   // Set a piece on the board.
   void set_piece (Kind k, Color c, coord idx);
@@ -406,6 +403,8 @@ struct Board {
 
   // Apply a move to this board.
   bool apply (const Move &m);
+  bool apply (const Move &m, Undo &u);
+  void unapply (const Move &m, const Undo &u);
 
   ////////////
   // Boards //
@@ -542,6 +541,9 @@ struct Board {
   // Generate the number of moves available at ply 'd'. Used for
   // debugging the move generator.
   uint64 perft (int d) const;
+
+  // An alternate implementation of perft using apply/unapply.
+  uint64 perft2 (int d);
 
   // For each child, print the child move and the perft (d) of the
   // resulting board.

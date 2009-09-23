@@ -546,19 +546,17 @@ Session::execute (char *line) {
       // Compute perft to a fixed depth.
       {
         int depth = (to_int (tokens[1]));
-        fprintf (out, "Computing perft to depth %i...\n", depth);
-        uint64 start = cpu_time();
-        uint64 count = board.perft (depth);
-        uint64 elapsed = cpu_time() - start;
-#ifdef _WIN32
-        fprintf (out, "moves = %I64u\n", count);
-#else
-        fprintf (out, "moves = %llun", count);
-#endif // _WIN32
-        fprintf (out, "%.2f seconds elapsed.\n", ((double) elapsed) / 1000.0);
+        for (int i = 1; i <= depth; i++)
+          {
+            uint64 start = cpu_time();
+            uint64 count = board.perft (i);
+            uint64 elapsed = cpu_time() - start;
+            fprintf (out, "perft (%i) = %9llu, ", i, count);
+            fprintf (out, "%5.2f seconds\n", ((double) elapsed) / 1000.0);
+          }
       }
       break;
-
+        
     case CMD_HASH: 
       // Output the hash key for this position.
       cout << board.hash << endl;

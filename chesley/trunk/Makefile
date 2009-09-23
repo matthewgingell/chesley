@@ -75,7 +75,8 @@ playself: chesley
 
 # Run an xboard game of Chesley against another engine.
 playother: chesley
-	xboard -tc 1 -mps 100 -fcp ./chesley -scp gnuchess -mode TwoMachines $(XBOARD_OPTS)
+	xboard -tc 1 -mps 100 -mg 1000 -fcp ./chesley -scp gnuchess	\
+-mode TwoMachines $(XBOARD_OPTS)
 
 #############
 # Clean up. #

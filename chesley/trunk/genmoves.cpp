@@ -670,6 +670,25 @@ Board::perft (int d) const {
   return sum;
 }
 
+// An alternate implementation of perft using apply/unapply.
+uint64
+Board::perft2 (int d) {
+  uint64 sum = 0;
+  
+  if (d == 0) return 1;
+
+  Move_Vector moves (*this);
+  for (int i = 0; i < moves.count; i++)
+    {
+      Undo u;
+      if (apply (moves[i], u))
+        sum += perft2 (d - 1);
+      unapply (moves[i], u);
+    }
+  
+  return sum;
+}
+
 // For each child, print the child move and the perft (d) of the
 // resulting board.
 void

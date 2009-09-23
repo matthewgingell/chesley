@@ -229,8 +229,8 @@ to_int (const char &c) {
 static char *
 newstr (const char *s) {
   size_t sz = strlen (s) + 1;
-  char *rv = (char *) malloc (sz + 1);
-  memcpy (rv, s, sz + 1);
+  char *rv = (char *) malloc (sz);
+  memcpy (rv, s, sz);
   return rv;
 }
 
