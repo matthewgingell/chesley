@@ -17,7 +17,6 @@
 
 #include "bits64.hpp"
 #include "board.hpp"
-#include "chesley.hpp"
 #include "common.hpp"
 #include "eval.hpp"
 #include "move.hpp"
@@ -37,7 +36,6 @@
 
 #define VERSION SVN_REVISION
 
-
 inline
 char *get_prologue () {
   static char buf[2048];
@@ -45,9 +43,5 @@ char *get_prologue () {
            ENGINE_ID_STR, VERSION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }
-
-#ifdef ENABLE_LMR
-#undef ENABLE_LMR
-#endif // ENABLE_LMR
 
 #endif // __CHESLEY__

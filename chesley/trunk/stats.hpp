@@ -22,4 +22,3 @@ void gen_material_stats (const std::string filename);
 void gen_psq_tables (const std::string filename);
 
 #endif // _STATS_
-

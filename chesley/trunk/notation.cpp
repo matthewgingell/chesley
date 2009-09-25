@@ -31,8 +31,8 @@ Board::from_calg (const string &s) const {
   assert (s.length () >= 4);
 
   // Decode string
-  coord from = (s[0] - 'a') + 8 * (s[1] - '1');
-  coord to   = (s[2] - 'a') + 8 * (s[3] - '1');
+  Coord from = (s[0] - 'a') + 8 * (s[1] - '1');
+  Coord to   = (s[2] - 'a') + 8 * (s[3] - '1');
 
   // Build move.
   Kind kind = get_kind (from);
@@ -162,7 +162,7 @@ Board::to_calg (const Move &m) const {
 // Produce an algebraic letter-number pair for an integer square
 // number.
 string
-Board::to_alg_coord (coord idx) const {
+Board::to_alg_coord (Coord idx) const {
   ostringstream s;
 
   s << (char) ('a' + idx_to_file (idx));

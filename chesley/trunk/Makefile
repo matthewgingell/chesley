@@ -21,13 +21,14 @@ CXX=g++
 #EXT=.exe
 
 OPT = -g3 -O3 -m64
+PROF =
 INC = -Ideps
-LIBS =
+LIBS = 
 WARN = -Wall -Wextra
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 VSN = -DSVN_REVISION=\"$(shell svnversion)\"
-CXXFLAGS = $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
+CXXFLAGS = $(OPT) $(PROF) $(ALG) $(INC) $(VSN) $(WARN) $(DEBUG)
 
 ########################################################################
 #                                                                      #
@@ -42,7 +43,7 @@ CXXFLAGS = $(OPT) $(ALG) $(INC) $(LIBS) $(VSN) $(WARN) $(DEBUG)
 
 ALG = -DENABLE_QSEARCH -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW	\
 -DENABLE_NULL_MOVE -DENABLE_TRANS_TABLE -DENABLE_FUTILITY	\
--DENABLE_RAZORING -DENABLE_EXTENSIONS -DENABLE_SEE -DENABLE_LMR
+-DENABLE_RAZORING -DENABLE_EXTENSIONS -DENABLE_LMR -DENABLE_SEE
 
 DEBUG = # -DTRACE_EVAL
 
@@ -75,7 +76,7 @@ playself: chesley
 
 # Run an xboard game of Chesley against another engine.
 playother: chesley
-	xboard -tc 1 -mps 100 -mg 1000 -fcp ./chesley -scp gnuchess	\
+	xboard -tc 1 -mg 1000 -fcp ./chesley -scp other_binaries/zct	\
 -mode TwoMachines $(XBOARD_OPTS)
 
 #############

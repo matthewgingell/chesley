@@ -134,13 +134,20 @@ struct Eval {
   // incrementally and saved in the Board data structure.
   Score sum_piece_squares (const Board &b);
 
+  // Sum net material over white and black pieces. This is only
+  // provided for debuging purposes as this value is computed
+  // incrementally.
+  Score sum_net_material ();
+
+  void verify_piece_counts ();
+
   ////////////////////////////////
   // Inline utility functions.  //
   ////////////////////////////////
 
   // Fetch the piece square table value for a piece.
   static inline Score 
-  psq_value (Kind k, Color c, coord idx) {
+  psq_value (Kind k, Color c, Coord idx) {
     return piece_square_table[k][xfrm[c][idx]];
   }
   

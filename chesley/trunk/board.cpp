@@ -206,10 +206,9 @@ Board::set_castling_right (Castling_Right cr, bool v) {
 // Setting and updating the board.  //
 //////////////////////////////////////
 
-
 // Clear a piece on the board.
 void
-Board::clear_piece (coord idx) {
+Board::clear_piece (Coord idx) {
   if (occupied & masks_0[idx])
     {
       Color c = get_color (idx);
@@ -219,7 +218,7 @@ Board::clear_piece (coord idx) {
 }
 
 void
-Board::clear_piece (Kind k, Color c, coord idx) {
+Board::clear_piece (Kind k, Color c, Coord idx) {
   if (occupied & masks_0[idx])
     {
       assert (k != NULL_KIND);
@@ -227,8 +226,10 @@ Board::clear_piece (Kind k, Color c, coord idx) {
       assert (idx < 64);
 
       // Clear color and piece kind bits.
-      color_to_board (c) &= ~masks_0[idx];
-      kind_to_board (k) &= ~masks_0[idx];
+      const bits64 mask = 1ULL << idx;
+      white &= ~mask;
+      black &= ~mask;
+      kind_to_board (k) &= ~mask;
 
       // Update hash key.
       hash ^= get_zobrist_piece_key (c, k, idx);
@@ -255,7 +256,7 @@ Board::clear_piece (Kind k, Color c, coord idx) {
 
 // Set a piece on the board with an index.
 void
-Board::set_piece (Kind k, Color c, coord idx) {
+Board::set_piece (Kind k, Color c, Coord idx) {
   assert (~occupied & masks_0[idx]);
   assert (k != NULL_KIND);
   assert (c == BLACK || c == WHITE);
@@ -284,8 +285,8 @@ Board::set_piece (Kind k, Color c, coord idx) {
 
 // Set a piece on the board with a row and file.
 void
-Board::set_piece (Kind kind, Color color, int row, int file) {
-  set_piece (kind, color, file + 8 * row);
+Board::set_piece (Kind k, Color c, int rank, int file) {
+  set_piece (k, c, to_idx (rank, file));
 }
 
 //////////////////////
@@ -302,9 +303,9 @@ Board::apply (const Move &m) {
 
 bool
 Board::apply (const Move &m, Undo &u) {
-  Kind kind = m.get_kind ();
-  Kind capture = m.get_capture ();
-  Color color = to_move ();
+  const Kind kind = m.get_kind ();
+  const Kind capture = m.get_capture ();
+  const Color color = to_move ();
 
   assert (capture != KING);
 
@@ -433,7 +434,7 @@ Board::apply (const Move &m, Undo &u) {
                       set_piece (KING, WHITE, C1);
                       set_piece (ROOK, WHITE, D1);
                       set_color (invert (to_move ()));
-                      flags.w_has_k_castled = 1;
+                      flags.w_has_q_castled = 1;
                       return !(attacked & 0x1C);
                     }
 
@@ -507,13 +508,17 @@ Board::apply (const Move &m, Undo &u) {
   //////////////////////////////////////////////
 
   clear_piece (kind, color, m.from);
-  if (capture != NULL_KIND) clear_piece (capture, ~color, m.to);
-
+  if (capture != NULL_KIND) 
+    clear_piece (capture, ~color, m.to);
+  
   ////////////////////////////////////////////////////
   // Set the destination square, possibly promoting //
   ////////////////////////////////////////////////////
-
-  set_piece ((m.promote == NULL_KIND ? kind : m.promote), color, m.to);
+  
+  Kind destination_kind = kind;
+  if (m.promote != NULL_KIND) destination_kind = m.promote;
+    
+  set_piece (destination_kind, color, m.to);
 
   /////////////////////////////////////////////
   // Test legality of the resulting position //
@@ -662,7 +667,7 @@ std::ostream &
 operator<< (std::ostream &os, const Move &m)
 {
   return os << "[Move from "
-            << (coord) (m.from) << " => " << (coord) (m.to) << " "
+            << (Coord) (m.from) << " => " << (Coord) (m.to) << " "
             << m.color << " " << m.kind << " " << m.capture << " "
             << m.promote << " " << m.en_passant << "]";
 }

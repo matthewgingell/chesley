@@ -865,7 +865,7 @@ init_pawn_attack_spans () {
   pawn_attack_spans[WHITE] = new bitboard[64];
   pawn_attack_spans[BLACK] = new bitboard[64];
 
-  for (coord idx = 0; idx < 64; idx++)
+  for (Coord idx = 0; idx < 64; idx++)
     {
       int rank = idx_to_rank (idx);
       int file = idx_to_file (idx);
@@ -903,7 +903,7 @@ init_in_front_of () {
   // Allocate table.
   in_front_of[WHITE] = new bitboard[64];
   in_front_of[BLACK] = new bitboard[64];
-  for (coord idx = 0; idx < 64; idx++)
+  for (Coord idx = 0; idx < 64; idx++)
     {
       int rank = idx_to_rank (idx);
 
@@ -934,7 +934,7 @@ init_adjacent_files () {
   // Allocate table.
   adjacent_files = new bitboard[64];
 
-  for (coord idx = 0; idx < 64; idx++)
+  for (Coord idx = 0; idx < 64; idx++)
     {
       int f = idx_to_file (idx);
       adjacent_files[idx] = 0;
