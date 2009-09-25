@@ -29,7 +29,7 @@ struct Move {
   Move () {}
 
   // Construct a move;
-  Move (coord from, coord to, Color color, Kind kind, Kind capture,
+  Move (Coord from, Coord to, Color color, Kind kind, Kind capture,
         Kind promote = NULL_KIND, bool en_passant = false)
     : from (from), to (to), color (color), kind (kind),
       capture (capture), promote (promote), en_passant (en_passant) {}
@@ -92,8 +92,8 @@ struct Move {
 
   // State
 #if 0
-  coord  from       : 8;
-  coord  to         : 8;
+  Coord  from       : 8;
+  Coord  to         : 8;
   Color  color      : 8;
   Kind   kind       : 8;
   Kind   capture    : 8;
@@ -101,8 +101,8 @@ struct Move {
   bool   en_passant : 8;
   uint32 unused     : 8;
 #else
-  coord  from       : 6;
-  coord  to         : 6;
+  Coord  from       : 6;
+  Coord  to         : 6;
   Color  color      : 2;
   Kind   kind       : 4;
   Kind   capture    : 4;
@@ -168,7 +168,7 @@ struct Move_Vector {
 
   // Push a move on to the end of a move list.
   void push
-  (coord from, coord to,
+  (Coord from, Coord to,
    Color color, Kind kind,
    Kind capture, Kind promote = NULL_KIND,
    bool en_passant = false)

@@ -358,8 +358,8 @@ private:
         bitboard pieces = b.kind_to_board (k) & b.white;
         while (pieces)
           {
-            coord idx = bit_idx (pieces);
-            coord flip = flip_left_right[idx];
+            Coord idx = bit_idx (pieces);
+            Coord flip = flip_left_right[idx];
             ff[k][idx]++;
             ff[k][flip]++;
             if (g.winner == WHITE) 
@@ -390,8 +390,8 @@ private:
         pieces = b.kind_to_board (k) & b.black;
         while (pieces)
           {
-            coord idx = flip_white_black[bit_idx (pieces)];
-            coord flip = flip_left_right[idx];
+            Coord idx = flip_white_black[bit_idx (pieces)];
+            Coord flip = flip_left_right[idx];
             ff[k][idx]++;
             ff[k][flip]++;
             if (g.winner == BLACK) 

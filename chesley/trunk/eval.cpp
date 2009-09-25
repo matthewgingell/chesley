@@ -8,6 +8,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <cassert>
 #include <iostream>
 #include "board.hpp"
 #include "chesley.hpp"
@@ -88,7 +89,7 @@ Score Eval::eval_rooks (const Color c) {
   bitboard pieces = b.get_rooks (c);
   while (pieces)
      {
-       coord idx = bit_idx (pieces);
+       Coord idx = bit_idx (pieces);
        int file = idx_to_file (idx);
        int rank = idx_to_rank (idx);
        int pawn_count = b.pawn_counts[c][file];
@@ -124,7 +125,7 @@ Score Eval::eval_queens (const Color c) {
   bitboard pieces = b.get_queens (c);
   while (pieces)
      {
-       coord idx = bit_idx (pieces);
+       Coord idx = bit_idx (pieces);
        int file = idx_to_file (idx);
        int pawn_count = b.pawn_counts[c][file];
        
@@ -157,7 +158,7 @@ Score Eval::eval_knights (const Color c) {
   // Do very simple output evaluation on C5 / F5.
   while (pieces)
     {
-      coord idx = bit_idx (pieces);
+      Coord idx = bit_idx (pieces);
       if (c == WHITE)
         {
           if (idx == C5 || idx == F5) s+= KNIGHT_OUTPOST_BONUS;
@@ -184,7 +185,7 @@ Score Eval::eval_bishops (const Color c) {
   // Iterate over bishops.
   while (our_bishops) 
     {
-      coord idx = bit_idx (our_bishops);
+      Coord idx = bit_idx (our_bishops);
 
       if (c == WHITE)
         {
@@ -231,7 +232,7 @@ Eval::eval_mobility (const Color c) {
   // Rooks
   pieces = b.get_rooks (c);
   while (pieces) {
-    coord idx = bit_idx (pieces);
+    Coord idx = bit_idx (pieces);
     s += b.rook_mobility (idx) * ROOK_MOBILITY_BONUS;
     clear_bit (pieces, idx);
   }
@@ -239,7 +240,7 @@ Eval::eval_mobility (const Color c) {
   // Knights
   pieces = b.get_knights (c);
   while (pieces) {
-    coord idx = bit_idx (pieces);
+    Coord idx = bit_idx (pieces);
     s += b.knight_mobility (idx) * KNIGHT_MOBILITY_BONUS;
     clear_bit (pieces, idx);
   }
@@ -247,7 +248,7 @@ Eval::eval_mobility (const Color c) {
   // Bishops
   pieces = b.get_bishops (c);
   while (pieces) {
-    coord idx = bit_idx (pieces);
+    Coord idx = bit_idx (pieces);
     s += b.bishop_mobility (idx) * BISHOP_MOBILITY_BONUS;
     clear_bit (pieces, idx);
   }
@@ -255,7 +256,7 @@ Eval::eval_mobility (const Color c) {
   // Queens
   pieces = b.get_queens (c);
   while (pieces) {
-    coord idx = bit_idx (pieces);
+    Coord idx = bit_idx (pieces);
     s += b.queen_mobility (idx) * QUEEN_MOBILITY_BONUS;
     clear_bit (pieces, idx);
   }
@@ -293,7 +294,7 @@ bitboard pawn_attacks (bitboard pawns, Color c) {
 bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
   bitboard all = 0;
   while (pawns) {
-    coord idx = bit_idx (pawns);
+    Coord idx = bit_idx (pawns);
     all |= pawn_attack_spans[c][idx];
     clear_bit (pawns, idx);
   }
@@ -370,7 +371,7 @@ Score Eval::eval_pawns (const Color c) {
   bitboard p = our_pawns;
   while (p)
     {
-      coord idx = bit_idx (p);
+      Coord idx = bit_idx (p);
       int rank = idx_to_rank (idx);
       int file = idx_to_file (idx);
       
@@ -416,7 +417,7 @@ Score Eval::eval_king (const Color c) {
   if ((b.kings & b.color_to_board (c)) == 0)
     return 0;
 
-  coord idx = bit_idx (b.kings & b.color_to_board (c));
+  Coord idx = bit_idx (b.kings & b.color_to_board (c));
 
   // Provide a bonus for having castled or being able to castle.
   if (c == WHITE)
@@ -506,7 +507,7 @@ Score Eval::sum_piece_squares (const Board &b) {
           // Do all pieces but the king.
           while (pieces)
             {
-              coord idx = bit_idx (pieces);
+              Coord idx = bit_idx (pieces);
               bonus += s *
                 Eval::piece_square_table[k][Eval::xfrm[c][idx]];
               clear_bit (pieces, idx);
@@ -526,5 +527,51 @@ void Eval::count_material () {
     {
       major_counts[c] = b.piece_counts[c][ROOK] + b.piece_counts[c][QUEEN];
       minor_counts[c] = b.piece_counts[c][KNIGHT] + b.piece_counts[c][BISHOP];
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////
+// Debug routines to verify incrementally updated evaluation variables //
+// are correct                                                         //
+/////////////////////////////////////////////////////////////////////////
+
+Score Eval::sum_net_material () {
+  return
+    PAWN_VAL * (pop_count (b.white & b.pawns) - 
+                pop_count (b.black & b.pawns)) +
+    KNIGHT_VAL * (pop_count (b.white & b.knights) - 
+                  pop_count (b.black & b.knights)) +
+    BISHOP_VAL * (pop_count (b.white & b.bishops) - 
+                  pop_count (b.black & b.bishops)) +
+    ROOK_VAL * (pop_count (b.white & b.rooks) - 
+                pop_count (b.black & b.rooks))  +
+    QUEEN_VAL * (pop_count (b.white & b.queens) - 
+                 pop_count (b.black & b.queens));
+}
+
+void Eval::verify_piece_counts () {
+  for (Color c = WHITE; c <= BLACK; c++)
+    {
+      for (Kind k = PAWN; k < KING; k++) 
+        {
+          bitboard pieces = b.color_to_board (c) & b.kind_to_board (k);
+          assert (pop_count (pieces) == b.piece_counts[c][k]);
+        }
+
+      uint8 pawn_counts[COLOR_COUNT][FILE_COUNT];
+      ZERO (pawn_counts);
+
+      bitboard pawns = b.pawns & b.color_to_board(c);
+      while (pawns)
+        {
+          Coord idx = bit_idx (pawns);
+          pawn_counts[c][idx_to_file (idx)]++;
+          clear_bit (pawns, idx);
+        }
+
+      for (int i = 0; i < 8; i++)
+        {
+          assert (pawn_counts[c][i] == (int) b.pawn_counts[c][i]);
+        }
     }
 }

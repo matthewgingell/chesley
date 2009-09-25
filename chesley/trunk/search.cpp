@@ -375,6 +375,7 @@ Search_Engine :: search
         Board c = b;
         Move_Vector dummy;
         c.set_color (~c.to_move ());
+        c.set_en_passant (0);
         int val = -search_with_memory
           (c, depth - R - 1, ply, dummy, -beta, -beta + 1, false);
         if (val >= beta) 
@@ -668,7 +669,6 @@ Search_Engine :: order_moves
       if (m.get_capture () != NULL_KIND)
         {
           Score sval = see (b, m);
-          
           if (sval > 0) 
             { 
               scores[i] = WINNING_CAPTURE + sval;
@@ -779,24 +779,106 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
 //                                                                  //
 //////////////////////////////////////////////////////////////////////
 
+// Apply a capture to a position without updating the hash or the
+// evaluation data.
+
+void apply_fast_capture (Board &b, const Move &m) {
+  assert (m.is_capture ());
+
+  const Coord from = m.from;
+  const Coord to = m.to;
+  const Color c = m.color;
+  const Kind kind = m.get_kind ();
+  const Kind victim = m.get_capture ();
+  const bits64 from_mask = 1ULL << from;
+  const bits64 to_mask = 1ULL << to;
+
+  // The kind of piece we will eventually be setting on the
+  // destination square.
+  Kind destination_kind = m.get_promote ();
+  if (destination_kind == NULL_KIND)
+    destination_kind = kind;
+
+  //////////////////////
+  // Clear the origin //
+  //////////////////////
+
+  b.white &= ~from_mask;
+  b.black &= ~from_mask;
+  b.kind_to_board (kind) &= ~from_mask;
+
+  b.occupied     &= ~masks_0[from];
+  b.occupied_45  &= ~masks_45[from];
+  b.occupied_90  &= ~masks_90[from];
+  b.occupied_135 &= ~masks_135[from];
+
+  /////////////////////////
+  // Set the destination //
+  /////////////////////////
+
+  // Flip color. 
+  b.white ^= to_mask;
+  b.black ^= to_mask;
+
+  // Change the piece on the target square. Note that the occupany
+  // boards stay the same, unless this is a capture en passant.
+
+  b.kind_to_board (victim) &= ~to_mask;
+  b.kind_to_board (kind) |= to_mask;
+
+  if (m.is_en_passant ())
+    {
+      Coord epc = b.flags.en_passant - sign (c) * 8;
+
+      // Set the currently unoccupied destination.
+      b.color_to_board (c) |= masks_0[to];
+      b.color_to_board (~c) &= ~masks_0[to];
+      b.occupied |= masks_0[to];
+      b.occupied_45 |= masks_45[to];
+      b.occupied_90 |= masks_90[to];
+      b.occupied_135 |= masks_135[to];
+      
+      // Clear the pawn captured en passant.
+      b.white &= ~masks_0[epc];
+      b.black &= ~masks_0[epc];
+      b.pawns &= ~masks_0[epc];
+      b.occupied &= ~masks_0[epc];
+      b.occupied_45 &= ~masks_45[epc];
+      b.occupied_90 &= ~masks_90[epc];
+      b.occupied_135 &= ~masks_135[epc];
+    }
+
+  // Flip the color to move.
+  b.flags.to_move = invert (b.flags.to_move);
+}
+
 Score
 Search_Engine :: see (const Board &b, const Move &m) const {
+  Board c = b;
+  return see_inner (c, m);
+}
+
+Score
+Search_Engine :: see_inner (Board &b, const Move &m) const {
 #ifdef ENABLE_SEE
   if (m.get_capture () == NULL_KIND) return 0;
   Score s = Eval::eval_victim (m);
 
-  // Construct child position.
-  Board c = b;
-  c.clear_piece (m.get_kind (), b.to_move (), m.from);
-  c.clear_piece (m.get_capture (), ~b.to_move (), m.to);
-  c.set_piece (m.get_kind (), b.to_move (), m.to);
-  c.set_color (invert (b.to_move ()));
+#if 1
+  apply_fast_capture (b, m);
+#else
+  b.clear_piece (m.get_kind (), b.to_move (), m.from);
+  b.clear_piece (m.get_capture (), ~b.to_move (), m.to);
+  b.set_piece (m.get_kind (), b.to_move (), m.to);
+  b.set_color (invert (b.to_move ()));
+#endif
 
-  Move lvc = c.least_valuable_attacker (m.to);
+  Move lvc = b.least_valuable_attacker (m.to);
+
   if (lvc != NULL_MOVE)
     {
       assert (lvc.to == m.to);
-      s -= max (see (c, lvc), Score (0));
+      s -= max (see_inner (b, lvc), Score (0));
     }
 
   return s;
@@ -848,7 +930,7 @@ Search_Engine :: qsearch
       ////////////////////////////////
 
       b.gen_captures (moves);
-      b.gen_promotions (moves);
+      // b.gen_promotions (moves);
 
       if (moves.count > 0)
         {
@@ -856,9 +938,20 @@ Search_Engine :: qsearch
           ZERO (scores);
           for (int i = 0; i < moves.count; i++) 
             {
-              scores[i] = see (b, moves[i]);
-              if (moves[i].get_promote () == QUEEN) 
-                scores[i] += QUEEN_VAL - PAWN_VAL;
+              if (moves[i].is_en_passant ())
+                {
+                  scores[i] = PAWN_VAL;
+                }
+              else
+                {
+                  scores[i] = see (b, moves[i]);
+                }
+
+              if (moves[i].get_promote () == QUEEN && 
+                  !moves[i].is_capture ()) 
+                {
+                  scores[i] += QUEEN_VAL - PAWN_VAL;
+                }
             }
           moves.sort (scores);
 

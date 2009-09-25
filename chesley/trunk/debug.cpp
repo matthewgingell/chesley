@@ -188,7 +188,8 @@ Session::epd (const string_vector &args)
 
                   int depth = to_int (opcode [1]);
                   uint64 expecting = to_int (operand);
-                  uint64 p = b.perft2 (depth);
+                  // uint64 p = b.perft2 (depth);
+                  uint64 p = b.perft (depth);
                   bool pass = (p == expecting);
 #ifdef _WIN32
                   fprintf (out, "%s %I64u\n", pass ? "PASS" : "FAIL", p);
@@ -208,7 +209,7 @@ Session::epd (const string_vector &args)
           Move best = b.from_san (first (tokens));
           cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
           se.reset ();
-          se.set_fixed_time (1 * 1000);
+          se.set_fixed_time (15 * 1000);
           se.post = true;
           running = true;
           Move m = se.choose_move (b, 100);

@@ -3,7 +3,7 @@
 # Allow large core dumps. Note that Darwin sticks its core files in
 # /cores and they are enourmous.
 
-ulimit -c unlimited
+#ulimit -c unlimited
 
 # Use the system g++
 

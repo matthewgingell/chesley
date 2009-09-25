@@ -293,10 +293,12 @@ struct Search_Engine {
 
   // Quiescence search.
   Score qsearch
-  (const Board &b, int depth, int ply, Score alpha = -INF, Score beta = INF);
+  (const Board &b, int depth, int ply, 
+   Score alpha = -INF, Score beta = INF);
 
   // Static exchange evaluation.
   Score see (const Board &b, const Move &capture) const;
+  Score see_inner (Board &b, const Move &m) const;
 
   // Heuristically order a list of moves by estimated value.
   void order_moves (const Board &b, int ply, Move_Vector &moves);
@@ -320,8 +322,7 @@ struct Search_Engine {
 
   // Routines to update these heuristic tables.
   void collect_move (int depth, int ply, const Move &m, Score s);
-  void collect_fail_high 
-  (int ply, const Move &m, Score s, int mi);
+  void collect_fail_high (int ply, const Move &m, Score s, int mi);
 };
 
 #endif // _SEARCH_

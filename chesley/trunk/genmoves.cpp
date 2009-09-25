@@ -39,6 +39,7 @@ Board::gen_moves (Move_Vector &moves) const
   while (our_pawns)
     {
       bitboard from = clear_msbs (our_pawns);
+      Coord from_idx = bit_idx (from);
       bitboard to;
 
       if (c == WHITE)
@@ -57,7 +58,7 @@ Board::gen_moves (Move_Vector &moves) const
           to |= ((from & ~file_mask (H)) << 9) & black;
 
           // Pawns which can reach the En Passant square.
-          if (flags.en_passant != 0 &&
+          if (flags.en_passant != 0 && idx_to_rank (from_idx) == 4 && 
               ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
                (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
             {
@@ -80,7 +81,7 @@ Board::gen_moves (Move_Vector &moves) const
           to |= ((from & ~file_mask (A)) >> 9) & white;
 
           // Pawns which can reach the En Passant square.
-          if (flags.en_passant != 0 &&
+          if (flags.en_passant != 0 && idx_to_rank (from_idx) == 3 && 
               ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
                (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
             {
@@ -89,10 +90,9 @@ Board::gen_moves (Move_Vector &moves) const
         }
 
       // Collect each destination in the moves list.
-      coord from_idx = bit_idx (from);
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
 
           // Handle the case of a promotion.
           if ((c == WHITE && idx_to_rank (to_idx) == 7) ||
@@ -136,13 +136,13 @@ Board::gen_moves (Move_Vector &moves) const
   // For each rook
   while (our_rooks)
     {
-      coord from = bit_idx (our_rooks);
+      Coord from = bit_idx (our_rooks);
 
       // Collect each destination in the moves list.
       bitboard to = rook_attacks (from) & ~our_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), ROOK, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -159,13 +159,13 @@ Board::gen_moves (Move_Vector &moves) const
   // For each knight:
   while (our_knights)
     {
-      coord from = bit_idx (our_knights);
+      Coord from = bit_idx (our_knights);
 
       // Collect each destination in the moves list.
       bitboard to = knight_attacks (from) & ~our_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KNIGHT, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -181,13 +181,13 @@ Board::gen_moves (Move_Vector &moves) const
   // For each bishop;
   while (our_bishops)
     {
-      coord from = bit_idx (our_bishops);
+      Coord from = bit_idx (our_bishops);
 
       // Collect each destination in the moves list.
       bitboard to = bishop_attacks (from) & ~our_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), BISHOP, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -203,13 +203,13 @@ Board::gen_moves (Move_Vector &moves) const
   // For each queen.
   while (our_queens)
     {
-      coord from = bit_idx (our_queens);
+      Coord from = bit_idx (our_queens);
 
       // Collect each destination in the moves list.
       bitboard to = queen_attacks (from) & ~our_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), QUEEN, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -228,13 +228,13 @@ Board::gen_moves (Move_Vector &moves) const
 
   if (our_king)
     {
-      coord from = bit_idx (our_king);
+      Coord from = bit_idx (our_king);
 
       // Collect each destination in the moves list.
       bitboard to = king_attacks (from) & ~our_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KING, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -297,8 +297,8 @@ Board::gen_promotions (Move_Vector &moves) const
   // For each pawn:
   while (our_pawns)
     {
-      coord from = bit_idx (our_pawns);
-      coord to = (c == WHITE) ? (from + 8) : (from - 8);
+      Coord from = bit_idx (our_pawns);
+      Coord to = (c == WHITE) ? (from + 8) : (from - 8);
       moves.push (from, to, c, PAWN, NULL_KIND, QUEEN);
       clear_bit (our_pawns, from);
     }
@@ -318,6 +318,7 @@ Board::gen_captures (Move_Vector &moves) const
   while (our_pawns)
     {
       bitboard from = clear_msbs (our_pawns);
+      Coord from_idx = bit_idx (from);
       bitboard to = 0;
 
       if (c == WHITE)
@@ -329,7 +330,7 @@ Board::gen_captures (Move_Vector &moves) const
           to |= ((from & ~file_mask (H)) << 9) & black;
 
           // Pawns which can reach the En Passant square.
-          if (flags.en_passant != 0 &&
+          if (flags.en_passant != 0 && idx_to_rank (from_idx) == 4 && 
               ((bit_idx ((from & ~file_mask (A)) << 7) == flags.en_passant) ||
                (bit_idx ((from & ~file_mask (H)) << 9) == flags.en_passant)))
             {
@@ -345,7 +346,7 @@ Board::gen_captures (Move_Vector &moves) const
           to |= ((from & ~file_mask (A)) >> 9) & white;
 
           // Pawns which can reach the En Passant square.
-          if (flags.en_passant != 0 &&
+          if (flags.en_passant != 0 && idx_to_rank (from_idx) == 3 && 
               ((bit_idx ((from & ~file_mask (H)) >> 7) == flags.en_passant) ||
                (bit_idx ((from & ~file_mask (A)) >> 9) == flags.en_passant)))
             {
@@ -354,10 +355,9 @@ Board::gen_captures (Move_Vector &moves) const
         }
 
       // Collect each destination in the moves list.
-      coord from_idx = bit_idx (from);
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           Kind capture = get_kind (to_idx);
           if (idx_to_file (from_idx) != idx_to_file (to_idx) && 
               capture == NULL_KIND)
@@ -385,14 +385,14 @@ Board::gen_captures (Move_Vector &moves) const
   // For each rook
   while (our_rooks)
     {
-      coord from = bit_idx (our_rooks);
+      Coord from = bit_idx (our_rooks);
 
       // Collect each destination in the moves list.
       bitboard to = rook_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), ROOK, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -409,14 +409,14 @@ Board::gen_captures (Move_Vector &moves) const
   // For each knight:
   while (our_knights)
     {
-      coord from = bit_idx (our_knights);
+      Coord from = bit_idx (our_knights);
 
       // Collect each destination in the moves list.
       bitboard to = knight_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KNIGHT, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -433,14 +433,14 @@ Board::gen_captures (Move_Vector &moves) const
   while (our_bishops)
     {
       // Look up destinations in moves table and collect each in 'moves'.
-      coord from = bit_idx (our_bishops);
+      Coord from = bit_idx (our_bishops);
 
       // Collect each destination in the moves list.
       bitboard to = bishop_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), BISHOP, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -457,14 +457,14 @@ Board::gen_captures (Move_Vector &moves) const
   while (our_queens)
     {
       // Look up destinations in moves table and collect each in 'moves'.
-      coord from = bit_idx (our_queens);
+      Coord from = bit_idx (our_queens);
 
       // Collect each destination in the moves list.
       bitboard to = queen_attacks (from);
       to &= other_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), QUEEN, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -479,14 +479,14 @@ Board::gen_captures (Move_Vector &moves) const
 
   if (our_king)
     {
-      coord from = bit_idx (our_king);
+      Coord from = bit_idx (our_king);
 
       // Collect each destination in the moves list.
       bitboard to = king_attacks (from) & ~our_pieces ();
       to &= other_pieces ();
       while (to)
         {
-          coord to_idx = bit_idx (to);
+          Coord to_idx = bit_idx (to);
           moves.push (from, to_idx, to_move (), KING, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
@@ -499,7 +499,7 @@ Board::attack_set (Color c) const {
   bitboard color = c == WHITE ? white : black;
   bitboard attacks;
   bitboard pieces;
-  coord from;
+  Coord from;
 
   // Pawns
   attacks = get_pawn_attacks (c);
@@ -570,7 +570,7 @@ Board::child_count () const
 
 // Return whether the square at idx is attacked by a piece of color c.
 bool
-Board::is_attacked (coord idx, Color c) const
+Board::is_attacked (Coord idx, Color c) const
 {
   // Take advantage of the symmetry that if the piece at index could
   // move like an X and capture an X, then that X is able to attack it
@@ -588,9 +588,10 @@ Board::is_attacked (coord idx, Color c) const
 // of that set and pieces actually at those locations. En Passant is
 // ignored for now.
 Move
-Board::least_valuable_attacker (coord sqr) const {
+Board::least_valuable_attacker (Coord sqr) const {
   Color c = to_move ();
   bitboard us = color_to_board (c);
+
   bitboard from;
 
   // Pawns.
@@ -638,15 +639,18 @@ Board::least_valuable_attacker (coord sqr) const {
 bool
 Board::in_check (Color c) const
 {
-  coord idx = bit_idx (kings & color_to_board (c));
+  Coord idx = bit_idx (kings & color_to_board (c));
 
   if (idx >= 64)
     {
-      cout << to_fen () << endl;
-      cout << kings << endl;
-      cout << c << endl;
-      cout << (kings & color_to_board (c)) << endl;
-      cout << idx << endl;
+      cerr << to_fen () << endl;
+      cerr << kings << endl;
+      cerr << c << endl;
+      print_board (kings);
+      cerr << endl;
+      print_board (color_to_board (c));
+      cerr << endl;
+      cerr << idx << endl;
       assert (0);
     }
 

@@ -135,7 +135,7 @@ struct Board {
 
   // Produce an algebraic letter-number pair for an integer square
   // number.
-  std::string to_alg_coord (coord idx) const;
+  std::string to_alg_coord (Coord idx) const;
 
   // Produce an an integer square number from an algebraic letter-number
   // pair.
@@ -169,11 +169,11 @@ struct Board {
   int child_count () const;
 
   // Return whether the square idx is attacked by a piece of color c.
-  bool is_attacked (coord idx, Color c) const;
+  bool is_attacked (Coord idx, Color c) const;
 
   // For the currently moving side, find the least valuable piece
   // attacking a square.
-  Move least_valuable_attacker (coord sqr) const;
+  Move least_valuable_attacker (Coord sqr) const;
 
   // Return whether color c is in check.
   bool in_check (Color c) const;
@@ -182,7 +182,7 @@ struct Board {
   Color to_move () const { return flags.to_move; }
 
   // Return the color of a piece on a square.
-  Color get_color (coord idx) const {
+  Color get_color (Coord idx) const {
     if (test_bit (white, idx)) return WHITE;
     if (test_bit (black, idx)) return BLACK;
     return NULL_COLOR;
@@ -194,7 +194,7 @@ struct Board {
   }
 
   // Return the kind of piece on a square.
-  Kind get_kind (coord idx) const {
+  Kind get_kind (Coord idx) const {
     if (!test_bit (occupied, idx)) return NULL_KIND;
     if ( test_bit    (pawns, idx)) return PAWN;
     if ( test_bit    (rooks, idx)) return ROOK;
@@ -313,7 +313,7 @@ struct Board {
   }
 
   // Set en_passant target.
-  void set_en_passant (coord idx) {
+  void set_en_passant (Coord idx) {
     hash ^= zobrist_enpassant_keys[flags.en_passant];
     hash ^= zobrist_enpassant_keys[idx];
     flags.en_passant = idx;
@@ -394,12 +394,14 @@ struct Board {
   }
 
   // Clear a piece on the board.
-  void clear_piece (coord idx);
-  void clear_piece (Kind kind, Color c, coord idx);
+  void clear_piece (Coord idx);
+  void clear_piece (Kind k, Color c, Coord idx);
 
   // Set a piece on the board.
-  void set_piece (Kind k, Color c, coord idx);
-  void set_piece (Kind kind, Color color, int row, int file);
+  void set_piece (Kind k, Color c, Coord idx);
+  void set_piece (Kind k, Color c, int row, int file);
+
+  // Move a piece on the board.
 
   // Apply a move to this board.
   bool apply (const Move &m);
@@ -431,22 +433,22 @@ struct Board {
   ////////////////////////
 
   byte
-  occ_0 (coord from) const {
+  occ_0 (Coord from) const {
     return get_byte (occupied, from / 8);
   }
 
   byte
-  occ_45 (coord from) const {
+  occ_45 (Coord from) const {
     return (byte) (occupied_45 >> diag_shifts_45[from]);
   }
 
   byte
-  occ_90 (coord from) const {
+  occ_90 (Coord from) const {
     return get_byte (occupied_90, from % 8);
   }
 
   byte
-  occ_135 (coord from) const {
+  occ_135 (Coord from) const {
     return (byte) (occupied_135 >> diag_shifts_135[from]);
   }
 
@@ -454,39 +456,39 @@ struct Board {
   // Move and child position generation //
   ////////////////////////////////////////
 
-  bitboard rank_attacks (coord idx) const { 
+  bitboard rank_attacks (Coord idx) const { 
     return RANK_ATTACKS_TBL[idx * 256 + occ_0 (idx)];
   }
 
-  bitboard file_attacks (coord idx) const { 
+  bitboard file_attacks (Coord idx) const { 
     return FILE_ATTACKS_TBL[idx * 256 + occ_90 (idx)];
   }
 
-  bitboard diag_45_attacks (coord idx) const { 
+  bitboard diag_45_attacks (Coord idx) const { 
     return DIAG_45_ATTACKS_TBL[idx * 256 + occ_45 (idx)];
   }
 
-  bitboard diag_135_attacks (coord idx) const { 
+  bitboard diag_135_attacks (Coord idx) const { 
     return DIAG_135_ATTACKS_TBL[idx * 256 + occ_135 (idx)];
   }
 
-  bitboard knight_attacks (coord idx) const { 
+  bitboard knight_attacks (Coord idx) const { 
     return KNIGHT_ATTACKS_TBL[idx];
   }
 
-  bitboard bishop_attacks (coord idx) const { 
+  bitboard bishop_attacks (Coord idx) const { 
     return diag_45_attacks (idx) | diag_135_attacks (idx);
   }
 
-  bitboard rook_attacks (coord idx) const { 
+  bitboard rook_attacks (Coord idx) const { 
     return rank_attacks (idx) | file_attacks (idx);
   }
 
-  bitboard queen_attacks (coord idx) const { 
+  bitboard queen_attacks (Coord idx) const { 
     return bishop_attacks (idx) | rook_attacks (idx);
   }
 
-  bitboard king_attacks (coord idx) const { 
+  bitboard king_attacks (Coord idx) const { 
     return KING_ATTACKS_TBL[idx];
   }  
 
@@ -498,39 +500,39 @@ struct Board {
   // Mobility counting //
   ///////////////////////
 
-  byte rank_mobility (coord idx) const { 
+  byte rank_mobility (Coord idx) const { 
     return RANK_MOBILITY_TBL[idx * 256 + occ_0 (idx)];
   }
 
-  byte file_mobility (coord idx) const { 
+  byte file_mobility (Coord idx) const { 
     return FILE_MOBILITY_TBL[idx * 256 + occ_90 (idx)];
   }
 
-  byte diag_45_mobility (coord idx) const { 
+  byte diag_45_mobility (Coord idx) const { 
     return DIAG_45_MOBILITY_TBL[idx * 256 + occ_45 (idx)];
   }
 
-  byte diag_135_mobility (coord idx) const { 
+  byte diag_135_mobility (Coord idx) const { 
     return DIAG_135_MOBILITY_TBL[idx * 256 + occ_135 (idx)];
   }
 
-  byte knight_mobility (coord idx) const { 
+  byte knight_mobility (Coord idx) const { 
     return KNIGHT_MOBILITY_TBL[idx];
   }
 
-  byte bishop_mobility (coord idx) const { 
+  byte bishop_mobility (Coord idx) const { 
     return diag_45_mobility (idx) + diag_135_mobility (idx);
   }
 
-  byte rook_mobility (coord idx) const { 
+  byte rook_mobility (Coord idx) const { 
     return rank_mobility (idx) + file_mobility (idx);
   }
 
-  byte queen_mobility (coord idx) const { 
+  byte queen_mobility (Coord idx) const { 
     return bishop_mobility (idx) + rook_mobility (idx);
   }
 
-  byte king_mobility (coord idx) const { 
+  byte king_mobility (Coord idx) const { 
     return KING_MOBILITY_TBL[idx];
   }  
 

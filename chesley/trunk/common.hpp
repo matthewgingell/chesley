@@ -14,7 +14,6 @@
 #define __COMMON__
 
 #include <cassert>
-#include <cstdio>
 
 ///////////
 // Types //
@@ -46,19 +45,16 @@ typedef unsigned char byte;
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
-
 #ifndef snprintf
 #define snprintf _snprintf
-#endif // snprintf
-
+#endif
 #ifndef fileno
 #define fileno _fileno
-#endif // fileno
-
+#endif
 #endif // _WIN32
 
 // Type for a number representing a square on the board.
-typedef uint32 coord;
+typedef uint32 Coord;
 
 // Hash type for a chess position.
 typedef uint64 hash_t;
@@ -154,13 +150,13 @@ std::ostream & operator<< (std::ostream &os, Kind k);
 
 inline bool in_bounds (int x, int y);
 inline bitboard rank_mask (int rank);
-inline bitboard in_front_of_mask (coord idx, Color c);
+inline bitboard in_front_of_mask (Coord idx, Color c);
 inline bitboard file_mask (int file);
-inline bitboard this_file_mask (coord idx);
-inline int idx_to_rank (coord idx);
-inline int idx_to_file (coord idx);
-inline coord to_idx (int rank, int file);
-inline hash_t get_zobrist_piece_key (Color c, Kind k, coord idx);
+inline bitboard this_file_mask (Coord idx);
+inline int idx_to_rank (Coord idx);
+inline int idx_to_file (Coord idx);
+inline Coord to_idx (int rank, int file);
+inline hash_t get_zobrist_piece_key (Color c, Kind k, Coord idx);
 
 // Test whether a coordinate is in bounds.
 inline bool
@@ -182,25 +178,25 @@ file_mask (int file) {
 
 // Return a bitboard with every bit of the Nth file set.
 inline bitboard
-this_file_mask (coord idx) {
+this_file_mask (Coord idx) {
   return 0x0101010101010101ULL << idx_to_file (idx);
 }
 
 // Return the rank 0 .. 7 containing a coordinate.
 inline int
-idx_to_rank (coord idx) {
+idx_to_rank (Coord idx) {
   return idx / 8;
 }
 
 // Return the file 0 .. 7 containing a coordinate.
 inline int
-idx_to_file (coord idx) {
+idx_to_file (Coord idx) {
   return idx % 8;
 }
   
 // Return an index for a rank and file.
 inline 
-coord to_idx (int rank, int file) {
+Coord to_idx (int rank, int file) {
   return 8 * rank + file;
 }
 
@@ -214,7 +210,7 @@ extern uint64  zobrist_b_castle_k_key;
 
 // Fetch the key for a piece.
 inline hash_t 
-get_zobrist_piece_key (Color c, Kind k, coord idx) {
+get_zobrist_piece_key (Color c, Kind k, Coord idx) {
   uint32 i = (c == BLACK ? 0 : 1);
   uint32 j = (int32) k;
   assert (c != NULL_COLOR);
@@ -299,13 +295,13 @@ extern bitboard *adjacent_files;
 ////////////////////////////////////
   
 // Return a bitboard of all squares in front on this square.
-inline bitboard in_front_of_mask (coord idx, Color c) { 
+inline bitboard in_front_of_mask (Coord idx, Color c) { 
   return in_front_of[c][idx]; 
 }
 
 // Return the files adjacent to this one.
 inline bitboard
-adjacent_files_mask (coord idx) {
+adjacent_files_mask (Coord idx) {
   return adjacent_files[idx];
 }
 
