@@ -38,6 +38,8 @@ static const Score CAN_CASTLE_BONUS = 10;
 
 static const Score TEMPO_BONUS = 10;
 
+static const Score LAZY_EVAL_MARGIN = 200;
+
 const Score isolated_penalty[8]  = { 5, 5, 5, 5, 5, 5, 5, 5 };
 const Score doubled_penalty[8]   = { 5, 5, 5, 5, 5, 5, 5, 5 };
 const Score backwards_penalty[8] = { 4, 4, 4, 4, 4, 4, 4, 4 };
@@ -93,10 +95,11 @@ struct Eval {
   // Initialization //
   ////////////////////
 
-  Eval (const Board &board) {
-    b = board;
-    memset (minor_counts, 0, sizeof (minor_counts));
-    memset (major_counts, 0, sizeof (major_counts));
+  Eval (const Board &board, const Score alpha = -INF, const Score beta = INF) :
+    b (board), alpha (alpha), beta (beta)
+  {
+    ZERO (minor_counts);
+    ZERO (major_counts);
     count_material ();
   }
 
@@ -241,11 +244,13 @@ struct Eval {
   /////////////////////
   // Evaluation data //
   /////////////////////
-    
-  Board b;
+  
+  const Board &b;
   Phase phase;
   int major_counts[2];
   int minor_counts[2];
+  const Score alpha;
+  const Score beta;
 };
 
 #endif // _EVAL_
