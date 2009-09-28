@@ -7,7 +7,7 @@ Matthew Gingell, <gingell@adacore.com>. September 2009.
   xboard GUI.
 
 * Chesley takes its name from Chesley B. "Sully" Sullenberger, the
-  pilot who successfully landed a airplane on the Hudson river around
+  pilot who successfully landed an airplane on the Hudson river around
   the time I was getting started.
 
 * To install, see the Makefile in this directory. To build Chesley you

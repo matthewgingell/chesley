@@ -40,7 +40,19 @@ Score Eval::score () {
   s += b.net_material;
 
   // Add net piece square values.
-  s += (b.psquares[WHITE] - b.psquares[BLACK]);
+  s += b.psquares[WHITE] - b.psquares[BLACK];
+
+  // Lazy evaluation.
+  Score ss = sign (b.to_move ()) * s;
+  
+  if (ss > beta + LAZY_EVAL_MARGIN) 
+    {
+      return ss;
+    }
+  else if (ss < alpha -LAZY_EVAL_MARGIN) 
+    {
+      return ss;
+    }
 
   // Mobility
   s += eval_mobility (WHITE) - eval_mobility (BLACK);
@@ -104,12 +116,14 @@ Score Eval::eval_rooks (const Color c) {
            score += ROOK_HALF_BONUS;
          }
 
-       // Reward rook on the 7th file.
-       if (c == WHITE && rank == 6)
+       // Reward rook on the 7th file trapping the enemy king.
+       if (c == WHITE && rank == 6 && 
+           (b.kings & b.black & rank_mask (7)))
          {
            score += ROOK_ON_7TH_BONUS;
          }
-       else if (c == BLACK && rank == 1)
+       else if (c == BLACK && rank == 1 &&
+                (b.kings & b.white & rank_mask (0)))
          {
            score += ROOK_ON_7TH_BONUS;
          }

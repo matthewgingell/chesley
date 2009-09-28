@@ -214,13 +214,35 @@ struct Board {
     return get_kind (file + 8 * row);
   }
 
-  // Get a bitboard of pieces of some color.
-  bitboard get_pawns   (Color c) { return color_to_board (c) & pawns; }
-  bitboard get_rooks   (Color c) { return color_to_board (c) & rooks; }
-  bitboard get_knights (Color c) { return color_to_board (c) & knights; }
-  bitboard get_bishops (Color c) { return color_to_board (c) & bishops; }
-  bitboard get_queens  (Color c) { return color_to_board (c) & queens; }
-  bitboard get_kings   (Color c) { return color_to_board (c) & kings; }
+  // Return all pawns of color c.
+  bitboard get_pawns (Color c) const { 
+    return color_to_board (c) & pawns; 
+  }
+
+  // Return all rooks of color c.
+  bitboard get_rooks (Color c) const { 
+    return color_to_board (c) & rooks; 
+  }
+
+  // Return all knights of color c.
+  bitboard get_knights (Color c) const { 
+    return color_to_board (c) & knights; 
+  }
+
+  // Return all bishops of color c.
+  bitboard get_bishops (Color c) const { 
+    return color_to_board (c) & bishops; 
+  }
+
+  // Return all queens of color c.
+  bitboard get_queens (Color c) const { 
+    return color_to_board (c) & queens; 
+  }
+
+  // Return all kingsd of color c.
+  bitboard get_kings (Color c) const { 
+    return color_to_board (c) & kings; 
+  }
 
   // Get a bitboard of pawn moves, excluding attacks.
   bitboard get_pawn_moves (Color c) const {

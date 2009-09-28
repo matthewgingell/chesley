@@ -58,7 +58,7 @@ Score
 Search_Engine :: new_search
 (const Board &b, int depth, Move_Vector &pv)
 {  
-  // Age the history tables.
+  // Age the history and mates tables.
   hh_max /= 4;
   mates_max /= 4;
   for (int i = 0; i < 64; i++)
@@ -68,14 +68,15 @@ Search_Engine :: new_search
         mates_table[i][j] /= 4;
       }
 
-  // Age the killers tables.
+  // Age the killer and mate_killer tables.
   for (int i = 0; i < MAX_PLY - 2; i++)
     {
       killers[i] = killers[i + 2];
       killers2[i] = killers[i + 2];
       mate_killer[i] = mate_killer[i + 2];
     }
-
+  
+  // Clear the last two elements of killer and mate killer tables.
   for (int i = MAX_PLY - 2; i < MAX_PLY; i++) 
     {
       killers[i] = NULL_MOVE;
@@ -90,7 +91,8 @@ Search_Engine :: new_search
   new_deadline ();
 
   // If one has been configured, set a fixed maximum search depth.
-  if (controls.fixed_depth > 0) depth = min (depth, controls.fixed_depth);
+  if (controls.fixed_depth > 0) 
+    depth = min (depth, controls.fixed_depth);
 
   // Do the actual tree search.
   return iterative_deepening (b, depth, pv);
@@ -235,13 +237,14 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
     {
       int ext;
       Board c = b;
+      Move m = moves[i];
       cpv.clear();
 
       // Skip this move if it's illegal.
-      if (!c.apply (moves[i])) continue;
+      if (!c.apply (m)) continue;
 
       // Decide on a depth adjustment for this search.
-      ext = depth_adjustment (b, moves[i]);
+      ext = depth_adjustment (b, m);
                             
       // Do principal variation search.
       if (i > 0)
@@ -258,8 +261,8 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
       if (cs > alpha)
         {
           alpha = cs;
-          pv = Move_Vector (moves[i], cpv);
-          collect_move (depth, 0, moves[i], alpha);
+          pv = Move_Vector (m, cpv);
+          collect_move (depth, 0, m, alpha);
         }
     }
   
@@ -299,12 +302,14 @@ Search_Engine :: search_with_memory
   // Try to find this node in the transposition table.
   if (tt_try (b, depth, ply, m, s, alpha, beta))
     {
-      if (m != NULL_MOVE) pv.push (m);
+      if (m != NULL_MOVE) 
+        pv.push (m);
       return s;
     }
   
   // See if we can fail high immediately.
-  if (alpha >= beta) return alpha;
+  if (alpha >= beta) 
+    return alpha;
   
   // Push this position onto the repetition stack and recurse.
   rt_push (b);
@@ -313,7 +318,8 @@ Search_Engine :: search_with_memory
   
   // Update the transposition table and history counters.
   tt_update (b, depth, ply, pv, s, alpha, beta);
-  if (pv.count > 0) collect_move (depth, ply, pv[0], s);
+  if (pv.count > 0) 
+    collect_move (depth, ply, pv[0], s);
   
   return s;
 }
@@ -350,14 +356,8 @@ Search_Engine :: search
   
   // Return the result of a quiescence search at depth 0.
   if (depth <= 0)
-    {
-#ifdef ENABLE_QSEARCH
-      alpha = qsearch (b, -1, ply, alpha, beta);
-#else
-      alpha = Eval (b).score ();
-#endif // ENABLE_QSEARCH
-    }
-
+    alpha = qsearch (b, -1, ply, alpha, beta);
+  
   // Otherwise recurse over the children of this node.
   else {
 
@@ -397,23 +397,24 @@ Search_Engine :: search
     for (mi = 0; mi < moves.count; mi++)
       {
         int cs;
-        Board c = b;
+        Move m = moves[mi];
         Move_Vector cpv;
+        Board c = b;
 
         // Skip this move if it's illegal.
-        if (!c.apply (moves[mi])) continue;
+        if (!c.apply (m)) continue;
 
         legal_move_count++;
 
         // Determine the estimated evaluation for this move.
         Score estimate = 
-          Eval (b).net_material () + see (b, moves[mi]);
+          Eval (b).net_material () + see (b, m);
 
         // Determine whether this moves checks.
         bool c_in_check = c.in_check (c.to_move());
 
         // Decide on a depth adjustment for this search.
-        int ext = depth_adjustment (b, moves[mi]);
+        int ext = depth_adjustment (b, m);
 
 #ifdef ENABLE_FUTILITY
         // The approach taken to futility pruning here come from Ernst
@@ -427,7 +428,7 @@ Search_Engine :: search
         Score upperbound;
         if (ext == 0 && 
             !in_check && !c_in_check && !have_pv_move && 
-            moves[mi].promote == NULL_KIND)
+            m.promote == NULL_KIND)
           {
             ////////////////////////
             // Futility pruning.  //
@@ -490,7 +491,7 @@ Search_Engine :: search
             const int Reduction_Limit = 3;
 
             if (mi >= Full_Depth_Count && depth >= Reduction_Limit &&
-                moves[mi].get_promote () != QUEEN && 
+                m.get_promote () != QUEEN && 
                 ext == 0 && !in_check && !c_in_check)
               {
                 cs = -search_with_memory
@@ -539,12 +540,12 @@ Search_Engine :: search
             if (alpha < beta) 
               {
                 have_pv_move = true;
-                pv = Move_Vector (moves[mi], cpv);
+                pv = Move_Vector (m, cpv);
               }
             else
               {
-                collect_fail_high (ply, moves[mi], cs, mi);
-                pv = Move_Vector (moves[mi], cpv);
+                collect_fail_high (ply, m, cs, mi);
+                pv = Move_Vector (m, cpv);
                 break;
               }
           }
@@ -590,7 +591,7 @@ Search_Engine::collect_fail_high
     {
       // Update the killer moves at this ply.
       if (mi > 0 && 
-          m.get_capture () == NULL_KIND && 
+          !m.is_capture () && 
           m.get_promote () != QUEEN &&
           killers[ply] != m)
         {
@@ -666,7 +667,7 @@ Search_Engine :: order_moves
         }
 
       // Evaluate captures.
-      if (m.get_capture () != NULL_KIND)
+      if (m.is_capture ())
         {
           Score sval = see (b, m);
           if (sval > 0) 
@@ -686,8 +687,7 @@ Search_Engine :: order_moves
         }
       
       // Apply promotion bonus.
-      if (m.get_promote () == QUEEN && 
-          m.get_capture () == NULL_KIND) 
+      if (m.get_promote () == QUEEN && !m.is_capture ())
         {
           scores[i] += QUEEN_PROMOTION;
           continue;
@@ -861,7 +861,7 @@ Search_Engine :: see (const Board &b, const Move &m) const {
 Score
 Search_Engine :: see_inner (Board &b, const Move &m) const {
 #ifdef ENABLE_SEE
-  if (m.get_capture () == NULL_KIND) return 0;
+  if (!m.is_capture ()) return 0;
   Score s = Eval::eval_victim (m);
 
 #if 1
@@ -902,7 +902,7 @@ Search_Engine :: qsearch
   stats.calls_to_qsearch++;
 
   // Do static evaluation at this node.
-  Score static_eval = Eval (b).score ();
+  Score static_eval = Eval (b, alpha, beta).score ();
 
 #if 0
   // Delta pruning.
@@ -959,8 +959,9 @@ Search_Engine :: qsearch
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
+              Move m = moves[mi];
               c = b;
-              if (c.apply (moves[mi]))
+              if (c.apply (m))
                 {
                   alpha = max
                     (alpha, 

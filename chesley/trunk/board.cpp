@@ -33,12 +33,10 @@ to_char (Kind k) {
     case BISHOP:    return 'B';
     case QUEEN:     return 'Q';
     case KING:      return 'K';
-    default:        assert (0);
     }
-  assert (0);
 
-  // Suppress gcc warning in -DNDEBUG case.
-  return '!';
+  throw string ("Failure in to_char");
+  return NULL_KIND;
 }
 
 // Convert a character code to a piece code, ignoring color.
@@ -54,7 +52,7 @@ to_kind (char k) {
       case 'Q': return QUEEN;
       case 'K': return KING;
     }
-  // assert (0);
+
   throw string ("Failure in to_kind");
   return NULL_KIND;
 }
@@ -70,11 +68,10 @@ operator<< (std::ostream &os, Kind k) {
     case BISHOP:    return os << "BISHOP";
     case QUEEN:     return os << "QUEEN";
     case KING:      return os << "KING";
-    default:        cerr << k << endl; assert (0);
     }
 
-    // Suppress gcc warning in -DNDEBUG case.
-    return os;
+  throw string ("Failure in operator<< (Kind k)");
+  return os;
 }
 
 ////////////////
@@ -87,8 +84,11 @@ operator<< (std::ostream &os, Color c) {
     {
     case WHITE: return os << "WHITE";
     case BLACK: return os << "BLACK";
-    default: return os;
+    default: break;
     }
+
+  throw string ("Failure in operator<< (Color c)");
+  return os;
 }
 
 ///////////////
@@ -156,8 +156,7 @@ Board::common_init (Board &b) {
 // Construct a board from the standard starting position.
 Board
 Board::startpos () {
-  return Board::from_fen
-    ("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+  return Board::from_fen (INITIAL_POSITIONS);
 }
 
 /////////////////////////////
