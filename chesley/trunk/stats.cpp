@@ -17,6 +17,11 @@
 
 #include "chesley.hpp"
 
+// MSVC doesn't provide an isnan in <cmath>.
+#if defined(_MSC_VER) && !defined(isnan)
+inline bool isnan(double v) { return v!=v; }
+#endif
+
 using namespace std;
 
 /////////////////////////////////////////////////////////////////////////
@@ -146,8 +151,8 @@ struct Table {
     for (i = elements.begin (); i != elements.end (); i++)
       {
         count++;
-        mean_x += log (i -> first);
-        mean_y += log (i -> second);
+        mean_x += log ((double) i -> first);
+        mean_y += log ((double) i -> second);
       }
 
     mean_x /= count; 

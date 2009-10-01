@@ -623,8 +623,9 @@ Search_Engine::collect_move (int depth, int ply, const Move &m, Score s) {
 void
 Search_Engine :: order_moves
 (const Board &b, int ply, Move_Vector &moves) {
-  int32 scores[moves.count];
-  ZERO (scores);
+  int32 *scores = (int32 *) alloca (sizeof (int32) * moves.count);
+  
+  memset (scores, 0, moves.count * sizeof (int32));
   Move best_guess = tt_move (b);
 
   ///////////////////////////////////////////////////////////////////
@@ -934,8 +935,9 @@ Search_Engine :: qsearch
 
       if (moves.count > 0)
         {
-          int32 scores [moves.count];
-          ZERO (scores);
+          int32 *scores = (int32 *) alloca (sizeof (int32) * moves.count);
+          memset (scores, 0, moves.count * sizeof (int32));
+            
           for (int i = 0; i < moves.count; i++) 
             {
               if (moves[i].is_en_passant ())
