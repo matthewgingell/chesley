@@ -13,6 +13,7 @@
 #ifndef __COMMON__
 #define __COMMON__
 
+#include <algorithm>
 #include <cassert>
 
 ///////////
@@ -195,9 +196,17 @@ idx_to_file (Coord idx) {
 }
   
 // Return an index for a rank and file.
-inline 
-Coord to_idx (int rank, int file) {
+inline Coord 
+to_idx (int rank, int file) {
   return 8 * rank + file;
+}
+
+// Return the distance between two locations.
+inline uint32
+dist (Coord a, Coord b) {
+  return std::max 
+    (std::abs (idx_to_file (a) - idx_to_file (b)),
+     std::abs (idx_to_rank (a) - idx_to_rank (b)));
 }
 
 extern uint64 *zobrist_piece_keys;
@@ -304,5 +313,12 @@ inline bitboard
 adjacent_files_mask (Coord idx) {
   return adjacent_files[idx];
 }
+
+// Return a mask of squares adjacent to idx.
+inline bitboard 
+adjacent_square (Coord idx) {
+  return KING_ATTACKS_TBL[idx];
+}
+
 
 #endif // __COMMON__

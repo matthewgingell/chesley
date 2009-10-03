@@ -640,7 +640,7 @@ Search_Engine :: order_moves
   const int32 EVEN_CAPTURE    =  50 * 1000;
   const int32 KILLER_1        =  25 * 1000;
   const int32 KILLER_2        =  10 * 1000;
-  const int32 CASTLING        =   9 * 1000;
+  const int32 CASTLING        =   5 * 1000;
 
   // Score each move.
   for (int i = 0; i < moves.count; i++)
@@ -856,32 +856,39 @@ void apply_fast_capture (Board &b, const Move &m) {
 Score
 Search_Engine :: see (const Board &b, const Move &m) const {
   Board c = b;
-  return see_inner (c, m);
+  if (!m.is_capture ()) 
+    {
+      return 0;
+    }
+  else
+    {
+      return see_inner (c, m);
+    }
 }
 
 Score
 Search_Engine :: see_inner (Board &b, const Move &m) const {
 #ifdef ENABLE_SEE
-  if (!m.is_capture ()) return 0;
+  assert (m.is_capture ());
+
+  // If our king has been taken, return a very bad score.
+  if (!b.get_kings (b.to_move ()))
+    return -INF;
+
+  // Compute the value of the piece being captured.
   Score s = Eval::eval_victim (m);
 
-#if 1
+  // Make this move without uodating the position hash keys, etc.
   apply_fast_capture (b, m);
-#else
-  b.clear_piece (m.get_kind (), b.to_move (), m.from);
-  b.clear_piece (m.get_capture (), ~b.to_move (), m.to);
-  b.set_piece (m.get_kind (), b.to_move (), m.to);
-  b.set_color (invert (b.to_move ()));
-#endif
 
+  // Recurse with the next capture in the chain.
   Move lvc = b.least_valuable_attacker (m.to);
-
   if (lvc != NULL_MOVE)
     {
       assert (lvc.to == m.to);
       s -= max (see_inner (b, lvc), Score (0));
     }
-
+  
   return s;
 #else 
   return Eval::eval_capture (m);
@@ -1189,8 +1196,14 @@ Search_Engine :: new_deadline ()
     {
       if (controls.moves_remaining > 0)
         {
-          controls.deadline = mclock () +
-            (controls.time_remaining) / (controls.moves_remaining + 5);
+          uint64 allocated = 
+            controls.time_remaining / (controls.moves_remaining + 5);
+          
+          cerr << "time_remaining: " << controls.time_remaining << endl;
+          cerr << "moves_remaining: " << controls.moves_remaining << endl;
+          cerr << "time allocated: " << allocated << endl;
+          
+          controls.deadline = mclock () + allocated;
         }
       else
         {

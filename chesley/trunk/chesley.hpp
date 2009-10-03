@@ -34,12 +34,12 @@
 #define ENGINE_LICENSE_STR   "Chesley is free software, " \
                               "distributed under the GNU General Public License."
 
-#define VERSION SVN_REVISION
+#define VERSION "~c & ksqrs, pc * kt"
 
 inline
 char *get_prologue () {
   static char buf[2048];
-  snprintf (buf, sizeof (buf), "%s (svn %s)\n\n%s\n%s",
+  snprintf (buf, sizeof (buf), "%s (%s)\n\n%s\n%s",
            ENGINE_ID_STR, VERSION, ENGINE_COPYRIGHT_STR, ENGINE_LICENSE_STR);
   return buf;
 }

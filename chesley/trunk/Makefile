@@ -80,19 +80,22 @@ out.pgn:
 
 # Run an xboard game of Chesley against another engine.
 playother: chesley
-	rm -f out.pgn
-	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp  \
-gnuchess -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
-other_binaries/exchess -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
+#	rm -f out.pgn
+# 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp  \
+# gnuchess -mode TwoMachines $(XBOARD_OPTS)
+# 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
+# other_binaries/exchess -mode TwoMachines $(XBOARD_OPTS)
+	xboard -tc 1 -mps 60 -mg 5 -fcp ./chesley -scp	\
 other_binaries/zct -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
+#	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
 other_binaries/GreKo -mode TwoMachines $(XBOARD_OPTS)
+#	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp		\
+other_programs/arasan-11.5.0/bin/arasan-11.5.0/arasanx -mode	\
+TwoMachines $(XBOARD_OPTS)
 
 # Annotate out.pgn using Crafty.
 annotate: out.pgn
-	printf "smpmt=2\nannotateh out.pgn Chesley other_binaries/crafty 1-999	\
+	printf "smpmt=2\nannotate out.pgn Chesley other_binaries/crafty 1-999	\
 2 5\n" | other_binaries/crafty
 
 #############

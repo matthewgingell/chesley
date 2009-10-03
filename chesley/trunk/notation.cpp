@@ -224,11 +224,11 @@ Board::to_san (const Move &m) const {
           // destination?
           if (k == ki && m.to == moves[i].to)
             {
-              // If these two pieces are the same rank, we will
+              // If these two pieces are the on the same rank, we will
               // disambiguate by writing the file.
               if (from_rank == idx_to_rank (moves[i].from)) need_file = true;
 
-              // If these two pieces are the same file, we will
+              // If these two pieces are on the same file, we will
               // disambiguate by writing the rank.
               if (from_file == idx_to_file (moves[i].from)) need_rank = true;
 
@@ -427,7 +427,7 @@ Board::from_san (const string &s) const {
   return m;
 }
 
-// Handle a failure read a SAN move.
+// Handle failure to read a SAN move.
 void
 Board::from_san_fail (const string &s) const {
   cerr << "Error parsing a SAN string: " << s << endl;
@@ -707,13 +707,4 @@ Board::to_ascii () const {
     }
 
     return s.str ();
-}
-
-// Initialize a board from an ASCII art representation of a board
-// string.
-Board
-Board::from_ascii (const string &str IS_UNUSED) {
-  // Warning: this is method isn't implemented.
-  assert (0);
-  return Board ();
 }
