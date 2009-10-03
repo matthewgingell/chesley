@@ -228,3 +228,63 @@ Session::epd (const string_vector &args)
 
   return true;
 }
+
+/////////////////////////////////////////////////////////////////////////
+// Generate the number of moves available at ply d. Used for debugging //
+// the move generator                                                  //
+/////////////////////////////////////////////////////////////////////////
+
+uint64
+Board::perft (int d) const {
+  uint64 sum = 0;
+
+  if (d == 0) return 1;
+
+  Move_Vector moves (*this);
+  for (int i = 0; i < moves.count; i++)
+    {
+      Board c (*this);
+      if (c.apply (moves[i])) sum += c.perft (d - 1);
+    }
+  return sum;
+}
+
+//////////////////////////////////////////////////////////////
+// An alternate implementation of perft using apply/unapply //
+//////////////////////////////////////////////////////////////
+
+uint64
+Board::perft2 (int d) {
+  uint64 sum = 0;
+  
+  if (d == 0) return 1;
+
+  Move_Vector moves (*this);
+  for (int i = 0; i < moves.count; i++)
+    {
+      Undo u;
+      if (apply (moves[i], u))
+        sum += perft2 (d - 1);
+      unapply (moves[i], u);
+    }
+  
+  return sum;
+}
+
+///////////////////////////////////////////////////////////////////
+// For each child, print the child move and the perft (d) of the //
+// resulting board.                                              //
+///////////////////////////////////////////////////////////////////
+
+void
+Board :: divide (int d) const {
+  Move_Vector moves (*this);
+
+  for (int i = 0; i < moves.count; i++)
+    {
+      Board child = *this;
+      std::cerr << to_calg (moves[i]) << " ";
+      if (child.apply (moves [i]))
+        std::cerr << child.perft (d - 1) << std::endl;
+    }
+}

@@ -239,11 +239,24 @@ struct Board {
     return color_to_board (c) & queens; 
   }
 
-  // Return all kingsd of color c.
+  // Return all kings of color c.
   bitboard get_kings (Color c) const { 
     return color_to_board (c) & kings; 
   }
 
+  // Return all kings of color c.
+  Coord king_square (Color c) const { 
+    return bit_idx (color_to_board (c) & kings); 
+  }
+
+  Coord our_king_square () const { 
+    return king_square (to_move ());
+  }
+
+  Coord their_king_square () const { 
+    return king_square (~to_move ());
+  }
+  
   // Get a bitboard of pawn moves, excluding attacks.
   bitboard get_pawn_moves (Color c) const {
     bitboard to;
