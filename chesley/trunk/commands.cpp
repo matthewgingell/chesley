@@ -416,7 +416,7 @@ Session::execute (char *line) {
         assert (applied);
             
         // This move may have ended the game.
-        Status s = get_status ();
+        Status s = get_status (board);
         if (s != GAME_IN_PROGRESS)
           {
             handle_end_of_game (s);
@@ -437,6 +437,7 @@ Session::execute (char *line) {
       // Start a new game.
       board = Board :: startpos ();
       se.reset ();
+      pv.clear ();
       our_color = BLACK;
       running = true;
       break;
@@ -610,15 +611,15 @@ Session::execute (char *line) {
       break;
 
     case CMD_EASY:
-      // ignored.
+      Session::ponder_enabled = false;
       break;
-
+      
     case CMD_EDIT:
       // ignored.
       break;
-
+      
     case CMD_HARD:
-      // ignored.
+      Session::ponder_enabled = true;
       break;
 
     case CMD_HINT:
@@ -774,6 +775,7 @@ Session::display_time_controls (const string_vector &ctokens IS_UNUSED) {
 
   switch (se.controls.mode) 
     {
+    case UNLIMITED:    fprintf (out, "UNLIMITED"); break;
     case CONVENTIONAL: fprintf (out, "CONVENTIONAL"); break;
     case ICS:          fprintf (out, "ICS"); break;
     case EXACT:        fprintf (out, "EXACT"); break;

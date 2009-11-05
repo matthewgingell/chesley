@@ -597,9 +597,9 @@ Board::least_valuable_attacker (Coord sqr) const {
   bitboard our_pawns = pawns & us;
   if (c == WHITE)
     {
-      from = ((masks_0 [sqr] & ~file_mask (H)) >> 7) & our_pawns;
+      from = ((masks_0[sqr] & ~file_mask (H)) >> 7) & our_pawns;
       if (from) return Move (bit_idx (from), sqr, c, PAWN, get_kind (sqr));
-      from = ((masks_0 [sqr] & ~file_mask (A)) >> 9) & our_pawns;
+      from = ((masks_0[sqr] & ~file_mask (A)) >> 9) & our_pawns;
       if (from) return Move (bit_idx (from), sqr, c, PAWN, get_kind (sqr));
     }
   else

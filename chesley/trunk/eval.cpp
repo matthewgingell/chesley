@@ -53,7 +53,7 @@ Score Eval::score () {
     {
       return ss;
     }
-
+  
   // Mobility
   s += eval_mobility (WHITE) - eval_mobility (BLACK);
 
