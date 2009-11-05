@@ -24,24 +24,35 @@ using namespace std;
 // Reference to the pawn hash table.
 extern PHash ph;
 
-// Exceptions.
-const int SEARCH_INTERRUPTED = 1;
-
 // Utility functions.
 bool is_mate (Score s) { 
   return abs (s) > MATE_VAL - MAX_DEPTH;
 }
 
-// Compute the principal variation and return its first move.
-Move
-Search_Engine :: choose_move (const Board &b, int depth)
+// Compute and return the principal variation.
+Score
+Search_Engine :: compute_pv (const Board &b, int depth, Move_Vector &pv)
 {
-  Move_Vector pv;
+  Score s;
+  pv.clear ();
+  assert (depth > 0);
   assert (!is_triple_rep (b));
-  depth = min (depth, MAX_DEPTH);
-  new_search (b, depth, pv);
+  s = new_search (b, min (depth, MAX_DEPTH), pv);
   assert (pv.count > 0);
-  return pv[0];
+  return s;
+}
+
+// Do a search and generate a move for the passed position.
+void 
+Search_Engine :: do_ponder (const Board &b) {
+  ponder.pv.clear ();
+  ponder.position = b;
+  ponder.time = mclock ();
+  time_mode old_mode = controls.mode;
+  controls.mode = UNLIMITED;
+  ponder.score = new_search (b, MAX_DEPTH, ponder.pv);
+  controls.mode = old_mode;
+  ponder.time = mclock () - ponder.time;
 }
 
 /////////////////////////////////////////////////////////////////////////
@@ -55,47 +66,74 @@ Search_Engine :: choose_move (const Board &b, int depth)
 /////////////////////////////////////////////////////////////////////////
 
 Score
-Search_Engine :: new_search
-(const Board &b, int depth, Move_Vector &pv)
-{  
-  // Age the history and mates tables.
-  hh_max /= 4;
-  mates_max /= 4;
-  for (int i = 0; i < 64; i++)
-    for (int j = 0; j < 64; j++)
-      {
-        hh_table[i][j] /= 4;
-        mates_table[i][j] /= 4;
-      }
-
-  // Age the killer and mate_killer tables.
-  for (int i = 0; i < MAX_PLY - 2; i++)
+Search_Engine :: new_search 
+(const Board &b, int depth, Move_Vector &pv) {
+  if (!Session::ponder_enabled)
     {
-      killers[i] = killers[i + 2];
-      killers2[i] = killers[i + 2];
-      mate_killer[i] = mate_killer[i + 2];
+      // Age the history and mates tables.
+      hh_max /= 4;
+      mates_max /= 4;
+      for (int i = 0; i < 64; i++)
+        for (int j = 0; j < 64; j++)
+          {
+            hh_table[i][j] /= 4;
+            mates_table[i][j] /= 4;
+          }
+      
+      // Age the killer and mate_killer tables.
+      for (int i = 0; i < MAX_PLY - 2; i++)
+        {
+          killers[i] = killers[i + 2];
+          killers2[i] = killers[i + 2];
+          mate_killer[i] = mate_killer[i + 2];
+        }
+      
+      // Clear the last two elements of killer and mate killer tables.
+      for (int i = MAX_PLY - 2; i < MAX_PLY; i++) 
+        {
+          killers[i] = NULL_MOVE;
+          killers2[i] = NULL_MOVE;
+          mate_killer[i] = NULL_MOVE;
+        }
     }
-  
-  // Clear the last two elements of killer and mate killer tables.
-  for (int i = MAX_PLY - 2; i < MAX_PLY; i++) 
+  else
     {
-      killers[i] = NULL_MOVE;
-      killers2[i] = NULL_MOVE;
-      mate_killer[i] = NULL_MOVE;
+      hh_max = 0;
+      ZERO (hh_table);
+      mates_max = 0;
+      ZERO (mates_table);
+      ZERO (killers);
+      ZERO (killers2);
+      ZERO (mate_killer);
     }
 
   // Clear statistics.
   clear_statistics ();
-
+  
   // Setup the clock.
   new_deadline ();
 
+  // Test to see whether we have a ponder hit. If we spent at least as
+  // much time pondering as we have allocated for this search, then
+  // return the pondered pv.
+
+  if (ponder.position == b &&
+      ponder.pv.count > 0 &&
+      ponder.time >= controls.allocated)
+    {
+      cout << "ponder hit: " << ponder.time << endl;
+      pv = ponder.pv;
+      return ponder.score;
+    }  
+  
   // If one has been configured, set a fixed maximum search depth.
   if (controls.fixed_depth > 0) 
     depth = min (depth, controls.fixed_depth);
 
   // Do the actual tree search.
-  return iterative_deepening (b, depth, pv);
+  Score s = iterative_deepening (b, depth, pv);
+  
+  return s;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -661,7 +699,7 @@ Search_Engine :: order_moves
           continue;
         }
 
-      if (ply > 2 && m == mate_killer[ply - 2]) 
+      if (ply >= 2 && m == mate_killer[ply - 2]) 
         {     
           scores[i] += MATE_KILLER - 1;
           continue;
@@ -701,7 +739,7 @@ Search_Engine :: order_moves
           continue;
         }
 
-      if (ply > 2 && m == killers[ply - 2]) 
+      if (ply >= 2 && m == killers[ply - 2]) 
         {
           scores[i] += KILLER_1 - 1;
           continue;
@@ -713,7 +751,7 @@ Search_Engine :: order_moves
           continue;
         }
 
-      if (ply > 2 && m == killers2[ply - 2]) 
+      if (ply >= 2 && m == killers2[ply - 2]) 
         {
           scores[i] += KILLER_2 - 1;
           continue;
@@ -938,7 +976,7 @@ Search_Engine :: qsearch
       ////////////////////////////////
 
       b.gen_captures (moves);
-      // b.gen_promotions (moves);
+      b.gen_promotions (moves);
 
       if (moves.count > 0)
         {
@@ -1091,14 +1129,11 @@ Search_Engine :: tt_update
 
   Move m = (pv.count > 0) ? pv[0] : NULL_MOVE;
   
-#if 0 
+#if 0
   Move old_move;
   Score old_score;
   int old_depth;
   tt.lookup (b, old_move, old_score, old_depth);
-#endif
-
-#if 0
   if (depth > old_depth) 
 #endif
 
@@ -1187,30 +1222,43 @@ void
 Search_Engine :: new_deadline ()
 {
   controls.interrupt_search = false;
+
+  // Handle an unlimited time search.
+  if (controls.mode == UNLIMITED)
+    {
+      controls.allocated = -1;
+      controls.deadline = -1;
+      return;
+    }
+
+  // Handle a fixed time search.
   if (controls.mode == EXACT || controls.fixed_time >= 0)
     {
-      // Set an absolute fixed time limit for this move.
-      controls.deadline = mclock () + controls.fixed_time;
+      controls.allocated = controls.fixed_time;
+      controls.deadline = mclock () + controls.allocated;
+      return;
     }
-  else if (controls.time_remaining >= 0)
+
+  // Handle the case of limited time and/or moves per session.
+  if (controls.time_remaining >= 0)
     {
       if (controls.moves_remaining > 0)
         {
-          uint64 allocated = 
+          controls.allocated = 
             controls.time_remaining / (controls.moves_remaining + 5);
           
           cerr << "time_remaining: " << controls.time_remaining << endl;
           cerr << "moves_remaining: " << controls.moves_remaining << endl;
-          cerr << "time allocated: " << allocated << endl;
+          cerr << "time allocated: " << controls.allocated << endl;
           
-          controls.deadline = mclock () + allocated;
+          controls.deadline = mclock () + controls.allocated;
         }
       else
         {
           // If time is limited but the move count is not, always
           // assume the game will end in 25 more moves.
-          controls.deadline = 
-            mclock () + (controls.time_remaining - 1000) / 25;
+          controls.allocated = controls.time_remaining / 25;
+          controls.deadline = mclock () + controls.allocated;
         }
     }
   else
@@ -1223,15 +1271,13 @@ Search_Engine :: new_deadline ()
 // Method called periodically to implement time control.
 inline void
 Search_Engine :: poll () {
-  if ((stats.calls_to_qsearch + stats.calls_to_search) % 64 * 1024 == 0)
-    {
-      uint64 clock = mclock ();
-      if (controls.deadline > 0 && clock >= controls.deadline)
-        {
-          controls.interrupt_search = true;
-          throw SEARCH_INTERRUPTED;
-        }
-    }
+  // If we've looked at enough nodes since we last checked then
+  // callback the session manager.
+
+  const uint64 nodes = stats.calls_to_qsearch + stats.calls_to_search;
+  const uint64 period = 64 * 1024;
+
+  if (nodes > 0 && nodes % period == 0) Session::poll ();
 }
 
 // Set fixed depth per move.

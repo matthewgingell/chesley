@@ -306,7 +306,7 @@ Board::apply (const Move &m, Undo &u) {
   const Kind capture = m.get_capture ();
   const Color color = to_move ();
 
-  assert (capture != KING);
+  if (capture == KING) return false;
 
   ///////////////////////////
   // Save undo information //

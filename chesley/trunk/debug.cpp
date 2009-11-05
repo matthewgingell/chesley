@@ -26,10 +26,13 @@ using namespace std;
 bool
 Session::bench (const string_vector &tokens) {
   int depth = 6;
+  Move_Vector pv;
+
   if (tokens.size () > 1 && is_number (tokens[1]))
     depth = to_int (tokens[1]);
+
   se.set_fixed_time (1024 * 1024);
-  Move m = se.choose_move (board, depth);
+  se.compute_pv (board, depth, pv);
   return true;
 }
 
@@ -44,7 +47,7 @@ Session::play_self (const string_vector &tokens IS_UNUSED)
   board = Board::startpos ();
   running = true;
   se.set_fixed_time (1000);
-  while ((s = get_status ()) == GAME_IN_PROGRESS)
+  while ((s = get_status (board)) == GAME_IN_PROGRESS)
     {
       cout << board << endl << endl;
       Move m = find_a_move ();
@@ -71,7 +74,7 @@ Session::dump_pawns (const string_vector &tokens IS_UNUSED)
     {
       Status s;
       board = Board::startpos ();
-      while ((s = get_status ()) == GAME_IN_PROGRESS)
+      while ((s = get_status (board)) == GAME_IN_PROGRESS)
         {
           // dump white pawns vector.
           bitboard white_pawns = board.pawns & board.white;
@@ -206,15 +209,17 @@ Session::epd (const string_vector &args)
 
       else if (opcode == "bm")
         {
+          Move_Vector pv;
           Move best = b.from_san (first (tokens));
+
           cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
           se.reset ();
           se.set_fixed_time (15 * 1000);
           se.post = true;
           running = true;
-          Move m = se.choose_move (b, 100);
+          se.compute_pv (b, 100, pv);
           running = false;
-          (m == best) ? cout << "PASS: " : cout << "FAIL: ";
+          (pv[0] == best) ? cout << "PASS: " : cout << "FAIL: ";
           cout << fen << " bm " << b.to_san (best) << endl << endl;;
           tokens == rest (tokens);
         }

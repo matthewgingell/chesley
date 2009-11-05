@@ -61,6 +61,9 @@ chesley: $(OBJS)
 # Running games under xboard  #
 ###############################
 
+#XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
+-sgf out.pgn
+
 XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
 -sgf out.pgn
 
@@ -71,12 +74,17 @@ play: chesley
 # Run an xboard game of Chesley against Chesley.
 playself: chesley
 	rm -f out.pgn
-	xboard -tc 1 -mps 100 -fcp ./chesley -scp ./chesley -mode	\
+	xboard -tc 5 -inc 0 -fcp ./chesley -scp ./chesley -mode	\
 TwoMachines $(XBOARD_OPTS)
 
 # Generate a pgn file of games against different engines.
 out.pgn:
 	make playother
+
+playold: chesley chesley.old
+	rm -f out.pgn
+	xboard -tc 1 -mps 60 -mg 5 -fcp ./chesley -scp ./chesley.old -mode	\
+TwoMachines $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against another engine.
 playother: chesley
@@ -85,7 +93,7 @@ playother: chesley
 # gnuchess -mode TwoMachines $(XBOARD_OPTS)
 # 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
 # other_binaries/exchess -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 1 -mps 60 -mg 5 -fcp ./chesley -scp	\
+	xboard -tc 1 -mps 60 -mg 500 -fcp ./chesley -scp	\
 other_binaries/zct -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
 other_binaries/GreKo -mode TwoMachines $(XBOARD_OPTS)
@@ -95,8 +103,8 @@ TwoMachines $(XBOARD_OPTS)
 
 # Annotate out.pgn using Crafty.
 annotate: out.pgn
-	printf "smpmt=2\nannotate out.pgn Chesley other_binaries/crafty 1-999	\
-2 5\n" | other_binaries/crafty
+	printf "smpmt=2\nannotate out.pgn w other_binaries/crafty 1-999	\
+0.5 5\n" | other_binaries/crafty
 
 #############
 # Clean up. #

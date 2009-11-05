@@ -19,11 +19,17 @@
 
 #include "chesley.hpp"
 
-enum Status { GAME_IN_PROGRESS, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
-enum UI_Mode { INTERACTIVE, BATCH };
+enum Status   { GAME_IN_PROGRESS, GAME_WIN_WHITE, GAME_WIN_BLACK, GAME_DRAW };
+enum UI_Mode  { INTERACTIVE, BATCH };
 enum Protocol { NATIVE, UCI, XBOARD };
 
 std::ostream & operator<< (std::ostream &os, Status s);
+
+////////////////
+// Exceptions //
+////////////////
+
+const int SEARCH_INTERRUPTED = 1;
 
 struct Session {
 
@@ -34,7 +40,10 @@ struct Session {
   // State of the chess board.
   static Board board;
 
-  // Color the engine is playing.
+  // The principle variation computed for this board, or otherwise an
+  // empty list.
+  static Move_Vector pv;
+  // Color that Chesley is playing.
   static Color our_color;
 
   // Is the opponent a computer?
@@ -44,14 +53,13 @@ struct Session {
   // Engine state //
   //////////////////
 
-  // Is session running or paused?
+  // Is session running or stopped?
   static bool running;
 
-  // Time in milliseconds since the epoch at which to interrupt an
-  // ongoing search, or zero if no timeout is set.
-  static uint64 timeout;
+  // Is pondering enabled?
+  static bool ponder_enabled;
 
-  // Command prompt;
+  // Command prompt.
   static const char *prompt;
 
   //////////////////
@@ -61,6 +69,7 @@ struct Session {
   // This class is intended to be used as a singleton.
   Session () { assert (0); }
 
+  // Initialize the main command loop.
   static void init_session ();
 
   /////////////
@@ -94,9 +103,6 @@ struct Session {
   static FILE *in, *out;
   static bool tty;
 
-  // Handle an alarm signal.
-  static void handle_alarm (int sig);
-
   // Write the command prompt.
   static void write_prompt ();
 
@@ -122,7 +128,7 @@ struct Session {
   static void work ();
 
   // Determine the current status of this game.
-  static Status get_status ();
+  static Status get_status (Board &b);
 
   // Set session state to reflect the game has ended.
   static void handle_end_of_game (Status s);
@@ -130,9 +136,17 @@ struct Session {
   // Find a move to play.
   static Move find_a_move ();
 
+  // Ponder the next move in the principle variation.
+  static void do_ponder ();
+
+  // This function must be called periodically to implement timeouts.
+  static void poll ();
+
   //////////////
   // Commands //
   //////////////
+
+  // ??? Move implementations to commands.cpp?
 
   // Process a string in Extended Position Notation.
   static bool epd (const string_vector &tokens);

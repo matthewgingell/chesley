@@ -34,19 +34,21 @@ FILE *Session::out;
 bool  Session::tty;
 
 // Game state
-Board   Session::board;
-Color   Session::our_color;
-bool    Session::op_is_computer;
+Board       Session::board;
+Move_Vector Session::pv;
+Color       Session::our_color;
+bool        Session::op_is_computer;
 
 // Interface mode.
-UI_Mode Session::ui_mode;
+UI_Mode  Session::ui_mode;
 Protocol Session::protocol;
 
-// Search state.
+// Search engine.
 Search_Engine Session::se;
 
 // Engine state.
 bool        Session::running;
+bool        Session::ponder_enabled = false;
 const char *Session::prompt;
 
 ////////////////////////////////
@@ -60,7 +62,8 @@ Session::init_session () {
   board = Board :: startpos ();
   our_color = BLACK;
   op_is_computer = false;
-
+  pv.clear ();
+  
   // Set initial engine state.
   running = false;
 
@@ -85,11 +88,6 @@ Session::init_session () {
   protocol = NATIVE;
 
   prompt = ui_mode == INTERACTIVE ? "> " : "";
-}
-
-void
-Session::handle_alarm (int sig IS_UNUSED) {
-  //  if (running) se.poll ();
 }
 
 // Write the command prompt.
@@ -149,67 +147,76 @@ void
 Session::work ()
 {
   // If we aren't running, return and block for input.
-  if (!running)
-    return;
-
-  Status s = get_status ();
+  if (!running) return;
 
   // If the game is over, return and block for input.
-  if (s != GAME_IN_PROGRESS)
-    return;
+  if (get_status (board) != GAME_IN_PROGRESS) return;
 
-  // If it isn't our turn, return and block for input.
-  if (board.to_move () != our_color)
+  // If it isn't our turn, possibly ponder then return.
+  if (board.to_move () != our_color) 
     {
+      if (ponder_enabled && pv.count >= 2)
+        {
+          Board to_ponder = board;
+
+          if (!to_ponder.apply (pv[1]))
+            {
+              assert (0);
+            }
+          
+          if (get_status (to_ponder) == GAME_IN_PROGRESS)
+            {
+              se.do_ponder (to_ponder);
+            }
+        }
+
       return;
     }
 
   // Otherwise the game is still running and it's our turn, so compute
   // and send a move.
-  else
-    {
-      // Search for a move.
-      Move m = find_a_move ();
+  Move m = find_a_move ();
 
-      // We should never get back a null move from the search engine.
-      assert (m != NULL_MOVE);
+  // We should never get back a null move from the search engine.
+  assert (m != NULL_MOVE);
 
-      // Apply the move.
-      bool applied = board.apply (m);
-      se.rt_push (board);
+  // Apply the move.
+  bool applied = board.apply (m);
 
-      // We should never get back a move that doesn't apply.
-      assert (applied);
+  // We should never get back a move that doesn't apply.
+  assert (applied);
 
-      // Send the move to the client.
-      fprintf (out, "move %s\n", board.to_calg (m).c_str ());
-    }
+  // Add the resulting position to the repetition table.
+  se.rt_push (board);
+
+  // Send the move to the client.
+  fprintf (out, "move %s\n", board.to_calg (m).c_str ());
 
   // This move may have ended the game.
-  s = get_status ();
+  Status s = get_status (board);
   if (s != GAME_IN_PROGRESS)
     handle_end_of_game (s);
 }
 
 // Determine the current status of this game.
 Status
-Session :: get_status () {
-  Color player = board.to_move ();
+Session :: get_status (Board &b) {
+  Color player = b.to_move ();
 
   // Check 50 move rule.
-  if (board.half_move_clock == 100)
+  if (b.half_move_clock == 100)
     return GAME_DRAW;
 
   // Check for a triple repetition.
-  if (se.is_triple_rep (board))
+  if (se.is_triple_rep (b))
     return GAME_DRAW;
 
   // Check whether there are any moves legal moves for the current
   // player from this position
-  if (board.child_count () == 0)
+  if (b.child_count () == 0)
     {
       // This is checkmate.
-      if (board.in_check (player))
+      if (b.in_check (player))
         {
           if (player == WHITE)
             return GAME_WIN_BLACK;
@@ -261,12 +268,14 @@ Session::handle_end_of_game (Status s) {
 Move
 Session::find_a_move () {
   uint64 start_time = mclock ();
-  Move m = se.choose_move (board, 99);
+  pv.clear ();
+  se.compute_pv (board, 256, pv);
   uint64 elapsed = mclock () - start_time;
 
   // The caller is responsible for managing the time and move limits
   // set in the search engine, since the search engine can't know what
   // is being done with the results it returns.
+
   if (((uint64) se.controls.time_remaining) > elapsed)
     {
       se.controls.time_remaining -= (int32) elapsed;
@@ -282,11 +291,24 @@ Session::find_a_move () {
     }
   else
     {
-      se.controls.moves_remaining = 
-        se.controls.moves_ptc;
+      se.controls.moves_remaining = se.controls.moves_ptc;
     }
 
-  return m;
+  return pv[0];
+}
+
+// This function must be called periodically to implement timeouts.
+void
+Session::poll () {
+  uint64 now = mclock ();
+
+  // We have reached the search deadline or there is input pending on STDIN.
+  if ((se.controls.deadline > 0 && now >= se.controls.deadline) ||
+      (fdready (fileno (in))))
+    {
+      se.controls.interrupt_search = true;
+      throw SEARCH_INTERRUPTED;
+    }
 }
 
 /////////////////

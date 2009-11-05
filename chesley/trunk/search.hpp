@@ -23,7 +23,7 @@
 #include <boost/unordered_map.hpp>
 
 // Supported time keeping modes.
-enum time_mode { CONVENTIONAL, ICS, EXACT };
+enum time_mode { UNLIMITED, CONVENTIONAL, ICS, EXACT };
 
 // Maximum search depth. 
 static const int32 MAX_DEPTH = 256;
@@ -36,8 +36,9 @@ struct Search_Engine {
   // Constants //
   ///////////////
 
-  // Transposition table size in entries. This should be a power of 2.
-  static const uint32 TT_SIZE = 4 * 1024 * 1024;
+  // Transposition table size in entries, where each entry is 16 bytes
+  // long. This should be a power of 2.
+  static const uint32 TT_SIZE = 8 * 1024 * 1024;
 
   /////////////////////////////////////
   // Constructors and initialization //
@@ -53,6 +54,12 @@ struct Search_Engine {
     // Clear search statistics.
     clear_statistics ();
 
+    // Pondering status.
+    // ponder.position = NULL_BOARD;
+    ponder.time = 0;
+    ponder.score = 0;
+    ponder.pv.clear ();
+
     // Time management parameters.
     controls.mode = EXACT;
     controls.moves_ptc = -1;
@@ -63,7 +70,8 @@ struct Search_Engine {
     controls.time_remaining = -1;
     controls.moves_remaining = -1;
     controls.interrupt_search = false;
-    controls.deadline = 0;
+    controls.deadline = -1;
+    controls.allocated = 1;
 
     // Transposition and repetition tables.
     tt.clear ();
@@ -154,6 +162,20 @@ struct Search_Engine {
   // Test whether this board is a third repetition.
   bool is_triple_rep (const Board &b);
 
+  /////////////////////////////////////////////////////////////////////
+  // Support for computing a move on the opponents time. (pondering) //
+  /////////////////////////////////////////////////////////////////////
+
+  struct {
+    Board       position; // Position that was pondered.
+    uint64      time;     // The time spent pondering that position.
+    Score       score;    // Score computed.
+    Move_Vector pv;       // Reply and pondered position.   
+  } ponder;
+
+  // Do a search and generate a move for the passed position.
+  void do_ponder (const Board &b);
+
   //////////////////////////////////////////////////////////////////////
   // Time management. Times are always expected to be in milliseconds //
   //////////////////////////////////////////////////////////////////////
@@ -199,6 +221,7 @@ struct Search_Engine {
     // Resources remaining for the search currently underway.  //
     /////////////////////////////////////////////////////////////
 
+    uint64 allocated;      // Time originally allocated for this search.
     uint64 deadline;       // Deadline after which to halt.
     bool interrupt_search; // If true, return as soon as possible.
 
@@ -256,10 +279,9 @@ struct Search_Engine {
   // Hierarchy of search routines //
   //////////////////////////////////
 
-  // Choose a move, score it, and return it.
-  Move choose_move 
-  (const Board &b, int32 depth = -1);
-
+  // Compute and return the principal variation.
+  Score compute_pv (const Board &b, int depth, Move_Vector &pv);
+  
   // Initialize a new search and return its value.
   Score new_search 
   (const Board &b, int depth, Move_Vector &pv);
