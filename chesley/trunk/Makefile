@@ -10,15 +10,15 @@
 # Building for POSIX #
 ######################
 
-CXX=g++
+#CXX=g++
 
 ########################
 # Building for Windows #
 ########################
 
 #CXX=/Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-c++
-#CXX=/opt/local/bin/i386-mingw32-g++
-#EXT=.exe
+CXX=i386-mingw32-g++
+EXT=.exe
 
 OPT = -g3 -O3 -m64
 PROF =
@@ -30,7 +30,7 @@ SRCS = $(wildcard *.cpp)
 VSN = -DSVN_REVISION=\"$(shell svnversion)\"
 CXXFLAGS = $(OPT) $(PROF) $(ALG) $(INC) $(VSN) $(WARN) $(DEBUG)
 
-########################################################################                                                                     
+########################################################################
 # Search configuration.                                                #
 #								       #
 # The following macros are used to enable and disable various parts of #

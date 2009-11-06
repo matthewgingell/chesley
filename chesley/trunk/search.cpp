@@ -12,10 +12,14 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdlib.h>
 #include <cassert>
 #include <iomanip>
 #include <iostream>
+#include <stdlib.h>
+
+#ifdef _WIN32
+#include <malloc.h>
+#endif 
 
 #include "chesley.hpp"
 
