@@ -221,8 +221,8 @@ struct Search_Engine {
     // Resources remaining for the search currently underway.  //
     /////////////////////////////////////////////////////////////
 
-    uint64 allocated;      // Time originally allocated for this search.
-    uint64 deadline;       // Deadline after which to halt.
+    int64 allocated;       // Time originally allocated for this search.
+    int64 deadline;        // Deadline after which to halt.
     bool interrupt_search; // If true, return as soon as possible.
 
   } controls;
