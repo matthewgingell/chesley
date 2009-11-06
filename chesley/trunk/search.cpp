@@ -42,6 +42,7 @@ Search_Engine :: compute_pv (const Board &b, int depth, Move_Vector &pv)
   assert (depth > 0);
   assert (!is_triple_rep (b));
   s = new_search (b, min (depth, MAX_DEPTH), pv);
+  tt_extend_pv (b, pv);
   assert (pv.count > 0);
   return s;
 }
@@ -54,6 +55,7 @@ Search_Engine :: do_ponder (const Board &b) {
   ponder.time = mclock ();
   time_mode old_mode = controls.mode;
   controls.mode = UNLIMITED;
+  controls.deadline = -1;
   ponder.score = new_search (b, MAX_DEPTH, ponder.pv);
   controls.mode = old_mode;
   ponder.time = mclock () - ponder.time;
@@ -168,6 +170,17 @@ Search_Engine :: iterative_deepening
     {
       Move_Vector pv_tmp;
       Score s_tmp = 0;
+
+      // If we have less than 20% of the time we started remaining,
+      // then it's unlikely we'll be able to complete a search of the
+      // next ply. In that case break and leave the remaining time on
+      // the clock.
+
+      if (controls.mode != UNLIMITED && controls.deadline > 0 &&
+          (controls.deadline - mclock ()) < (0.2 * controls.allocated))
+        {
+          break;
+        }
 
       // Initialize statistics for this iteration.
       stats.calls_to_search = stats.calls_to_qsearch = 0;
@@ -388,7 +401,7 @@ Search_Engine :: search
   bool in_check = b.in_check ((b.to_move ()));
 
   // Check 50 move and triple repetition rules.
-  if (b.half_move_clock == 100 || is_triple_rep (b)) 
+  if (b.half_move_clock == 100 || is_triple_rep (b))
     return 0;
 
   // Mate distance pruning.
@@ -1105,6 +1118,26 @@ Search_Engine :: tt_move (const Board &b) {
 #endif // ENABLE_TRANS_TABLE
 }
 
+// Extend the principle variation from the transposition table. 
+void 
+Search_Engine :: tt_extend_pv 
+(const Board &b, Move_Vector &pv, int max_length) {
+  Board last = b;
+  int len = pv.count;
+  
+  for (int i = 0; i < len; i++) 
+    {
+      if (!last.apply (pv[i])) return;
+    }
+
+  for (int i = len; i < max_length; i++)
+    {
+      Move m = tt_move (last);
+      if (m == NULL_MOVE || !last.apply (m)) return;
+      pv.push (m);
+    }
+}
+
 void
 Search_Engine :: tt_update
 (const Board &b, int32 depth, int32 ply, 
@@ -1226,6 +1259,7 @@ void
 Search_Engine :: new_deadline ()
 {
   controls.interrupt_search = false;
+  controls.start_time = mclock ();
 
   // Handle an unlimited time search.
   if (controls.mode == UNLIMITED)
@@ -1239,7 +1273,7 @@ Search_Engine :: new_deadline ()
   if (controls.mode == EXACT || controls.fixed_time >= 0)
     {
       controls.allocated = controls.fixed_time;
-      controls.deadline = mclock () + controls.allocated;
+      controls.deadline = controls.start_time + controls.allocated;
       return;
     }
 
@@ -1249,20 +1283,20 @@ Search_Engine :: new_deadline ()
       if (controls.moves_remaining > 0)
         {
           controls.allocated = 
-            controls.time_remaining / (controls.moves_remaining + 5);
+            (controls.time_remaining - 1) / (controls.moves_remaining + 5);
           
           cerr << "time_remaining: " << controls.time_remaining << endl;
           cerr << "moves_remaining: " << controls.moves_remaining << endl;
           cerr << "time allocated: " << controls.allocated << endl;
           
-          controls.deadline = mclock () + controls.allocated;
+          controls.deadline = controls.start_time + controls.allocated;
         }
       else
         {
           // If time is limited but the move count is not, always
           // assume the game will end in 25 more moves.
-          controls.allocated = controls.time_remaining / 25;
-          controls.deadline = mclock () + controls.allocated;
+          controls.allocated = (controls.time_remaining - 1) / 25;
+          controls.deadline = controls.start_time + controls.allocated;
         }
     }
   else
@@ -1400,7 +1434,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   
   // Principle variation.
   Move_Vector pve = pv;
-  //  tt_extend_pv (b, pve);
+  tt_extend_pv (b, pve);
   for (int i = 0; i < pve.count; i++)
     {
       cout << c.to_san (pve[i]) << " ";

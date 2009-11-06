@@ -74,14 +74,17 @@ Session::init_session () {
   // Setup I/O.
   in = stdin;
   out = stdout;
-  setvbuf (in, NULL, _IONBF, 0);
   setvbuf (out, NULL, _IONBF, 0);
 
 #ifndef _WIN32
   tty = isatty (fileno (in));
 #else
   tty = true;
-#endif // _WIN32
+#endif
+
+#ifndef _WIN32
+  setvbuf (in, NULL, _IONBF, 0);
+#endif 
 
   // Set interface mode.
   ui_mode = tty ? INTERACTIVE : BATCH;
@@ -300,7 +303,7 @@ Session::find_a_move () {
 // This function must be called periodically to implement timeouts.
 void
 Session::poll () {
-  uint64 now = mclock ();
+  int64 now = mclock ();
 
   // We have reached the search deadline or there is input pending on STDIN.
   if ((se.controls.deadline > 0 && now >= se.controls.deadline) ||

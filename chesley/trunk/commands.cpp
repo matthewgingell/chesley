@@ -48,6 +48,7 @@ enum Command
     CMD_FORCE, 
     CMD_GO, 
     CMD_HELP,
+    CMD_INTERRUPT,
     CMD_LEVEL, 
     CMD_MOVE, 
     CMD_MOVES, 
@@ -58,7 +59,7 @@ enum Command
     CMD_SD, 
     CMD_SETBOARD, 
     CMD_ST, 
-    CMD_TIME, 
+    CMD_TIME,
     CMD_WHITE, 
 
     ////////////////////////
@@ -154,6 +155,9 @@ static const struct {
 
   { CMD_HELP,  USER_CMD,      "HELP",      "",
     "Print a help message."},
+
+  { CMD_INTERRUPT,  USER_CMD, "?",         "",
+    "Interrupt the search and return to the command time."},
 
   { CMD_LEVEL, USER_CMD,      "LEVEL",     "<moves time increment>",
     "Set time controls"},
@@ -397,6 +401,11 @@ Session::execute (char *line) {
     case CMD_HELP: 
       // Print help message for the user.
       display_help (rest (tokens));
+      break;
+
+    case CMD_INTERRUPT:
+      // There is nothing to do here, since we will interrupt on any
+      // input.
       break;
 
     case CMD_LEVEL:
