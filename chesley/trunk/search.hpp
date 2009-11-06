@@ -139,10 +139,8 @@ struct Search_Engine {
   // Fetch a move from the transposition table.
   Move tt_move (const Board &b);
 
-#if 0
-  // Extend the principal variation from the transposition table.
-  inline void tt_extend_pv (const Board &b, Move_Vector &pv);
-#endif
+  // Extend the principle variation from the transposition table. 
+  void tt_extend_pv (const Board &b, Move_Vector &pv, int max_length = 10);
 
   // The repetition table.
   Rep_Table rt;
@@ -168,7 +166,7 @@ struct Search_Engine {
 
   struct {
     Board       position; // Position that was pondered.
-    uint64      time;     // The time spent pondering that position.
+    int64       time;     // The time spent pondering that position.
     Score       score;    // Score computed.
     Move_Vector pv;       // Reply and pondered position.   
   } ponder;
@@ -222,6 +220,7 @@ struct Search_Engine {
     /////////////////////////////////////////////////////////////
 
     int64 allocated;       // Time originally allocated for this search.
+    int64 start_time;      // The time at which this search began.
     int64 deadline;        // Deadline after which to halt.
     bool interrupt_search; // If true, return as soon as possible.
 

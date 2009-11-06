@@ -10,15 +10,15 @@
 # Building for POSIX #
 ######################
 
-#CXX=g++
+CXX=g++
 
 ########################
 # Building for Windows #
 ########################
 
-#CXX=/Users/gingell/projects/mingw/prefix/bin/x86_64-pc-mingw32-c++
-CXX=i386-mingw32-g++
-EXT=.exe
+#CXX=/Users/gingell/projects/mingw/prefix/bin/i386-mingw32-g++
+#CXX=i386-mingw32-g++
+#EXT=.exe
 
 OPT = -g3 -O3 -m64
 PROF =
