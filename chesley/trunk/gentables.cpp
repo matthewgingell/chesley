@@ -82,31 +82,31 @@ bitboard *adjacent_files;
 ////////////////////
 
 // Bit masks for rotated coordinates.
-bitboard *init_masks_0 ();
-bitboard *init_masks_45 ();
-bitboard *init_masks_90 ();
-bitboard *init_masks_135 ();
+static bitboard *init_masks_0 ();
+static bitboard *init_masks_45 ();
+static bitboard *init_masks_90 ();
+static bitboard *init_masks_135 ();
 
 // Maps from normal to rotated coordinates.
-int *init_rot_45 ();
-int *init_rot_90 ();
-int *init_rot_135 ();
+static int *init_rot_45 ();
+static int *init_rot_90 ();
+static int *init_rot_135 ();
 
 // Assessors for diagonals.
-byte *init_diag_shifts_45 ();
-byte *init_diag_bitpos_45 ();
-byte *init_diag_widths_45 ();
-byte *init_diag_shifts_135 ();
-byte *init_diag_bitpos_135 ();
-byte *init_diag_widths_135 ();
+static byte *init_diag_shifts_45 ();
+static byte *init_diag_bitpos_45 ();
+static byte *init_diag_widths_45 ();
+static byte *init_diag_shifts_135 ();
+static byte *init_diag_bitpos_135 ();
+static byte *init_diag_widths_135 ();
 
 // Attack tables.
-bitboard *init_knight_attacks_tbl ();
-bitboard *init_king_attacks_tbl ();
-bitboard *init_rank_attacks_tbl ();
-bitboard *init_file_attacks_tbl ();
-bitboard *init_45d_attacks_tbl ();
-bitboard *init_135d_attacks_tbl ();
+static bitboard *init_knight_attacks_tbl ();
+static bitboard *init_king_attacks_tbl ();
+static bitboard *init_rank_attacks_tbl ();
+static bitboard *init_file_attacks_tbl ();
+static bitboard *init_45d_attacks_tbl ();
+static bitboard *init_135d_attacks_tbl ();
 
 // Mobility tables.
 static void init_mobility_tables ();
@@ -173,7 +173,7 @@ precompute_tables () {
   00 01 02 03 04 05 06 07      00 01 02 03 04 05 06 07
 */
 
-bitboard *
+static bitboard *
 init_masks_0 () {
   bitboard *masks = new bits64[64];
   for (int i = 0; i < 64; i++)
@@ -216,7 +216,7 @@ init_masks_0 () {
 
 
 // Rotate normal indices 45 degrees.
-int *
+static int *
 init_rot_45 () {
   int *rot = new int[64];
   int idx_00 = 0;
@@ -235,7 +235,7 @@ init_rot_45 () {
 }
 
 // Table of normal index to shift to fetch occupancy pattern.
-byte *
+static byte *
 init_diag_shifts_45 () {
   static byte rotated[64];
   static byte unrotated[] =
@@ -266,7 +266,7 @@ init_diag_shifts_45 () {
 }
 
 // Find the position of a bit within a diagonal occupancy byte.
-byte *
+static byte *
 init_diag_bitpos_45  () {
   static byte rotated[64];
   static byte unrotated[] =
@@ -297,7 +297,7 @@ init_diag_bitpos_45  () {
 }
 
 // Find the width of a diagonal given a normal position.
-byte *
+static byte *
 init_diag_widths_45 () {
   static byte rotated[64];
   static byte unrotated[] =
@@ -327,7 +327,7 @@ init_diag_widths_45 () {
   return rotated;
 }
 
-bitboard *
+static bitboard *
 init_masks_45 () {
   bits64 *masks = new bits64[64];
   int idx_00 = 0;
@@ -360,7 +360,7 @@ init_masks_45 () {
   00 01 02 03 04 05 06 07     56 48 40 32 24 16 08 00
 */
 
-bitboard *
+static bitboard *
 init_masks_90 () {
   bitboard *masks = new bits64[64];
 
@@ -372,7 +372,7 @@ init_masks_90 () {
   return masks;
 }
 
-int *
+static int *
 init_rot_90 () {
   int *rot = new int[64];
 
@@ -416,7 +416,7 @@ init_rot_90 () {
 */
 
 // Table of normal index => bit shift to fetch occupancy pattern..
-byte *
+static byte *
 init_diag_shifts_135 () {
   static byte rotated[64];
   static byte unrotated[] =
@@ -447,7 +447,7 @@ init_diag_shifts_135 () {
 }
 
 // Find the position of a bit within a diagonal occupancy byte.
-byte *
+static byte *
 init_diag_bitpos_135  () {
   static byte rotated[64];
   static byte unrotated[] =
@@ -478,7 +478,7 @@ init_diag_bitpos_135  () {
 }
 
 // Find the width of a diagonal given a normal position.
-byte *
+static byte *
 init_diag_widths_135  () {
   static byte rotated[64];
   static byte unrotated[] =
@@ -508,7 +508,7 @@ init_diag_widths_135  () {
   return rotated;
 }
 
-bitboard *
+static bitboard *
 init_masks_135 () {
   bitboard *masks = new bits64[64];
   int idx_00 = 0;
@@ -526,7 +526,7 @@ init_masks_135 () {
   return masks;
 }
 
-int *
+static int *
 init_rot_135 () {
   int *rot = new int[64];
   int idx_00 = 0;
@@ -549,7 +549,7 @@ init_rot_135 () {
 ////////////////////////////////////////////////
 
 // Precompute bitboards for rank attack.
-bitboard *
+static bitboard *
 init_rank_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
@@ -593,7 +593,7 @@ init_rank_attacks_tbl () {
 }
 
 // Precompute bitboards for file attack.
-bitboard *
+static bitboard *
 init_file_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
@@ -642,7 +642,7 @@ init_file_attacks_tbl () {
 }
 
 // Precompute bitboards for knight moves.
-bitboard *
+static bitboard *
 init_knight_attacks_tbl()
 {
   const int moves[8][2] =
@@ -672,7 +672,7 @@ init_knight_attacks_tbl()
 }
 
 // Precompute bitboards for king moves.
-bitboard *
+static bitboard *
 init_king_attacks_tbl()
 {
   const int moves[8][2] =
@@ -702,7 +702,7 @@ init_king_attacks_tbl()
 }
 
 // Precompute attacks along the 56 - 07 diagonal.
-bitboard *
+static bitboard *
 init_45d_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
@@ -747,7 +747,7 @@ init_45d_attacks_tbl () {
 }
 
 // Precompute attacks along the 0 - 63 diagonal.
-bitboard *
+static bitboard *
 init_135d_attacks_tbl () {
   bitboard *rv = new bitboard[64 * 256];
 
@@ -796,7 +796,7 @@ init_135d_attacks_tbl () {
 //////////////////////////////////////////////////////////////////////
 
 // Initialize all the above keys to random bit strings.
-void
+static void
 init_zobrist_keys () {
   zobrist_key_white_to_move = random64();
 
@@ -819,7 +819,8 @@ init_zobrist_keys () {
 // Generate mobility tables //
 //////////////////////////////
 
-static void init_mobility_tables () {
+static void 
+init_mobility_tables () {
   // Allocate tables.
   KNIGHT_MOBILITY_TBL =   new byte[64];
   KING_MOBILITY_TBL =     new byte[64];
