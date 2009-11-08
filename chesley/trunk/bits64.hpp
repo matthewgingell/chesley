@@ -67,8 +67,8 @@ clear_msbs (bits64 b) {
 // the case b is 0x0.
 inline uint32
 bit_idx (bits64 b) {
-#ifdef __GNUC__
-  return __builtin_ffsll (b) - 1; 
+#if defined (__GNUC__) || defined (__INTEL_COMPILER)
+    return __builtin_ffsll (b) - 1; 
 #else
   int c;
   if (!b) return -1;
