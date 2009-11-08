@@ -14,7 +14,8 @@
 #ifndef __UTIL__
 #define __UTIL__
 
-#include <assert.h>
+#include <cassert>
+#include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
