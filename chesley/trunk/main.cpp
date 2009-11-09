@@ -12,6 +12,7 @@
 
 #include <iostream>
 #include <string>
+#include <cstdio>
 
 #include "chesley.hpp"
 
@@ -22,9 +23,15 @@ char *arg0;
 
 // Initialization.
 void initialize_all ()
-{
-  //  seed_random ();
+ {
+  // Set unbuffered I/O mode.
+  setvbuf (stdin, NULL, _IONBF, 0);
+  setvbuf (stdout, NULL, _IONBF, 0);
+
+  // Build move generation and other miscellaneous tables.
   precompute_tables ();
+  
+  // Initialize the user session.
   Session :: init_session ();
 }
 
