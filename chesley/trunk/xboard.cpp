@@ -23,10 +23,6 @@ Session::set_xboard_mode (const string_vector &tokens IS_UNUSED) {
   protocol = XBOARD;
   ui_mode = BATCH;
 
-#ifdef _WIN32
-  setvbuf (in, NULL, _IOLBF, 0);
-#endif // _WIN32
-  
   // Set chatting for ICS.
   fprintf (out, "tellicsnoalias set 1 %s v%s\n",
            ENGINE_ID_STR, VERSION);
