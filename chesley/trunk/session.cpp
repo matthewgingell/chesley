@@ -74,17 +74,12 @@ Session::init_session () {
   // Setup I/O.
   in = stdin;
   out = stdout;
-  setvbuf (out, NULL, _IONBF, 0);
 
 #ifndef _WIN32
   tty = isatty (fileno (in));
 #else
   tty = true;
 #endif
-
-#ifndef _WIN32
-  setvbuf (in, NULL, _IONBF, 0);
-#endif 
 
   // Set interface mode.
   ui_mode = tty ? INTERACTIVE : BATCH;
