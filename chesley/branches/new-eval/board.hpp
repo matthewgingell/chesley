@@ -30,8 +30,6 @@
 struct Move_Vector;
 struct Board;
 
-void print_board (bitboard b);
-
 ////////////////////////////
 // Chess board state type //
 ////////////////////////////
@@ -161,6 +159,13 @@ struct Board {
   ///////////
   // Tests //
   ///////////
+
+  // Test whether color c has castled.
+  bool has_castled (Color c) const {
+    return 
+      ((c == WHITE && (flags.w_has_k_castled || flags.w_has_q_castled)) ||
+       (c == BLACK && (flags.b_has_k_castled || flags.b_has_q_castled)));
+  }
 
   // Compute a bitboard of every square color is attacking.
   bitboard attack_set (Color) const;

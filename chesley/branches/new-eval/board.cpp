@@ -235,8 +235,12 @@ Board::clear_piece (Kind k, Color c, Coord idx) {
 
       // Update evaluation information.
       material[c] -= value (k);
-      psquares[c][OPENING_PHASE] -= piece_square_value (k, c, idx);
-      psquares[c][END_PHASE] -= piece_square_value (k, c, idx);
+
+      psquares[c][OPENING_PHASE] -= 
+        piece_square_value (OPENING_PHASE, k, c, idx);
+
+      psquares[c][END_PHASE] -= 
+        piece_square_value (END_PHASE, k, c, idx);
 
       piece_counts[c][k]--;
       
@@ -273,8 +277,13 @@ Board::set_piece (Kind k, Color c, Coord idx) {
 
   // Update evaluation information.
   material[c] += value (k);
-  psquares[c][OPENING_PHASE] += piece_square_value (k, c, idx);
-  psquares[c][END_PHASE] += piece_square_value (k, c, idx);
+
+  psquares[c][OPENING_PHASE] += 
+    piece_square_value (OPENING_PHASE, k, c, idx);
+
+  psquares[c][END_PHASE] += 
+    piece_square_value (END_PHASE, k, c, idx);
+  
   piece_counts[c][k]++;
   if (k == PAWN) pawn_counts[c][idx_to_file (idx)]++;
 
@@ -677,18 +686,6 @@ operator<< (std::ostream &os, const Move &m)
 /////////////
 // Testing //
 /////////////
-
-// Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
-void
-print_board (bitboard b) {
-  for (int y = 7; y >= 0; y--)
-    {
-      for (int x = 0; x < 8; x++)
-        cerr << (test_bit (b, x + 8 * y) ? 'X' : '.') << " ";
-      cerr << endl;
-    }
-  cerr << endl;
-}
 
 // Print the full tree to depth N.
 void
