@@ -26,7 +26,7 @@
 using namespace std;
 
 // Reference to the pawn hash table.
-//extern PHash ph;
+extern PHash ph;
 
 // Utility functions.
 bool is_mate (Score s) { 
@@ -412,8 +412,11 @@ Search_Engine :: search
   if (alpha >= beta) return alpha;
   
   // Return the result of a quiescence search at depth 0.
-  if (depth <= 0)
-    alpha = qsearch (b, -1, ply, alpha, beta);
+  if (depth <= 0) 
+    {
+      alpha = qsearch (b, -1, ply, alpha, beta);
+    }
+  
   
   // Otherwise recurse over the children of this node.
   else {
@@ -521,7 +524,7 @@ Search_Engine :: search
             
             // If this position looks extremely bad at depth three,
             // proceed with a reduced depth search.
-            const Score RAZORING_MARGIN = 8 * PAWN_VAL;
+            const Score RAZORING_MARGIN = QUEEN_VAL + PAWN_VAL;
             upperbound = estimate + RAZORING_MARGIN;
             if (depth == PRE_PRE_FRONTIER && upperbound <= alpha)
               {
@@ -539,6 +542,8 @@ Search_Engine :: search
         
         if (mi > 0)
           {
+
+#ifdef ENABLE_LMR
             //////////////////////////
             // Late move reductions //
             //////////////////////////
@@ -566,6 +571,8 @@ Search_Engine :: search
                   }
               }
             else
+#endif // ENABLE_LMR
+
               {
                 cs = -search_with_memory
                   (c, depth - 1 + ext, ply + 1, cpv, -alpha - 1, -alpha, true);
@@ -1472,10 +1479,10 @@ Search_Engine :: post_after () {
   double coll_rate = (double) tt.collisions / tt.writes;
   cout << "coll rate " << coll_rate * 100 << "%, ";
 
-  //  hit_rate = (double) ph.hits / (ph.hits + ph.misses);
-  //  cout << "ph hit " << hit_rate * 100 << "%, ";
-  //  coll_rate = (double) ph.collisions / ph.writes;
-  //  cout << "ph coll " << coll_rate * 100 << "%, ";
+  hit_rate = (double) ph.hits / (ph.hits + ph.misses);
+  cout << "ph hit " << hit_rate * 100 << "%, ";
+  coll_rate = (double) ph.collisions / ph.writes;
+  cout << "ph coll " << coll_rate * 100 << "%, ";
 
   // Display performance of heuristics.
   cout << "asp: "   << stats.asp_hits << endl;

@@ -20,7 +20,7 @@ CXX=g++
 #CXX=i386-mingw32-g++
 #EXT=.exe
 
-OPT = -g3 -O3 -m64
+OPT = -g3 -m64 -O3
 PROF =
 INC = -Ideps
 LIBS = 
@@ -39,9 +39,13 @@ CXXFLAGS = $(OPT) $(PROF) $(ALG) $(INC) $(VSN) $(WARN) $(DEBUG)
 # -DENABLE_LMR, -DENABLE_FUTILITY, -DENABLE_RAZORING		       #
 ########################################################################
 
-ALG = -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW -DENABLE_NULL_MOVE	\
+#ALG = -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW -DENABLE_NULL_MOVE \
 -DENABLE_TRANS_TABLE -DENABLE_FUTILITY -DENABLE_RAZORING		\
 -DENABLE_EXTENSIONS -DENABLE_LMR -DENABLE_SEE
+
+ALG = -DENABLE_PVS -DENABLE_NULL_MOVE -DENABLE_TRANS_TABLE	\
+-DENABLE_EXTENSIONS -DENABLE_SEE -DENABLE_LMR -DENABLE_FUTILITY	\
+-DENABLE_RAZORING -DENABLE_ASPIRATION_WINDOW
 
 DEBUG = # -DTRACE_EVAL
 
@@ -74,7 +78,7 @@ play: chesley
 # Run an xboard game of Chesley against Chesley.
 playself: chesley
 	rm -f out.pgn
-	xboard -tc 1 -inc 0 -fcp ./chesley -scp ./chesley -mode	\
+	xboard -tc 1 -inc 0  -mg 10 -fcp ./chesley -scp ./chesley -mode	\
 TwoMachines $(XBOARD_OPTS)
 
 # Generate a pgn file of games against different engines.
@@ -83,7 +87,7 @@ out.pgn:
 
 playold: chesley chesley.old
 	rm -f out.pgn
-	xboard -tc 1 -mps 60 -mg 5 -fcp ./chesley -scp ./chesley.old -mode	\
+	xboard -tc 1 -mps 60 -mg 1 -fcp ./chesley -scp ./chesley.old -mode	\
 TwoMachines $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against another engine.
@@ -93,7 +97,7 @@ playother: chesley
 # gnuchess -mode TwoMachines $(XBOARD_OPTS)
 # 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
 # other_binaries/exchess -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 1 -mps 60 -mg 500 -fcp ./chesley -scp	\
+	xboard -tc 5 -mps 60 -mg 500 -fcp ./chesley -scp	\
 other_binaries/zct -mode TwoMachines $(XBOARD_OPTS)
 #	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
 other_binaries/GreKo -mode TwoMachines $(XBOARD_OPTS)

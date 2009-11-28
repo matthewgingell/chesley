@@ -101,7 +101,7 @@ enum Kind {
 const int KIND_COUNT = 6;
 
 // Score type for a chess position.
-typedef int16 Score;
+typedef int32 Score;
 
 enum SKind {
   NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 
@@ -145,6 +145,11 @@ inline void operator++ (Kind &k, int) { k = (Kind) (k + 1); }
 inline void operator-- (Kind &k, int) { k = (Kind) (k - 1); }
 inline void operator++ (Kind &k) { k = (Kind) (k + 1); }
 inline void operator-- (Kind &k) { k = (Kind) (k - 1); }
+
+inline void operator++ (File &f, int) { f = (File) (f + 1); }
+inline void operator-- (File &f, int) { f = (File) (f - 1); }
+inline void operator++ (File &f) { f = (File) (f + 1); }
+inline void operator-- (File &f) { f = (File) (f - 1); }
 
 char to_char (Kind k);
 Kind to_kind (char k);
@@ -304,6 +309,16 @@ extern bitboard *adjacent_files;
 ////////////////////////////////////
 // Patterns for use in evaluation //
 ////////////////////////////////////
+
+// Advance an coordinate one square.
+inline Coord forward (Coord idx, Color c) {
+  return (c == WHITE ? idx + 8 : idx - 8);
+}
+
+// Retreat a coordinate one square.
+inline Coord back (Coord idx, Color c) {
+  return (c == WHITE ? idx - 8 : idx + 8);
+}
   
 // Return a bitboard of all squares in front on this square.
 inline bitboard in_front_of_mask (Coord idx, Color c) { 
@@ -318,9 +333,20 @@ adjacent_files_mask (Coord idx) {
 
 // Return a mask of squares adjacent to idx.
 inline bitboard 
-adjacent_square (Coord idx) {
+adjacent_squares_mask (Coord idx) {
   return KING_ATTACKS_TBL[idx];
 }
 
+// Return a bitboard shifted one square forwards.
+inline bitboard 
+shift_forward (bitboard b, Color c) {
+  return (c == WHITE ? b << 8 : b >> 8);
+}
+
+// Return a bitboard shifted one square backwards.
+inline bitboard 
+shift_backward (bitboard b, Color c) {
+  return (c == BLACK ? b << 8 : b >> 8);
+}
 
 #endif // __COMMON__
