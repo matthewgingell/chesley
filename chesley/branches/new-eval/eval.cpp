@@ -11,6 +11,7 @@
 #include <iostream>
 
 #include "chesley.hpp"
+#include "weights.hpp"
 
 using namespace std;
 
@@ -20,182 +21,6 @@ using namespace std;
 
 // The pawn evaluation cache.
 PHash ph (1024 * 1024);
-
-/////////////////////////////////////////////////////////////////////////
-//                                                                     //
-//  piece_square_table:                                                //
-//                                                                     //
-//  This is a table of bonuses for each piece-location pair. The table //
-//  is written in 'reverse' for readability and a transformation is    //
-//  required for fetching values for black and white.                  //
-//                                                                     //
-/////////////////////////////////////////////////////////////////////////
-
-const Score piece_square_table[2][6][64] =
-  {
-    // Values used in the opening.
-    {
-
-      // Pawns
-      {
-        0,   0,   0,   0,   0,   0,   0,   0,
-        0,   0,   0,   0,   0,   0,   0,   0,
-        0,   0,   5,  25,  25,   5,   0,   0,
-        0,   1,  10,  25,  25,  10,   1,   0,
-        0,   1,  15,  30,  30,  15,   1,   0,
-        0,   1,  15,  15,  15,  15,   1,   0,
-        0,   0,   0, -20, -20,   0,   0,   0,
-        0,   0,   0,   0,   0,   0,   0,   0
-      },
-      
-      // Rooks
-      {
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0
-      },
-
-      // Knights
-      {
-       -50, -20, -20, -10, -10, -20, -20, -50,
-       -20,  15,  15,  25,  25,  15,  15, -20,
-       -10,  15,  20,  25,  25,  20,   0, -10,
-         0,  10,  20,  25,  25,  20,  10,   0,
-         0,  10,  15,  20,  20,  15,  10,   0,
-         0,   0,  15,  10,  10,  15,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-       -50, -20, -20, -20, -20, -20, -20, -50
-      },
-
-      // Bishops
-      {
-         0,   0,   0,   5,   5,   0,   0,   0,
-         0,   5,   5,   5,   5,   5,   5,   0,
-         0,   5,  10,  10,  10,  10,   5,   0,
-         0,   5,  10,  15,  15,  10,   5,   0,
-         0,   5,  10,  15,  15,  10,   5,   0,
-         0,   5,  10,  10,  10,  10,   5,   0,
-         0,   5,   5,   5,   5,   5,   5,   0,
-       -10, -10, -10,  -5,  -5,  10,  10, -10
-      },
-
-      // Queens
-      {
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,   0,   0,   0,   0,   0,   0,
-         0,   0,  25,  50,  50,  25,   0,   0,
-         0,   0,  50,  75,  75,  50,   0,   0
-      },
-
-      // Kings
-      {
-        -40, -40, -40, -40, -40, -40, -40, -40,
-        -40, -40, -40, -40, -40, -40, -40, -40,
-        -40, -40, -40, -40, -40, -40, -40, -40,
-        -40, -40, -40, -40, -40, -40, -40, -40,
-        -40, -40, -40, -40, -40, -40, -40, -40,
-        -40, -40, -40, -40, -40, -40, -40, -40,
-        -20, -20, -20, -20, -20, -20, -20, -20,
-          0,  20,  40, -20,   0, -20,  40,  20
-      }
-
-    },
-
-    // Values used in the end game.
-    {
-      // Pawns
-      {
-#define eg(x) (x + 75)
-        eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0),
-        eg( 0), eg( 0), eg( 5), eg( 5), eg( 5), eg( 5), eg( 0), eg( 0),
-        eg( 0), eg( 1), eg( 5), eg(10), eg(10), eg( 5), eg( 1), eg( 0),
-        eg( 0), eg( 1), eg(10), eg(15), eg(15), eg(10), eg( 1), eg( 0),
-        eg( 0), eg( 1), eg(10), eg(10), eg(10), eg(10), eg( 1), eg( 0),
-        eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0),
-        eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0), eg( 0),
-#undef eg
-      },
-      
-      // Rooks
-      {
-#define eg(x) (x - 25)
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0)
-#undef eg
-      },
-
-      // Knights
-#define eg(x) (x - 25)
-      {
-        eg(-50), eg (-20), eg(-20), eg(-10), eg(-10), eg(-20), eg(-20), eg(-50),
-        eg(-20), eg ( 15), eg( 15), eg( 25), eg( 25), eg( 15), eg( 15), eg(-20),
-        eg(-10), eg ( 15), eg( 20), eg( 25), eg( 25), eg( 20), eg(  0), eg(-10),
-        eg(  0), eg ( 10), eg( 20), eg( 25), eg( 25), eg( 20), eg( 10), eg(  0),
-        eg(  0), eg ( 10), eg( 15), eg( 20), eg( 20), eg( 15), eg( 10), eg(  0),
-        eg(  0), eg (  0), eg( 15), eg( 10), eg( 10), eg( 15), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(-50), eg (-20), eg(-20), eg(-20), eg(-20), eg(-20), eg(-20), eg(-50)
-#undef eg
-      },
-
-      // Bishops
-#define eg(x) (x + 25)
-      {
-        eg(  0), eg (  0), eg(  0), eg(  5), eg(  5), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  0),
-        eg(  0), eg (  5), eg( 10), eg( 10), eg( 10), eg( 10), eg(  5), eg(  0),
-        eg(  0), eg (  5), eg( 10), eg( 15), eg( 15), eg( 10), eg(  5), eg(  0),
-        eg(  0), eg (  5), eg( 10), eg( 15), eg( 15), eg( 10), eg(  5), eg(  0),
-        eg(  0), eg (  5), eg( 10), eg( 10), eg( 10), eg( 10), eg(  5), eg(  0),
-        eg(  0), eg (  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  0),
-        eg(-10), eg (-10), eg(-10), eg( -5), eg( -5), eg( 10), eg( 10), eg(-10)
-#undef eg
-      },
-
-      // Queens
-      {
-#define eg(x) (x)
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
-        eg(  0), eg (  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0)
-#undef eg
-      },
-
-      // Kings
-      {
-#define eg(x) (x)
-        eg(  0), eg ( 10), eg( 20), eg( 30), eg( 30), eg( 20), eg( 10), eg(  0),
-        eg( 10), eg ( 20), eg( 30), eg( 40), eg( 40), eg( 30), eg( 20), eg( 10),
-        eg( 20), eg ( 30), eg( 40), eg( 50), eg( 50), eg( 40), eg( 30), eg( 20),
-        eg( 30), eg ( 40), eg( 50), eg( 60), eg( 60), eg( 50), eg( 40), eg( 30),
-        eg( 30), eg ( 40), eg( 50), eg( 60), eg( 60), eg( 50), eg( 40), eg( 30),
-        eg( 20), eg ( 30), eg( 40), eg( 50), eg( 50), eg( 40), eg( 30), eg( 20),
-        eg( 10), eg ( 20), eg( 30), eg( 40), eg( 40), eg( 30), eg( 20), eg( 10),
-        eg(  0), eg ( 10), eg( 20), eg( 30), eg( 30), eg( 20), eg( 10), eg(  0)
-#undef eg
-      }
-    }
-  };
 
 //////////////////////////////////////
 // Evaluation function entry point. //
@@ -218,32 +43,53 @@ Score Eval::sum_net_material () {
 
 Score 
 Eval::score () { 
+  int f, f2;
+  
+#ifdef TRACE_EVAL
+  cerr << "Evaluating " << b.to_fen () << endl;
+#endif
 
   s += sign (b.to_move ()) * TEMPO_VAL;
 
   // Simple material value.
-  s += b.material[WHITE] - b.material[BLACK];
+  f = b.material[WHITE] - b.material[BLACK];
+  s += f;
+
+#ifdef TRACE_EVAL
+  cout << "Net material is " << f << endl;
+#endif 
 
   // Piece square values.
-  s_op += b.psquares[WHITE][OPENING_PHASE] -
+  f = b.psquares[WHITE][OPENING_PHASE] -
     b.psquares[BLACK][OPENING_PHASE];
 
-  s_eg += b.psquares[WHITE][END_PHASE] - 
+  s_op += f;
+
+  f2 = b.psquares[WHITE][END_PHASE] - 
     b.psquares[BLACK][END_PHASE];
+
+  s_eg += f2;
+
+#ifdef TRACE_EVAL
+  cout << "Opening psqrs is " << f << endl;
+  cout << "End game psqrs is " << f2 << endl;
+  cout << "Interpolated value is " << 
+    interpolate (b, f, f2) << endl;
+#endif   
 
 #if 0
   // Try lazy eval
   if (s < (alpha - LAZY_EVAL_MARGIN) || (s > beta + LAZY_EVAL_MARGIN))
     return sign (b.to_move ()) * (s + interpolate (s_op, s_eg));
 #endif
-  
+
   // Compute the presence of some useful features.
   compute_features ();
 
   // Evaluate mobility.
   s += score_mobility (WHITE) - 
     score_mobility (BLACK);
-  
+
   // King safety.
   s += score_king (WHITE) - 
     score_king (BLACK);
@@ -261,10 +107,11 @@ Eval::score () {
     score_rooks_and_queens (BLACK);
 
   // Pawn structure.
+
   s += score_pawns ();
 
   // Add interpolated value for split evaluation. 
-  s += interpolate (s_op, s_eg);
+  s += interpolate (b, s_op, s_eg);
 
   return sign (b.to_move ()) * s;
 }
@@ -281,9 +128,11 @@ Eval::compute_features () {
   for (File f = A; f <= H; f++)
     {
       open_file[f] = 
-        (b.pawn_counts[WHITE][f] == 0 && b.pawn_counts[BLACK][f]) == 0;
+        (b.pawn_counts[WHITE][f] == 0 && 
+         b.pawn_counts[BLACK][f]) == 0;
       half_open_file[f] =
-        (b.pawn_counts[WHITE][f] == 0 || b.pawn_counts[BLACK][f]) == 0;
+        (b.pawn_counts[WHITE][f] == 0 || 
+         b.pawn_counts[BLACK][f]) == 0;
     }
 }
 
@@ -402,7 +251,6 @@ Eval::score_knight (const Color c) {
   return s;
 }
 
-
 //////////////////////
 // Evaluate bishops //
 //////////////////////
@@ -451,6 +299,7 @@ Eval::score_bishop (const Color c) {
   return s;
 }
 
+// Evaluate mobility
 Score
 Eval::score_mobility (const Color c) {
   Score s = 0;
@@ -490,7 +339,7 @@ Eval::score_mobility (const Color c) {
   return s;
 }
 
-// Evaluate rook and pawn positions.
+// Evaluate rook and queen positional strength.
 Score 
 Eval::score_rooks_and_queens (const Color c) {
   Score s = 0;
@@ -518,6 +367,8 @@ Eval::score_rooks_and_queens (const Color c) {
       s += ROOK_ON_7TH_VAL;
     }
 
+  // Rook pair on second?
+
     clear_bit (pieces, idx);
   }
 
@@ -534,14 +385,19 @@ Eval::score_rooks_and_queens (const Color c) {
   return s;
 }
 
+// Memoized wrapper for score_pawns_inner.
 Score
 Eval::score_pawns () {
   Score s = 0;
 
   if (ph.lookup (b.phash, s)) 
-    return s;
+    {
+      return s;
+    }
   else
-    s = score_pawns_inner (WHITE) - score_pawns_inner (BLACK);
+    {
+      s = score_pawns_inner (WHITE) - score_pawns_inner (BLACK);
+    }
 
   ph.set (b.phash, s);
 
@@ -559,15 +415,17 @@ Eval::score_pawns_inner (const Color c) {
   bitboard i = our_pawns;
   while (i) {
     Coord idx = bit_idx (i);
+    Score val = 0;
 
     //////////////////////////////
     // Pawn structure features. //
     //////////////////////////////
 
-    bool passed = false;
-    bool connected = false;
     bool backward = false;
+    bool connected = false;
+    bool doubled = false;
     bool isolated = false;
+    bool passed = false;
 
     const Coord rank = idx_to_rank (idx);
     const Coord file = idx_to_file (idx);
@@ -578,11 +436,12 @@ Eval::score_pawns_inner (const Color c) {
 
     // A mask of the pawns one square ahead-right and one square
     // ahead-left of this pawn.
-    const bitboard forward_pawns_mask = 
+    const bitboard front_neighbors_mask = 
       shift_forward (beside_mask, c) & our_pawns;
 
     // Is there an empty square in front of this pawn?
-    const bool can_advance = test_bit (b.unoccupied (), forward (idx, c));
+    const bool can_advance = 
+      test_bit (b.unoccupied (), forward (idx, c));
 
     // A mask of all the squares on this and the two adjacent files
     // which are further forward than this pawn.
@@ -590,117 +449,121 @@ Eval::score_pawns_inner (const Color c) {
       (this_file_mask (idx) | adjacent_files_mask (idx)) & 
       in_front_of_mask(idx, c);
 
+    // A mask of the squares attack by enemy pawns.
+    const bitboard their_attacks = b.get_pawn_attacks (~c);
+
+    ///////////////////
+    // Doubled pawns //
+    ///////////////////
+
+    if (b.pawn_counts[c][file] > 1)
+      {
+        doubled = true;
+      }
+
     //////////////////
     // Passed pawns //
     //////////////////
 
-#if 0
-    if (idx == A4) 
-      {
-        print_board (this_file_mask (idx) | adjacent_files_mask (idx));
-        print_board (in_front_of_mask (idx, c));
-        print_board (front_span);
-        print_board (their_pawns);
-        print_board (front_span & their_pawns);
-      }
-#endif    
-
     // This pawn is passed if there are no enemy pawns in it's front
     // span.
     if (!(front_span & their_pawns))
-      passed = true;
-
-#if 0
-    if (idx == A4) 
       {
-        cout << "passed = " << passed << endl;
-        exit (0);
+        passed = true;
       }
-#endif
 
     /////////////////////
     // Backwards pawns //
     /////////////////////
-    
-    // If a pawn can physically move forwards and place itself
-    // directly beside a pawn, but doing so would result in it's being
-    // taken, the pawn is backward.
 
-    if (can_advance && 
-        forward_pawns_mask &&
-        test_bit (attack_set[~c], forward (idx, c)))
-      backward = true;
+    if (
+        // This can advance
+        can_advance 
+
+        // And advancing it would place it besides a pawn.
+        && front_neighbors_mask != 0
+
+        // And doing so would leave it unprotected.
+        && !(beside_mask & our_pawns)
+
+        // And it could be taken by a pawn.
+        && test_bit (their_attacks, forward (idx, c)))
+
+      {
+        backward = true;
+      }
 
     //////////////////////
     // Connected pawns. //
     //////////////////////
 
-    // This pawn is connected if there is a pawn beside it.
-    if (beside_mask & our_pawns)
-      connected = true;
+    else if (
+             
+        // This pawn is connected if there is a pawn beside it.
+        (beside_mask & our_pawns)
+        
+        // Or if it is defended by a pawn
+        || (shift_backward (beside_mask, c) & our_pawns)
+        
+        // Or if it can advanced and place itself directly beside a pawn
+        // and is not backwards.
+        || (can_advance && front_neighbors_mask)
 
-    // Or if it is defended by a pawn
-    else if (shift_backward (beside_mask, c) & our_pawns)
-      connected = true;
-
-    // Or if it can advanced and place itself directly beside a pawn
-    // without being taken.
-    else if (can_advance && 
-             forward_pawns_mask &&
-             !backward)
-      connected = true;
-
-    // We only worry about backward pawns on half-open files.
-    // half_open_file (idx_to_file (idx))
+        )
+      
+      {
+        connected = true;
+      }
 
     /////////////////////
     // Isolated pawns. //
     /////////////////////
 
+    // This pawn is isolated if there are no pawns of the same color
+    // on the adjacent files.
     if (!(adjacent_files_mask (idx) & our_pawns))
+      {
         isolated = true;
-
-#if 0
-    cerr << c << " pawn at " << b.to_alg_coord (idx) << " is ";
-    cerr << (passed ? "passed " : "");
-    cerr << (backward ? "backward " : "");
-    cerr << (connected ? "connected " : "");
-    cerr << (isolated ? "isolated " : "");
-
-    if (!(passed || backward || connected))
-      cerr << "nothing";
-    cerr << "." << endl;
-#endif
+      }
 
     //////////////////////////////
     // Apply score adjustments. //
     //////////////////////////////
+    
+    if (passed && connected)
+      {
+        val = PASSED_CONNECTED_VAL[c][rank];
+      }
+    else if (passed)
+      {
+        val = PASSED_VAL[c][rank];
+      }
+    else if (connected)
+      {
+        val = CONNECTED_VAL[c][rank];
+      }
+    else if (isolated)
+      {
+        val = ISOLATED_VAL[c][rank];
+      }
 
-    if (backward && half_open_file[file]) 
-      s += BACKWARD_VAL[c][rank];
-    else if (isolated) 
-      s += ISOLATED_VAL[c][rank];
-    else if (connected && passed) 
-      s += PASSED_CONNECTED_VAL[c][rank];
-    else if (connected) 
-      s += CONNECTED_VAL[c][rank];
-    else if (passed) 
-      s += PASSED_VAL[c][rank];
-    else 
-      s += BASE_ADV_VAL[c][rank];
+#ifdef TRACE_EVAL
+    cerr << c << " pawn at " << b.to_alg_coord (idx) << ":";
+    cerr << (connected ? " connected" : "");
+    cerr << (doubled ? " doubled" : "");
+    cerr << (isolated ? " isolated" : "");
+    cerr << (passed ? " passed" : "");
+    cerr << " (bonus " << val << ")" << endl;
+#endif
+
+    s += val;
 
     clear_bit (i, idx);
   }
 
+#ifdef TRACE_EVAL
+  cerr << endl;
+#endif
+  
   return s;
-}
-
-// Interpolate between the opening and end game weighted by the
-// material remaining on the board.
-Score 
-Eval::interpolate (Score s_op, Score s_eg) {
-  const int32 m_max = 2 * 
-    (8 * PAWN_VAL + 2 * (ROOK_VAL + KNIGHT_VAL + BISHOP_VAL) + QUEEN_VAL);
-  const int32 m = (b.material[WHITE] + b.material[BLACK]);
-  return (m * s_op + (m_max - m) * s_eg) / m_max;
 }

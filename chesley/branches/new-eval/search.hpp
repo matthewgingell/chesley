@@ -36,9 +36,9 @@ struct Search_Engine {
   // Constants //
   ///////////////
 
-  // Transposition table size in entries, where each entry is 16 bytes
+  // Transposition table size in entries where each entry is 16 bytes
   // long. This should be a power of 2.
-  static const uint32 TT_SIZE = 8 * 1024 * 1024;
+  static const uint32 TT_SIZE = 1 * 1024 * 1024;
 
   /////////////////////////////////////
   // Constructors and initialization //
