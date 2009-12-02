@@ -218,6 +218,7 @@ Board::clear_piece (Coord idx) {
 
 void
 Board::clear_piece (Kind k, Color c, Coord idx) {
+
   if (occupied & masks_0[idx])
     {
       assert (k != NULL_KIND);
@@ -236,11 +237,20 @@ Board::clear_piece (Kind k, Color c, Coord idx) {
       // Update evaluation information.
       material[c] -= value (k);
 
+#if 0
+      cout << "Subtracting..." << endl;
+      cout << psquares[c][OPENING_PHASE] << endl;
+#endif
+
       psquares[c][OPENING_PHASE] -= 
         piece_square_value (OPENING_PHASE, k, c, idx);
 
       psquares[c][END_PHASE] -= 
         piece_square_value (END_PHASE, k, c, idx);
+
+#if 0
+      cout << psquares[c][OPENING_PHASE] << endl;
+#endif
 
       piece_counts[c][k]--;
       
@@ -278,8 +288,18 @@ Board::set_piece (Kind k, Color c, Coord idx) {
   // Update evaluation information.
   material[c] += value (k);
 
+#if 0
+  cout << psquares[c][OPENING_PHASE] << endl;
+
+  cout << "Adding..." << endl;
+#endif
+
   psquares[c][OPENING_PHASE] += 
     piece_square_value (OPENING_PHASE, k, c, idx);
+
+#if 0
+  cout << psquares[c][OPENING_PHASE] << endl;
+#endif
 
   psquares[c][END_PHASE] += 
     piece_square_value (END_PHASE, k, c, idx);
