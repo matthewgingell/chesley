@@ -31,6 +31,7 @@ static const Score KNIGHT_VAL = 325;
 static const Score BISHOP_VAL = 325;
 static const Score ROOK_VAL   = 500;
 static const Score QUEEN_VAL  = 975;
+static const Score KING_VAL   = 0;
 
 ///////////////////////////////
 // Inline utility functions. //
@@ -41,16 +42,19 @@ extern const Score piece_square_table[2][6][64];
 
 // Piece values addressable the piece kind
 const Score piece_values[] = 
-  { PAWN_VAL, ROOK_VAL, KNIGHT_VAL, BISHOP_VAL, QUEEN_VAL, 0 };
+  { PAWN_VAL, ROOK_VAL, KNIGHT_VAL, BISHOP_VAL, QUEEN_VAL, KING_VAL };
 
 // Return the value of a piece by kind.
 inline Score value (Kind k) {
-  assert (k >= PAWN && k <= QUEEN_VAL);
+  assert (k >= PAWN && k <= KING);
   return piece_values[k];
 }
 
 // Return the value of a piece captured by a move.
 inline Score victim_value (Move m) {  return value (m.capture); }
+
+// Return the value of the piece moving.
+inline Score attacker_value (Move m) { return value (m.kind); }
 
 // Interpolate between opening and end game values.
 inline Score interpolate (const Board &b, Score s_op, Score s_eg) {

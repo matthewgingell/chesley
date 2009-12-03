@@ -17,7 +17,7 @@
 // Margins //
 /////////////
 
-static const Score LAZY_EVAL_MARGIN = 500;
+static const Score LAZY_EVAL_MARGIN = 250;
 
 ////////////////////////
 // Evaluation weights //
@@ -69,7 +69,7 @@ static const Score BISHOP_PAIR_VAL = 50;
 // Pawn structure adjustments based on feature computed during
 // evaluation.
 
-#define s 0.25
+#define s .75
 
 #define pair(a, b, c, d, e, f, g, h) \
   {{ (a * s), (b * s), (c * s), (d * s), \
