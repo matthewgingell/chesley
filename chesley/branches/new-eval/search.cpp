@@ -414,7 +414,7 @@ Search_Engine :: search
   // Return the result of a quiescence search at depth 0.
   if (depth <= 0) 
     {
-      alpha = qsearch (b, -1, ply, alpha, beta);
+      alpha = qsearch (b, -1, 0, alpha, beta);
     }
   
   
@@ -941,11 +941,12 @@ Search_Engine :: see_inner (Board &b, const Move &m) const {
   // Compute the value of the piece being captured.
   Score s = victim_value (m);
 
-  // Make this move without uodating the position hash keys, etc.
+  // Make this move without updating the position hash keys, etc.
   apply_fast_capture (b, m);
 
   // Recurse with the next capture in the chain.
   Move lvc = b.least_valuable_attacker (m.to);
+
   if (lvc != NULL_MOVE)
     {
       assert (lvc.to == m.to);
@@ -953,6 +954,7 @@ Search_Engine :: see_inner (Board &b, const Move &m) const {
     }
   
   return s;
+
 #else 
   return Eval::eval_capture (m);
 #endif // ENABLE_SEE

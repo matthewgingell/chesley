@@ -43,6 +43,7 @@ Score Eval::sum_net_material () {
 
 Score 
 Eval::score () { 
+
   int f, f2;
   
 #ifdef TRACE_EVAL
@@ -77,10 +78,10 @@ Eval::score () {
     interpolate (b, f, f2) << endl;
 #endif   
 
-#if 0
+#if 1
   // Try lazy eval
   if (s < (alpha - LAZY_EVAL_MARGIN) || (s > beta + LAZY_EVAL_MARGIN))
-    return sign (b.to_move ()) * (s + interpolate (s_op, s_eg));
+    return sign (b.to_move ()) * (s + interpolate (b, s_op, s_eg));
 #endif
 
   // Compute the presence of some useful features.
@@ -396,7 +397,8 @@ Eval::score_pawns () {
     }
   else
     {
-      s = score_pawns_inner (WHITE) - score_pawns_inner (BLACK);
+      s = score_pawns_inner (WHITE) - 
+        score_pawns_inner (BLACK);
     }
 
   ph.set (b.phash, s);

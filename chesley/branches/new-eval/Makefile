@@ -68,7 +68,7 @@ chesley: $(OBJS)
 #XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
 -sgf out.pgn
 
-XBOARD_OPTS = -debug -coords -autoflag -size Small -thinking -xponder	\
+XBOARD_OPTS = -debug -coords -autoflag -size Large -thinking -xponder	\
 -sgf out.pgn
 
 # Launch an xboard session with Chesley.
