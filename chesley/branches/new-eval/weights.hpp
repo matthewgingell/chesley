@@ -17,7 +17,7 @@
 // Margins //
 /////////////
 
-static const Score LAZY_EVAL_MARGIN = 250;
+static const Score LAZY_EVAL_MARGIN = 500;
 
 ////////////////////////
 // Evaluation weights //
@@ -31,7 +31,7 @@ static const Score CAN_CASTLE_Q_VAL = 10;
 static const Score CASTLED_KS_VAL = 65;
 static const Score CASTLED_QS_VAL = 25;
 
-// Kings on or next to open files.
+// Kings on or next to an open file.
 
 static const Score KING_ON_OPEN_FILE_VAL = -50;
 static const Score KING_NEXT_TO_OPEN_FILE_VAL = -30;
@@ -39,7 +39,7 @@ static const Score KING_NEXT_TO_OPEN_FILE_VAL = -30;
 static const Score KING_ON_HALF_OPEN_FILE_VAL = -30;
 static const Score KING_NEXT_TO_HALF_OPEN_FILE_VAL = -15;
 
-// King attacked 
+// A square adjacent to the king is attacked.
 
 static const Score KING_ADJACENT_ATTACKED_VAL = -25;
 
@@ -70,6 +70,9 @@ static const Score BISHOP_PAIR_VAL = 50;
 // evaluation.
 
 #define s .75
+
+static const Score WEAK_PAWN_VAL = 15;
+static const Score PROTECTED_PAST_VAL = 25;
 
 #define pair(a, b, c, d, e, f, g, h) \
   {{ (a * s), (b * s), (c * s), (d * s), \
@@ -118,13 +121,12 @@ static const Score KNIGHT_MOBILITY_VAL = 6;
 static const Score BISHOP_MOBILITY_VAL = 8;
 static const Score QUEEN_MOBILITY_VAL  = 4;
 
-
 /////////////////////////////////////////////////////////////////////////
 //                                                                     //
 //  piece_square_table:                                                //
 //                                                                     //
 //  This is a table of bonuses for each piece-location pair. The table //
-//  is written in 'reverse' for readability and a transformation is    //
+//  is written in reverse for readability and a transformation is      //
 //  required for fetching values for black and white.                  //
 //                                                                     //
 /////////////////////////////////////////////////////////////////////////
@@ -212,19 +214,21 @@ const Score piece_square_table[2][6][64] =
     {
       // Pawn values based on Hans Berliner.
       {
-         0,   0,   0,   0,   0,   0,   0,   0,
-        45,  29,  16,   5,   5,  16,  29,  45,
-        45,  29,  16,   5,   5,  16,  29,  45,
-        33,  17,   7,   1,   1,   7,  17,  33,
-        25,  10,   0,  -5,  -5,   0,  10,  25,
-        20,   5,  -5, -10, -10,  -5,   5,  20,
-        20,   5,  -5, -10, -10,  -5,   5,  20,
-         0,   0,   0,   0,   0,   0,   0,   0
+#define eg(x) x
+        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
+        eg( 45), eg( 29), eg( 16), eg(  5), eg(  5), eg( 16), eg( 29), eg( 45),
+        eg( 45), eg( 29), eg( 16), eg(  5), eg(  5), eg( 16), eg( 29), eg( 45),
+        eg( 33), eg( 17), eg(  7), eg(  1), eg(  1), eg(  7), eg( 17), eg( 33),
+        eg( 25), eg( 10), eg(  0), eg( -5), eg( -5), eg(  0), eg( 10), eg( 25),
+        eg( 20), eg(  5), eg( -5), eg(-10), eg(-10), eg( -5), eg(  5), eg( 20),
+        eg( 20), eg(  5), eg( -5), eg(-10), eg(-10), eg( -5), eg(  5), eg( 20),
+        eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0)
+#undef eg
       },
       
       // Rooks
       {
-#define eg(x) (x - 25)
+#define eg(x) (x - 25) // Why??????
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
@@ -293,6 +297,5 @@ const Score piece_square_table[2][6][64] =
       }
     }
   };
-
 
 #endif // _WEIGHTS_

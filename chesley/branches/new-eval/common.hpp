@@ -325,6 +325,11 @@ inline bitboard in_front_of_mask (Coord idx, Color c) {
   return in_front_of[c][idx]; 
 }
 
+// Return a bitboard of all squares behind this square.
+inline bitboard in_back_of_mask (Coord idx, Color c) { 
+  return in_front_of[~c][idx]; 
+}
+
 // Return the files adjacent to this one.
 inline bitboard
 adjacent_files_mask (Coord idx) {
