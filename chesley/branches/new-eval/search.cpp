@@ -977,14 +977,12 @@ Search_Engine :: qsearch
   // Do static evaluation at this node.
   Score static_eval = Eval (b, alpha, beta).score ();
 
-#if 0
   // Delta pruning.
   if (static_eval + QUEEN_VAL < alpha)
     {
       stats.delta_count++;
       return alpha;
     }
-#endif
 
   // Decide whether to stand pat.
   if (static_eval > alpha)
@@ -1033,6 +1031,8 @@ Search_Engine :: qsearch
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
+              if (scores[mi] < 0) break;
+
               Move m = moves[mi];
               c = b;
               if (c.apply (m))

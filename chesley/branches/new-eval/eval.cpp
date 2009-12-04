@@ -603,10 +603,6 @@ Eval::score_pawns_inner (const Color c) {
       {
         val = CONNECTED_VAL[c][rank];
       }
-    else if (isolated)
-      {
-        val = ISOLATED_VAL[c][rank];
-      }
 
 #if 0
     // Protected pawns backed by a rook.

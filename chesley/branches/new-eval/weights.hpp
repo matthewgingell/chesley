@@ -71,7 +71,8 @@ static const Score BISHOP_PAIR_VAL = 50;
 
 #define s .75
 
-static const Score WEAK_PAWN_VAL = 15;
+static const Score WEAK_PAWN_VAL = 20;
+
 static const Score PROTECTED_PAST_VAL = 25;
 
 #define pair(a, b, c, d, e, f, g, h) \
@@ -79,10 +80,6 @@ static const Score PROTECTED_PAST_VAL = 25;
      (e * s), (f * s), (g * s), (h * s) }, \
    { (h * s), (g * s), (f * s), (e * s), \
      (d * s), (c * s), (b * s), (a * s) } }
-
-static const 
-Score ISOLATED_VAL[COLOR_COUNT][RANK_COUNT] =
-  pair(    0, -20, -15, -10, -10, -5,  0,   0);
 
 static const 
 Score DOUBLED_VAL[COLOR_COUNT][RANK_COUNT] =
