@@ -118,6 +118,10 @@ private:
   bool open_file[FILE_COUNT];
   bool half_open_file[FILE_COUNT];
 
+  int pawn_count[COLOR_COUNT];
+  int major_count[COLOR_COUNT];
+  int minor_count[COLOR_COUNT];
+
   bitboard attack_set[COLOR_COUNT];
   
   ///////////////////////////////
@@ -125,6 +129,9 @@ private:
   ///////////////////////////////
 
   void compute_features ();
+
+  bool can_not_win             (Color c);
+  bool is_draw                 ();
 
   Score score_king             (const Color c);
   Score score_knight           (const Color c);

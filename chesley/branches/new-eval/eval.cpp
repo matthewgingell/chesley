@@ -50,6 +50,28 @@ Eval::score () {
   cerr << "Evaluating " << b.to_fen () << endl;
 #endif
 
+  // Compute the presence of some useful features.
+  compute_features ();
+
+  // If neither side has mating material then this is a draw.
+  if (can_not_win (WHITE) && can_not_win (BLACK))
+    { 
+      return 0;
+    }
+
+  // If we can not win but the opponent can, we still care about the
+  // rest of the evaluation to guide us towards a possible draw, but
+  // we apply an enormous penalty.
+
+  else if (can_not_win (WHITE))
+    {
+      s -= MATE_VAL / 2;
+    }
+  else if (can_not_win (BLACK))
+    {
+      s += MATE_VAL / 2;
+    }
+
   s += sign (b.to_move ()) * TEMPO_VAL;
 
   // Simple material value.
@@ -78,14 +100,9 @@ Eval::score () {
     interpolate (b, f, f2) << endl;
 #endif   
 
-#if 1
   // Try lazy eval
   if (s < (alpha - LAZY_EVAL_MARGIN) || (s > beta + LAZY_EVAL_MARGIN))
     return sign (b.to_move ()) * (s + interpolate (b, s_op, s_eg));
-#endif
-
-  // Compute the presence of some useful features.
-  compute_features ();
 
   // Evaluate mobility.
   s += score_mobility (WHITE) - 
@@ -108,7 +125,6 @@ Eval::score () {
     score_rooks_and_queens (BLACK);
 
   // Pawn structure.
-
   s += score_pawns ();
 
   // Add interpolated value for split evaluation. 
@@ -135,6 +151,49 @@ Eval::compute_features () {
         (b.pawn_counts[WHITE][f] == 0 || 
          b.pawn_counts[BLACK][f]) == 0;
     }
+
+  // Compute major, minor, and pawn counts.
+  for (Color c = WHITE; c <= BLACK; c++)
+    {
+      pawn_count[c] = 
+        b.piece_counts[c][PAWN];
+
+      major_count[c] = 
+        b.piece_counts[c][ROOK] + b.piece_counts[c][QUEEN];
+
+      minor_count[c] = b.piece_counts[c][KNIGHT] + 
+        b.piece_counts[c][BISHOP];
+    }
+}
+
+bool
+Eval::can_not_win (Color c) {
+  if (pawn_count[c] || major_count[c])
+      {
+        return false;
+      }
+    else
+      {
+        // Can not win with any number of bishops on the same color.
+        if (b.piece_counts[c][KNIGHT] == 0)
+          {
+            if ((b.get_bishops(c) & light_squares) == 0 ||
+                !(b.get_bishops(c) & dark_squares))
+              {
+                return true;
+              }
+          } 
+        else
+          {
+            // Can not win with just a knight.
+            if (b.piece_counts[c][KNIGHT] <= 1)
+              {
+                return true;
+              }
+          }
+      }
+       
+  return false;
 }
 
 Score
@@ -531,7 +590,7 @@ Eval::score_pawns_inner (const Color c) {
     //////////////////////////////
     // Apply score adjustments. //
     //////////////////////////////
-    
+
     if (passed && connected)
       {
         val = PASSED_CONNECTED_VAL[c][rank];
@@ -547,6 +606,23 @@ Eval::score_pawns_inner (const Color c) {
     else if (isolated)
       {
         val = ISOLATED_VAL[c][rank];
+      }
+
+#if 0
+    // Protected pawns backed by a rook.
+    if (passed &&
+        !doubled && 
+        half_open_file[file] &&
+        (this_file_mask (idx) & in_back_of_mask (idx, c) & b.get_rooks (c)))
+      {
+        val += PROTECTED_PAST_VAL;
+      }
+#endif
+
+    // Weak pawns
+    if (backward || isolated || doubled)
+      {
+        val -= WEAK_PAWN_VAL;
       }
 
 #ifdef TRACE_EVAL

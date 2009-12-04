@@ -532,8 +532,9 @@ struct Board {
     return KING_ATTACKS_TBL[idx];
   }  
 
-  void gen_captures (Move_Vector &moves) const;
   void gen_moves (Move_Vector &moves) const;
+  void gen_captures (Move_Vector &moves) const;
+  void gen_checks (Move_Vector &moves) const;
   void gen_promotions (Move_Vector &moves) const;
 
   ///////////////////////
