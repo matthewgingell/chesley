@@ -480,7 +480,6 @@ Session::execute (char *line) {
       se.set_fixed_time (1000 * to_int (tokens[1]));
       break;
 
-
     case CMD_TIME: 
       // Set the clock.
       se.set_time_remaining (10 * to_int (tokens[1]));
@@ -497,8 +496,18 @@ Session::execute (char *line) {
     ////////////////////////
 
     case CMD_APPLY: 
-      // Apply a move to the current position.
+
+      // Apply list of moves to the current position.
+
       running = false;
+      for (uint32 i = 1; i < tokens.size (); i++)
+        {
+          Move m = board.from_san (tokens[i]);
+          cerr << m << endl;
+          board.apply (m);
+        }
+      
+      break;
       board.apply (board.from_calg (tokens[1]));
       break;
 
