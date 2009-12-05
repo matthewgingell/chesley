@@ -295,13 +295,14 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
       int ext;
       Board c = b;
       Move m = moves[i];
+      path[0] = m;
       cpv.clear();
 
       // Skip this move if it's illegal.
       if (!c.apply (m)) continue;
 
       // Decide on a depth adjustment for this search.
-      ext = depth_adjustment (b, m);
+      ext = depth_adjustment (b, m, 0);
                             
       // Do principal variation search.
       if (i > 0)
@@ -321,6 +322,7 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
           pv = Move_Vector (m, cpv);
           collect_move (depth, 0, m, alpha);
         }
+
     }
   
   // Store this result in the transposition table.
@@ -417,7 +419,6 @@ Search_Engine :: search
       alpha = qsearch (b, -1, 0, alpha, beta);
     }
   
-  
   // Otherwise recurse over the children of this node.
   else {
 
@@ -438,6 +439,7 @@ Search_Engine :: search
         c.set_en_passant (0);
         int val = -search_with_memory
           (c, depth - R - 1, ply, dummy, -beta, -beta + 1, false);
+
         if (val >= beta) 
           { 
             stats.null_count++;
@@ -454,10 +456,42 @@ Search_Engine :: search
     order_moves (b, ply, moves);
     int mi = 0;
     bool have_pv_move = false;
+
+    //////////////////////////////
+    // Singular reply extension //
+    //////////////////////////////
+
+    bool sre = false;
+
+#if 0
+#ifdef ENABLE_EXTENSIONS
+    // If we are in check, count the number of legal moves available
+    // to us. This should be replaced with check evasion generation.
+    if (in_check)
+      {
+        int count = 0;
+        for (int i = 0; i < moves.count; i++)
+          {
+            Board c = b;
+            if (c.apply (moves[i])) count++;
+            if (count > 1) break;
+          }
+        
+        if (count == 1)
+          {
+            sre = true;
+          }
+
+        stats.ext_count++;
+      }
+#endif
+#endif
+
     for (mi = 0; mi < moves.count; mi++)
       {
         int cs;
         Move m = moves[mi];
+        path[ply] = m;
         Move_Vector cpv;
         Board c = b;
 
@@ -473,7 +507,8 @@ Search_Engine :: search
         bool c_in_check = c.in_check (c.to_move());
 
         // Decide on a depth adjustment for this search.
-        int ext = depth_adjustment (b, m);
+        int ext = depth_adjustment (b, m, ply);
+        if (sre) ext++;
 
 #ifdef ENABLE_FUTILITY
         // The approach taken to futility pruning here come from Ernst
@@ -696,10 +731,11 @@ Search_Engine :: order_moves
   // http://members.home.nl/matador/chess840.htm                   //
   ///////////////////////////////////////////////////////////////////
 
-  const int32 HASH_MOVE =       150 * 1000;
-  const int32 MATE_KILLER =     125 * 1000;
+  const int32 HASH_MOVE       = 150 * 1000;
+  const int32 MATE_KILLER     = 125 * 1000;
   const int32 WINNING_CAPTURE = 100 * 1000;
   const int32 QUEEN_PROMOTION =  75 * 1000;
+  const int32 RECAPTURE       =  50 * 1000;
   const int32 EVEN_CAPTURE    =  50 * 1000;
   const int32 KILLER_1        =  25 * 1000;
   const int32 KILLER_2        =  10 * 1000;
@@ -734,7 +770,14 @@ Search_Engine :: order_moves
       if (m.is_capture ())
         {
           Score sval = see (b, m);
-          if (sval > 0) 
+
+          // Order recaptures early.
+          if (ply > 0 && path[ply - 1].to == m.to)
+            {
+              scores[i] = RECAPTURE + sval;
+              continue;
+            }
+          else if (sval > 0) 
             { 
               scores[i] = WINNING_CAPTURE + sval;
               continue;
@@ -805,7 +848,7 @@ Search_Engine :: order_moves
 }
 
 // Return a depth adjustment for a position.
-int Search_Engine::depth_adjustment (const Board &b, Move m) {
+int Search_Engine::depth_adjustment (const Board &b, Move m, int ply) {
 #ifdef ENABLE_EXTENSIONS
   int ext = 0;
 
@@ -815,12 +858,19 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
       ext++;
     }
 
-  // Pawn to seventh rank extensions.
-  else 
+  // Recapture extension.
+  if (ply > 0 && 
+      path[ply - 1].is_capture () &&
+      path[ply].to == path[ply - 1].to)
     {
-      int rank = idx_to_rank (m.to);
-      if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
-        ext += 1;
+      ext++;
+    }
+
+  // Pawn to seventh rank extension.
+  int rank = idx_to_rank (m.to);
+  if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
+    {
+      ext += 1;
     }
   
   stats.ext_count += ext;
@@ -1444,7 +1494,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   
   // Principle variation.
   Move_Vector pve = pv;
-  tt_extend_pv (b, pve);
+  //  tt_extend_pv (b, pve);
   for (int i = 0; i < pve.count; i++)
     {
       cout << c.to_san (pve[i]) << " ";

@@ -160,10 +160,16 @@ struct Move_Vector {
   void clear () {
     count = 0;
   }
-
+  
   // Push a move on to the end of a move list.
   void push (const Move &m) {
     move[count++] = m;
+  }
+
+  // Pop a move from the end of a move list.
+  Move pop () {
+    move[count--];
+    return move[count + 1];
   }
 
   // Push a move on to the end of a move list.
