@@ -62,6 +62,8 @@ Board::from_calg (const string &s) const {
 // Return a description of a Move in Coordinate Algebraic Notation //
 /////////////////////////////////////////////////////////////////////
 
+extern bool xboard;
+
 string
 Board::to_calg (const Move &m) const {
   ostringstream s;
@@ -74,7 +76,7 @@ Board::to_calg (const Move &m) const {
 
   // Promotion case.
   if (m.promote != NULL_KIND)
-    s << to_char (m.promote);
+    s << (char) (tolower (to_char (m.promote)));
 
   return s.str();
 }
@@ -706,5 +708,5 @@ Board::to_ascii () const {
       if (row != 0) s << endl;
     }
 
-    return s.str ();
+  return s.str ();
 }
