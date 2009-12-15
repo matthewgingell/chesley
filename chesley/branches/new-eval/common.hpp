@@ -157,6 +157,7 @@ Kind to_kind (char k);
 std::ostream & operator<< (std::ostream &os, Kind k);
 
 inline bool in_bounds (int x, int y);
+
 inline bitboard rank_mask (int rank);
 inline bitboard in_front_of_mask (Coord idx, Color c);
 inline bitboard file_mask (int file);

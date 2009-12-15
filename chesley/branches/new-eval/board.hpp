@@ -254,12 +254,44 @@ struct Board {
     return bit_idx (color_to_board (c) & kings); 
   }
 
+  // Return the location of the king of the side on the move.
   Coord our_king_square () const { 
     return king_square (to_move ());
   }
 
+  // Return the location of the king of the side not on the move.
   Coord their_king_square () const { 
     return king_square (~to_move ());
+  }
+
+  // Return true if a square contains a pawn.
+  bool is_pawn (Coord idx, Color c) const {
+    return test_bit (get_pawns (c), idx);
+  }
+
+  // Return true if a square contains a rook.
+  bool is_rook (Coord idx, Color c) const {
+    return test_bit (get_rooks (c), idx);
+  }
+
+  // Return true if a square contains a knight.
+  bool is_knight (Coord idx, Color c) const {
+    return test_bit (get_knights (c), idx);
+  }
+
+  // Return true if a square contains a bishop.
+  bool is_bishop (Coord idx, Color c) const {
+    return test_bit (get_bishops (c), idx);
+  }
+
+  // Return true if a square contains a queen.
+  bool is_queen (Coord idx, Color c) const {
+    return test_bit (get_queens (c), idx);
+  }
+
+  // Return true if a square contains a king.
+  bool is_king (Coord idx, Color c) const {
+    return test_bit (get_kings (c), idx);
   }
   
   // Get a bitboard of pawn moves, excluding attacks.
@@ -403,7 +435,6 @@ struct Board {
     // Suppress gcc warning in -DNDEBUG case.
     return pawns;
   }
-
 
   // Map a color to the corresponding bitboard.
   bitboard &

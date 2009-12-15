@@ -198,86 +198,65 @@ Eval::can_not_win (Color c) {
 
 Score
 Eval::score_king (const Color c) {
-  Coord ksq = b.king_square (c);
-  File  kfile = (File) idx_to_file (ksq);
-  File  krank = (File) idx_to_rank (ksq);
+
+  // CPW: 
+  // 
+  // King_Pressure: penalty for a nearby square being attack.
+  // King_Attackers: number of attackers - scales king_Pressure penalty.
+  // Reward for F2 etc, smaller for F3, penalty for missing.
+  //
+  // ideas?
+  //
+  // if the king could move like a queen, how many squares could it reach?
+  // castle early
+  // do not move the pawns in front of the king
+
   Score s = 0;
 
-  // Evaluate castling status.
-  if (c == WHITE) 
-    {
-      if (b.flags.w_has_k_castled) 
-        s += CASTLED_KS_VAL;
-      else if (b.flags.w_has_q_castled) 
-        s += CASTLED_QS_VAL;
-      else if (b.flags.w_can_k_castle)
-        s += CAN_CASTLE_K_VAL;
-      else if (b.flags.w_can_q_castle)
-        s += CAN_CASTLE_Q_VAL;
-    }
-  else
-    {
-      if (b.flags.b_has_k_castled) 
-        s += CASTLED_KS_VAL;
-      else if (b.flags.b_has_q_castled) 
-        s += CASTLED_QS_VAL;
-      else if (b.flags.b_can_k_castle)
-        s += CAN_CASTLE_K_VAL;
-      else if (b.flags.b_can_q_castle)
-        s += CAN_CASTLE_Q_VAL;
-    }
+  int loc = b.king_square (c);
+  int rank = idx_to_rank (loc);
+  int file = idx_to_file (loc);
 
-  // Penalize kings on or next to open or half-open files.
+  /////////////////////////////
+  // Pawn shield evaluation. //
+  /////////////////////////////
 
-  if (open_file[kfile]) 
+  if (c == WHITE && file == 0 && rank > 4)
     {
-      s += KING_ON_OPEN_FILE_VAL;
+      if (b.is_pawn (F2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (F3, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (G2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (G3, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (H2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (H3, WHITE)) s += PAWN_SHEILD_2_VAL;
     }
-  else if (half_open_file[kfile])
+  else if (c == WHITE && file == 0 && rank < 3)
     {
-      s += KING_ON_HALF_OPEN_FILE_VAL;
+      if (b.is_pawn (A1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (A2, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (B1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (B2, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (C1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (C2, WHITE)) s += PAWN_SHEILD_2_VAL;
     }
-
-  if (kfile > A && open_file[kfile - 1]) 
+  else if (c == BLACK && file == 6 && rank > 4)
     {
-      s += KING_NEXT_TO_OPEN_FILE_VAL;
+      if (b.is_pawn (F7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (F6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (G7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (G6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (H7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (H6, BLACK)) s += PAWN_SHEILD_2_VAL;
     }
-  else if (kfile > A && half_open_file[kfile - 1])
+  else if (c == BLACK && file == 6 && rank < 3)
     {
-      s += KING_NEXT_TO_HALF_OPEN_FILE_VAL;
+      if (b.is_pawn (A7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (A6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (B7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (B6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (C7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (C6, BLACK)) s += PAWN_SHEILD_2_VAL;
     }
-
-  if (kfile < H && open_file[kfile + 1]) 
-    {
-      s += KING_NEXT_TO_OPEN_FILE_VAL;
-    }
-  else if (kfile < H && half_open_file[kfile + 1]) 
-    {
-      s += KING_NEXT_TO_OPEN_FILE_VAL;
-    }
-
-  // Evaluate pawn shield
-
-  bitboard pawns = b.get_pawns(c);
-  
-  if (c == WHITE && b.has_castled (WHITE) && krank < 2)
-    {
-      if (test_bit (pawns, ksq << 8)) s += 10;
-      if (kfile > A && test_bit (pawns, ksq << 9)) s += 10;
-      if (kfile < H && test_bit (pawns, ksq << 7)) s += 10;
-    }
-  else if (c == BLACK && b.has_castled (BLACK)  && krank > 5)
-    {
-      if (test_bit (pawns, ksq << 8)) s += 10;
-      if (kfile > A && c == WHITE && test_bit (pawns, ksq >> 9)) s += 10;
-      if (kfile < H && c == WHITE && test_bit (pawns, ksq >> 7)) s += 10;
-    }
-
-  // Penalize the king for being adjacent to an attacked square.
-  s += pop_count ((attack_set[!c] & 
-                   !b.color_to_board (c) & 
-                   adjacent_squares_mask (ksq))) 
-    * KING_ADJACENT_ATTACKED_VAL;
 
   return s;
 }
