@@ -118,6 +118,10 @@ static const Score KNIGHT_MOBILITY_VAL = 6;
 static const Score BISHOP_MOBILITY_VAL = 8;
 static const Score QUEEN_MOBILITY_VAL  = 4;
 
+// King safety
+static const Score PAWN_SHEILD_1_VAL  = 10;
+static const Score PAWN_SHEILD_2_VAL  =  5;
+
 /////////////////////////////////////////////////////////////////////////
 //                                                                     //
 //  piece_square_table:                                                //
