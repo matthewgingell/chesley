@@ -24,16 +24,16 @@ char *arg0;
 // Initialization.
 void initialize_all ()
  {
-  // Set unbuffered I/O mode.
-  setvbuf (stdin, NULL, _IONBF, 0);
-  setvbuf (stdout, NULL, _IONBF, 0);
+   // Set unbuffered I/O mode.
+   setvbuf (stdin, NULL, _IONBF, 0);
+   setvbuf (stdout, NULL, _IONBF, 0);
 
-  // Build move generation and other miscellaneous tables.
-  precompute_tables ();
-  
-  // Initialize the user session.
-  Session :: init_session ();
-}
+   // Build move generation and other miscellaneous tables.
+   precompute_tables ();
+   
+   // Initialize the user session.
+   Session :: init_session ();
+ }
 
 // Initialize and pass control to main loop.
 int main(int argc IS_UNUSED, char **argv)

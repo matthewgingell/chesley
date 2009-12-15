@@ -354,7 +354,8 @@ Eval::score_bishop (const Color c) {
     }
 
   // Provide a bonus for holding both bishops.
-  if (b.piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_VAL;
+  if (b.piece_counts[c][BISHOP] >= 2) 
+    s += BISHOP_PAIR_VAL;
 
   return s;
 }
@@ -413,7 +414,6 @@ Eval::score_rooks_and_queens (const Color c) {
     if (half_open_file [idx_to_file (idx)]) s += ROOK_HALF_VAL;
 
   // Reward rook on the 7th file trapping the enemy king.
-
   const int rank = idx_to_rank (idx);
 
   if (c == WHITE && rank == 6 && 
@@ -426,8 +426,6 @@ Eval::score_rooks_and_queens (const Color c) {
     {
       s += ROOK_ON_7TH_VAL;
     }
-
-  // Rook pair on second?
 
     clear_bit (pieces, idx);
   }
