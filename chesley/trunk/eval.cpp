@@ -8,162 +8,265 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cassert>
 #include <iostream>
-#include "board.hpp"
+
 #include "chesley.hpp"
-#include "phash.hpp"
+#include "weights.hpp"
 
 using namespace std;
+
+/////////////////////
+// Data structures //
+/////////////////////
 
 // The pawn evaluation cache.
 PHash ph (1024 * 1024);
 
-///////////////////////////////////
-// Top level evaluation function //
-///////////////////////////////////
+//////////////////////////////////////
+// Evaluation function entry point. //
+//////////////////////////////////////
 
-Score Eval::score () {
 
+Score Eval::sum_net_material () {
+  return
+    PAWN_VAL * (pop_count (b.white & b.pawns) - 
+                pop_count (b.black & b.pawns)) +
+    KNIGHT_VAL * (pop_count (b.white & b.knights) - 
+                  pop_count (b.black & b.knights)) +
+    BISHOP_VAL * (pop_count (b.white & b.bishops) - 
+                  pop_count (b.black & b.bishops)) +
+    ROOK_VAL * (pop_count (b.white & b.rooks) - 
+                pop_count (b.black & b.rooks))  +
+    QUEEN_VAL * (pop_count (b.white & b.queens) - 
+                 pop_count (b.black & b.queens));
+}
+
+Score 
+Eval::score () { 
+
+  int f, f2;
+  
 #ifdef TRACE_EVAL
-  cerr << "Evaluating position " << b.to_fen () << endl;
-  cerr << b << endl << endl;
-#endif // TRACE_EVAL
-
-  Score s = sign (b.to_move ()) * TEMPO_BONUS;
-  phase = get_phase ();
-
-  // Draw detection.
-  if (is_draw ()) return 0;
-  
-  // Generate a simple material score.
-  s += b.net_material;
-
-  // Add net piece square values.
-  s += b.psquares[WHITE] - b.psquares[BLACK];
-
-  // Lazy evaluation.
-  Score ss = sign (b.to_move ()) * s;
-  
-  if (ss > beta + LAZY_EVAL_MARGIN) 
-    {
-      return ss;
-    }
-  else if (ss < alpha -LAZY_EVAL_MARGIN) 
-    {
-      return ss;
-    }
-  
-  // Mobility
-  s += eval_mobility (WHITE) - eval_mobility (BLACK);
-
-  // Evaluate by kind of piece.
-  s += eval_pawns   (WHITE) - eval_pawns   (BLACK);
-  s += eval_rooks   (WHITE) - eval_rooks   (BLACK);
-  s += eval_knights (WHITE) - eval_knights (BLACK);
-  s += eval_bishops (WHITE) - eval_bishops (BLACK);
-  s += eval_queens  (WHITE) - eval_queens  (BLACK);
-  s += eval_king    (WHITE) - eval_king    (BLACK);
-  
-  // Add a small random number for variety.
-#if 0
-  s += rand() % 5 - 2;
+  cerr << "Evaluating " << b.to_fen () << endl;
 #endif
 
+  // Compute the presence of some useful features.
+  compute_features ();
+
+  // If neither side has mating material then this is a draw.
+  if (can_not_win (WHITE) && can_not_win (BLACK))
+    { 
+      return 0;
+    }
+
+  // If we can not win but the opponent can, we still care about the
+  // rest of the evaluation to guide us towards a possible draw, but
+  // we apply an enormous penalty.
+
+  else if (can_not_win (WHITE))
+    {
+      s -= MATE_VAL / 2;
+    }
+  else if (can_not_win (BLACK))
+    {
+      s += MATE_VAL / 2;
+    }
+
+  s += sign (b.to_move ()) * TEMPO_VAL;
+
+  // Simple material value.
+  f = b.material[WHITE] - b.material[BLACK];
+  s += f;
+
 #ifdef TRACE_EVAL
-  cerr << "Score: " << s << endl;
-#endif // TRACE_EVAL
-  
-  // Set the appropriate sign and return the s.
+  cout << "Net material is " << f << endl;
+#endif 
+
+  // Piece square values.
+  f = b.psquares[WHITE][OPENING_PHASE] -
+    b.psquares[BLACK][OPENING_PHASE];
+
+  s_op += f;
+
+  f2 = b.psquares[WHITE][END_PHASE] - 
+    b.psquares[BLACK][END_PHASE];
+
+  s_eg += f2;
+
+#ifdef TRACE_EVAL
+  cout << "Opening psqrs is " << f << endl;
+  cout << "End game psqrs is " << f2 << endl;
+  cout << "Interpolated value is " << 
+    interpolate (b, f, f2) << endl;
+#endif   
+
+  // Try lazy eval
+  if (s < (alpha - LAZY_EVAL_MARGIN) || (s > beta + LAZY_EVAL_MARGIN))
+    return sign (b.to_move ()) * (s + interpolate (b, s_op, s_eg));
+
+  // Evaluate mobility.
+  s += score_mobility (WHITE) - 
+    score_mobility (BLACK);
+
+  // King safety.
+  s += score_king (WHITE) - 
+    score_king (BLACK);
+
+  // Knights.
+  s += score_knight (WHITE) - 
+    score_knight (BLACK);
+
+  // Bishop.
+  s += score_bishop (WHITE) - 
+    score_bishop (BLACK);
+
+  // Rooks and queens.
+  s += score_rooks_and_queens (WHITE) - 
+    score_rooks_and_queens (BLACK);
+
+  // Pawn structure.
+  s += score_pawns ();
+
+  // Add interpolated value for split evaluation. 
+  s += interpolate (b, s_op, s_eg);
+
   return sign (b.to_move ()) * s;
 }
 
-///////////////////////////////////////////////
-// Determine whether this position is a draw //
-///////////////////////////////////////////////
+void
+Eval::compute_features () {
 
-// A very conservative evaluation of mating material.
-bool Eval::is_draw () {
-  return (b.piece_counts[WHITE][PAWN] == 0 && 
-          b.piece_counts[BLACK][PAWN] == 0 &&
-          major_counts[WHITE] == 0       && 
-          major_counts[BLACK] == 0       &&
-          minor_counts[WHITE] <= 1       &&
-          minor_counts[BLACK] <= 1);
+  // Compute the set of attacked squares for white and black.
+  attack_set[WHITE] = b.attack_set (WHITE);
+  attack_set[BLACK] = b.attack_set (BLACK);
+
+  // Compute the set of open files and files with only pawns of our
+  // own color.
+  for (File f = A; f <= H; f++)
+    {
+      open_file[f] = 
+        (b.pawn_counts[WHITE][f] == 0 && 
+         b.pawn_counts[BLACK][f]) == 0;
+      half_open_file[f] =
+        (b.pawn_counts[WHITE][f] == 0 || 
+         b.pawn_counts[BLACK][f]) == 0;
+    }
+
+  // Compute major, minor, and pawn counts.
+  for (Color c = WHITE; c <= BLACK; c++)
+    {
+      pawn_count[c] = 
+        b.piece_counts[c][PAWN];
+
+      major_count[c] = 
+        b.piece_counts[c][ROOK] + b.piece_counts[c][QUEEN];
+
+      minor_count[c] = b.piece_counts[c][KNIGHT] + 
+        b.piece_counts[c][BISHOP];
+    }
 }
 
-///////////////////////////////////////////////////////////
-// Evaluate score adjustments for pieces moving on files //
-///////////////////////////////////////////////////////////
-
-Score Eval::eval_rooks (const Color c) {
-  Score score = 0;
-  bitboard pieces = b.get_rooks (c);
-  while (pieces)
-     {
-       Coord idx = bit_idx (pieces);
-       int file = idx_to_file (idx);
-       int rank = idx_to_rank (idx);
-       int pawn_count = b.pawn_counts[c][file];
-
-       // Reward rooks on open and semi-open files.
-       if (pawn_count == 0) 
-         { 
-           score += ROOK_OPEN_BONUS;
-         }
-       else if (pawn_count == 1) 
-         { 
-           score += ROOK_HALF_BONUS;
-         }
-
-       // Reward rook on the 7th file trapping the enemy king.
-       if (c == WHITE && rank == 6 && 
-           (b.kings & b.black & rank_mask (7)))
-         {
-           score += ROOK_ON_7TH_BONUS;
-         }
-       else if (c == BLACK && rank == 1 &&
-                (b.kings & b.white & rank_mask (0)))
-         {
-           score += ROOK_ON_7TH_BONUS;
-         }
-
-       clear_bit (pieces, idx);
-     }
-
-   return score;
-}
-
-Score Eval::eval_queens (const Color c) {
-  Score s = 0;
-  bitboard pieces = b.get_queens (c);
-  while (pieces)
-     {
-       Coord idx = bit_idx (pieces);
-       int file = idx_to_file (idx);
-       int pawn_count = b.pawn_counts[c][file];
+bool
+Eval::can_not_win (Color c) {
+  if (pawn_count[c] || major_count[c])
+      {
+        return false;
+      }
+    else
+      {
+        // Can not win with any number of bishops on the same color.
+        if (b.piece_counts[c][KNIGHT] == 0)
+          {
+            if ((b.get_bishops(c) & light_squares) == 0 ||
+                !(b.get_bishops(c) & dark_squares))
+              {
+                return true;
+              }
+          } 
+        else
+          {
+            // Can not win with just a knight.
+            if (b.piece_counts[c][KNIGHT] <= 1)
+              {
+                return true;
+              }
+          }
+      }
        
-       // Reward queens on open and semi-open files.
-       if (pawn_count == 0) 
-         { 
-           s += QUEEN_OPEN_BONUS;
-         }
-       else if (pawn_count == 1) 
-         { 
-           s += QUEEN_HALF_BONUS;
-         }
+  return false;
+}
 
-       clear_bit (pieces, idx);
-     }
+Score
+Eval::score_king (const Color c) {
 
-   return s;
+  // CPW: 
+  // 
+  // King_Pressure: penalty for a nearby square being attack.
+  // King_Attackers: number of attackers - scales king_Pressure penalty.
+  // Reward for F2 etc, smaller for F3, penalty for missing.
+  //
+  // ideas?
+  //
+  // if the king could move like a queen, how many squares could it reach?
+  // castle early
+  // do not move the pawns in front of the king
+
+  Score s = 0;
+
+  int loc = b.king_square (c);
+  int rank = idx_to_rank (loc);
+  int file = idx_to_file (loc);
+
+  /////////////////////////////
+  // Pawn shield evaluation. //
+  /////////////////////////////
+
+  if (c == WHITE && file == 0 && rank > 4)
+    {
+      if (b.is_pawn (F2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (F3, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (G2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (G3, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (H2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (H3, WHITE)) s += PAWN_SHEILD_2_VAL;
+    }
+  else if (c == WHITE && file == 0 && rank < 3)
+    {
+      if (b.is_pawn (A1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (A2, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (B1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (B2, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (C1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (C2, WHITE)) s += PAWN_SHEILD_2_VAL;
+    }
+  else if (c == BLACK && file == 6 && rank > 4)
+    {
+      if (b.is_pawn (F7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (F6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (G7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (G6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (H7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (H6, BLACK)) s += PAWN_SHEILD_2_VAL;
+    }
+  else if (c == BLACK && file == 6 && rank < 3)
+    {
+      if (b.is_pawn (A7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (A6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (B7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (B6, BLACK)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (C7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (C6, BLACK)) s += PAWN_SHEILD_2_VAL;
+    }
+
+  return s;
 }
 
 ///////////////////////
 // Evaluate knights  //
 ///////////////////////
 
-Score Eval::eval_knights (const Color c) {
+Score
+Eval::score_knight (const Color c) {
   Score s = 0;
  
   // Compute the set of knights protected by pawms.
@@ -175,11 +278,11 @@ Score Eval::eval_knights (const Color c) {
       Coord idx = bit_idx (pieces);
       if (c == WHITE)
         {
-          if (idx == C5 || idx == F5) s+= KNIGHT_OUTPOST_BONUS;
+          if (idx == C5 || idx == F5) s+= KNIGHT_OUTPOST_VAL;
         }
       else 
         {
-          if (idx == C4 || idx == F4) s+= KNIGHT_OUTPOST_BONUS;
+          if (idx == C4 || idx == F4) s+= KNIGHT_OUTPOST_VAL;
         }
       clear_bit (pieces, idx);
     }
@@ -191,7 +294,8 @@ Score Eval::eval_knights (const Color c) {
 // Evaluate bishops //
 //////////////////////
 
-Score Eval::eval_bishops (const Color c) {
+Score 
+Eval::score_bishop (const Color c) {
   Score s = 0;
   bitboard our_bishops = b.get_bishops (c);
   bitboard their_pawns = b.get_pawns (!c);
@@ -229,25 +333,22 @@ Score Eval::eval_bishops (const Color c) {
     }
 
   // Provide a bonus for holding both bishops.
-  if (b.piece_counts[c][BISHOP] >= 2) s += BISHOP_PAIR_BONUS;
+  if (b.piece_counts[c][BISHOP] >= 2) 
+    s += BISHOP_PAIR_VAL;
 
   return s;
 }
 
-/////////////////////////////////////
-// Evaluate mobility by piece kind //
-/////////////////////////////////////
-
-Score 
-Eval::eval_mobility (const Color c) {
+// Evaluate mobility
+Score
+Eval::score_mobility (const Color c) {
   Score s = 0;
-  bitboard pieces;
 
   // Rooks
-  pieces = b.get_rooks (c);
+  bitboard pieces = b.get_rooks (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.rook_mobility (idx) * ROOK_MOBILITY_BONUS;
+    s += b.rook_mobility (idx) * ROOK_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
@@ -255,7 +356,7 @@ Eval::eval_mobility (const Color c) {
   pieces = b.get_knights (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.knight_mobility (idx) * KNIGHT_MOBILITY_BONUS;
+    s += b.knight_mobility (idx) * KNIGHT_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
@@ -263,7 +364,7 @@ Eval::eval_mobility (const Color c) {
   pieces = b.get_bishops (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.bishop_mobility (idx) * BISHOP_MOBILITY_BONUS;
+    s += b.bishop_mobility (idx) * BISHOP_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
@@ -271,321 +372,238 @@ Eval::eval_mobility (const Color c) {
   pieces = b.get_queens (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.queen_mobility (idx) * QUEEN_MOBILITY_BONUS;
+    s += b.queen_mobility (idx) * QUEEN_MOBILITY_VAL;
+    clear_bit (pieces, idx);
+  }
+  
+  return s;
+}
+
+// Evaluate rook and queen positional strength.
+Score 
+Eval::score_rooks_and_queens (const Color c) {
+  Score s = 0;
+  bitboard pieces;
+
+  // Reward rooks on open and half open files
+  pieces = b.get_rooks (c);
+  while (pieces) {
+    Coord idx = bit_idx (pieces);
+    if (open_file [idx_to_file (idx)]) s += ROOK_OPEN_VAL;
+    if (half_open_file [idx_to_file (idx)]) s += ROOK_HALF_VAL;
+
+  // Reward rook on the 7th file trapping the enemy king.
+  const int rank = idx_to_rank (idx);
+
+  if (c == WHITE && rank == 6 && 
+      (b.kings & b.black & rank_mask (7)))
+    {
+      s += ROOK_ON_7TH_VAL;
+    }
+  else if (c == BLACK && rank == 1 &&
+           (b.kings & b.white & rank_mask (0)))
+    {
+      s += ROOK_ON_7TH_VAL;
+    }
+
+    clear_bit (pieces, idx);
+  }
+
+
+  // Reward queens on open and half open files
+  pieces = b.get_queens (c);
+  while (pieces) {
+    Coord idx = bit_idx (pieces);
+    if (open_file [idx_to_file (idx)]) s += QUEEN_OPEN_VAL;
+    if (half_open_file [idx_to_file (idx)]) s += QUEEN_HALF_VAL;
     clear_bit (pieces, idx);
   }
 
   return s;
 }
 
-////////////////////
-// Evaluate pawns //
-////////////////////
+// Memoized wrapper for score_pawns_inner.
+Score
+Eval::score_pawns () {
+  Score s = 0;
 
-// Return the set of squares directly in front of a set of pawns.
-bitboard pawn_forward_rank (bitboard pawns, Color c) {
-  return (c == WHITE) ? (pawns << 8) : (pawns >> 8);
-}
-
-// Return the set of squares directly behind of a set of pawns.
-bitboard pawn_backward_rank (bitboard pawns, Color c) {
-  return (c == WHITE) ? (pawns >> 8) : (pawns << 8);
-}
-
-// Return the set of squares attacked by a set of pawns, excluding the
-// En Passant square.
-bitboard pawn_attacks (bitboard pawns, Color c) {
-  return (c == WHITE) ? 
-    // White pawns.
-    (((pawns & ~file_mask (A)) << 7) | 
-     ((pawns & ~file_mask (H)) << 9)) :
-    // Black pawns.
-    (((pawns & ~file_mask (H)) >> 7) |
-     ((pawns & ~file_mask (A)) >> 9));
-}
-
-// The union of every front span for each pawn of color c.
-bitboard pawn_all_attack_spans (bitboard pawns, Color c) {
-  bitboard all = 0;
-  while (pawns) {
-    Coord idx = bit_idx (pawns);
-    all |= pawn_attack_spans[c][idx];
-    clear_bit (pawns, idx);
-  }
-  return all;
-}
-
-Score Eval::eval_pawns (const Color c) {
-  // All the following block quotes regarding pawn structure are taken
-  // from "Pawn Power in Chess" by Hans Kmoch.
-  
-  Score s;
-  const bitboard our_pawns = b.get_pawns (c);
-  bitboard their_pawns = b.get_pawns (!c);
-
-  // Try to find this entry in the cache.
-  if (ph.lookup (b.phash, s))
+  if (ph.lookup (b.phash, s)) 
     {
       return s;
     }
   else
     {
-      s = 0;
+      s = score_pawns_inner (WHITE) - 
+        score_pawns_inner (BLACK);
     }
 
-  ////////////////////////////////////////////////////////////////////////
-  //                                                                    //
-  // Compute the set of half-free pawns.                                //
-  //                                                                    //
-  // "Originally every pawn is unfree owing to mechanical               //
-  //  obstruction. Removal of its counter pawn makes a pawn             //
-  //  half-free."                                                       //
-  //                                                                    //
-  ////////////////////////////////////////////////////////////////////////
-  
-  bitboard half_free = our_pawns;
-  for (int i = 0; i < 8; i++)
-    if (b.pawn_counts[!c][i] > 0) 
-      half_free &= ~file_mask (i);
-
-  //////////////////////////////////////////////////////////////////////
-  //                                                                  //
-  //  Compute the set of backward pawns.                              //
-  //                                                                  //
-  // "A half-free pawn, placed on the second or third rank, whose     //
-  //  stop square lacks pawn protection but is controlled by a        //
-  //  sentry, is called a backwards pawn."                            //
-  //                                                                  //
-  //////////////////////////////////////////////////////////////////////
-
-  bitboard backwards;
-
-  // Half-free pawns on the second or third rank.
-  backwards = (c == WHITE) ?
-    (half_free & (rank_mask (1) | rank_mask (2))) :
-    (half_free & (rank_mask (6) | rank_mask (5)));
-
-  // Lacking protection on the stop square.
-  backwards = pawn_forward_rank (backwards, c);
-  backwards &= ~pawn_attacks (our_pawns, c);
-
-  // Threatened by a sentry.
-  backwards &= pawn_all_attack_spans (their_pawns, !c);
-  backwards = pawn_backward_rank (backwards, c);
-
-#ifdef TRACE_EVAL
-  cerr << "Backwards pawns for: " << c << endl;
-  print_board (backwards);
-#endif // TRACE_EVAL
-  
-  ///////////////////////////////////////////////////////////////////
-  // Iterate over the set of pawns assessing penalties and bonuses //
-  ///////////////////////////////////////////////////////////////////
-
-  bitboard p = our_pawns;
-  while (p)
-    {
-      Coord idx = bit_idx (p);
-      int rank = idx_to_rank (idx);
-      int file = idx_to_file (idx);
-      
-      // Penalize isolated pawns.
-      if (!(adjacent_files_mask(idx) & our_pawns))
-        s -= isolated_penalty[file];
-
-      // Penalize backwards pawns.
-      if (test_bit (backwards, idx)) 
-        s -= backwards_penalty[file];
-
-      // Penalize doubled pawns.
-      if (b.pawn_counts[c][file] > 1) 
-        s -= doubled_penalty[file];
-
-      // Reward passed pawns.
-      bitboard front = 
-        (this_file_mask (idx) | 
-         adjacent_files_mask (idx))
-        & in_front_of_mask(idx, c);
-      if (!(front & their_pawns))
-        s += passed_pawn_bonus[c][rank];
-
-      // Further reward passed pawn backed by rook?
-
-      clear_bit (p, idx);
-    }
-
-  // Save this score in the pawn eval cache.
   ph.set (b.phash, s);
 
   return s;
 }
 
-////////////////////
-// Evaluate kings //
-////////////////////
-
-Score Eval::eval_king (const Color c) {
+// Evaluate pawn structure.
+Score
+Eval::score_pawns_inner (const Color c) {
   Score s = 0;
 
-  // Handle the case of no king in a test position.
-  if ((b.kings & b.color_to_board (c)) == 0)
-    return 0;
+  const bitboard our_pawns = b.get_pawns (c);
+  const bitboard their_pawns = b.get_pawns (~c);
 
-  Coord idx = bit_idx (b.kings & b.color_to_board (c));
+  bitboard i = our_pawns;
+  while (i) {
+    Coord idx = bit_idx (i);
+    Score val = 0;
 
-  // Provide a bonus for having castled or being able to castle.
-  if (c == WHITE)
-    {
-      if (b.flags.w_has_k_castled) 
-        {
-          s += CASTLE_KS_BONUS;
-        }
-      else if (b.flags.w_has_q_castled) 
-        {
-          s += CASTLE_QS_BONUS;
-        }
-      else if (b.flags.w_can_k_castle || b.flags.w_can_q_castle)
-        {
-          s+= CAN_CASTLE_BONUS;
-        }
-    }
-  else
-    {
-      if (b.flags.b_has_k_castled) 
-        {
-          s += CASTLE_KS_BONUS;
-        }
-      else if (b.flags.b_has_q_castled) 
-        {
-          s += CASTLE_QS_BONUS;
-        }
-      else if (b.flags.b_can_k_castle || b.flags.b_can_q_castle)
-        {
-          s += CAN_CASTLE_BONUS;
-        }
-    }
+    //////////////////////////////
+    // Pawn structure features. //
+    //////////////////////////////
+
+    bool backward = false;
+    bool connected = false;
+    bool doubled = false;
+    bool isolated = false;
+    bool passed = false;
+
+    const Coord rank = idx_to_rank (idx);
+    const Coord file = idx_to_file (idx);
+
+    // A mask of the two square directly adjacent to this pawn.
+    const bitboard beside_mask = 
+      rank_mask (rank) & adjacent_files_mask (idx);
+
+    // A mask of the pawns one square ahead-right and one square
+    // ahead-left of this pawn.
+    const bitboard front_neighbors_mask = 
+      shift_forward (beside_mask, c) & our_pawns;
+
+    // Is there an empty square in front of this pawn?
+    const bool can_advance = 
+      test_bit (b.unoccupied (), forward (idx, c));
+
+    // A mask of all the squares on this and the two adjacent files
+    // which are further forward than this pawn.
+    const bitboard front_span = 
+      (this_file_mask (idx) | adjacent_files_mask (idx)) & 
+      in_front_of_mask(idx, c);
+
+    // A mask of the squares attack by enemy pawns.
+    const bitboard their_attacks = b.get_pawn_attacks (~c);
+
+    ///////////////////
+    // Doubled pawns //
+    ///////////////////
+
+    if (b.pawn_counts[c][file] > 1)
+      {
+        doubled = true;
+      }
+
+    //////////////////
+    // Passed pawns //
+    //////////////////
+
+    // This pawn is passed if there are no enemy pawns in it's front
+    // span.
+    if (!(front_span & their_pawns))
+      {
+        passed = true;
+      }
+
+    /////////////////////
+    // Backwards pawns //
+    /////////////////////
+
+    if (
+        // This can advance
+        can_advance 
+
+        // And advancing it would place it besides a pawn.
+        && front_neighbors_mask != 0
+
+        // And doing so would leave it unprotected.
+        && !(beside_mask & our_pawns)
+
+        // And it could be taken by a pawn.
+        && test_bit (their_attacks, forward (idx, c)))
+
+      {
+        backward = true;
+      }
+
+    //////////////////////
+    // Connected pawns. //
+    //////////////////////
+
+    else if (
+             
+        // This pawn is connected if there is a pawn beside it.
+        (beside_mask & our_pawns)
+        
+        // Or if it is defended by a pawn
+        || (shift_backward (beside_mask, c) & our_pawns)
+        
+        // Or if it can advanced and place itself directly beside a pawn
+        // and is not backwards.
+        || (can_advance && front_neighbors_mask)
+
+        )
+      
+      {
+        connected = true;
+      }
+
+    /////////////////////
+    // Isolated pawns. //
+    /////////////////////
+
+    // This pawn is isolated if there are no pawns of the same color
+    // on the adjacent files.
+    if (!(adjacent_files_mask (idx) & our_pawns))
+      {
+        isolated = true;
+      }
+
+    //////////////////////////////
+    // Apply score adjustments. //
+    //////////////////////////////
+
+    if (passed && connected)
+      {
+        val = PASSED_CONNECTED_VAL[c][rank];
+      }
+    else if (passed)
+      {
+        val = PASSED_VAL[c][rank];
+      }
+    else if (connected)
+      {
+        val = CONNECTED_VAL[c][rank];
+      }
+
+    // Weak pawns
+    if (backward || isolated || doubled)
+      {
+        val -= WEAK_PAWN_VAL;
+      }
+
+#ifdef TRACE_EVAL
+    cerr << c << " pawn at " << b.to_alg_coord (idx) << ":";
+    cerr << (connected ? " connected" : "");
+    cerr << (doubled ? " doubled" : "");
+    cerr << (isolated ? " isolated" : "");
+    cerr << (passed ? " passed" : "");
+    cerr << " (bonus " << val << ")" << endl;
+#endif
+
+    s += val;
+
+    clear_bit (i, idx);
+  }
+
+#ifdef TRACE_EVAL
+  cerr << endl;
+#endif
   
-  // Add the phase specific king location score.
-  s += king_square_table[phase][xfrm[c][idx]];
-
-  // Very basic pawn shield evaluation.
-  if (phase < ENDGAME)
-    {
-      int rank = idx_to_rank (idx);
-      int file = idx_to_file (idx);
-      bitboard pawns = b.get_pawns (c);
-
-      if (c == WHITE && 
-          (b.flags.w_has_k_castled || b.flags.w_has_q_castled) &&
-          rank == 0) 
-        {
-          for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
-            {
-              if (test_bit (pawns, to_idx (rank + 1, f))) 
-                s += PAWN_SHEILD1_BONUS;
-              else if (test_bit (pawns, to_idx (rank + 2, f))) 
-                s += PAWN_SHEILD2_BONUS;
-            }
-        }
-      else if (c == BLACK && 
-               (b.flags.b_has_k_castled || b.flags.b_has_q_castled) &&
-               rank == 7) 
-        {
-          for (int f = max (file - 1, 0); f <= min (file + 1, 7); f++)
-            {
-              if (test_bit (pawns, to_idx (rank - 1, f))) 
-                s += PAWN_SHEILD1_BONUS;
-              else if (test_bit (pawns, to_idx (rank - 2, f))) 
-                s += PAWN_SHEILD2_BONUS;
-            }
-        }
-    }
-
   return s;
-}
-
-////////////////////////////////////////////////////////
-// Sum piece table values over white and black pieces //
-////////////////////////////////////////////////////////
-
-Score Eval::sum_piece_squares (const Board &b) {
-  Score bonus = 0;
-  for (Color c = WHITE; c <= BLACK; c++)
-    {
-      bitboard all = b.color_to_board (c);
-      int s = sign (c);
-
-      for (Kind k = PAWN; k < KING; k++)
-        {
-          bitboard pieces = all & b.kind_to_board (k);
-          // Do all pieces but the king.
-          while (pieces)
-            {
-              Coord idx = bit_idx (pieces);
-              bonus += s *
-                Eval::piece_square_table[k][Eval::xfrm[c][idx]];
-              clear_bit (pieces, idx);
-            }
-        }
-    }
-  return bonus;
-}
-
-////////////////////////////////////////////////////////////////////////
-// Initialize material count table used in the rest of the evaluation //
-////////////////////////////////////////////////////////////////////////
-
-void Eval::count_material () {
-  // Count majors and minors.
-  for (Color c = WHITE; c <= BLACK; c++)
-    {
-      major_counts[c] = b.piece_counts[c][ROOK] + b.piece_counts[c][QUEEN];
-      minor_counts[c] = b.piece_counts[c][KNIGHT] + b.piece_counts[c][BISHOP];
-    }
-}
-
-/////////////////////////////////////////////////////////////////////////
-// Debug routines to verify incrementally updated evaluation variables //
-// are correct                                                         //
-/////////////////////////////////////////////////////////////////////////
-
-Score Eval::sum_net_material () {
-  return
-    PAWN_VAL * (pop_count (b.white & b.pawns) - 
-                pop_count (b.black & b.pawns)) +
-    KNIGHT_VAL * (pop_count (b.white & b.knights) - 
-                  pop_count (b.black & b.knights)) +
-    BISHOP_VAL * (pop_count (b.white & b.bishops) - 
-                  pop_count (b.black & b.bishops)) +
-    ROOK_VAL * (pop_count (b.white & b.rooks) - 
-                pop_count (b.black & b.rooks))  +
-    QUEEN_VAL * (pop_count (b.white & b.queens) - 
-                 pop_count (b.black & b.queens));
-}
-
-void Eval::verify_piece_counts () {
-  for (Color c = WHITE; c <= BLACK; c++)
-    {
-      for (Kind k = PAWN; k < KING; k++) 
-        {
-          bitboard pieces = b.color_to_board (c) & b.kind_to_board (k);
-          assert (pop_count (pieces) == b.piece_counts[c][k]);
-        }
-
-      uint8 pawn_counts[COLOR_COUNT][FILE_COUNT];
-      ZERO (pawn_counts);
-
-      bitboard pawns = b.pawns & b.color_to_board(c);
-      while (pawns)
-        {
-          Coord idx = bit_idx (pawns);
-          pawn_counts[c][idx_to_file (idx)]++;
-          clear_bit (pawns, idx);
-        }
-
-      for (int i = 0; i < 8; i++)
-        {
-          assert (pawn_counts[c][i] == (int) b.pawn_counts[c][i]);
-        }
-    }
 }

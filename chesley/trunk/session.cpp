@@ -48,6 +48,7 @@ Search_Engine Session::se;
 
 // Engine state.
 bool        Session::running;
+bool        Session::interrupt_on_io = true;
 bool        Session::ponder_enabled = false;
 const char *Session::prompt;
 
@@ -302,7 +303,7 @@ Session::poll () {
 
   // We have reached the search deadline or there is input pending on STDIN.
   if ((se.controls.deadline > 0 && now >= se.controls.deadline) ||
-      (fdready (fileno (in))))
+      (interrupt_on_io && fdready (fileno (in))))
     {
       se.controls.interrupt_search = true;
       throw SEARCH_INTERRUPTED;

@@ -147,7 +147,7 @@ Board::common_init (Board &b) {
   b.half_move_clock = b.full_move_clock = 0;
 
   // Initialize scoring information.
-  b.net_material = 0;
+  ZERO (b.material);
   ZERO (b.psquares);
   ZERO (b.piece_counts);
   ZERO (b.pawn_counts);
@@ -218,6 +218,7 @@ Board::clear_piece (Coord idx) {
 
 void
 Board::clear_piece (Kind k, Color c, Coord idx) {
+
   if (occupied & masks_0[idx])
     {
       assert (k != NULL_KIND);
@@ -234,8 +235,23 @@ Board::clear_piece (Kind k, Color c, Coord idx) {
       hash ^= get_zobrist_piece_key (c, k, idx);
 
       // Update evaluation information.
-      net_material -= sign (c) * Eval::eval_piece (k);
-      psquares[c] -= Eval::psq_value (k, c, idx);
+      material[c] -= value (k);
+
+#if 0
+      cout << "Subtracting..." << endl;
+      cout << psquares[c][OPENING_PHASE] << endl;
+#endif
+
+      psquares[c][OPENING_PHASE] -= 
+        piece_square_value (OPENING_PHASE, k, c, idx);
+
+      psquares[c][END_PHASE] -= 
+        piece_square_value (END_PHASE, k, c, idx);
+
+#if 0
+      cout << psquares[c][OPENING_PHASE] << endl;
+#endif
+
       piece_counts[c][k]--;
       
       // Check the special case of clearing a pawn.
@@ -270,8 +286,24 @@ Board::set_piece (Kind k, Color c, Coord idx) {
   if (k == PAWN) phash ^= get_zobrist_piece_key (c, k, idx);
 
   // Update evaluation information.
-  net_material += sign (c) * Eval::eval_piece (k);
-  psquares[c] += Eval::psq_value (k, c, idx);
+  material[c] += value (k);
+
+#if 0
+  cout << psquares[c][OPENING_PHASE] << endl;
+
+  cout << "Adding..." << endl;
+#endif
+
+  psquares[c][OPENING_PHASE] += 
+    piece_square_value (OPENING_PHASE, k, c, idx);
+
+#if 0
+  cout << psquares[c][OPENING_PHASE] << endl;
+#endif
+
+  psquares[c][END_PHASE] += 
+    piece_square_value (END_PHASE, k, c, idx);
+  
   piece_counts[c][k]++;
   if (k == PAWN) pawn_counts[c][idx_to_file (idx)]++;
 
@@ -674,18 +706,6 @@ operator<< (std::ostream &os, const Move &m)
 /////////////
 // Testing //
 /////////////
-
-// Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
-void
-print_board (bitboard b) {
-  for (int y = 7; y >= 0; y--)
-    {
-      for (int x = 0; x < 8; x++)
-        cerr << (test_bit (b, x + 8 * y) ? 'X' : '.') << " ";
-      cerr << endl;
-    }
-  cerr << endl;
-}
 
 // Print the full tree to depth N.
 void

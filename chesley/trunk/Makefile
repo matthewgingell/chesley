@@ -20,30 +20,38 @@ CXX=g++
 #CXX=i386-mingw32-g++
 #EXT=.exe
 
-OPT = -g3 -O3 -m64
+OPT = -m64 -O3
 PROF =
 INC = -Ideps
-LIBS = 
+LIBS =
 WARN = -Wall -Wextra
 OBJS = $(subst .cpp,.o,$(SRCS))
 SRCS = $(wildcard *.cpp)
 VSN = -DSVN_REVISION=\"$(shell svnversion)\"
 CXXFLAGS = $(OPT) $(PROF) $(ALG) $(INC) $(VSN) $(WARN) $(DEBUG)
+DEBUG = -g3 # -DTRACE_EVAL 
 
-########################################################################
-# Search configuration.                                                #
-#								       #
-# The following macros are used to enable and disable various parts of #
-# the tree search. Valid options are: ENABLE_ASPIRATION_WINDOW,        #
-# ENABLE_TRANS_TABLE, ENABLE_NULL_MOVE, ENABLE_SEE, -DENABLE_PVS,      #
-# -DENABLE_LMR, -DENABLE_FUTILITY, -DENABLE_RAZORING		       #
-########################################################################
+#########################################################################
+# 								        #
+# Search configuration.                                                 #
+#  								        #
+# The following macros are used to enable and disable various parts of  #
+# the tree search. Valid options are:				        #
+# 								        #
+# ENABLE_ASPIRATION_WINDOW					        #
+# ENABLE_EXTENSIONS						        #
+# ENABLE_FUTILITY						        #
+# ENABLE_LMR							        #
+# ENABLE_NULL_MOVE						        #
+# ENABLE_PVS							        #
+# ENABLE_SEE							        #
+# ENABLE_TRANS_TABLE						        #
+# 								        #
+#########################################################################
 
-ALG = -DENABLE_PVS -DENABLE_ASPIRATION_WINDOW -DENABLE_NULL_MOVE	\
--DENABLE_TRANS_TABLE -DENABLE_FUTILITY -DENABLE_RAZORING		\
--DENABLE_EXTENSIONS -DENABLE_LMR -DENABLE_SEE
-
-DEBUG = # -DTRACE_EVAL
+ALG = -DENABLE_ASPIRATION_WINDOW -DENABLE_FUTILITY -DENABLE_NULL_MOVE	\
+-DENABLE_PVS -DENABLE_SEE -DENABLE_TRANS_TABLE -DENABLE_LMR		\
+-DENABLE_EXTENSIONS
 
 ################
 # Main binary. #
@@ -64,7 +72,7 @@ chesley: $(OBJS)
 #XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
 -sgf out.pgn
 
-XBOARD_OPTS = -debug -coords -autoflag -size Giant -thinking -xponder	\
+XBOARD_OPTS = -debug -coords -autoflag -size Large -thinking -xponder	\
 -sgf out.pgn
 
 # Launch an xboard session with Chesley.
@@ -74,7 +82,7 @@ play: chesley
 # Run an xboard game of Chesley against Chesley.
 playself: chesley
 	rm -f out.pgn
-	xboard -tc 5 -inc 0 -fcp ./chesley -scp ./chesley -mode	\
+	xboard -tc 1 -inc 0  -mg 10 -fcp ./chesley -scp ./chesley -mode	\
 TwoMachines $(XBOARD_OPTS)
 
 # Generate a pgn file of games against different engines.
@@ -83,28 +91,32 @@ out.pgn:
 
 playold: chesley chesley.old
 	rm -f out.pgn
-	xboard -tc 1 -mps 60 -mg 5 -fcp ./chesley -scp ./chesley.old -mode	\
+	xboard -tc 1 -mps 60 -mg 1 -fcp ./chesley -scp ./chesley.old -mode	\
 TwoMachines $(XBOARD_OPTS)
 
 # Run an xboard game of Chesley against another engine.
 playother: chesley
-#	rm -f out.pgn
-# 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp  \
-# gnuchess -mode TwoMachines $(XBOARD_OPTS)
-# 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
+	rm -f out.pgn
+
+	xboard -tc 1 -mps 40 -mg 2 -fcp ./chesley -scp gnuchess -mode	\
+ TwoMachines $(XBOARD_OPTS)
+
+# 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp \
 # other_binaries/exchess -mode TwoMachines $(XBOARD_OPTS)
-	xboard -tc 1 -mps 60 -mg 500 -fcp ./chesley -scp	\
+
+#	xboard -tc 5 -mps 60 -mg 500 -fcp ./chesley -scp \
 other_binaries/zct -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
+
+#	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp \
 other_binaries/GreKo -mode TwoMachines $(XBOARD_OPTS)
-#	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp		\
+
+#	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp \
 other_programs/arasan-11.5.0/bin/arasan-11.5.0/arasanx -mode	\
 TwoMachines $(XBOARD_OPTS)
 
 # Annotate out.pgn using Crafty.
 annotate: out.pgn
-	printf "smpmt=2\nannotate out.pgn w other_binaries/crafty 1-999	\
-0.5 5\n" | other_binaries/crafty
+	printf "smpmt 2\nannotate out.pgn Chesley 1-999 1 .5\n" | other_binaries/crafty
 
 #############
 # Clean up. #
