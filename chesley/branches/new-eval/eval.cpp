@@ -581,17 +581,6 @@ Eval::score_pawns_inner (const Color c) {
         val = CONNECTED_VAL[c][rank];
       }
 
-#if 0
-    // Protected pawns backed by a rook.
-    if (passed &&
-        !doubled && 
-        half_open_file[file] &&
-        (this_file_mask (idx) & in_back_of_mask (idx, c) & b.get_rooks (c)))
-      {
-        val += PROTECTED_PAST_VAL;
-      }
-#endif
-
     // Weak pawns
     if (backward || isolated || doubled)
       {
