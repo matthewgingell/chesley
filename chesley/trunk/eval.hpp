@@ -19,238 +19,134 @@
 
 #include "chesley.hpp"
 
-///////////////////////////////////////////////
-// Material and feature evaluation constants //
-///////////////////////////////////////////////
+// Bounds on the Score type.
 
-static const Score INF      = 30 * 1000;
-static const Score MATE_VAL = 20 * 1000;
+static const Score INF        = 30 * 1000;
+static const Score MATE_VAL   = 20 * 1000;
+
+// Piece values from Larry Kaufman.
 
 static const Score PAWN_VAL   = 100;
-static const Score KNIGHT_VAL = 400;
-static const Score BISHOP_VAL = 400;
-static const Score ROOK_VAL   = 600;
-static const Score QUEEN_VAL  = 1200;
+static const Score KNIGHT_VAL = 325;
+static const Score BISHOP_VAL = 325;
+static const Score ROOK_VAL   = 500;
+static const Score QUEEN_VAL  = 975;
+static const Score KING_VAL   = 0;
 
-static const Score CASTLE_KS_BONUS = 65;
-static const Score CASTLE_QS_BONUS = 25;
-static const Score CAN_CASTLE_BONUS = 10;
+///////////////////////////////
+// Inline utility functions. //
+///////////////////////////////
 
-static const Score TEMPO_BONUS = 10;
+// The piece square table.
+extern const Score piece_square_table[2][6][64];
 
-static const Score LAZY_EVAL_MARGIN = 200;
+// Piece values addressable the piece kind
+const Score piece_values[] = 
+  { PAWN_VAL, ROOK_VAL, KNIGHT_VAL, BISHOP_VAL, QUEEN_VAL, KING_VAL };
 
-const Score isolated_penalty[8]  = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score doubled_penalty[8]   = { 5, 5, 5, 5, 5, 5, 5, 5 };
-const Score backwards_penalty[8] = { 4, 4, 4, 4, 4, 4, 4, 4 };
+// Return the value of a piece by kind.
+inline Score value (Kind k) {
+  assert (k >= PAWN && k <= KING);
+  return piece_values[k];
+}
 
-const Score passed_pawn_bonus[2][8] = 
-  {{ 0, 10, 10, 25, 75, 125, 175, 0 },
-   { 0, 175, 125, 75, 25, 10, 10, 0}};
-                                       
-static const Score ROOK_MOBILITY_BONUS   = 4;
-static const Score KNIGHT_MOBILITY_BONUS = 6;
-static const Score BISHOP_MOBILITY_BONUS = 8;
-static const Score QUEEN_MOBILITY_BONUS  = 4;
+// Return the value of a piece captured by a move.
+inline Score victim_value (Move m) {  return value (m.capture); }
 
-static const Score ROOK_OPEN_BONUS = 40;
-static const Score ROOK_HALF_BONUS = 20;
-static const Score QUEEN_OPEN_BONUS = 20;
-static const Score QUEEN_HALF_BONUS = 10;
-static const Score ROOK_ON_7TH_BONUS = 50;
+// Return the value of the piece moving.
+inline Score attacker_value (Move m) { return value (m.kind); }
 
-static const Score BISHOP_TRAPPED_A7H7 = 150;
-static const Score BISHOP_TRAPPED_A6H6 =  75;
-static const Score BISHOP_PAIR_BONUS   =  50;
+// Interpolate between opening and end game values.
+inline Score interpolate (const Board &b, Score s_op, Score s_eg) {
+  const int32 m_max = 2 * 
+    (8 * PAWN_VAL + 2 * (ROOK_VAL + KNIGHT_VAL + BISHOP_VAL) + QUEEN_VAL);
+  const int32 m = (b.material[WHITE] + b.material[BLACK]);
+  return (m * s_op + (m_max - m) * s_eg) / m_max;
+}
 
-static const Score KNIGHT_OUTPOST_BONUS = 25;
+// Lookup the piece square value of a position.
+inline Score piece_square_value (Phase p, Kind k, Color c, Coord idx) {
+  Coord off = (c == BLACK) ? idx : flip_white_black[idx];
+  return piece_square_table[p][k][off];
+}
 
-static const Score PAWN_SHEILD1_BONUS = 10;
-static const Score PAWN_SHEILD2_BONUS = 5;
+// Lookup the interpolated piece square value of a position.
+inline Score
+interpolated_psq_val (const Board &b, Kind k, Color c, Coord idx) {
+  return interpolate 
+    (b,
+     piece_square_value (OPENING_PHASE, k, c, idx),
+     piece_square_value (END_PHASE, k, c, idx));
+}
 
-////////////////////////
-// The evaluator type //
-////////////////////////
+// Lookup the change in piece square value over a move.
+inline Score piece_square_value (const Board &b, const Move &m) {
+  return 0;
+
+  return interpolated_psq_val (b, m.kind, m.color, m.to) -
+    interpolated_psq_val (b, m.kind, m.color, m.from);
+}
+
+// Return the net material value of a position.
+inline Score net_material (const Board &b) {
+  return sign (b.to_move ()) * (b.material[WHITE] - b.material[BLACK]);
+}
+
+//////////////////////////////
+// Position evaluation type //
+//////////////////////////////
 
 struct Eval {
 
-  ///////////////////
-  // Static tables //
-  ///////////////////
+  // Initialize the evaluation object.
+  Eval (const Board &b, Score alpha = -INF, Score beta = -INF) :
+    b (b), alpha (alpha), beta (beta), s (0), s_op (0), s_eg (0) {}
   
-  // The main piece square table.
-  static const int8 piece_square_table[6][64];
-
-  // A table for computing indices from the perspective of one or the
-  // other color.
-  static const int8 xfrm[2][64];
-
-  // A table reflecting centrality values.
-  static const int8 centrality_table[64];
-
-  // A table used for computing the positional value of the king.
-  static const int8 king_square_table[3][64];
-
-  ////////////////////
-  // Initialization //
-  ////////////////////
-
-  Eval (const Board &board, const Score alpha = -INF, const Score beta = INF) :
-    b (board), alpha (alpha), beta (beta)
-  {
-    ZERO (minor_counts);
-    ZERO (major_counts);
-    count_material ();
-  }
-
-  // Calculate a score from a material imbalance.
-  Score net_material () {
-    return sign (b.to_move ()) * b.net_material;
-  }
-  
-  ////////////////////////////////
-  // Static position evaluation //
-  ////////////////////////////////
-
-  // Top level evaluation function.
+  // Return the static evaluation of this position.
   Score score ();
 
-  // Evaluate mobility by piece kind.
-  Score eval_mobility (const Color c);
+private:
 
-  // Evaluate by piece kind.
-  Score eval_pawns   (const Color c);
-  Score eval_rooks   (const Color c);
-  Score eval_knights (const Color c);
-  Score eval_bishops (const Color c);
-  Score eval_queens  (const Color c);
-  Score eval_king    (const Color c);
-
-  // Draw detection.
-  bool is_draw ();
-
-  // Initialize piece counts.
-  void count_material ();
-
-  // Sum piece table values over white and black pieces. This is only
-  // provided for debuging purposes as piece square sums are computed
-  // incrementally and saved in the Board data structure.
-  Score sum_piece_squares (const Board &b);
-
-  // Sum net material over white and black pieces. This is only
-  // provided for debuging purposes as this value is computed
-  // incrementally.
-  Score sum_net_material ();
-
-  void verify_piece_counts ();
-
-  ////////////////////////////////
-  // Inline utility functions.  //
-  ////////////////////////////////
-
-  // Fetch the piece square table value for a piece.
-  static inline Score 
-  psq_value (Kind k, Color c, Coord idx) {
-    return piece_square_table[k][xfrm[c][idx]];
-  }
-  
-  // Fetch a net score for a move from the piece square tables.
-  static inline Score 
-  psq_value (const Board &b, const Move &m) {
-    if (m.kind == KING) return 0;
-    return piece_square_table[m.get_kind()][xfrm[b.to_move()][m.to]] -
-      piece_square_table[m.get_kind()][xfrm[b.to_move()][m.from]];
-  }
-
-  //////////////////////////////
-  // Static utility functions //
-  //////////////////////////////
-
-  // Get the score for a piece by Kind.
-  static inline Score eval_piece (Kind k) {
-    switch (k)
-      {
-      case PAWN:   return PAWN_VAL;
-      case ROOK:   return ROOK_VAL;
-      case KNIGHT: return KNIGHT_VAL;
-      case BISHOP: return BISHOP_VAL;
-      case QUEEN:  return QUEEN_VAL;
-      default:     return 0;
-      }
-  }
-
-  // Approximate the value of a capture. 
-  static inline Score eval_capture (const Move &m) {
-    if (m.get_capture () != NULL_KIND)
-      {
-        return eval_piece (m.get_capture ()) - 
-          eval_piece (m.get_kind ()) / 10;
-      }
-    else
-      {
-        return 0;
-      }
-  }
-
-  // Get the value of a piece be moved.
-  static inline Score eval_piece (const Move &m) {
-    return eval_piece (m.get_kind ());
-  }
-
-  // Get the value of a piece being captured.
-  static inline Score eval_victim (const Move &m) {
-    return eval_piece (m.get_capture ());
-  }
-
-  // Determine whether k is a minor piece.
-  static inline bool is_minor (Kind k) {
-    switch (k)
-      {
-      case PAWN:   return false;
-      case ROOK:   return false;
-      case KNIGHT: return true;
-      case BISHOP: return true;
-      case QUEEN:  return false;
-      default:     return false;
-      }
-  }
-
-  // Determine whether k is a minor piece.
-  static inline bool is_major (Kind k) {
-    switch (k)
-      {
-      case PAWN:   return false;
-      case ROOK:   return true;
-      case KNIGHT: return false;
-      case BISHOP: return false;
-      case QUEEN:  return true;
-      default:     return false;
-      }
-  }
-    
-  // Get the game phase.
-  inline Phase get_phase () {
-    if (major_counts [WHITE] + minor_counts [WHITE] <= 3 &&
-        major_counts [BLACK] + minor_counts [BLACK] <= 3)
-      {
-        return ENDGAME;
-      }    
-    else
-      {
-        return OPENING;
-      }
-  }
-
-  /////////////////////
-  // Evaluation data //
-  /////////////////////
-  
   const Board &b;
-  Phase phase;
-  int major_counts[2];
-  int minor_counts[2];
   const Score alpha;
   const Score beta;
+
+  Score s;
+  Score s_op;
+  Score s_eg;
+
+  bool open_file[FILE_COUNT];
+  bool half_open_file[FILE_COUNT];
+
+  int pawn_count[COLOR_COUNT];
+  int major_count[COLOR_COUNT];
+  int minor_count[COLOR_COUNT];
+
+  bitboard attack_set[COLOR_COUNT];
+  
+  ///////////////////////////////
+  // Static feature evaluation //
+  ///////////////////////////////
+
+  void compute_features ();
+
+  bool can_not_win             (Color c);
+  bool is_draw                 ();
+
+  Score score_king             (const Color c);
+  Score score_knight           (const Color c);
+  Score score_bishop           (const Color c);
+  Score score_mobility         (const Color c);
+  Score score_rooks_and_queens (const Color c);
+
+  Score score_pawns            ();
+  Score score_pawns_inner      (const Color c);
+
+  ///////////////////
+  // Debug methods //
+  ///////////////////
+
+  Score sum_net_material ();
 };
 
 #endif // _EVAL_

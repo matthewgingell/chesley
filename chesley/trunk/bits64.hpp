@@ -31,7 +31,13 @@ inline bits64 clear_msbs (bits64)        IS_CONST;
 inline uint32 bit_idx    (bits64)        IS_CONST;
 inline uint32 pop_count  (bits64)        IS_CONST;
 inline byte   get_byte   (bits64, int)   IS_CONST;
-static void   print_bits (bits64)        IS_UNUSED;
+
+////////////////////////
+// Debugging routines //
+////////////////////////
+
+static void print_bits  (bits64 b) IS_UNUSED;
+static void print_board (bits64 b) IS_UNUSED;
 
 // Test a bit.
 inline bool
@@ -108,4 +114,20 @@ print_bits (bits64 b) {
   std::cerr << std:: endl;
 }
 
+static void 
+print_board (bits64 b);
+
+// Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
+static void
+print_board (bits64 b) {
+  for (int y = 7; y >= 0; y--)
+    {
+      for (int x = 0; x < 8; x++)
+        std::cerr << (test_bit (b, x + 8 * y) ? 'X' : '.') << " ";
+      std::cerr << std::endl;
+    }
+  std::cerr << std::endl;
+}
+
+ 
 #endif // _BITS64_

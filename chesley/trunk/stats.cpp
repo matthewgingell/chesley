@@ -222,7 +222,7 @@ gen_material_stats (const string filename)
           if (stable_count >= 5)
             {
               // Collect material balance information.
-              Score mdif = b.net_material;
+              Score mdif = b.material[WHITE] - b.material[BLACK];
 
               if (g.winner == WHITE) 
                 {

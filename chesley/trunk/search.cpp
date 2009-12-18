@@ -176,7 +176,9 @@ Search_Engine :: iterative_deepening
       // next ply. In that case break and leave the remaining time on
       // the clock.
 
-      if (controls.mode != UNLIMITED && controls.deadline > 0 &&
+      if (controls.mode != EXACT && 
+          controls.mode != UNLIMITED &&
+          controls.deadline > 0 &&
           (controls.deadline - mclock ()) < (0.2 * controls.allocated))
         {
           break;
@@ -293,13 +295,14 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
       int ext;
       Board c = b;
       Move m = moves[i];
+      path[0] = m;
       cpv.clear();
 
       // Skip this move if it's illegal.
       if (!c.apply (m)) continue;
 
       // Decide on a depth adjustment for this search.
-      ext = depth_adjustment (b, m);
+      ext = depth_adjustment (b, m, 0);
                             
       // Do principal variation search.
       if (i > 0)
@@ -319,6 +322,7 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
           pv = Move_Vector (m, cpv);
           collect_move (depth, 0, m, alpha);
         }
+
     }
   
   // Store this result in the transposition table.
@@ -410,8 +414,10 @@ Search_Engine :: search
   if (alpha >= beta) return alpha;
   
   // Return the result of a quiescence search at depth 0.
-  if (depth <= 0)
-    alpha = qsearch (b, -1, ply, alpha, beta);
+  if (depth <= 0) 
+    {
+      alpha = qsearch (b, -1, 0, alpha, beta);
+    }
   
   // Otherwise recurse over the children of this node.
   else {
@@ -433,6 +439,7 @@ Search_Engine :: search
         c.set_en_passant (0);
         int val = -search_with_memory
           (c, depth - R - 1, ply, dummy, -beta, -beta + 1, false);
+
         if (val >= beta) 
           { 
             stats.null_count++;
@@ -449,10 +456,42 @@ Search_Engine :: search
     order_moves (b, ply, moves);
     int mi = 0;
     bool have_pv_move = false;
+
+    //////////////////////////////
+    // Singular reply extension //
+    //////////////////////////////
+
+    bool sre = false;
+
+#if 0
+#ifdef ENABLE_EXTENSIONS
+    // If we are in check, count the number of legal moves available
+    // to us. This should be replaced with check evasion generation.
+    if (in_check)
+      {
+        int count = 0;
+        for (int i = 0; i < moves.count; i++)
+          {
+            Board c = b;
+            if (c.apply (moves[i])) count++;
+            if (count > 1) break;
+          }
+        
+        if (count == 1)
+          {
+            sre = true;
+          }
+
+        stats.ext_count++;
+      }
+#endif
+#endif
+
     for (mi = 0; mi < moves.count; mi++)
       {
         int cs;
         Move m = moves[mi];
+        path[ply] = m;
         Move_Vector cpv;
         Board c = b;
 
@@ -462,14 +501,14 @@ Search_Engine :: search
         legal_move_count++;
 
         // Determine the estimated evaluation for this move.
-        Score estimate = 
-          Eval (b).net_material () + see (b, m);
+        Score estimate = net_material (b) + see (b, m);
 
         // Determine whether this moves checks.
         bool c_in_check = c.in_check (c.to_move());
 
         // Decide on a depth adjustment for this search.
-        int ext = depth_adjustment (b, m);
+        int ext = depth_adjustment (b, m, ply);
+        if (sre) ext++;
 
 #ifdef ENABLE_FUTILITY
         // The approach taken to futility pruning here come from Ernst
@@ -520,7 +559,7 @@ Search_Engine :: search
             
             // If this position looks extremely bad at depth three,
             // proceed with a reduced depth search.
-            const Score RAZORING_MARGIN = 8 * PAWN_VAL;
+            const Score RAZORING_MARGIN = QUEEN_VAL + PAWN_VAL;
             upperbound = estimate + RAZORING_MARGIN;
             if (depth == PRE_PRE_FRONTIER && upperbound <= alpha)
               {
@@ -538,6 +577,8 @@ Search_Engine :: search
         
         if (mi > 0)
           {
+
+#ifdef ENABLE_LMR
             //////////////////////////
             // Late move reductions //
             //////////////////////////
@@ -565,6 +606,8 @@ Search_Engine :: search
                   }
               }
             else
+#endif // ENABLE_LMR
+
               {
                 cs = -search_with_memory
                   (c, depth - 1 + ext, ply + 1, cpv, -alpha - 1, -alpha, true);
@@ -688,10 +731,11 @@ Search_Engine :: order_moves
   // http://members.home.nl/matador/chess840.htm                   //
   ///////////////////////////////////////////////////////////////////
 
-  const int32 HASH_MOVE =       150 * 1000;
-  const int32 MATE_KILLER =     125 * 1000;
+  const int32 HASH_MOVE       = 150 * 1000;
+  const int32 MATE_KILLER     = 125 * 1000;
   const int32 WINNING_CAPTURE = 100 * 1000;
   const int32 QUEEN_PROMOTION =  75 * 1000;
+  const int32 RECAPTURE       =  50 * 1000;
   const int32 EVEN_CAPTURE    =  50 * 1000;
   const int32 KILLER_1        =  25 * 1000;
   const int32 KILLER_2        =  10 * 1000;
@@ -726,7 +770,14 @@ Search_Engine :: order_moves
       if (m.is_capture ())
         {
           Score sval = see (b, m);
-          if (sval > 0) 
+
+          // Order recaptures early.
+          if (ply > 0 && path[ply - 1].to == m.to)
+            {
+              scores[i] = RECAPTURE + sval;
+              continue;
+            }
+          else if (sval > 0) 
             { 
               scores[i] = WINNING_CAPTURE + sval;
               continue;
@@ -790,14 +841,14 @@ Search_Engine :: order_moves
       if (hh_max) scores[i] += (PAWN_VAL * hval) / hh_max;
       
       // Apply piece square table bonus.
-      scores[i] += Eval::psq_value (b, m);
+      scores[i] += piece_square_value (b, m);
     }
 
   moves.sort (scores);  
 }
 
 // Return a depth adjustment for a position.
-int Search_Engine::depth_adjustment (const Board &b, Move m) {
+int Search_Engine::depth_adjustment (const Board &b, Move m, int ply) {
 #ifdef ENABLE_EXTENSIONS
   int ext = 0;
 
@@ -807,12 +858,19 @@ int Search_Engine::depth_adjustment (const Board &b, Move m) {
       ext++;
     }
 
-  // Pawn to seventh rank extensions.
-  else 
+  // Recapture extension.
+  if (ply > 0 && 
+      path[ply - 1].is_capture () &&
+      path[ply].to == path[ply - 1].to)
     {
-      int rank = idx_to_rank (m.to);
-      if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
-        ext += 1;
+      ext++;
+    }
+
+  // Pawn to seventh rank extension.
+  int rank = idx_to_rank (m.to);
+  if ((rank == 1 || rank == 6) && m.get_kind () == PAWN)
+    {
+      ext += 1;
     }
   
   stats.ext_count += ext;
@@ -931,13 +989,14 @@ Search_Engine :: see_inner (Board &b, const Move &m) const {
     return -INF;
 
   // Compute the value of the piece being captured.
-  Score s = Eval::eval_victim (m);
+  Score s = victim_value (m);
 
-  // Make this move without uodating the position hash keys, etc.
+  // Make this move without updating the position hash keys, etc.
   apply_fast_capture (b, m);
 
   // Recurse with the next capture in the chain.
   Move lvc = b.least_valuable_attacker (m.to);
+
   if (lvc != NULL_MOVE)
     {
       assert (lvc.to == m.to);
@@ -945,6 +1004,7 @@ Search_Engine :: see_inner (Board &b, const Move &m) const {
     }
   
   return s;
+
 #else 
   return Eval::eval_capture (m);
 #endif // ENABLE_SEE
@@ -967,14 +1027,12 @@ Search_Engine :: qsearch
   // Do static evaluation at this node.
   Score static_eval = Eval (b, alpha, beta).score ();
 
-#if 0
   // Delta pruning.
   if (static_eval + QUEEN_VAL < alpha)
     {
       stats.delta_count++;
       return alpha;
     }
-#endif
 
   // Decide whether to stand pat.
   if (static_eval > alpha)
@@ -1023,6 +1081,8 @@ Search_Engine :: qsearch
           int mi = 0;
           for (mi = 0; mi < moves.count; mi++)
             {
+              if (scores[mi] < 0) break;
+
               Move m = moves[mi];
               c = b;
               if (c.apply (m))
@@ -1434,7 +1494,7 @@ post_each (const Board &b, int depth, Score s, const Move_Vector &pv) {
   
   // Principle variation.
   Move_Vector pve = pv;
-  tt_extend_pv (b, pve);
+  //  tt_extend_pv (b, pve);
   for (int i = 0; i < pve.count; i++)
     {
       cout << c.to_san (pve[i]) << " ";

@@ -214,10 +214,12 @@ Session::epd (const string_vector &args)
 
           cout << "Trying " << fen << " bm " << b.to_san (best) << endl;
           se.reset ();
-          se.set_fixed_time (15 * 1000);
+          se.set_fixed_time (1 * 1000);
           se.post = true;
           running = true;
+          interrupt_on_io = false;
           se.compute_pv (b, 100, pv);
+          interrupt_on_io = true;
           running = false;
           (pv[0] == best) ? cout << "PASS: " : cout << "FAIL: ";
           cout << fen << " bm " << b.to_san (best) << endl << endl;;

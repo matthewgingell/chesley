@@ -274,36 +274,6 @@ Board::gen_moves (Move_Vector &moves) const
     }
 }
 
-// Generate non-capture promotions to Queen.
-void
-Board::gen_promotions (Move_Vector &moves) const
-{
-  Color c = to_move ();
-  bitboard our_pawns = pawns & our_pieces ();
-
-  // Select the pawns on the 2nd or 7th rank with an empty square
-  // ahead of them.
-  if (c == WHITE) 
-    {
-      our_pawns &= rank_mask (6);
-      our_pawns = ((our_pawns << 8) & unoccupied ()) >> 8;
-    }
-  else 
-    {
-      our_pawns &= rank_mask (1);
-      our_pawns = ((our_pawns >> 8) & unoccupied ()) << 8;
-    }
-
-  // For each pawn:
-  while (our_pawns)
-    {
-      Coord from = bit_idx (our_pawns);
-      Coord to = (c == WHITE) ? (from + 8) : (from - 8);
-      moves.push (from, to, c, PAWN, NULL_KIND, QUEEN);
-      clear_bit (our_pawns, from);
-    }
-}
-
 // Generate captures
 void
 Board::gen_captures (Move_Vector &moves) const
@@ -490,6 +460,50 @@ Board::gen_captures (Move_Vector &moves) const
           moves.push (from, to_idx, to_move (), KING, get_kind (to_idx));
           clear_bit (to, to_idx);
         }
+    }
+}
+
+#if 0
+
+// Collect a list of moves which put the opponent in check.
+void
+Board::gen_checks (Move_Vector &moves) const
+{ 
+  // Coord king_idx = their_king_square ();
+ 
+  // Direct pawn checks.
+  return;
+}
+
+#endif
+
+// Generate non-capture promotions to Queen.
+void
+Board::gen_promotions (Move_Vector &moves) const
+{
+  Color c = to_move ();
+  bitboard our_pawns = pawns & our_pieces ();
+
+  // Select the pawns on the 2nd or 7th rank with an empty square
+  // ahead of them.
+  if (c == WHITE) 
+    {
+      our_pawns &= rank_mask (6);
+      our_pawns = ((our_pawns << 8) & unoccupied ()) >> 8;
+    }
+  else 
+    {
+      our_pawns &= rank_mask (1);
+      our_pawns = ((our_pawns >> 8) & unoccupied ()) << 8;
+    }
+
+  // For each pawn:
+  while (our_pawns)
+    {
+      Coord from = bit_idx (our_pawns);
+      Coord to = (c == WHITE) ? (from + 8) : (from - 8);
+      moves.push (from, to, c, PAWN, NULL_KIND, QUEEN);
+      clear_bit (our_pawns, from);
     }
 }
 

@@ -56,6 +56,9 @@ struct Session {
   // Is session running or stopped?
   static bool running;
 
+  // Should we interupt the search if we have pending input?
+  static bool interrupt_on_io;
+
   // Is pondering enabled?
   static bool ponder_enabled;
 

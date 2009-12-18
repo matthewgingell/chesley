@@ -30,8 +30,6 @@
 struct Move_Vector;
 struct Board;
 
-void print_board (bitboard b);
-
 ////////////////////////////
 // Chess board state type //
 ////////////////////////////
@@ -162,6 +160,13 @@ struct Board {
   // Tests //
   ///////////
 
+  // Test whether color c has castled.
+  bool has_castled (Color c) const {
+    return 
+      ((c == WHITE && (flags.w_has_k_castled || flags.w_has_q_castled)) ||
+       (c == BLACK && (flags.b_has_k_castled || flags.b_has_q_castled)));
+  }
+
   // Compute a bitboard of every square color is attacking.
   bitboard attack_set (Color) const;
 
@@ -249,12 +254,44 @@ struct Board {
     return bit_idx (color_to_board (c) & kings); 
   }
 
+  // Return the location of the king of the side on the move.
   Coord our_king_square () const { 
     return king_square (to_move ());
   }
 
+  // Return the location of the king of the side not on the move.
   Coord their_king_square () const { 
     return king_square (~to_move ());
+  }
+
+  // Return true if a square contains a pawn.
+  bool is_pawn (Coord idx, Color c) const {
+    return test_bit (get_pawns (c), idx);
+  }
+
+  // Return true if a square contains a rook.
+  bool is_rook (Coord idx, Color c) const {
+    return test_bit (get_rooks (c), idx);
+  }
+
+  // Return true if a square contains a knight.
+  bool is_knight (Coord idx, Color c) const {
+    return test_bit (get_knights (c), idx);
+  }
+
+  // Return true if a square contains a bishop.
+  bool is_bishop (Coord idx, Color c) const {
+    return test_bit (get_bishops (c), idx);
+  }
+
+  // Return true if a square contains a queen.
+  bool is_queen (Coord idx, Color c) const {
+    return test_bit (get_queens (c), idx);
+  }
+
+  // Return true if a square contains a king.
+  bool is_king (Coord idx, Color c) const {
+    return test_bit (get_kings (c), idx);
   }
   
   // Get a bitboard of pawn moves, excluding attacks.
@@ -399,7 +436,6 @@ struct Board {
     return pawns;
   }
 
-
   // Map a color to the corresponding bitboard.
   bitboard &
   color_to_board (Color color) {
@@ -527,8 +563,9 @@ struct Board {
     return KING_ATTACKS_TBL[idx];
   }  
 
-  void gen_captures (Move_Vector &moves) const;
   void gen_moves (Move_Vector &moves) const;
+  void gen_captures (Move_Vector &moves) const;
+  void gen_checks (Move_Vector &moves) const;
   void gen_promotions (Move_Vector &moves) const;
 
   ///////////////////////
@@ -596,11 +633,11 @@ struct Board {
   ///////////////////////////////////////////////
   // Incrementally updated scoring information //
   ///////////////////////////////////////////////
-  
-  Score net_material;
-  Score psquares[COLOR_COUNT];
-  uint8 piece_counts[COLOR_COUNT][KIND_COUNT];
-  uint8 pawn_counts[COLOR_COUNT][FILE_COUNT];
+
+  Score material     [COLOR_COUNT];
+  Score psquares     [COLOR_COUNT][PHASE_COUNT];
+  uint8 piece_counts [COLOR_COUNT][KIND_COUNT];
+  uint8 pawn_counts  [COLOR_COUNT][FILE_COUNT];
 };
 
 // Output human readable board.
