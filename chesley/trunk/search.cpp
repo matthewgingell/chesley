@@ -405,7 +405,7 @@ Search_Engine :: search
   bool in_check = b.in_check ((b.to_move ()));
 
   // Check 50 move and triple repetition rules.
-  if (b.half_move_clock == 100 || is_triple_rep (b))
+  if (b.half_move_clock == 100 || is_rep (b))
     return 0;
 
   // Mate distance pruning.
