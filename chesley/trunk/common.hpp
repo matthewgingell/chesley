@@ -101,7 +101,8 @@ enum Kind {
 const int KIND_COUNT = 6;
 
 // Score type for a chess position.
-typedef int32 Score;
+// typedef float Score;
+typedef int16 Score;
 
 enum SKind {
   NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 
@@ -207,6 +208,21 @@ idx_to_file (Coord idx) {
 inline Coord 
 to_idx (int rank, int file) {
   return 8 * rank + file;
+}
+
+// Return a bitmask of c's side of the board.
+inline bitboard
+our_side_of_board (Color c) {
+  bitboard white_side = 
+    file_mask (A) | file_mask (B) | 
+    file_mask (C) |  file_mask (D);
+  return (c == WHITE) ? white_side : ~white_side;
+}
+
+// Return a bitmask of !c's side of the board.
+inline bitboard
+their_side_of_board (Color c) {
+  return our_side_of_board (~c);
 }
 
 // Return the distance between two locations.

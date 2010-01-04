@@ -22,6 +22,16 @@ using namespace std;
 // The pawn evaluation cache.
 PHash ph (1024 * 1024);
 
+#define PSQ 0.5
+#define MOB 1
+#define PWN 1
+#define SPC 0
+#define KSF 0
+#define NGT 0
+#define BSH 0
+#define QRS 0
+#define LZY 0
+
 //////////////////////////////////////
 // Evaluation function entry point. //
 //////////////////////////////////////
@@ -44,91 +54,57 @@ Score Eval::sum_net_material () {
 Score 
 Eval::score () { 
 
-  int f, f2;
-  
-#ifdef TRACE_EVAL
-  cerr << "Evaluating " << b.to_fen () << endl;
-#endif
+  Score s = 0;
 
   // Compute the presence of some useful features.
   compute_features ();
 
   // If neither side has mating material then this is a draw.
-  if (can_not_win (WHITE) && can_not_win (BLACK))
-    { 
-      return 0;
-    }
+  if (can_not_win (WHITE) && can_not_win (BLACK)) return 0;
 
   // If we can not win but the opponent can, we still care about the
   // rest of the evaluation to guide us towards a possible draw, but
   // we apply an enormous penalty.
 
-  else if (can_not_win (WHITE))
-    {
-      s -= MATE_VAL / 2;
-    }
-  else if (can_not_win (BLACK))
-    {
-      s += MATE_VAL / 2;
-    }
+  else if (can_not_win (WHITE)) s -= MATE_VAL / 2;
+  else if (can_not_win (BLACK)) s += MATE_VAL / 2;
 
-  s += sign (b.to_move ()) * TEMPO_VAL;
-
-  // Simple material value.
-  f = b.material[WHITE] - b.material[BLACK];
-  s += f;
-
-#ifdef TRACE_EVAL
-  cout << "Net material is " << f << endl;
-#endif 
+  // Evaluate material.
+  s += b.material[WHITE] - b.material[BLACK];
 
   // Piece square values.
-  f = b.psquares[WHITE][OPENING_PHASE] -
+  Score s1 = b.psquares[WHITE][OPENING_PHASE] - 
     b.psquares[BLACK][OPENING_PHASE];
 
-  s_op += f;
-
-  f2 = b.psquares[WHITE][END_PHASE] - 
+  Score s2 = b.psquares[WHITE][END_PHASE] - 
     b.psquares[BLACK][END_PHASE];
+  
+  s += PSQ * interpolate (b, s1, s2);
 
-  s_eg += f2;
-
-#ifdef TRACE_EVAL
-  cout << "Opening psqrs is " << f << endl;
-  cout << "End game psqrs is " << f2 << endl;
-  cout << "Interpolated value is " << 
-    interpolate (b, f, f2) << endl;
-#endif   
-
+#if LZY
   // Try lazy eval
   if (s < (alpha - LAZY_EVAL_MARGIN) || (s > beta + LAZY_EVAL_MARGIN))
-    return sign (b.to_move ()) * (s + interpolate (b, s_op, s_eg));
+    return s * sign (b.to_move ());
+#endif
 
   // Evaluate mobility.
-  s += score_mobility (WHITE) - 
-    score_mobility (BLACK);
+  s += MOB * (score_mobility (WHITE) - score_mobility (BLACK));
 
   // King safety.
-  s += score_king (WHITE) - 
-    score_king (BLACK);
+  s += KSF * (score_king (WHITE) - score_king (BLACK));
 
   // Knights.
-  s += score_knight (WHITE) - 
-    score_knight (BLACK);
+  s += NGT * (score_knight (WHITE) - score_knight (BLACK));
 
   // Bishop.
-  s += score_bishop (WHITE) - 
-    score_bishop (BLACK);
+  s += BSH * (score_bishop (WHITE) - score_bishop (BLACK));
 
   // Rooks and queens.
-  s += score_rooks_and_queens (WHITE) - 
-    score_rooks_and_queens (BLACK);
+  s += QRS * (score_rooks_and_queens (WHITE) - 
+              score_rooks_and_queens (BLACK));
 
   // Pawn structure.
-  s += score_pawns ();
-
-  // Add interpolated value for split evaluation. 
-  s += interpolate (b, s_op, s_eg);
+  s += PWN * score_pawns ();
 
   return sign (b.to_move ()) * s;
 }
@@ -268,25 +244,34 @@ Eval::score_king (const Color c) {
 Score
 Eval::score_knight (const Color c) {
   Score s = 0;
- 
-  // Compute the set of knights protected by pawms.
-  bitboard pieces = b.get_knights (c) & b.get_pawn_attacks (c);
-  
-  // Do very simple output evaluation on C5 / F5.
-  while (pieces)
+
+  // Reward Knights which are defended by a pawn and not attacked by a
+  // pawn.
+
+  bitboard outposts =  
+    b.get_knights (c) & 
+    b.get_pawn_attacks (c) & 
+    ~b.get_pawn_attacks (~c);
+
+  int knight_outpost[64] =
+    { 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 1, 4, 4, 4, 4, 1, 0,
+      0, 2, 6, 8, 8, 6, 2, 0,
+      0, 1, 4, 4, 4, 4, 1, 0,  
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0 };
+
+  while (outposts) 
     {
-      Coord idx = bit_idx (pieces);
-      if (c == WHITE)
-        {
-          if (idx == C5 || idx == F5) s+= KNIGHT_OUTPOST_VAL;
-        }
-      else 
-        {
-          if (idx == C4 || idx == F4) s+= KNIGHT_OUTPOST_VAL;
-        }
-      clear_bit (pieces, idx);
+      Coord idx = bit_idx (outposts);
+      Coord off = (c == BLACK) ? 
+        idx : flip_white_black[idx];
+      s += knight_outpost[off];
+      clear_bit (outposts, idx);
     }
-  
+
   return s;
 }
 
@@ -336,6 +321,33 @@ Eval::score_bishop (const Color c) {
   if (b.piece_counts[c][BISHOP] >= 2) 
     s += BISHOP_PAIR_VAL;
 
+  // Reward bishops which are defended by a pawn and not attacked by a
+  // pawn.
+
+  bitboard outposts =  
+    b.get_bishops (c) & 
+    b.get_pawn_attacks (c) & 
+    ~b.get_pawn_attacks (~c);
+
+  int bishop_outpost[64] =
+    { 0, 0, 0, 0, 0, 0, 0, 0,
+     -1, 0, 0, 0, 0, 0, 0,-1,
+      0, 0, 1, 1, 1, 1, 0, 0,
+      0, 1, 3, 3, 3, 3, 1, 0,
+      0, 3, 5, 5, 5, 5, 3, 0,
+      0, 1, 2, 2, 2, 2, 1, 0,
+      0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0 };
+
+  while (outposts) 
+    {
+      Coord idx = bit_idx (outposts);
+      Coord off = (c == BLACK) ? 
+        idx : flip_white_black[idx];
+      s += bishop_outpost[off];
+      clear_bit (outposts, idx);
+    }
+
   return s;
 }
 
@@ -343,12 +355,23 @@ Eval::score_bishop (const Color c) {
 Score
 Eval::score_mobility (const Color c) {
   Score s = 0;
+  int space = 0;
+  bitboard pieces;
+  bitboard attacks;
+
+  // Pawns
+  attacks = b.get_pawn_attacks (c) & ~b.our_pieces ();
+  s += pop_count (attacks) * PAWN_MOBILITY_VAL;
+  space += pop_count (attacks & their_side_of_board (c));
 
   // Rooks
-  bitboard pieces = b.get_rooks (c);
+  pieces = b.get_rooks (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.rook_mobility (idx) * ROOK_MOBILITY_VAL;
+    attacks = b.rook_attacks (idx) & ~b.our_pieces ();
+    s += pop_count (attacks) * ROOK_MOBILITY_VAL;
+    space += pop_count (attacks & their_side_of_board (c));
+    // s += b.rook_mobility (idx) * ROOK_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
@@ -356,7 +379,10 @@ Eval::score_mobility (const Color c) {
   pieces = b.get_knights (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.knight_mobility (idx) * KNIGHT_MOBILITY_VAL;
+    attacks = b.knight_attacks (idx) & ~b.our_pieces ();
+    space += pop_count (attacks & their_side_of_board (c));
+    s += pop_count (attacks) * KNIGHT_MOBILITY_VAL;
+    // s += b.knight_mobility (idx) * KNIGHT_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
@@ -364,7 +390,10 @@ Eval::score_mobility (const Color c) {
   pieces = b.get_bishops (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.bishop_mobility (idx) * BISHOP_MOBILITY_VAL;
+    attacks = b.bishop_attacks (idx) & ~b.our_pieces ();
+    s += pop_count (attacks) * BISHOP_MOBILITY_VAL;
+    space += pop_count (attacks & their_side_of_board (c));
+    // s += b.bishop_mobility (idx) * BISHOP_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
@@ -372,10 +401,17 @@ Eval::score_mobility (const Color c) {
   pieces = b.get_queens (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    s += b.queen_mobility (idx) * QUEEN_MOBILITY_VAL;
+    attacks = b.queen_attacks (idx) & ~b.our_pieces ();
+    space += pop_count (attacks & their_side_of_board (c));
+    s += pop_count (attacks) * QUEEN_MOBILITY_VAL;
+    // s += b.queen_mobility (idx) * QUEEN_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
-  
+
+  // Give a reward for the number of squares on the other side of the
+  // board we're attacking.
+  s += SPC * 5 * space;
+
   return s;
 }
 
@@ -409,13 +445,27 @@ Eval::score_rooks_and_queens (const Color c) {
     clear_bit (pieces, idx);
   }
 
-
   // Reward queens on open and half open files
   pieces = b.get_queens (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
     if (open_file [idx_to_file (idx)]) s += QUEEN_OPEN_VAL;
     if (half_open_file [idx_to_file (idx)]) s += QUEEN_HALF_VAL;
+
+    // Reward queen on the 7th file trapping the enemy king.
+    const int rank = idx_to_rank (idx);
+
+    if (c == WHITE && rank == 6 && 
+        (b.kings & b.black & rank_mask (7)))
+      {
+        s += ROOK_ON_7TH_VAL;
+      }
+    else if (c == BLACK && rank == 1 &&
+             (b.kings & b.white & rank_mask (0)))
+      {
+        s += ROOK_ON_7TH_VAL;
+      }
+
     clear_bit (pieces, idx);
   }
 
@@ -433,8 +483,8 @@ Eval::score_pawns () {
     }
   else
     {
-      s = score_pawns_inner (WHITE) - 
-        score_pawns_inner (BLACK);
+      s = PWN * (score_pawns_inner (WHITE) - 
+                 score_pawns_inner (BLACK));
     }
 
   ph.set (b.phash, s);
@@ -495,9 +545,7 @@ Eval::score_pawns_inner (const Color c) {
     ///////////////////
 
     if (b.pawn_counts[c][file] > 1)
-      {
-        doubled = true;
-      }
+      doubled = true;
 
     //////////////////
     // Passed pawns //
@@ -506,9 +554,7 @@ Eval::score_pawns_inner (const Color c) {
     // This pawn is passed if there are no enemy pawns in it's front
     // span.
     if (!(front_span & their_pawns))
-      {
-        passed = true;
-      }
+      passed = true;
 
     /////////////////////
     // Backwards pawns //
@@ -560,9 +606,7 @@ Eval::score_pawns_inner (const Color c) {
     // This pawn is isolated if there are no pawns of the same color
     // on the adjacent files.
     if (!(adjacent_files_mask (idx) & our_pawns))
-      {
         isolated = true;
-      }
 
     //////////////////////////////
     // Apply score adjustments. //
@@ -583,9 +627,8 @@ Eval::score_pawns_inner (const Color c) {
 
     // Weak pawns
     if (backward || isolated || doubled)
-      {
-        val -= WEAK_PAWN_VAL;
-      }
+      val -= WEAK_PAWN_VAL;
+    
 
 #ifdef TRACE_EVAL
     cerr << c << " pawn at " << b.to_alg_coord (idx) << ":";

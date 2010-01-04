@@ -17,7 +17,7 @@
 // Margins //
 /////////////
 
-static const Score LAZY_EVAL_MARGIN = 500;
+static const Score LAZY_EVAL_MARGIN = 300;
 
 ////////////////////////
 // Evaluation weights //
@@ -69,25 +69,11 @@ static const Score BISHOP_PAIR_VAL = 50;
 // Pawn structure adjustments based on feature computed during
 // evaluation.
 
-#define s .75
-
 static const Score WEAK_PAWN_VAL = 20;
 
-static const Score PROTECTED_PAST_VAL = 25;
-
 #define pair(a, b, c, d, e, f, g, h) \
-  {{ (a * s), (b * s), (c * s), (d * s), \
-     (e * s), (f * s), (g * s), (h * s) }, \
-   { (h * s), (g * s), (f * s), (e * s), \
-     (d * s), (c * s), (b * s), (a * s) } }
-
-static const 
-Score DOUBLED_VAL[COLOR_COUNT][RANK_COUNT] =
-  pair(    0, -20, -15, -10, -10, -5,  0,   0);
-
-static const 
-Score BACKWARD_VAL[COLOR_COUNT][RANK_COUNT] = 
-  pair (   0, -10, -10, -10, -10, -10, -10,   0);
+  {{ (a), (b), (c), (d), (e), (f), (g), (h) }, \
+   { (h), (g), (f), (e), (d), (c), (b), (a) } }
 
 static const 
 Score CONNECTED_VAL[COLOR_COUNT][RANK_COUNT] = 
@@ -102,7 +88,6 @@ Score PASSED_CONNECTED_VAL[COLOR_COUNT][RANK_COUNT] =
   pair(    0,  10,  30,  60, 100, 150, 250,   0);
 
 #undef pair
-#undef s
 
 // Knights.
 
@@ -113,7 +98,8 @@ static const Score KNIGHT_OUTPOST_VAL = 25;
 static const Score TEMPO_VAL = 10;
 
 // Mobility bonuses
-static const Score ROOK_MOBILITY_VAL   = 4;
+static const Score PAWN_MOBILITY_VAL   = 0;
+static const Score ROOK_MOBILITY_VAL   = 5;
 static const Score KNIGHT_MOBILITY_VAL = 6;
 static const Score BISHOP_MOBILITY_VAL = 8;
 static const Score QUEEN_MOBILITY_VAL  = 4;
