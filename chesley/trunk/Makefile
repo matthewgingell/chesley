@@ -98,11 +98,14 @@ TwoMachines $(XBOARD_OPTS)
 playother: chesley
 	rm -f out.pgn
 
-	xboard -tc 1 -mps 40 -mg 2 -fcp ./chesley -scp gnuchess -mode	\
+#	xboard -tc 1 -mps 40 -mg 2 -fcp ./chesley -scp gnuchess -mode	\
  TwoMachines $(XBOARD_OPTS)
 
 # 	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp \
 # other_binaries/exchess -mode TwoMachines $(XBOARD_OPTS)
+
+	xboard -tc 5 -mps 40 -mg 5 -fcp ./chesley -scp	\
+other_binaries/gray -mode TwoMachines $(XBOARD_OPTS)
 
 #	xboard -tc 5 -mps 60 -mg 500 -fcp ./chesley -scp \
 other_binaries/zct -mode TwoMachines $(XBOARD_OPTS)

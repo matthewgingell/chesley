@@ -33,6 +33,7 @@ struct TTable
     Score  score;  // :16
     int    depth   : 8;
     SKind  skind   : 8;
+    byte   pad[16];
   };
 
   // Clear the entire table.
