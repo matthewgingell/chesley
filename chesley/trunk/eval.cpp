@@ -22,11 +22,11 @@ using namespace std;
 // The pawn evaluation cache.
 PHash ph (1024 * 1024);
 
-#define PSQ 0.5
+#define PSQ 1
 #define MOB 1
 #define PWN 1
 #define SPC 0
-#define KSF 0
+#define KSF 1
 #define NGT 0
 #define BSH 0
 #define QRS 0
@@ -189,7 +189,7 @@ Eval::score_king (const Color c) {
 
   Score s = 0;
 
-  int loc = b.king_square (c);
+  Coord loc = b.king_square (c);
   int rank = idx_to_rank (loc);
   int file = idx_to_file (loc);
 
@@ -197,7 +197,7 @@ Eval::score_king (const Color c) {
   // Pawn shield evaluation. //
   /////////////////////////////
 
-  if (c == WHITE && file == 0 && rank > 4)
+  if (c == WHITE && rank == 0 && file >= F)
     {
       if (b.is_pawn (F2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
         if (b.is_pawn (F3, WHITE)) s += PAWN_SHEILD_2_VAL;
@@ -206,16 +206,16 @@ Eval::score_king (const Color c) {
       if (b.is_pawn (H2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
         if (b.is_pawn (H3, WHITE)) s += PAWN_SHEILD_2_VAL;
     }
-  else if (c == WHITE && file == 0 && rank < 3)
+  else if (c == WHITE && rank == 0 && file <= C)
     {
-      if (b.is_pawn (A1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
-        if (b.is_pawn (A2, WHITE)) s += PAWN_SHEILD_2_VAL;
-      if (b.is_pawn (B1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
-        if (b.is_pawn (B2, WHITE)) s += PAWN_SHEILD_2_VAL;
-      if (b.is_pawn (C1, WHITE)) s += PAWN_SHEILD_1_VAL; else 
-        if (b.is_pawn (C2, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (A2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (A3, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (B2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (B3, WHITE)) s += PAWN_SHEILD_2_VAL;
+      if (b.is_pawn (C2, WHITE)) s += PAWN_SHEILD_1_VAL; else 
+        if (b.is_pawn (C3, WHITE)) s += PAWN_SHEILD_2_VAL;
     }
-  else if (c == BLACK && file == 6 && rank > 4)
+  else if (c == BLACK && rank == 7 && file >= F)
     {
       if (b.is_pawn (F7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
         if (b.is_pawn (F6, BLACK)) s += PAWN_SHEILD_2_VAL;
@@ -224,7 +224,7 @@ Eval::score_king (const Color c) {
       if (b.is_pawn (H7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
         if (b.is_pawn (H6, BLACK)) s += PAWN_SHEILD_2_VAL;
     }
-  else if (c == BLACK && file == 6 && rank < 3)
+  else if (c == BLACK && rank == 7 && file <= C)
     {
       if (b.is_pawn (A7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
         if (b.is_pawn (A6, BLACK)) s += PAWN_SHEILD_2_VAL;
@@ -233,6 +233,12 @@ Eval::score_king (const Color c) {
       if (b.is_pawn (C7, BLACK)) s += PAWN_SHEILD_1_VAL; else 
         if (b.is_pawn (C6, BLACK)) s += PAWN_SHEILD_2_VAL;
     }
+  
+  //////////////////////
+  // Reward castling. //
+  //////////////////////
+
+  if (b.has_castled (c)) s += 35;
 
   return s;
 }
@@ -356,19 +362,22 @@ Score
 Eval::score_mobility (const Color c) {
   Score s = 0;
   int space = 0;
+  bitboard our_pieces = b.color_to_board (c);
   bitboard pieces;
   bitboard attacks;
 
+#if 0
   // Pawns
-  attacks = b.get_pawn_attacks (c) & ~b.our_pieces ();
+  attacks = b.get_pawn_attacks (c) & ~our_pieces;
   s += pop_count (attacks) * PAWN_MOBILITY_VAL;
   space += pop_count (attacks & their_side_of_board (c));
+#endif
 
   // Rooks
   pieces = b.get_rooks (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    attacks = b.rook_attacks (idx) & ~b.our_pieces ();
+    attacks = b.rook_attacks (idx) & ~our_pieces;
     s += pop_count (attacks) * ROOK_MOBILITY_VAL;
     space += pop_count (attacks & their_side_of_board (c));
     // s += b.rook_mobility (idx) * ROOK_MOBILITY_VAL;
@@ -379,7 +388,7 @@ Eval::score_mobility (const Color c) {
   pieces = b.get_knights (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    attacks = b.knight_attacks (idx) & ~b.our_pieces ();
+    attacks = b.knight_attacks (idx) & ~our_pieces;
     space += pop_count (attacks & their_side_of_board (c));
     s += pop_count (attacks) * KNIGHT_MOBILITY_VAL;
     // s += b.knight_mobility (idx) * KNIGHT_MOBILITY_VAL;
@@ -390,7 +399,7 @@ Eval::score_mobility (const Color c) {
   pieces = b.get_bishops (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    attacks = b.bishop_attacks (idx) & ~b.our_pieces ();
+    attacks = b.bishop_attacks (idx) & ~our_pieces;
     s += pop_count (attacks) * BISHOP_MOBILITY_VAL;
     space += pop_count (attacks & their_side_of_board (c));
     // s += b.bishop_mobility (idx) * BISHOP_MOBILITY_VAL;
@@ -401,16 +410,22 @@ Eval::score_mobility (const Color c) {
   pieces = b.get_queens (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    attacks = b.queen_attacks (idx) & ~b.our_pieces ();
+    attacks = b.queen_attacks (idx) & ~our_pieces;
     space += pop_count (attacks & their_side_of_board (c));
     s += pop_count (attacks) * QUEEN_MOBILITY_VAL;
     // s += b.queen_mobility (idx) * QUEEN_MOBILITY_VAL;
     clear_bit (pieces, idx);
   }
 
+#if 0
   // Give a reward for the number of squares on the other side of the
   // board we're attacking.
   s += SPC * 5 * space;
+#endif
+
+#ifdef TRACE_EVAL
+  cerr << c << " Mobility: " << s << endl;
+#endif // TRACE_EVAL
 
   return s;
 }
