@@ -56,8 +56,8 @@ static const Score ROOK_ON_7TH_VAL = 50;
 static const Score BISHOP_TRAPPED_A7H7 = 150;
 static const Score BISHOP_TRAPPED_A6H6 =  75;
 
-// Bishop pair value from Larry Kaufman.
-static const Score BISHOP_PAIR_VAL = 50;
+// Bonus for holding at least 2 bishops.
+static const Score BISHOP_PAIR_VAL = 15;
 
 ///////////////////////////////////////////////////////////////////
 // Pawn structure bonuses based on Hans Berliner's _The System_. //
@@ -212,7 +212,7 @@ const Score piece_square_table[2][6][64] =
       
       // Rooks
       {
-#define eg(x) (x - 25) // Why??????
+#define eg(x) x
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
@@ -225,8 +225,8 @@ const Score piece_square_table[2][6][64] =
       },
 
       // Knights
-#define eg(x) (x - 25)
       {
+#define eg(x) x
         eg(-50), eg (-20), eg(-20), eg(-10), eg(-10), eg(-20), eg(-20), eg(-50),
         eg(-20), eg ( 15), eg( 15), eg( 25), eg( 25), eg( 15), eg( 15), eg(-20),
         eg(-10), eg ( 15), eg( 20), eg( 25), eg( 25), eg( 20), eg(  0), eg(-10),
@@ -239,7 +239,7 @@ const Score piece_square_table[2][6][64] =
       },
 
       // Bishops
-#define eg(x) (x + 25)
+#define eg(x) x
       {
         eg(  0), eg (  0), eg(  0), eg(  5), eg(  5), eg(  0), eg(  0), eg(  0),
         eg(  0), eg (  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  0),

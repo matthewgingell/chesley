@@ -25,11 +25,11 @@ PHash ph (1024 * 1024);
 #define PSQ 1
 #define MOB 1
 #define PWN 1
-#define SPC 0
+#define SPC 1
 #define KSF 1
 #define NGT 3
-#define BSH 0
-#define QRS 0
+#define BSH 1
+#define QRS 1
 #define LZY 0
 
 Score Eval::sum_net_material () {
@@ -86,7 +86,7 @@ Eval::score () {
     return s * sign (b.to_move ());
 #endif
 
-  // Evaluate mobility.
+  // Mobility.
   s += MOB * (score_mobility (WHITE) - score_mobility (BLACK));
 
   // King safety.
@@ -114,6 +114,9 @@ Eval::compute_features () {
   // Compute the set of attacked squares for white and black.
   attack_set[WHITE] = b.attack_set (WHITE);
   attack_set[BLACK] = b.attack_set (BLACK);
+
+  // Sum total material remaining on the board.
+  total_material = b.material[WHITE] + b.material[BLACK];
 
   // Compute the set of open files and files with only pawns of our
   // own color.
@@ -319,26 +322,12 @@ Eval::score_bishop (const Color c) {
             s -= BISHOP_TRAPPED_A6H6;
         }
 
-#if 0
-      // Penalize bishops on color occupied by friendly pawns.
-      if (test_bit (light_squares, idx))
-        {
-          s -= 5 * pop_count (b.get_pawns (c) & light_squares);
-        }
-      else
-        {
-          s -= 5 * pop_count (b.get_pawns (c) & dark_squares);
-        }
-#endif
-
       clear_bit (our_bishops, idx);
     }
 
   // Provide a bonus for holding both bishops.
-  //  if (b.piece_counts[c][BISHOP] >= 2) 
-  //    s += BISHOP_PAIR_VAL;
-  // s += 25;
-
+  if (b.piece_counts[c][BISHOP] >= 2) 
+    s += BISHOP_PAIR_VAL;
 
 #if 0  
   // Reward bishops which are defended by a pawn and not attacked by a
@@ -435,7 +424,7 @@ Eval::score_mobility (const Color c) {
   // Give a reward for the number of squares on the other side of the
   // board we're attacking.
   s += SPC * space;
-  
+
 #ifdef TRACE_EVAL
   cerr << c << " Mobility: " << s << endl;
 #endif // TRACE_EVAL
@@ -453,7 +442,12 @@ Eval::score_rooks_and_queens (const Color c) {
   pieces = b.get_rooks (c);
   while (pieces) {
     Coord idx = bit_idx (pieces);
-    if (open_file [idx_to_file (idx)]) s += ROOK_OPEN_VAL;
+
+    if (open_file [idx_to_file (idx)]) 
+      s += ROOK_OPEN_VAL;
+
+#if 0
+
     if (half_open_file [idx_to_file (idx)]) s += ROOK_HALF_VAL;
 
   // Reward rook on the 7th file trapping the enemy king.
@@ -469,6 +463,8 @@ Eval::score_rooks_and_queens (const Color c) {
     {
       s += ROOK_ON_7TH_VAL;
     }
+
+#endif
 
     clear_bit (pieces, idx);
   }
