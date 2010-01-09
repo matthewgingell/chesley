@@ -45,10 +45,7 @@ static const Score KING_ADJACENT_ATTACKED_VAL = -25;
 
 // Bonuses for rooks and queens.
 
-static const Score ROOK_OPEN_FILE_VALUE = 50;
-static const Score QUEEN_OPEN_FILE_VALUE = 50;
-
-static const Score ROOK_OPEN_VAL = 40;
+static const Score ROOK_OPEN_VAL = 5;
 static const Score ROOK_HALF_VAL = 20;
 static const Score QUEEN_OPEN_VAL = 20;
 static const Score QUEEN_HALF_VAL = 10;

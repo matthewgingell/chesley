@@ -32,6 +32,9 @@ static const Score BISHOP_VAL = 325;
 static const Score ROOK_VAL   = 500;
 static const Score QUEEN_VAL  = 975;
 static const Score KING_VAL   = 0;
+  
+const Score max_material = 2 * 
+  (8 * PAWN_VAL + 2 * (ROOK_VAL + KNIGHT_VAL + BISHOP_VAL) + QUEEN_VAL);
 
 ///////////////////////////////
 // Inline utility functions. //
@@ -58,10 +61,9 @@ inline Score attacker_value (Move m) { return value (m.kind); }
 
 // Interpolate between opening and end game values.
 inline Score interpolate (const Board &b, Score s_op, Score s_eg) {
-  const int32 m_max = 2 * 
-    (8 * PAWN_VAL + 2 * (ROOK_VAL + KNIGHT_VAL + BISHOP_VAL) + QUEEN_VAL);
-  const int32 m = (b.material[WHITE] + b.material[BLACK]);
-  return (m * s_op + (m_max - m) * s_eg) / m_max;
+  const Score total_material = b.material[WHITE] + b.material[BLACK];
+  return (total_material * s_op + (max_material - total_material) * s_eg) 
+    / max_material;
 }
 
 // Lookup the piece square value of a position.
@@ -110,6 +112,8 @@ private:
   const Board &b;
   const Score alpha;
   const Score beta;
+
+  Score total_material;
 
   Score s;
   Score s_op;

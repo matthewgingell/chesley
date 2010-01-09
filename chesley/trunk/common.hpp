@@ -102,7 +102,7 @@ const int KIND_COUNT = 6;
 
 // Score type for a chess position.
 // typedef float Score;
-typedef int16 Score;
+typedef int32 Score;
 
 enum SKind {
   NULL_SKIND, LOWER_BOUND, UPPER_BOUND, EXACT_VALUE 
@@ -214,8 +214,7 @@ to_idx (int rank, int file) {
 inline bitboard
 our_side_of_board (Color c) {
   bitboard white_side = 
-    file_mask (A) | file_mask (B) | 
-    file_mask (C) |  file_mask (D);
+    rank_mask (0) | rank_mask (1) | rank_mask (2) | rank_mask (3);
   return (c == WHITE) ? white_side : ~white_side;
 }
 
