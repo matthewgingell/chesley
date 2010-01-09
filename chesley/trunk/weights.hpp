@@ -98,7 +98,7 @@ static const Score KNIGHT_OUTPOST_VAL = 25;
 static const Score TEMPO_VAL = 10;
 
 // Mobility bonuses
-static const Score PAWN_MOBILITY_VAL   = 0;
+static const Score PAWN_MOBILITY_VAL   = 5;
 static const Score ROOK_MOBILITY_VAL   = 5;
 static const Score KNIGHT_MOBILITY_VAL = 6;
 static const Score BISHOP_MOBILITY_VAL = 8;
@@ -131,7 +131,7 @@ const Score piece_square_table[2][6][64] =
         -3,   3,  17,  28,  28,  17,   3,  -3,
        -10,  -5,  10,  20,  20,  10,  -5, -10,
        -10,  -5,   5,  15,  15,   5,  -5, -10,
-       -10,  -5,   5, -10, -10,   5,  -5,  -1,
+       -10,  -5,   5, -10, -10,   5,  -5, -10,
          0,   0,   0,   0,   0,   0,   0,   0
       },
 

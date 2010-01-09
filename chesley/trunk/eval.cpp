@@ -27,15 +27,10 @@ PHash ph (1024 * 1024);
 #define PWN 1
 #define SPC 0
 #define KSF 1
-#define NGT 0
+#define NGT 3
 #define BSH 0
 #define QRS 0
 #define LZY 0
-
-//////////////////////////////////////
-// Evaluation function entry point. //
-//////////////////////////////////////
-
 
 Score Eval::sum_net_material () {
   return
@@ -50,6 +45,10 @@ Score Eval::sum_net_material () {
     QUEEN_VAL * (pop_count (b.white & b.queens) - 
                  pop_count (b.black & b.queens));
 }
+
+//////////////////////////////////////
+// Evaluation function entry point. //
+//////////////////////////////////////
 
 Score 
 Eval::score () { 
@@ -102,7 +101,7 @@ Eval::score () {
   // Rooks and queens.
   s += QRS * (score_rooks_and_queens (WHITE) - 
               score_rooks_and_queens (BLACK));
-
+  
   // Pawn structure.
   s += PWN * score_pawns ();
 
@@ -251,7 +250,7 @@ Score
 Eval::score_knight (const Color c) {
   Score s = 0;
 
-  // Reward Knights which are defended by a pawn and not attacked by a
+  // Reward knights which are defended by a pawn and not attacked by a
   // pawn.
 
   bitboard outposts =  
@@ -272,8 +271,7 @@ Eval::score_knight (const Color c) {
   while (outposts) 
     {
       Coord idx = bit_idx (outposts);
-      Coord off = (c == BLACK) ? 
-        idx : flip_white_black[idx];
+      Coord off = (c == BLACK) ? idx : flip_white_black[idx];
       s += knight_outpost[off];
       clear_bit (outposts, idx);
     }
@@ -320,13 +318,29 @@ Eval::score_bishop (const Color c) {
               (idx == H3 && test_bit (their_pawns, G4)))
             s -= BISHOP_TRAPPED_A6H6;
         }
+
+#if 0
+      // Penalize bishops on color occupied by friendly pawns.
+      if (test_bit (light_squares, idx))
+        {
+          s -= 5 * pop_count (b.get_pawns (c) & light_squares);
+        }
+      else
+        {
+          s -= 5 * pop_count (b.get_pawns (c) & dark_squares);
+        }
+#endif
+
       clear_bit (our_bishops, idx);
     }
 
   // Provide a bonus for holding both bishops.
-  if (b.piece_counts[c][BISHOP] >= 2) 
-    s += BISHOP_PAIR_VAL;
+  //  if (b.piece_counts[c][BISHOP] >= 2) 
+  //    s += BISHOP_PAIR_VAL;
+  // s += 25;
 
+
+#if 0  
   // Reward bishops which are defended by a pawn and not attacked by a
   // pawn.
 
@@ -353,6 +367,7 @@ Eval::score_bishop (const Color c) {
       s += bishop_outpost[off];
       clear_bit (outposts, idx);
     }
+#endif
 
   return s;
 }
@@ -417,12 +432,10 @@ Eval::score_mobility (const Color c) {
     clear_bit (pieces, idx);
   }
 
-#if 0
   // Give a reward for the number of squares on the other side of the
   // board we're attacking.
-  s += SPC * 5 * space;
-#endif
-
+  s += SPC * space;
+  
 #ifdef TRACE_EVAL
   cerr << c << " Mobility: " << s << endl;
 #endif // TRACE_EVAL
@@ -460,6 +473,7 @@ Eval::score_rooks_and_queens (const Color c) {
     clear_bit (pieces, idx);
   }
 
+#if 0
   // Reward queens on open and half open files
   pieces = b.get_queens (c);
   while (pieces) {
@@ -483,6 +497,7 @@ Eval::score_rooks_and_queens (const Color c) {
 
     clear_bit (pieces, idx);
   }
+#endif
 
   return s;
 }
