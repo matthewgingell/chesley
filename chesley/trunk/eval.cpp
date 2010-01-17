@@ -366,9 +366,12 @@ Score
 Eval::score_mobility (const Color c) {
   Score s = 0;
   int space = 0;
+  const Coord ks = b.king_square (~c);
   bitboard our_pieces = b.color_to_board (c);
   bitboard pieces;
   bitboard attacks;
+
+  const Score KING_GRAVITY[] = {0, 8, 7, 6, 5, 4, 3, 0};
 
 #if 0
   // Pawns
@@ -385,6 +388,7 @@ Eval::score_mobility (const Color c) {
     s += pop_count (attacks) * ROOK_MOBILITY_VAL;
     space += pop_count (attacks & their_side_of_board (c));
     // s += b.rook_mobility (idx) * ROOK_MOBILITY_VAL;
+    s += KING_GRAVITY[dist (idx, ks)];
     clear_bit (pieces, idx);
   }
 
@@ -396,6 +400,7 @@ Eval::score_mobility (const Color c) {
     space += pop_count (attacks & their_side_of_board (c));
     s += pop_count (attacks) * KNIGHT_MOBILITY_VAL;
     // s += b.knight_mobility (idx) * KNIGHT_MOBILITY_VAL;
+    s += KING_GRAVITY[dist (idx, ks)];
     clear_bit (pieces, idx);
   }
 
@@ -407,6 +412,7 @@ Eval::score_mobility (const Color c) {
     s += pop_count (attacks) * BISHOP_MOBILITY_VAL;
     space += pop_count (attacks & their_side_of_board (c));
     // s += b.bishop_mobility (idx) * BISHOP_MOBILITY_VAL;
+    s += KING_GRAVITY[dist (idx, ks)];
     clear_bit (pieces, idx);
   }
 
@@ -418,6 +424,7 @@ Eval::score_mobility (const Color c) {
     space += pop_count (attacks & their_side_of_board (c));
     s += pop_count (attacks) * QUEEN_MOBILITY_VAL;
     // s += b.queen_mobility (idx) * QUEEN_MOBILITY_VAL;
+    s += KING_GRAVITY[dist (idx, ks)];
     clear_bit (pieces, idx);
   }
 
@@ -654,7 +661,6 @@ Eval::score_pawns_inner (const Color c) {
     // Weak pawns
     if (backward || isolated || doubled)
       val -= WEAK_PAWN_VAL;
-    
 
 #ifdef TRACE_EVAL
     cerr << c << " pawn at " << b.to_alg_coord (idx) << ":";
