@@ -86,10 +86,6 @@ Score PASSED_CONNECTED_VAL[COLOR_COUNT][RANK_COUNT] =
 
 #undef pair
 
-// Knights.
-
-static const Score KNIGHT_OUTPOST_VAL = 25;
-
 // Tempo
 
 static const Score TEMPO_VAL = 10;
@@ -198,7 +194,7 @@ const Score piece_square_table[2][6][64] =
     {
       // Pawn values based on Hans Berliner.
       {
-#define eg(x) x
+#define eg(x) (x)
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg( 45), eg( 29), eg( 16), eg(  5), eg(  5), eg( 16), eg( 29), eg( 45),
         eg( 45), eg( 29), eg( 16), eg(  5), eg(  5), eg( 16), eg( 29), eg( 45),
@@ -212,7 +208,7 @@ const Score piece_square_table[2][6][64] =
       
       // Rooks
       {
-#define eg(x) x
+#define eg(x) (x)
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
         eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0), eg(  0),
@@ -226,7 +222,7 @@ const Score piece_square_table[2][6][64] =
 
       // Knights
       {
-#define eg(x) x
+#define eg(x) (x)
         eg(-50), eg (-20), eg(-20), eg(-10), eg(-10), eg(-20), eg(-20), eg(-50),
         eg(-20), eg ( 15), eg( 15), eg( 25), eg( 25), eg( 15), eg( 15), eg(-20),
         eg(-10), eg ( 15), eg( 20), eg( 25), eg( 25), eg( 20), eg(  0), eg(-10),
@@ -239,7 +235,7 @@ const Score piece_square_table[2][6][64] =
       },
 
       // Bishops
-#define eg(x) x
+#define eg(x) (x)
       {
         eg(  0), eg (  0), eg(  0), eg(  5), eg(  5), eg(  0), eg(  0), eg(  0),
         eg(  0), eg (  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  5), eg(  0),
