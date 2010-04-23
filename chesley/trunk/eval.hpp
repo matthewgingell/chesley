@@ -8,8 +8,8 @@
 // returned to the player are multiplied by the correct sign and are          //
 // appropriate for negamax.                                                   //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -54,10 +54,14 @@ inline Score value (Kind k) {
 }
 
 // Return the value of a piece captured by a move.
-inline Score victim_value (Move m) {  return value (m.capture); }
+inline Score victim_value (Move m) {  
+  return value (m.capture); 
+}
 
 // Return the value of the piece moving.
-inline Score attacker_value (Move m) { return value (m.kind); }
+inline Score attacker_value (Move m) { 
+  return value (m.kind); 
+}
 
 // Interpolate between opening and end game values.
 inline Score interpolate (const Board &b, Score s_op, Score s_eg) {
@@ -75,16 +79,13 @@ inline Score piece_square_value (Phase p, Kind k, Color c, Coord idx) {
 // Lookup the interpolated piece square value of a position.
 inline Score
 interpolated_psq_val (const Board &b, Kind k, Color c, Coord idx) {
-  return interpolate 
-    (b,
-     piece_square_value (OPENING_PHASE, k, c, idx),
-     piece_square_value (END_PHASE, k, c, idx));
+  return interpolate (b,
+                      piece_square_value (OPENING_PHASE, k, c, idx),
+                      piece_square_value (END_PHASE, k, c, idx));
 }
 
 // Lookup the change in piece square value over a move.
 inline Score piece_square_value (const Board &b, const Move &m) {
-  return 0;
-
   return interpolated_psq_val (b, m.kind, m.color, m.to) -
     interpolated_psq_val (b, m.kind, m.color, m.from);
 }
@@ -119,10 +120,10 @@ private:
   Score s_op;
   Score s_eg;
 
-  bool open_file[FILE_COUNT];
+  bool open_file     [FILE_COUNT];
   bool half_open_file[FILE_COUNT];
 
-  int pawn_count[COLOR_COUNT];
+  int pawn_count [COLOR_COUNT];
   int major_count[COLOR_COUNT];
   int minor_count[COLOR_COUNT];
 

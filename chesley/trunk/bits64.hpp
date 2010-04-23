@@ -4,8 +4,8 @@
 //                                                                            //
 // Operations on 64-bit bitmaps.                                              //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@
 #define _BITS64_
 
 #include <iostream>
+
 #include "common.hpp"
 #include "util.hpp"
 
@@ -23,14 +24,14 @@ typedef uint64 bits64;
 // Bitwise operations on 64 bit unsigned ints //
 ////////////////////////////////////////////////
 
-inline bool   test_bit   (bits64, int)   IS_CONST;
+inline bool   test_bit   (bits64,   int)   IS_CONST;
 inline void   set_bit    (bits64 &, int); 
 inline void   clear_bit  (bits64 &, int);
-inline bits64 clear_lsb  (bits64)        IS_CONST;
-inline bits64 clear_msbs (bits64)        IS_CONST;
-inline uint32 bit_idx    (bits64)        IS_CONST;
-inline uint32 pop_count  (bits64)        IS_CONST;
-inline byte   get_byte   (bits64, int)   IS_CONST;
+inline bits64 clear_lsb  (bits64)          IS_CONST;
+inline bits64 clear_msbs (bits64)          IS_CONST;
+inline uint32 bit_idx    (bits64)          IS_CONST;
+inline uint32 pop_count  (bits64)          IS_CONST;
+inline byte   get_byte   (bits64,   int)   IS_CONST;
 
 ////////////////////////
 // Debugging routines //
@@ -113,9 +114,6 @@ print_bits (bits64 b) {
     std::cerr << (test_bit (b, i) ? "1" : "0");
   std::cerr << std:: endl;
 }
-
-static void 
-print_board (bits64 b);
 
 // Print a 64 bit set as a 8x8 matrix of 'X; and '.'.
 static void

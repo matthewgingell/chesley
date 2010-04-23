@@ -4,8 +4,8 @@
 //                                                                            //
 // Various declarations common to all units.                                  //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -20,7 +20,20 @@
 // Types //
 ///////////
 
-#ifndef _WIN32
+#ifdef _WIN32
+
+typedef signed    char    int8;
+typedef signed    short   int16;
+typedef signed    int     int32;
+typedef signed    __int64 int64;
+typedef unsigned  char    uint8; 
+typedef unsigned  short   uint16;
+typedef unsigned  int     uint32;
+typedef unsigned  __int64 uint64;
+typedef unsigned  char    byte;
+
+#else // _WIN32
+
 #include <stdint.h>
 typedef int8_t   int8;
 typedef int16_t  int16;
@@ -31,27 +44,21 @@ typedef uint16_t uint16;
 typedef uint32_t uint32;
 typedef uint64_t uint64;
 typedef uint8_t  byte;
-#else
-typedef signed char int8;
-typedef signed short int16;
-typedef signed int int32;
-typedef signed __int64 int64;
-typedef unsigned char uint8; 
-typedef unsigned short uint16;
-typedef unsigned int uint32;
-typedef unsigned __int64 uint64;
-typedef unsigned char byte;
-#endif
+
+#endif // _WIN32
 
 #ifdef _WIN32
 #include <windows.h>
 #include <winbase.h>
+
 #ifndef snprintf
 #define snprintf _snprintf
 #endif
+
 #ifndef fileno
 #define fileno _fileno
 #endif
+
 #endif // _WIN32
 
 // Type for a number representing a square on the board.
@@ -130,27 +137,27 @@ void precompute_tables ();
 ///////////////
 
 inline Color invert (Color c) { return (c == WHITE) ? BLACK : WHITE; }
-inline int sign (Color c) { return (c == WHITE) ? +1 : -1; }
+inline int   sign   (Color c) { return (c == WHITE) ? +1 : -1; }
 
-inline void operator++ (Color &c, int) { c = (Color) (c + 1); }
-inline void operator-- (Color &c, int) { c = (Color) (c - 1); }
-inline void operator++ (Color &c) { c = (Color) (c + 1); }
-inline void operator-- (Color &c) { c = (Color) (c - 1); }
+inline void  operator++ (Color &c, int) { c = (Color) (c + 1); }
+inline void  operator-- (Color &c, int) { c = (Color) (c - 1); }
+inline void  operator++ (Color &c)      { c = (Color) (c + 1); }
+inline void  operator-- (Color &c)      { c = (Color) (c - 1); }
 
-inline Color operator! (Color c) { return invert (c); }
-inline Color operator~ (Color c) { return invert (c); }
+inline Color operator!  (Color c) { return invert (c); }
+inline Color operator~  (Color c) { return invert (c); }
 
 std::ostream & operator<< (std::ostream &os, Color c);
 
 inline void operator++ (Kind &k, int) { k = (Kind) (k + 1); }
 inline void operator-- (Kind &k, int) { k = (Kind) (k - 1); }
-inline void operator++ (Kind &k) { k = (Kind) (k + 1); }
-inline void operator-- (Kind &k) { k = (Kind) (k - 1); }
+inline void operator++ (Kind &k)      { k = (Kind) (k + 1); }
+inline void operator-- (Kind &k)      { k = (Kind) (k - 1); }
 
 inline void operator++ (File &f, int) { f = (File) (f + 1); }
 inline void operator-- (File &f, int) { f = (File) (f - 1); }
-inline void operator++ (File &f) { f = (File) (f + 1); }
-inline void operator-- (File &f) { f = (File) (f - 1); }
+inline void operator++ (File &f)      { f = (File) (f + 1); }
+inline void operator-- (File &f)     { f = (File) (f - 1); }
 
 char to_char (Kind k);
 Kind to_kind (char k);
@@ -160,13 +167,13 @@ std::ostream & operator<< (std::ostream &os, Kind k);
 inline bool in_bounds (int x, int y);
 
 inline bitboard rank_mask (int rank);
-inline bitboard in_front_of_mask (Coord idx, Color c);
-inline bitboard file_mask (int file);
-inline bitboard this_file_mask (Coord idx);
-inline int idx_to_rank (Coord idx);
-inline int idx_to_file (Coord idx);
-inline Coord to_idx (int rank, int file);
-inline hash_t get_zobrist_piece_key (Color c, Kind k, Coord idx);
+inline bitboard in_front_of_mask      (Coord idx, Color c);
+inline bitboard file_mask             (int file);
+inline bitboard this_file_mask        (Coord idx);
+inline int      idx_to_rank           (Coord idx);
+inline int      idx_to_file           (Coord idx);
+inline Coord    to_idx                (int rank, int file);
+inline hash_t   get_zobrist_piece_key (Color c, Kind k, Coord idx);
 
 // Test whether a coordinate is in bounds.
 inline bool
@@ -326,7 +333,7 @@ extern bitboard *adjacent_files;
 // Patterns for use in evaluation //
 ////////////////////////////////////
 
-// Advance an coordinate one square.
+// Advance a coordinate one square.
 inline Coord forward (Coord idx, Color c) {
   return (c == WHITE ? idx + 8 : idx - 8);
 }
@@ -346,7 +353,7 @@ inline bitboard in_back_of_mask (Coord idx, Color c) {
   return in_front_of[~c][idx]; 
 }
 
-// Return the files adjacent to this one.
+// Return a bitboard of the files adjacent to this one.
 inline bitboard
 adjacent_files_mask (Coord idx) {
   return adjacent_files[idx];

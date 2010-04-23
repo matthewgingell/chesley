@@ -4,9 +4,9 @@
 //                                                                            //
 // Utilities for working with Portable Game Notation files.                   //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley             //
-// the Chess Engine! is free software distributed under the terms             //
-// of the GNU Public License.                                                 //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Chess Engine! is free software distributed under the terms of the          //
+// GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -50,7 +50,7 @@ struct PGN {
   // Skip a '{ ... }' comment or white space.
   void skip_comment_and_whitespace ();
 
-// Skip a '( ... )' in the moves list.
+  // Skip a '( ... )' in the moves list.
   void skip_recursive_variation ();
 
   // An internal board against which moves are validated and parsed.

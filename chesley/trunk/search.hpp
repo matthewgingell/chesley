@@ -5,9 +5,9 @@
 // Interface to the search engine. Clients are expected to create and         //
 // configure search engine objects then call its methods to do various        //
 // types of searches.                                                         //
-//                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+//                 
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -15,12 +15,13 @@
 #ifndef _SEARCH_
 #define _SEARCH_
 
+#include <boost/unordered_map.hpp>
 #include <cstring>
+
 #include "board.hpp"
 #include "eval.hpp"
 #include "ttable.hpp"
 #include "util.hpp"
-#include <boost/unordered_map.hpp>
 
 // Supported time keeping modes.
 enum time_mode { UNLIMITED, CONVENTIONAL, ICS, EXACT };
@@ -28,7 +29,7 @@ enum time_mode { UNLIMITED, CONVENTIONAL, ICS, EXACT };
 // Maximum search depth. 
 static const int32 MAX_DEPTH = 256;
 static const int32 MAX_PLY = 256;
-static const int hist_nbuckets = 10;
+static const int   hist_nbuckets = 10;
 
 struct Search_Engine {
 
@@ -255,7 +256,7 @@ struct Search_Engine {
     uint64 calls_to_search;
     uint64 calls_for_depth[MAX_DEPTH];
     uint64 time_for_depth[MAX_DEPTH];
-
+    
     // A histogram of times we found a PV node at an index into the
     // moves list. This is a measure of the performance of our move
     // ordering strategy.

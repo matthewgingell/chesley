@@ -4,8 +4,8 @@
 //                                                                            //
 // Representation and operations on a board state in a game of chess.         //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -19,8 +19,8 @@
 #include <string>
 
 #include "bits64.hpp"
-#include "move.hpp"
 #include "common.hpp"
+#include "move.hpp"
 #include "util.hpp"
 
 ///////////
@@ -33,8 +33,6 @@ struct Board;
 ////////////////////////////
 // Chess board state type //
 ////////////////////////////
-
-std::ostream & operator<< (std::ostream &os, const Board &b);
 
 struct Board {
 
@@ -404,12 +402,12 @@ struct Board {
     switch (k)
       {
       case NULL_KIND: assert (0); break;
-      case PAWN: return pawns; break;
-      case ROOK: return rooks; break;
-      case KNIGHT: return knights; break;
-      case BISHOP: return bishops; break;
-      case KING: return kings; break;
-      case QUEEN: return queens; break;
+      case PAWN:      return pawns; break;
+      case ROOK:      return rooks; break;
+      case KNIGHT:    return knights; break;
+      case BISHOP:    return bishops; break;
+      case KING:      return kings; break;
+      case QUEEN:     return queens; break;
       default: assert (0);
       }
 
@@ -423,12 +421,12 @@ struct Board {
     switch (k)
       {
       case NULL_KIND: assert (0); break;
-      case PAWN: return pawns; break;
-      case ROOK: return rooks; break;
-      case KNIGHT: return knights; break;
-      case BISHOP: return bishops; break;
-      case KING: return kings; break;
-      case QUEEN: return queens; break;
+      case PAWN:      return pawns; break;
+      case ROOK:      return rooks; break;
+      case KNIGHT:    return knights; break;
+      case BISHOP:    return bishops; break;
+      case KING:      return kings; break;
+      case QUEEN:     return queens; break;
       default: assert (0);
       }
 
@@ -471,8 +469,6 @@ struct Board {
   // Set a piece on the board.
   void set_piece (Kind k, Color c, Coord idx);
   void set_piece (Kind k, Color c, int row, int file);
-
-  // Move a piece on the board.
 
   // Apply a move to this board.
   bool apply (const Move &m);

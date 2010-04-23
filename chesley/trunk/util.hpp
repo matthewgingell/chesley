@@ -5,8 +5,8 @@
 // Various small utility functions. This file is intended to encapsulate      //
 // all the platform dependent functionality used by Chesley.                  //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,8 +38,8 @@ extern char *arg0;
 ///////////////////////
 
 #ifdef __GNUC__
-#define IS_CONST __attribute__ ((const))
-#define IS_UNUSED  __attribute__ ((unused))
+#define IS_CONST    __attribute__ ((const))
+#define IS_UNUSED   __attribute__ ((unused))
 #define ALIGNED(A)  __attribute__ ((aligned (A)))
 #else
 #define IS_CONST
