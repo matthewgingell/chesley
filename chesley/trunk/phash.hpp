@@ -3,8 +3,8 @@
 //                                                                            //
 // The pawn evaluation cache data type.                                       //        
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -14,6 +14,7 @@
 
 #include <cassert>
 #include <stdlib.h>
+
 #include "common.hpp"
 
 struct PHash

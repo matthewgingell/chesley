@@ -6,8 +6,8 @@
 // session, either over the xboard protocol, UCI (Universal Chess             //
 // Interface), or interactive mode.                                           //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -180,4 +180,4 @@ struct Session {
   static void test_hashing (int d);
 };
 
-#endif /* _Session_ */
+#endif // _Session_

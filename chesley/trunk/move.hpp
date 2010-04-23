@@ -4,8 +4,8 @@
 //                                                                            //
 // Representation and operations on a chess move.                             //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
-// Chess Engine! is free software distributed under the terms of the          //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
@@ -24,8 +24,8 @@ struct Board;
 
 struct Move {
 
-  // It's important we have a null constructor here as we create large
-  // arrays of moves which we never access.
+  // It's important we have a null constructor here as we create large arrays
+  // of moves which we never access.
   Move () {}
 
   // Construct a move;
@@ -44,14 +44,13 @@ struct Move {
     return kind;
   }
 
-  // Returns the piece being captured, or NULL_KIND if this is not a
-  // capture.
+  // Returns the piece being captured, or NULL_KIND if this is not a capture.
   inline Kind get_capture () const {
     return capture;
   }
 
-  // Returns the piece being promoted to, or NULL_KIND if this is not
-  // a promotion.
+  // Returns the piece being promoted to, or NULL_KIND if this is not a
+  // promotion.
   inline Kind get_promote () const {
     return promote;
   }
@@ -143,8 +142,7 @@ operator<< (std::ostream &os, const Move_Vector &moves);
 // Vector of moves.
 struct Move_Vector {
 
-  // Amazingly, examples of positions with 218 different possible
-  // moves exist.
+  // Amazingly, examples of positions with 218 different possible moves exist.
   static uint32 const SIZE = 256;
 
   // Various constructors for composing Move_Vectors.

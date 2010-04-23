@@ -271,7 +271,7 @@ root_search (const Board &b, int depth, Move_Vector &pv, Score guess)
 
 #ifdef ENABLE_ASPIRATION_WINDOW
   // Try an aspiration search.
-  const int ASPIRATION_WINDOW = 30;
+  const int ASPIRATION_WINDOW = 20;
   Score lower = guess - ASPIRATION_WINDOW / 2;
   Score upper = guess + ASPIRATION_WINDOW / 2;
   cs = search_with_memory (b, depth, 0, pv, lower, upper);
