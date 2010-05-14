@@ -63,6 +63,11 @@ inline Score attacker_value (Move m) {
   return value (m.kind); 
 }
 
+// Return the value of a capture / recapture.
+inline Score capture_value (Move m) { 
+  return victim_value (m) - attacker_value (m);
+}
+
 // Interpolate between opening and end game values.
 inline Score interpolate (const Board &b, Score s_op, Score s_eg) {
   const Score total_material = b.material[WHITE] + b.material[BLACK];

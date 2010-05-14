@@ -6,9 +6,9 @@
 // and configure search engine objects then call its methods to do            //
 // various types of searches.                                                 //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley             //
-// the Chess Engine! is free software distributed under the terms             //
-// of the GNU Public License.                                                 //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// the Chess Engine! is free software distributed under the terms of the      //
+// GNU Public License.                                                        //
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -428,10 +428,7 @@ Search_Engine :: search
     /////////////////////////
 
     const int R = depth >= 6 ? 3 : 2;
-
-    // Since we don't have Zugzwang detection we just disable null
-    // move if there are fewer than 12 pieces on the board.
-    if (do_null_move && !in_check && pop_count (b.occupied) >= 12)
+    if (do_null_move && !in_check && b.has_piece ())
       {
         Board c = b;
         Move_Vector dummy;
@@ -439,13 +436,14 @@ Search_Engine :: search
         c.set_en_passant (0);
         int val = -search_with_memory
           (c, depth - R - 1, ply, dummy, -beta, -beta + 1, false);
-
+        
         if (val >= beta) 
           { 
             stats.null_count++;
             return val;
           }
       }
+    
 #endif // ENABLE_NULL_MOVE
     
     ///////////////////////////
@@ -463,7 +461,6 @@ Search_Engine :: search
 
     bool sre = false;
 
-#if 0
 #ifdef ENABLE_EXTENSIONS
     // If we are in check, count the number of legal moves available
     // to us. This should be replaced with check evasion generation.
@@ -484,7 +481,6 @@ Search_Engine :: search
 
         stats.ext_count++;
       }
-#endif
 #endif
 
     for (mi = 0; mi < moves.count; mi++)
@@ -1006,7 +1002,7 @@ Search_Engine :: see_inner (Board &b, const Move &m) const {
   return s;
 
 #else 
-  return Eval::eval_capture (m);
+  return capture_value (m);
 #endif // ENABLE_SEE
 }
 
