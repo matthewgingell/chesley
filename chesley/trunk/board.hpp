@@ -634,6 +634,16 @@ struct Board {
   Score psquares     [COLOR_COUNT][PHASE_COUNT];
   uint8 piece_counts [COLOR_COUNT][KIND_COUNT];
   uint8 pawn_counts  [COLOR_COUNT][FILE_COUNT];
+
+  // Does the side to move have at least one non-pawn?
+  bool has_piece () const {
+    return 
+      piece_counts[to_move ()][KNIGHT] > 0 || 
+      piece_counts[to_move ()][BISHOP] > 0 || 
+      piece_counts[to_move ()][ROOK  ] > 0 || 
+      piece_counts[to_move ()][QUEEN ] > 0;
+  }
+
 };
 
 // Output human readable board.
