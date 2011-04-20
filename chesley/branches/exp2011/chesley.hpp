@@ -4,7 +4,7 @@
 //                                                                            //
 // Chesley the Chess Engine!                                                  //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2011. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
 //                                                                            //
@@ -30,9 +30,9 @@
 
 #define ENGINE_ID_STR        "Chesley the Chess Engine!"
 #define ENGINE_AUTHOR_STR    "Matthew Gingell <gingell@adacore.com>"
-#define ENGINE_COPYRIGHT_STR "Copyright (C) 2009 " ENGINE_AUTHOR_STR
+#define ENGINE_COPYRIGHT_STR "Copyright (C) 2011 " ENGINE_AUTHOR_STR
 #define ENGINE_LICENSE_STR   "Chesley is free software, " \
-                              "distributed under the GNU General Public License."
+                             "distributed under the GNU General Public License."
 
 #define VERSION SVN_REVISION
 

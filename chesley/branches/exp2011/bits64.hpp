@@ -4,7 +4,7 @@
 //                                                                            //
 // Operations on 64-bit bitmaps.                                              //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2010. Chesley        //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2009-2011. Chesley        //
 // the Chess Engine! is free software distributed under the terms of the      //
 // GNU Public License.                                                        //
 //                                                                            //
@@ -126,6 +126,5 @@ print_board (bits64 b) {
     }
   std::cerr << std::endl;
 }
-
  
 #endif // _BITS64_
