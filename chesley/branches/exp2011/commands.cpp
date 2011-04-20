@@ -4,7 +4,7 @@
 //                                                                            //
 // Code for executing commands passed to the command interpreter.             //
 //                                                                            //
-// Copyright Matthew Gingell <gingell@adacore.com>, 2009. Chesley the         //
+// Copyright Matthew Gingell <gingell@adacore.com>, 2011. Chesley the         //
 // Chess Engine! is free software distributed under the terms of the          //
 // GNU Public License.                                                        //
 //                                                                            //
@@ -20,6 +20,8 @@
 #include "stats.hpp"
 
 using namespace std;
+
+extern bool xboard;
 
 //////////////////////////
 //                      //
