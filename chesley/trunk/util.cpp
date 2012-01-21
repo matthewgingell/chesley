@@ -11,7 +11,7 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/random.hpp>
+#if 0
 
 #include "common.hpp"
 #include "util.hpp"
@@ -19,9 +19,6 @@
 ///////////////////////////////
 // Random number generation  //
 ///////////////////////////////
-
-static boost::mt19937 generator;
-static boost::uniform_int <uint64> distribution (0ULL, ~0ULL); 
 
 // Seed the random number generator.
 void seed_random () {
@@ -32,3 +29,5 @@ void seed_random () {
 uint64 random64 () {
   return distribution (generator);
 }
+
+#endif
