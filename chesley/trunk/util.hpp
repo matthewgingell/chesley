@@ -49,8 +49,8 @@ extern char *arg0;
 
 #define ZERO(object) memset (object, 0, sizeof (object));
 
-static int32 sign (int x) IS_UNUSED;
-static int32 sign (int x) { return x / abs (x); }
+inline int32 sign (int x) IS_UNUSED;
+inline int32 sign (int x) { return x / abs (x); }
 
 //////////////////////
 // String functions //
@@ -166,10 +166,10 @@ insertion_sort (T &items) IS_UNUSED;
 ///////////////////
 
 // Seed the random number generator
-void seed_random ();
+static void seed_random () IS_UNUSED;;
 
 // Return a 64-bit random number.
-uint64 random64 ();
+static uint64 random64 () IS_UNUSED;;
 
 //////////////////////
 // String functions //
@@ -545,6 +545,24 @@ insertion_sort (V &items) {
         }
       items[j] = index;
     }
+}
+
+/////////////////////
+// Random numbers. //
+/////////////////////
+
+// Seed the random number generator
+static void
+seed_random () {
+#ifndef _WIN32
+  srandom (mclock ());
+#endif // _WIN32
+}
+
+// Return a 64-bit random number.
+static uint64
+random64 () {
+  return ((uint64) rand()) | (((uint64) rand()) << 32);
 }
 
 ////////////////////////////

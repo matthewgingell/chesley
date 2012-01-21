@@ -15,8 +15,8 @@
 #ifndef _SEARCH_
 #define _SEARCH_
 
-#include <boost/unordered_map.hpp>
 #include <cstring>
+#include <map>
 
 #include "board.hpp"
 #include "eval.hpp"
@@ -135,7 +135,7 @@ struct Search_Engine {
    const Move_Vector &pv, Score s, int32 alpha, int32 beta);
 
   // A table type mapping from a 64-bit key to a repetition count.
-  typedef boost::unordered_map <hash_t, int> Rep_Table;
+  typedef std::map <hash_t, int> Rep_Table;
 
   // Fetch a move from the transposition table.
   Move tt_move (const Board &b);
